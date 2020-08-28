@@ -3,6 +3,21 @@
 
 #include "mbuf.h"
 
+struct ixc_netif{
+    struct ixc_mbuf *sent_first;
+    struct ixc_mbuf *sent_last;
+    // LAN网卡
+#define IXC_NETIF_TYPE_LAN 0
+    // WAN网卡
+#define IXC_NETIF_TYPE_WAN 1
+    int type;
+    int fd;
+    // 写入标志
+    int write_flags;
+
+    unsigned char hwaddr[6];
+};
+
 int ixc_netif_create(const char *devname,char *res_devname[],int flags);
 void ixc_netif_delete(const char *devname,int flags);
 
