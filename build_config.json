@@ -1,0 +1,10 @@
+{
+  "debug": true,
+  "c_includes": [
+    "/opt/python38/include/python3.8"
+  ],
+  "libs": [
+  ],
+  "lib_dirs": [
+  ]
+}
