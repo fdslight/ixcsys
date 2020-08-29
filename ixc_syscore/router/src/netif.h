@@ -8,6 +8,8 @@
 struct ixc_netif{
     struct ixc_mbuf *sent_first;
     struct ixc_mbuf *sent_last;
+    char devname[512];
+    int is_used;
     // LAN网卡
 #define IXC_NETIF_TYPE_LAN 0
     // WAN网卡
@@ -20,8 +22,11 @@ struct ixc_netif{
     unsigned char hwaddr[6];
 };
 
-int ixc_netif_create(const char *devname,char *res_devname[],int flags);
-void ixc_netif_delete(const char *devname,int flags);
+int ixc_netif_init(void);
+void ixc_netif_uninit(void);
+
+int ixc_netif_create(const char *devname,char res_devname[],int type);
+void ixc_netif_delete(int type);
 
 
 int ixc_netif_send(struct ixc_mbuf *m);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 
-def build(base_dir, mydir, cflags, debug=True):
+def build(base_dir, cflags, debug=True):
     pass
 
 
