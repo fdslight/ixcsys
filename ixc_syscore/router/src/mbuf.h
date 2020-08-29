@@ -16,8 +16,18 @@ struct ixc_mbuf{
     // 尾部
     int tail;
     // 结束位置
+#define IXC_MBUF_END 0xff00
     int end;
+    
+    union{
+        unsigned short link_proto;
+        unsigned char ipproto;
+    };
+
     unsigned char data[0xffff];
+    unsigned char if_hwaddr[6];
+    unsigned char src_hwaddr[6];
+    unsigned char dst_hwaddr[6];
 };
 
 

@@ -10,5 +10,7 @@
 
 /// 发送数据到Python
 int ixc_router_send(void *buf,size_t size,int flags);
+/// 写入事件告知
+int ixc_router_write_ev_tell(int fd,int flags);
 
 #endif
