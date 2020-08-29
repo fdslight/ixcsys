@@ -3,6 +3,8 @@
 
 #include "mbuf.h"
 
+#define IXC_NETIF_READ_NUM 10
+
 struct ixc_netif{
     struct ixc_mbuf *sent_first;
     struct ixc_mbuf *sent_last;
@@ -25,9 +27,8 @@ void ixc_netif_delete(const char *devname,int flags);
 int ixc_netif_send(struct ixc_mbuf *m);
 
 /// 发送数据
-int ixc_netif_tx_data(void);
-
+int ixc_netif_tx_data(struct ixc_netif *netif);
 /// 接收数据
-int ixc_netif_rx_data(void);
+int ixc_netif_rx_data(struct ixc_netif *netif);
 
 #endif
