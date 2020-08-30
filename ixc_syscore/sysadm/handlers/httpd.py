@@ -99,6 +99,8 @@ class httpd_handler(tcp_handler.tcp_handler):
 
     # HTTP1x版本是否保持连接
     __http1_keep_conn = None
+    __http1_parssed_header = None
+    __scgi_closed = None
 
     # 连接超时时间
     __conn_timeout = None
@@ -115,6 +117,9 @@ class httpd_handler(tcp_handler.tcp_handler):
 
         self.__http_version = 1
         self.__is_defined_http_version = False
+
+        self.__http1_parssed_header = False
+        self.__scgi_closed = False
 
         self.__conn_timeout = 120
         self.__time_up = time.time()
