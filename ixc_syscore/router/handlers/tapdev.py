@@ -5,6 +5,7 @@ import pywind.evtframework.handlers.handler as handler
 
 class tapdevice(handler.handler):
     def init_func(self, creator_fd, fd):
+        self.set_fileno(fd)
         self.register(fd)
         self.add_evt_read(self.fileno)
 
@@ -12,6 +13,7 @@ class tapdevice(handler.handler):
 
     def evt_read(self):
         rs = self.dispatcher.router.netif_rx_data()
+
         if not rs:
             self.error()
             return

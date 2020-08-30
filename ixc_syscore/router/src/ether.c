@@ -1,7 +1,6 @@
 #include<arpa/inet.h>
 #include<string.h>
 
-#include "netif.h"
 #include "ether.h"
 #include "arp.h"
 #include "ip.h"
@@ -9,7 +8,6 @@
 
 int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
 {
-    struct ixc_netif *netif=mbuf->netif;
     struct ixc_ether_header eth_header;
     int size;
 
@@ -58,6 +56,12 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         ixc_mbuf_put(mbuf);
         return;
     }
+
+    memcpy(mbuf->dst_hwaddr,header->dst_hwaddr,6);
+    memcpy(mbuf->src_hwaddr,header->src_hwaddr,6);
+
+    mbuf->offset+=14;
+    mbuf->link_proto=type;
 
     switch (type){
         // IP

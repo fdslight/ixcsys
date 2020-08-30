@@ -31,7 +31,7 @@ void ixc_netif_uninit(void)
 
 int ixc_netif_create(const char *devname,char res_devname[])
 {
-    int fd,t,flags;
+    int fd,flags;
     struct ixc_netif *netif=&netif_obj;
 
     if(!netif_is_initialized){
@@ -48,13 +48,14 @@ int ixc_netif_create(const char *devname,char res_devname[])
 
     if(fd<0) return -1;
 
-    t=tapdev_up(res_devname);
+    tapdev_up(res_devname);
     flags=fcntl(fd,F_GETFL,0);
     fcntl(fd,F_SETFL,flags | O_NONBLOCK);
 
     strcpy(netif->devname,res_devname);
 
     netif->is_used=1;
+    netif->fd=fd;
 
     return fd;
 }

@@ -24,7 +24,7 @@ int ixc_mbuf_init(size_t pre_alloc_num)
             ixc_mbuf_uninit();
             return -1;
         }
-
+ 
         m->next=ixc_mbuf_empty_head;
         ixc_mbuf_empty_head=m;
     }
@@ -102,6 +102,6 @@ void ixc_mbuf_put(struct ixc_mbuf *m)
         return;
     }
 
-    m->next=NULL;
+    m->next=ixc_mbuf_empty_head;
     ixc_mbuf_empty_head=m;
 }
