@@ -6,6 +6,8 @@
 #include "../src/mbuf.h"
 #include "../src/router.h"
 #include "../src/netif.h"
+#include "../src/addr_map.h"
+#include "../src/qos.h"
 
 #include "../../../pywind/clib/debug.h"
 
@@ -128,13 +130,20 @@ router_send_netpkt(PyObject *self,PyObject *args)
 static PyObject *
 router_iowait(PyObject *self,PyObject *args)
 {
-    return NULL;
+    if(ixc_qos_have_data()){
+        Py_RETURN_FALSE;
+    }
+    
+    Py_RETURN_TRUE;
 }
 
 static PyObject *
 router_myloop(PyObject *self,PyObject *args)
 {
-    return NULL;
+    
+    ixc_addr_map_do();
+    
+    Py_RETURN_NONE;
 }
 
 static PyObject *

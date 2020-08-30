@@ -230,3 +230,8 @@ int ixc_netif_rx_data(void)
 
     return rs;
 }
+
+inline struct ixc_netif *ixc_netif_get(void)
+{
+    return &netif_obj;
+}

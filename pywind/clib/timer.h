@@ -5,7 +5,7 @@
 #include<sys/types.h>
 
 /// 超时回调函数
-typedef void(*time_timeout_fn_t)(void *data,int is_deleted);
+typedef void(*time_timeout_fn_t)(void *data);
 
 /// 数据存储对象
 struct time_data{

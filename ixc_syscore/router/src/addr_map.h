@@ -4,16 +4,30 @@
 #include<time.h>
 
 #include "../../../pywind/clib/map.h"
+#include "../../../pywind/clib/timer.h"
+
+#define IXC_ADDR_MAP_TIMEOUT 600
 
 struct ixc_addr_map{
     struct map *ip_record;
     struct map *ip6_record;
+    struct time_wheel time_wheel;
 };
 
 struct ixc_addr_map_record{
+    struct time_data *tdata;
     unsigned char address[16];
     time_t up_time;
+    int is_ipv6;
     unsigned char hwaddr[6];
 };
+
+int ixc_addr_map_init(void);
+void ixc_addr_map_uninit(void);
+
+int ixc_addr_map_add(unsigned char *ip,unsigned char *hwaddr,int is_ipv6);
+struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6);
+
+void ixc_addr_map_do(void);
 
 #endif

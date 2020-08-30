@@ -19,7 +19,7 @@ struct ixc_arp{
 };
 #pragma pack(pop)
 
-int ixc_arp_send(struct ixc_arp *arp);
+int ixc_arp_send(unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op);
 void ixc_arp_handle(struct ixc_mbuf *mbuf);
 
 #endif
