@@ -43,7 +43,7 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     }
 
     // 处理本机器与其他机器IP地址冲突的情况
-    if(!memcmp(arp->src_ipaddr,arp->dst_ipadr,4)){
+    if(!memcmp(arp->src_ipaddr,arp->dst_ipaddr,4)){
         ixc_mbuf_put(mbuf);
         return;
     }
@@ -52,9 +52,41 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     
 }
 
-
-int ixc_arp_send(struct ixc_arp *arp)
+int ixc_arp_send(unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op)
 {
+    struct ixc_arp arp;
+    struct ixc_netif *netif=ixc_netif_get();
+    struct ixc_mbuf *m;
+
+    arp.hwaddr_len=6;
+    arp.protoaddr_len=4;
+    arp.op=htons(op);
+
+    memcpy(arp.src_hwaddr,netif->hwaddr,6);
+    memcpy(arp.src_ipaddr,netif->ipaddr,4);
+
+    memcpy(arp.dst_hwaddr,dst_hwaddr,6);
+    memcpy(arp.dst_ipaddr,dst_ipaddr,4);
+
+    m=ixc_mbuf_get();
+
+    if(NULL==m){
+        STDERR("cannot get mbuf\r\n");
+        return -1;
+    }
+
+    m->netif=netif;
+    m->begin=IXC_MBUF_BEGIN;
+    m->offset=m->begin;
+    m->tail=sizeof(struct ixc_arp);
+    m->end=m->tail;
+    m->link_proto=0x806;
+
+    memcpy(m->src_hwaddr,netif->hwaddr,6);
+    memcpy(m->dst_hwaddr,dst_hwaddr,6);
+    
+    ixc_ether_send(m,1);
+
     return 0;
 }
 

@@ -25,7 +25,6 @@ struct ixc_mbuf{
     };
 
     unsigned char data[0xffff];
-    unsigned char if_hwaddr[6];
     unsigned char src_hwaddr[6];
     unsigned char dst_hwaddr[6];
 };

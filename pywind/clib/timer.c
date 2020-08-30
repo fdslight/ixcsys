@@ -22,6 +22,8 @@ static struct time_data *time_data_get(struct time_wheel *time_wheel)
         tdata->next=NULL;
     }
 
+    tdata->is_deleted=0;
+
     return tdata;
 }
 
@@ -40,12 +42,12 @@ static void time_data_put(struct time_wheel *time_wheel,struct time_data *data)
     time_wheel->empty_data_head=data;
 }
 
-static void time_wheel_timeout(struct time_wheel *time_wheel,struct time_data *first,int is_deleted)
+static void time_wheel_timeout(struct time_wheel *time_wheel,struct time_data *first)
 {
     struct time_data *tdata=first,*t;
 
     while(NULL!=tdata){
-        if(!tdata->is_deleted) time_wheel->timeout_fn(tdata->data,is_deleted);
+        if(!tdata->is_deleted) time_wheel->timeout_fn(tdata->data);
         t=tdata->next;
         // 回收data数据结构
         time_data_put(time_wheel,tdata);
@@ -112,7 +114,7 @@ void time_wheel_release(struct time_wheel *time_wheel)
 
     for(int n=0;n<time_wheel->tick_size;n++){
         t=tick->next;
-        time_wheel_timeout(time_wheel,tick->time_data,0);
+        time_wheel_timeout(time_wheel,tick->time_data);
         free(tick);
         tick=t;
     }
@@ -182,7 +184,7 @@ void time_wheel_handle(struct time_wheel *time_wheel)
     else tick_n=v / time_wheel->every_tick_timeout;
 
     for(int n=0;n<tick_n;n++){
-        time_wheel_timeout(time_wheel,tick->time_data,0);
+        time_wheel_timeout(time_wheel,tick->time_data);
         tick=tick->next;
     }
 }

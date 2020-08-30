@@ -40,4 +40,6 @@ int ixc_netif_tx_data(void);
 /// 接收数据
 int ixc_netif_rx_data(void);
 
+struct ixc_netif *ixc_netif_get(void);
+
 #endif
