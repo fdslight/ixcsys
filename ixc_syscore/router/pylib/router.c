@@ -144,7 +144,7 @@ router_netif_create(PyObject *self,PyObject *args)
     char res_devname[512];
     int fd;
 
-    if(!PyArg_ParseTuple(args,"si",&name)) return NULL;
+    if(!PyArg_ParseTuple(args,"s",&name)) return NULL;
 
     fd=ixc_netif_create(name,res_devname);
 
@@ -159,6 +159,31 @@ router_netif_delete(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 接收数据
+static PyObject *
+router_netif_rx_data(PyObject *self,PyObject *args)
+{
+    int rs=ixc_netif_rx_data();
+
+    if(rs<0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+/// 发送数据
+static PyObject *
+router_netif_tx_data(PyObject *self,PyObject *args)
+{
+    int rs=ixc_netif_tx_data();
+
+    if(rs<0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
 
 static PyMemberDef router_members[]={
     {NULL}
@@ -170,6 +195,8 @@ static PyMethodDef routerMethods[]={
     {"myloop",(PyCFunction)router_myloop,METH_VARARGS,"loop call"},
     {"netif_create",(PyCFunction)router_netif_create,METH_VARARGS,"create tap device"},
     {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},
+    {"netif_rx_data",(PyCFunction)router_netif_rx_data,METH_VARARGS,"receive netif data"},
+    {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {NULL,NULL,0,NULL}
 };
 

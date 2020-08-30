@@ -27,8 +27,8 @@ void ixc_netif_delete(void);
 int ixc_netif_send(struct ixc_mbuf *m);
 
 /// 发送数据
-int ixc_netif_tx_data(struct ixc_netif *netif);
+int ixc_netif_tx_data(void);
 /// 接收数据
-int ixc_netif_rx_data(struct ixc_netif *netif);
+int ixc_netif_rx_data(void);
 
 #endif

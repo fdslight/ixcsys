@@ -1,6 +1,8 @@
 #ifndef IXC_ARP_H
 #define IXC_ARP_H
 
+#include "mbuf.h"
+
 #pragma pack(push)
 #pragma pack(1)
 
@@ -16,5 +18,8 @@ struct ixc_arp{
     unsigned char dst_ipaddr[4];
 };
 #pragma pack(pop)
+
+int ixc_arp_send(struct ixc_arp *arp);
+void ixc_arp_handle(struct ixc_mbuf *mbuf);
 
 #endif

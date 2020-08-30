@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-echo ${IXC_PYTHON} ${IXC_MYAPP_DIR}
+${IXC_PYTHON} ${IXC_MYAPP_DIR}/ixc_router_main.py start
