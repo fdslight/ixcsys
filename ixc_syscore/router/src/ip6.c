@@ -5,5 +5,5 @@
 
 void ixc_ip6_handle(struct ixc_mbuf *mbuf)
 {
-    
+    ixc_mbuf_put(mbuf);
 }

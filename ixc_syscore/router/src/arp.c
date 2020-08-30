@@ -9,5 +9,5 @@ int ixc_arp_send(struct ixc_arp *arp)
 
 void ixc_arp_handle(struct ixc_mbuf *mbuf)
 {
-    
+    ixc_mbuf_put(mbuf);
 }

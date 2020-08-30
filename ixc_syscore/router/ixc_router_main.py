@@ -55,6 +55,7 @@ def __start_service(debug):
     if os.path.isfile(PID_FILE): os.remove(PID_FILE)
     sys.exit(0)
 
+
 class service(dispatcher.dispatcher):
     __router = None
     __debug = None
@@ -83,9 +84,46 @@ class service(dispatcher.dispatcher):
         return self.__router
 
     def release(self):
+        self.br_delete("brixc")
+
         if self.__if_fd > 0:
             self.router.netif_delete()
         self.__if_fd = -1
+
+    def linux_br_create(self, br_name: str, added_bind_ifs: list):
+        cmds = [
+            "ip link add name %s type bridge" % br_name,
+            "ip link set dev %s up" % br_name,
+        ]
+
+        for cmd in cmds: os.system(cmd)
+        for if_name in added_bind_ifs:
+            cmd = "ip link set dev %s master %s" % (if_name, br_name,)
+            os.system(cmd)
+
+    def freebsd_br_create(self, br_name: str, added_bind_ifs: list):
+        pass
+
+    def br_create(self, br_name: str, added_bind_ifs: list):
+        """桥接网络创建
+        :param br_name:
+        :param added_bind_ifs:
+        :return:
+        """
+        if sys.platform.startswith("linux"):
+            self.linux_br_create(br_name, added_bind_ifs)
+        else:
+            self.freebsd_br_create(br_name, added_bind_ifs)
+
+    def br_delete(self, br_name: str):
+        """桥接网络删除
+        :param br_name:
+        :return:
+        """
+        if sys.platform.startswith("linux"):
+            os.system("ip link del %s" % br_name)
+        else:
+            pass
 
     def init_func(self, debug):
         self.__debug = debug
@@ -95,6 +133,16 @@ class service(dispatcher.dispatcher):
 
         self.create_poll()
         self.create_handler(-1, tapdev.tapdevice, self.__if_fd)
+
+        phy_ifname = "enp3s0f0"
+
+        self.br_create("brixc", [self.__devname, phy_ifname])
+
+        if sys.platform.startswith("linux"):
+            os.system("ip link set %s up" % phy_ifname)
+            os.system("ip link set %s promisc on" % phy_ifname)
+        else:
+            os.system("ifconfig %s up" % phy_ifname)
 
     def myloop(self):
         pass
