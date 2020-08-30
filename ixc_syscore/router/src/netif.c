@@ -11,15 +11,12 @@
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netif/tuntap.h"
 
-static struct ixc_netif netif_wan;
-static struct ixc_netif netif_lan;
-
+static struct ixc_netif netif_obj;
 static int netif_is_initialized=0;
 
 int ixc_netif_init(void)
 {
-    bzero(&netif_wan,sizeof(struct ixc_netif));
-    bzero(&netif_lan,sizeof(struct ixc_netif));
+    bzero(&netif_obj,sizeof(struct ixc_netif));
 
     netif_is_initialized=1;
 
@@ -31,10 +28,10 @@ void ixc_netif_uninit(void)
 
 }
 
-int ixc_netif_create(const char *devname,char res_devname[],int type)
+int ixc_netif_create(const char *devname,char res_devname[])
 {
     int fd,t,flags;
-    struct ixc_netif *netif;
+    struct ixc_netif *netif=&netif_obj;
 
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -50,15 +47,8 @@ int ixc_netif_create(const char *devname,char res_devname[],int type)
     flags=fcntl(fd,F_GETFL,0);
     fcntl(fd,F_SETFL,flags | O_NONBLOCK);
 
-    if(IXC_NETIF_TYPE_LAN==type) netif=&netif_lan;
-    else netif=&netif_wan;
-
     if(netif->is_used){
-        if(IXC_NETIF_TYPE_LAN==type){
-            STDERR("ERROR:the LAN tap device has been opened\r\n");
-        }else{
-            STDERR("ERROR:the WAN tap device has been opened\r\n");
-        }
+            STDERR("ERROR:tap device has been opened\r\n");
         tapdev_close(fd,res_devname);
         fd=-1;
     }else{
@@ -68,18 +58,15 @@ int ixc_netif_create(const char *devname,char res_devname[],int type)
     return fd;
 }
 
-void ixc_netif_delete(int type)
+void ixc_netif_delete(void)
 {
-    struct ixc_netif *netif;
+    struct ixc_netif *netif=&netif_obj;
     struct ixc_mbuf *m,*t;
 
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
         return;
     }
-
-    if(IXC_NETIF_TYPE_LAN==type) netif=&netif_lan;
-    else netif=&netif_wan;
 
     if(!netif->is_used) return;
 

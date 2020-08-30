@@ -142,16 +142,11 @@ router_netif_create(PyObject *self,PyObject *args)
 {
     const char *name;
     char res_devname[512];
-    int type,fd;
+    int fd;
 
-    if(!PyArg_ParseTuple(args,"si",&name,&type)) return NULL;
+    if(!PyArg_ParseTuple(args,"si",&name)) return NULL;
 
-    if(IXC_NETIF_TYPE_WAN!=type && IXC_NETIF_TYPE_LAN!=type){
-        PyErr_SetString(PyExc_ValueError,"wrong type value");
-        return NULL;
-    }
-
-    fd=ixc_netif_create(name,res_devname,type);
+    fd=ixc_netif_create(name,res_devname);
 
     return Py_BuildValue("is",fd,res_devname);
 }
@@ -159,14 +154,7 @@ router_netif_create(PyObject *self,PyObject *args)
 static PyObject *
 router_netif_delete(PyObject *self,PyObject *args)
 {
-    int type;
-    if(!PyArg_ParseTuple(args,"i",&type)) return NULL;
-    if(IXC_NETIF_TYPE_WAN!=type && IXC_NETIF_TYPE_LAN!=type){
-        PyErr_SetString(PyExc_ValueError,"wrong type value");
-        return NULL;
-    }
-
-    ixc_netif_delete(type);
+    ixc_netif_delete();
 
     Py_RETURN_NONE;
 }
@@ -222,9 +210,6 @@ PyInit_router(void){
         Py_DECREF(m);
         return NULL;
     }
-
-    PyModule_AddIntMacro(m,IXC_NETIF_TYPE_LAN);
-    PyModule_AddIntMacro(m,IXC_NETIF_TYPE_WAN);
 
     PyModule_AddIntMacro(m,IXC_PKT_FLAGS_LINK);
     PyModule_AddIntMacro(m,IXC_PKT_FLAGS_IP);
