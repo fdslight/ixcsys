@@ -16,6 +16,9 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
         return 0;
     }
 
+    // 首先屏蔽旧的头部
+    mbuf->begin=mbuf->offset;
+
     memcpy(eth_header.dst_hwaddr,mbuf->dst_hwaddr,6);
     memcpy(eth_header.src_hwaddr,mbuf->src_hwaddr,6);
 

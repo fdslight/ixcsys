@@ -11,6 +11,8 @@
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netif/tuntap.h"
+#include "../../../pywind/clib/netif/hwinfo.h"
+#include "../../../pywind/clib/netutils.h"
 
 static struct ixc_netif netif_obj;
 static int netif_is_initialized=0;
@@ -26,6 +28,11 @@ int ixc_netif_init(void)
 
 void ixc_netif_uninit(void)
 {
+    if(!netif_is_initialized) return;
+    if(netif_obj.is_used){
+        ixc_netif_delete();
+    }
+
     netif_is_initialized=0;
 }
 
@@ -57,6 +64,8 @@ int ixc_netif_create(const char *devname,char res_devname[])
     netif->is_used=1;
     netif->fd=fd;
 
+    ixc_netif_refresh_hwaddr();
+
     return fd;
 }
 
@@ -81,6 +90,28 @@ void ixc_netif_delete(void)
         ixc_mbuf_put(m);
         m=t;
     }
+    netif->is_used=0;
+}
+
+int ixc_netif_set_ip(unsigned char *ipaddr,unsigned char prefix,int is_ipv6)
+{
+    unsigned char mask[16];
+
+    msk_calc(prefix,is_ipv6,mask);
+    if(is_ipv6){
+        memcpy(netif_obj.ip6addr,ipaddr,16);
+        memcpy(netif_obj.mask_v6,mask,16);
+    }else{
+        memcpy(netif_obj.ipaddr,ipaddr,4);
+        memcpy(netif_obj.mask_v4,mask,4);
+    }
+
+    return 0;
+}
+
+int ixc_netif_refresh_hwaddr(void)
+{
+    return hwinfo_get(netif_obj.devname,netif_obj.hwaddr);
 }
 
 int ixc_netif_send(struct ixc_mbuf *m)

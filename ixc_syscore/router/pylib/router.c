@@ -47,7 +47,7 @@ int ixc_router_write_ev_tell(int fd,int flags)
 static void
 router_dealloc(routerObject *self)
 {
-
+    ixc_mbuf_uninit();
 }
 
 static PyObject *
@@ -185,6 +185,30 @@ router_netif_tx_data(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
+/// 设置网卡IP地址
+static PyObject *
+router_netif_set_ip(PyObject *self,PyObject *args)
+{
+    unsigned char *ip;
+    Py_ssize_t size;
+    unsigned char prefix;
+    int is_ipv6;
+
+    if(!PyArg_ParseTuple(args,"y#bp",&ip,&size,&prefix,&is_ipv6)) return NULL;
+
+    ixc_netif_set_ip(ip,prefix,is_ipv6);
+
+    Py_RETURN_NONE;
+}
+
+/// 刷新网卡硬件地址
+static PyObject *
+router_netif_refresh_hwaddr(PyObject *self,PyObject *args)
+{
+    ixc_netif_refresh_hwaddr();
+    Py_RETURN_NONE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -197,6 +221,8 @@ static PyMethodDef routerMethods[]={
     {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},
     {"netif_rx_data",(PyCFunction)router_netif_rx_data,METH_VARARGS,"receive netif data"},
     {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
+    {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
+    {"netif_refresh_hwaddr",(PyCFunction)router_netif_refresh_hwaddr,METH_NOARGS,"refresh hardware address"},
     {NULL,NULL,0,NULL}
 };
 
