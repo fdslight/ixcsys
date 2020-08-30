@@ -27,6 +27,7 @@ static int __tuntap_create(char *tuntap_name,int is_tap)
     char *name, buf[256];
     char sysctl_name[512];
 
+    // FreeBSD可能会无法创建tap设备,需要预先加载 if_tap.ko 内核模块
     if(is_tap) strcpy(sysctl_name,"net.link.tap.devfs_cloning");
     else strcpy(sysctl_name,"net.link.tun.devfs_cloning");
     

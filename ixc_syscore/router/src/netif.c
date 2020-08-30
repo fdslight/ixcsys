@@ -7,6 +7,7 @@
 
 #include "netif.h"
 #include "router.h"
+#include "ether.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -25,7 +26,7 @@ int ixc_netif_init(void)
 
 void ixc_netif_uninit(void)
 {
-
+    netif_is_initialized=0;
 }
 
 int ixc_netif_create(const char *devname,char res_devname[])
@@ -38,6 +39,10 @@ int ixc_netif_create(const char *devname,char res_devname[])
         return -1;
     }
 
+    if(netif->is_used){
+        STDERR("ERROR:tap device has been opened\r\n");
+    }
+
     strcpy(res_devname,devname);
     fd=tapdev_create(res_devname);
 
@@ -47,13 +52,9 @@ int ixc_netif_create(const char *devname,char res_devname[])
     flags=fcntl(fd,F_GETFL,0);
     fcntl(fd,F_SETFL,flags | O_NONBLOCK);
 
-    if(netif->is_used){
-            STDERR("ERROR:tap device has been opened\r\n");
-        tapdev_close(fd,res_devname);
-        fd=-1;
-    }else{
-        strcpy(netif->devname,res_devname);
-    }
+    strcpy(netif->devname,res_devname);
+
+    netif->is_used=1;
 
     return fd;
 }
@@ -109,9 +110,10 @@ int ixc_netif_send(struct ixc_mbuf *m)
     return 0;
 }
 
-int ixc_netif_tx_data(struct ixc_netif *netif)
+int ixc_netif_tx_data(void)
 {
     struct ixc_mbuf *m;
+    struct ixc_netif *netif=&netif_obj;
     ssize_t wsize;
     int rs=0;
 
@@ -127,7 +129,7 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
 
         if(wsize<0){
             if(EAGAIN==errno){
-                rs=1;
+                rs=0;
                 break;
             }else{
                 rs=-1;
@@ -149,12 +151,13 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
     return rs;
 }
 
-int ixc_netif_rx_data(struct ixc_netif *netif)
+int ixc_netif_rx_data(void)
 {
     ssize_t rsize;
+    struct ixc_netif *netif=&netif_obj;
     struct ixc_mbuf *m;
     int rs=0;
-
+    
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
         return -1;
@@ -189,6 +192,8 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
         m->offset=m->begin;
         m->tail=m->offset+rsize;
         m->end=m->tail;
+
+        ixc_ether_handle(m);
     }
 
     return rs;
