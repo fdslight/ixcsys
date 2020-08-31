@@ -3,6 +3,7 @@
 
 #include "route.h"
 #include "qos.h"
+#include "router.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/debug.h"
@@ -276,13 +277,14 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 
-    // 找不到匹配的路由那么直接丢弃数据包
+    // 找不到匹配匹配路由直接发送到QOS
     if(!r){
-        ixc_mbuf_put(m);
+        ixc_qos_add(m,0);
         return;
     }
-
-    ixc_qos_add(m,0);
+    
+    if(r->is_linked) ixc_router_send(m->data+m->begin,m->end-m->begin,IXC_PKT_FLAGS_LINK);
+    else ixc_router_send(m->data+m->offset,m->tail-m->offset,IXC_PKT_FLAGS_IP);
 }
 
 void ixc_route_handle(struct ixc_mbuf *m,int is_ipv6)
