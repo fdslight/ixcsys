@@ -1,9 +1,13 @@
 #include<arpa/inet.h>
 #include<string.h>
+#include<time.h>
 
 #include "arp.h"
 #include "netif.h"
 #include "ether.h"
+#include "addr_map.h"
+
+#include "../../../pywind/clib/debug.h"
 
 static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 {
@@ -35,6 +39,7 @@ static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 {
     struct ixc_netif *netif=mbuf->netif;
+    struct ixc_addr_map_record *r;
 
     // 响应非本网卡丢弃数据包
     if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
@@ -48,8 +53,17 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
         return;
     }
 
-    // 添加到地址映射表
-    
+    r=ixc_addr_map_get(arp->src_ipaddr,0);
+
+    // 如果不存在那么添加到映射表
+    if(NULL==r){
+        ixc_addr_map_add(arp->src_ipaddr,arp->src_hwaddr,0);
+        ixc_mbuf_put(mbuf);
+        return;
+    }
+
+    memcpy(r->hwaddr,arp->src_hwaddr,6);
+    r->up_time=time(NULL);
 }
 
 int ixc_arp_send(unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op)
