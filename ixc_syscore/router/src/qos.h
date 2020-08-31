@@ -6,6 +6,7 @@
 struct ixc_qos_slot{
     struct ixc_qos_slot *next;
     int slot;
+    int is_ipv6;
 };
 
 #define IXC_QOS_SLOT_NUM 1024
@@ -16,6 +17,7 @@ struct ixc_qos{
     struct ixc_qos_slot *used_slots;
     // 当前已有的包数量
     unsigned int tot_pkt_num;
+    int udp_udplite_first;
 };
 
 
@@ -23,7 +25,7 @@ int ixc_qos_init(void);
 void ixc_qos_uninit(void);
 
 /// 把流量加入到QOS槽中
-void ixc_qos_add(struct ixc_mbuf *m);
+void ixc_qos_add(struct ixc_mbuf *m,int is_ipv6);
 
 /// 自动弹出槽中的数据
 void ixc_qos_pop(void);
