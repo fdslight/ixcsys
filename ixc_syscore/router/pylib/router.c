@@ -8,6 +8,9 @@
 #include "../src/netif.h"
 #include "../src/addr_map.h"
 #include "../src/qos.h"
+#include "../src/route.h"
+#include "../src/p2p.h"
+#include "../src/vpn.h"
 
 #include "../../../pywind/clib/debug.h"
 
@@ -70,6 +73,30 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if(rs<0){
         STDERR("cannot init netif\r\n");
         return NULL;
+    }
+
+    rs=ixc_addr_map_init();
+    if(rs<0){
+        STDERR("cannot init addr map\r\n");
+        return NULL;
+    }
+
+    rs=ixc_qos_init();
+    if(rs<0){
+        STDERR("cannot init qos\r\n");
+        return NULL;
+    }
+
+    rs=ixc_route_init();
+    if(rs<0){
+        STDERR("cannot init route\r\n");
+        return NULL;
+    }
+
+    rs=ixc_p2p_init();
+    if(rs<0){
+        STDERR("cannot init P2P\r\n");
+        return -1;
     }
 
 
