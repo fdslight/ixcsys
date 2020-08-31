@@ -1,2 +1,2 @@
 # ixcsys
-A single network card software router
+A software router
