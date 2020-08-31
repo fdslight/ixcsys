@@ -47,16 +47,12 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     // 除去以太网的填充字节
     mbuf->tail=mbuf->offset+tot_len;
 
-
-    STDERR("%d.%d.%d.%d\r\n",header->dst_addr[0],header->dst_addr[1],header->dst_addr[2],header->dst_addr[3]);
-    STDERR("%d %d\r\n",tot_len,mbuf->tail-mbuf->offset);
-
     switch(header->protocol){
         case 1:
             ixc_ip_handle_icmp(mbuf,header);
             break;
         default:
-            ixc_mbuf_put(mbuf);
+            ixc_route_handle(mbuf,0);
             break;
     }
 }
