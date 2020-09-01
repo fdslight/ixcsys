@@ -14,12 +14,12 @@
 #include "../../../pywind/clib/netif/hwinfo.h"
 #include "../../../pywind/clib/netutils.h"
 
-static struct ixc_netif netif_obj;
+static struct ixc_netif netif_objs[IXC_NETIF_MAX];
 static int netif_is_initialized=0;
 
 int ixc_netif_init(void)
 {
-    bzero(&netif_obj,sizeof(struct ixc_netif));
+    bzero(&netif_objs,sizeof(struct ixc_netif)*IXC_NETIF_MAX);
 
     netif_is_initialized=1;
 
@@ -29,17 +29,27 @@ int ixc_netif_init(void)
 void ixc_netif_uninit(void)
 {
     if(!netif_is_initialized) return;
-    if(netif_obj.is_used){
-        ixc_netif_delete();
+
+    for(int n=0;n<IXC_NETIF_MAX;n++){
+        if(netif_objs[n].is_used){
+            ixc_netif_delete(n);
+        }
     }
 
     netif_is_initialized=0;
 }
 
-int ixc_netif_create(const char *devname,char res_devname[])
+int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
 {
     int fd,flags;
-    struct ixc_netif *netif=&netif_obj;
+    struct ixc_netif *netif=NULL;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        STDERR("wrong if index value\r\n");
+        return -1;
+    }
+
+    netif=&netif_objs[if_idx];
 
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -63,21 +73,29 @@ int ixc_netif_create(const char *devname,char res_devname[])
 
     netif->is_used=1;
     netif->fd=fd;
+    netif->type=if_idx;
 
-    ixc_netif_refresh_hwaddr();
+    ixc_netif_refresh_hwaddr(if_idx);
 
     return fd;
 }
 
-void ixc_netif_delete(void)
+void ixc_netif_delete(int if_idx)
 {
-    struct ixc_netif *netif=&netif_obj;
+    struct ixc_netif *netif;
     struct ixc_mbuf *m,*t;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        STDERR("wrong if index value\r\n");
+        return;
+    }
 
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
         return;
     }
+
+    netif=&netif_objs[if_idx];
 
     if(!netif->is_used) return;
 
@@ -93,25 +111,53 @@ void ixc_netif_delete(void)
     netif->is_used=0;
 }
 
-int ixc_netif_set_ip(unsigned char *ipaddr,unsigned char prefix,int is_ipv6)
+int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int is_ipv6)
 {
     unsigned char mask[16];
+    struct ixc_netif *netif;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        STDERR("wrong if index value\r\n");
+        return -1;
+    }
+
+    netif=&netif_objs[if_idx];
+
+    if(!netif->is_used){
+        STDERR("cannot set ip,it is not opened\r\n");
+        return -1;
+    }
 
     msk_calc(prefix,is_ipv6,mask);
+
     if(is_ipv6){
-        memcpy(netif_obj.ip6addr,ipaddr,16);
-        memcpy(netif_obj.mask_v6,mask,16);
+        memcpy(netif->ip6addr,ipaddr,16);
+        memcpy(netif->mask_v6,mask,16);
     }else{
-        memcpy(netif_obj.ipaddr,ipaddr,4);
-        memcpy(netif_obj.mask_v4,mask,4);
+        memcpy(netif->ipaddr,ipaddr,4);
+        memcpy(netif->mask_v4,mask,4);
     }
 
     return 0;
 }
 
-int ixc_netif_refresh_hwaddr(void)
+int ixc_netif_refresh_hwaddr(int if_idx)
 {
-    return hwinfo_get(netif_obj.devname,netif_obj.hwaddr);
+    struct ixc_netif *netif;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        STDERR("wrong if index value\r\n");
+        return -1;
+    }
+
+    netif=&netif_objs[if_idx];
+
+    if(!netif->is_used){
+        STDERR("cannot set ip,it is not opened\r\n");
+        return -1;
+    }
+    
+    return hwinfo_get(netif->devname,netif->hwaddr);
 }
 
 int ixc_netif_send(struct ixc_mbuf *m)
@@ -142,10 +188,9 @@ int ixc_netif_send(struct ixc_mbuf *m)
     return 0;
 }
 
-int ixc_netif_tx_data(void)
+int ixc_netif_tx_data(struct ixc_netif *netif)
 {
     struct ixc_mbuf *m;
-    struct ixc_netif *netif=&netif_obj;
     ssize_t wsize;
     int rs=0;
 
@@ -183,10 +228,9 @@ int ixc_netif_tx_data(void)
     return rs;
 }
 
-int ixc_netif_rx_data(void)
+int ixc_netif_rx_data(struct ixc_netif *netif)
 {
     ssize_t rsize;
-    struct ixc_netif *netif=&netif_obj;
     struct ixc_mbuf *m;
     int rs=0;
     
@@ -231,7 +275,39 @@ int ixc_netif_rx_data(void)
     return rs;
 }
 
-inline struct ixc_netif *ixc_netif_get(void)
+struct ixc_netif *ixc_netif_get(int if_idx)
 {
-    return &netif_obj;
+    struct ixc_netif *netif;
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX) return NULL;
+
+    netif=&netif_objs[if_idx];
+
+    if(!netif->is_used) return NULL;
+
+    return netif;
+}
+
+int ixc_netif_no_used_get(void)
+{
+    struct ixc_netif *netif;
+    int rs=-1;
+
+    for(int n=1;n<IXC_NETIF_MAX;n++){
+        netif=&netif_objs[n];
+        if(netif->is_used) continue;
+        rs=n;
+        break;
+    }
+
+    return rs;
+}
+
+int ixc_netif_is_used(int if_idx)
+{
+    struct ixc_netif *netif;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX) return 0;
+    netif=&netif_objs[if_idx];
+
+    return netif->is_used;
 }

@@ -96,7 +96,7 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_p2p_init();
     if(rs<0){
         STDERR("cannot init P2P\r\n");
-        return -1;
+        return NULL;
     }
 
 
@@ -178,11 +178,19 @@ router_netif_create(PyObject *self,PyObject *args)
 {
     const char *name;
     char res_devname[512];
-    int fd;
+    int fd,if_idx;
 
-    if(!PyArg_ParseTuple(args,"s",&name)) return NULL;
+    if(!PyArg_ParseTuple(args,"si",&name,&if_idx)) return NULL;
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
+    if(ixc_netif_is_used(if_idx)){
+        PyErr_SetString(PyExc_SystemError,"netif is used\r\n");
+        return NULL;  
+    }
 
-    fd=ixc_netif_create(name,res_devname);
+    fd=ixc_netif_create(name,res_devname,if_idx);
 
     return Py_BuildValue("is",fd,res_devname);
 }
@@ -190,7 +198,15 @@ router_netif_create(PyObject *self,PyObject *args)
 static PyObject *
 router_netif_delete(PyObject *self,PyObject *args)
 {
-    ixc_netif_delete();
+    int if_idx;
+    if(!PyArg_ParseTuple(args,"i",&if_idx)) return NULL;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
+
+    ixc_netif_delete(if_idx);
 
     Py_RETURN_NONE;
 }
@@ -199,7 +215,22 @@ router_netif_delete(PyObject *self,PyObject *args)
 static PyObject *
 router_netif_rx_data(PyObject *self,PyObject *args)
 {
-    int rs=ixc_netif_rx_data();
+    int if_idx,rs;
+    struct ixc_netif *netif;
+    if(!PyArg_ParseTuple(args,"i",&if_idx)) return NULL;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
+
+    if(!ixc_netif_is_used(if_idx)){
+        PyErr_SetString(PyExc_SystemError,"netif is not used\r\n");
+        return NULL;  
+    }
+
+    netif=ixc_netif_get(if_idx);
+    rs=ixc_netif_rx_data(netif);
 
     if(rs<0){
         Py_RETURN_FALSE;
@@ -212,12 +243,27 @@ router_netif_rx_data(PyObject *self,PyObject *args)
 static PyObject *
 router_netif_tx_data(PyObject *self,PyObject *args)
 {
-    int rs=ixc_netif_tx_data();
+    int if_idx,rs;
+    struct ixc_netif *netif;
+    if(!PyArg_ParseTuple(args,"i",&if_idx)) return NULL;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
+
+    if(!ixc_netif_is_used(if_idx)){
+        PyErr_SetString(PyExc_SystemError,"netif is not used\r\n");
+        return NULL;  
+    }
+
+    netif=ixc_netif_get(if_idx);
+    rs=ixc_netif_tx_data(netif);
 
     if(rs<0){
         Py_RETURN_FALSE;
     }
-
+    
     Py_RETURN_TRUE;
 }
 
@@ -228,11 +274,19 @@ router_netif_set_ip(PyObject *self,PyObject *args)
     unsigned char *ip;
     Py_ssize_t size;
     unsigned char prefix;
-    int is_ipv6;
+    int is_ipv6,if_idx;
 
-    if(!PyArg_ParseTuple(args,"y#bp",&ip,&size,&prefix,&is_ipv6)) return NULL;
+    if(!PyArg_ParseTuple(args,"iy#bp",&if_idx,&ip,&size,&prefix,&is_ipv6)) return NULL;
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
 
-    ixc_netif_set_ip(ip,prefix,is_ipv6);
+    if(!ixc_netif_is_used(if_idx)){
+        PyErr_SetString(PyExc_SystemError,"netif is not used\r\n");
+        return NULL;  
+    }
+    ixc_netif_set_ip(if_idx,ip,prefix,is_ipv6);
 
     Py_RETURN_NONE;
 }
@@ -241,7 +295,19 @@ router_netif_set_ip(PyObject *self,PyObject *args)
 static PyObject *
 router_netif_refresh_hwaddr(PyObject *self,PyObject *args)
 {
-    ixc_netif_refresh_hwaddr();
+    int if_idx;
+    if(!PyArg_ParseTuple(args,"i",&if_idx)) return NULL;
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
+    if(!ixc_netif_is_used(if_idx)){
+        PyErr_SetString(PyExc_SystemError,"netif is not used\r\n");
+        return NULL;  
+    }
+
+    ixc_netif_refresh_hwaddr(if_idx);
+
     Py_RETURN_NONE;
 }
 
@@ -258,7 +324,7 @@ static PyMethodDef routerMethods[]={
     {"netif_rx_data",(PyCFunction)router_netif_rx_data,METH_VARARGS,"receive netif data"},
     {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
-    {"netif_refresh_hwaddr",(PyCFunction)router_netif_refresh_hwaddr,METH_NOARGS,"refresh hardware address"},
+    {"netif_refresh_hwaddr",(PyCFunction)router_netif_refresh_hwaddr,METH_VARARGS,"refresh hardware address"},
     {NULL,NULL,0,NULL}
 };
 
@@ -302,6 +368,10 @@ PyInit_router(void){
 
     PyModule_AddIntMacro(m,IXC_PKT_FLAGS_LINK);
     PyModule_AddIntMacro(m,IXC_PKT_FLAGS_IP);
+
+    PyModule_AddIntMacro(m,IXC_NETIF_LAN);
+    //
+    PyModule_AddIntMacro(m,IXC_NETIF_WAN);
 
     return m;
 }
