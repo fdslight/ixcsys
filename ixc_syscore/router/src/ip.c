@@ -13,7 +13,7 @@
 
 static void ixc_ip_handle_icmp(struct ixc_mbuf *m,struct netutil_iphdr *header)
 {
-    struct ixc_netif *netif=ixc_netif_get();
+    struct ixc_netif *netif=m->netif;
 
     // 不是发送本机的ICMP直接发送到路由
     if(memcmp(netif->ipaddr,header->dst_addr,4)){
@@ -43,6 +43,8 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
         ixc_mbuf_put(mbuf);
         return;
     }
+
+    mbuf->is_ipv6=0;
     
     // 除去以太网的填充字节
     mbuf->tail=mbuf->offset+tot_len;

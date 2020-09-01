@@ -57,7 +57,7 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 
     // 如果不存在那么添加到映射表
     if(NULL==r){
-        ixc_addr_map_add(arp->src_ipaddr,arp->src_hwaddr,0);
+        ixc_addr_map_add(netif,arp->src_ipaddr,arp->src_hwaddr,0);
         ixc_mbuf_put(mbuf);
         return;
     }
@@ -66,10 +66,9 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     r->up_time=time(NULL);
 }
 
-int ixc_arp_send(unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op)
+int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op)
 {
     struct ixc_arp arp;
-    struct ixc_netif *netif=ixc_netif_get();
     struct ixc_mbuf *m;
 
     arp.hwaddr_len=6;

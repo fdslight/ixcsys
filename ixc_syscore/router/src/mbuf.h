@@ -8,6 +8,7 @@
 struct ixc_mbuf{
     struct ixc_netif *netif;
     struct ixc_mbuf *next;
+    int is_ipv6;
     // 开始位置
 #define IXC_MBUF_BEGIN 256
     int begin;

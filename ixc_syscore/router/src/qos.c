@@ -17,7 +17,7 @@ static int ixc_qos_calc_slot(unsigned char a,unsigned char b,unsigned short _id)
 static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
-
+    unsigned char a=iphdr->src_addr[2],b=iphdr->src_addr[3];
 
 
 }
