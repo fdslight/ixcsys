@@ -3,6 +3,8 @@
 
 #include<time.h>
 
+#include "netif.h"
+
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/timer.h"
 
@@ -15,6 +17,7 @@ struct ixc_addr_map{
 };
 
 struct ixc_addr_map_record{
+    struct ixc_netif *netif;
     struct time_data *tdata;
     unsigned char address[16];
     time_t up_time;

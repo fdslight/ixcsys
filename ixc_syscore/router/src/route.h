@@ -2,6 +2,7 @@
 #define IXC_ROUTE_H
 
 #include "mbuf.h"
+#include "netif.h"
 
 #include "../../../pywind/clib/map.h"
 
@@ -15,6 +16,7 @@ struct ixc_route_prefix{
 };
 
 struct ixc_route_info{
+    struct ixc_netif *netif;
     unsigned char subnet[16];
     // 是否需要以链路层形式发送
     int is_linked;
