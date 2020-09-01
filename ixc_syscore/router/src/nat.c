@@ -1,4 +1,5 @@
 #include<string.h>
+#include<arpa/inet.h>
 
 #include "nat.h"
 #include "pppoe.h"
