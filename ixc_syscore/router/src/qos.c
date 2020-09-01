@@ -80,6 +80,7 @@ void ixc_qos_pop(void)
     struct ixc_qos_slot *slot=NULL,*t=NULL;
     struct ixc_mbuf *m;
 
+    t=ixc_qos.used_slots;
     slot=ixc_qos.used_slots;
 
     while(NULL!=slot){
@@ -88,11 +89,21 @@ void ixc_qos_pop(void)
         m=m->next;
 
         if(NULL!=m){
+            t=slot;
             slot=slot->next;
             continue;
         }
         // 此处回收slot
+        // 如果是第一个slot
+        if(slot==ixc_qos.used_slots){
+            ixc_qos.used_slots=slot->next;
+            slot=slot->next;
+            continue;
+        }
         
+        t->next=slot->next;
+        slot->next=ixc_qos.empty_slot_head;
+        ixc_qos.empty_slot_head=slot;
     }
 }
 
