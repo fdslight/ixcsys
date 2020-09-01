@@ -1,3 +1,4 @@
+#include<string.h>
 
 #include "nat.h"
 #include "pppoe.h"
