@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import socket, time
 import pywind.evtframework.handlers.tcp_handler as tcp_handler
+import pywind.evtframework.handlers.ssl_handler as ssl_handler
 
 HTTP1_xID = 0
 
@@ -86,7 +87,7 @@ class httpd_listener(tcp_handler.tcp_handler):
         self.close()
 
 
-class httpd_handler(tcp_handler.tcp_handler):
+class httpd_handler(ssl_handler.ssl_handler):
     __ssl_on = None
     __ssl_cert = None
     __ssl_key = None
@@ -109,7 +110,7 @@ class httpd_handler(tcp_handler.tcp_handler):
 
     __sessions = None
 
-    def init_func(self, creator_fd, cs, caddr, ssl_on=False, ssl_key=None, ssl_cert=None, is_ipv6=False):
+    def ssl_init(self, cs, caddr, ssl_on=False, ssl_key=None, ssl_cert=None, is_ipv6=False):
         self.__ssl_on = ssl_on
         self.__ssl_cert = ssl_cert
         self.__ssl_key = ssl_key
