@@ -6,15 +6,16 @@
 struct ixc_qos_slot{
     struct ixc_qos_slot *next;
     int slot;
-    int is_ipv6;
 };
 
 #define IXC_QOS_SLOT_NUM 1024
 
 struct ixc_qos{
-    struct ixc_mbuf *mbuf_slots[IXC_QOS_SLOT_NUM];
+    struct ixc_mbuf *mbuf_slots_head[IXC_QOS_SLOT_NUM];
+    struct ixc_mbuf *mbuf_slots_end[IXC_QOS_SLOT_NUM];
+
     struct ixc_qos_slot *empty_slot_head;
-    struct ixc_qos_slot *used_slots;
+    struct ixc_qos_slot *used_slots_head;
     // 当前已有的包数量
     unsigned int tot_pkt_num;
     int udp_udplite_first;

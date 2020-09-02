@@ -16,10 +16,15 @@ import ixc_syslib.pylib.logging as logging
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
+WAN_BR_NAME = "ixwanbr"
+LAN_BR_NAME = "ixclanbr"
+
+LAN_NAME = "ixclan"
+WAN_NAME = "ixcwan"
+
 
 def __stop_service():
     pid = proc.get_pid(PID_FILE)
-    print(PID_FILE)
     if pid < 0: return
 
     os.kill(pid, signal.SIGINT)
@@ -40,7 +45,7 @@ def __start_service(debug):
 
         if pid != 0: sys.exit(0)
 
-        proc.write_pid(PID_FILE, pid)
+        proc.write_pid(PID_FILE, os.getpid())
 
     cls = service(debug)
 
@@ -60,7 +65,7 @@ class service(dispatcher.dispatcher):
     __router = None
     __debug = None
 
-    __if_fd = None
+    __if_lan_fd = None
     __devname = None
 
     def _write_ev_tell(self, fd: int, flags: int):
@@ -84,11 +89,11 @@ class service(dispatcher.dispatcher):
         return self.__router
 
     def release(self):
-        self.br_delete("brixc")
+        self.br_delete(LAN_BR_NAME)
 
-        if self.__if_fd > 0:
-            self.router.netif_delete()
-        self.__if_fd = -1
+        if self.__if_lan_fd > 0:
+            self.router.netif_delete(router.IXC_NETIF_LAN)
+        self.__if_lan_fd = -1
 
     def linux_br_create(self, br_name: str, added_bind_ifs: list):
         cmds = [
@@ -127,16 +132,16 @@ class service(dispatcher.dispatcher):
 
     def init_func(self, debug):
         self.__debug = debug
-        self.__if_fd = -1
+        self.__if_lan_fd = -1
         self.__router = router.router(self._recv_from_proto_stack, self._write_ev_tell)
-        self.__if_fd, self.__devname = self.__router.netif_create("ixcsys")
+        self.__if_lan_fd, self.__devname = self.__router.netif_create(LAN_NAME, router.IXC_NETIF_LAN)
 
         self.create_poll()
-        self.create_handler(-1, tapdev.tapdevice, self.__if_fd)
+        self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
 
         phy_ifname = "enp3s0f0"
 
-        self.br_create("brixc", [self.__devname, phy_ifname])
+        self.br_create(LAN_BR_NAME, [self.__devname, phy_ifname])
 
         if sys.platform.startswith("linux"):
             os.system("ip link set %s up" % phy_ifname)
@@ -166,7 +171,7 @@ def main():
     if action == "debug":
         debug = True
     else:
-        debug = True
+        debug = False
 
     __start_service(debug)
 
