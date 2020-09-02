@@ -6,15 +6,24 @@
 #include "natv6.h"
 
 static int p2p_enable=0;
+static struct ixc_p2p p2p;
 
 static void ixc_p2p_send(struct ixc_mbuf *m)
 {
+    struct ixc_netif *netif=m->netif;
+
+    // 只处理LAN网卡
+    if(IXC_NETIF_LAN==netif->type){
+        // 检查是否在指定的地址范围内
+    }
+
     if(m->is_ipv6) ixc_natv6_handle(m);
     else ixc_nat_handle(m);
 }
 
 int ixc_p2p_init(void)
 {
+    bzero(&p2p,sizeof(struct ixc_p2p));
     return 0;
 }
 
