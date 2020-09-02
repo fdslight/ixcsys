@@ -132,10 +132,10 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
 
     if(is_ipv6){
         memcpy(netif->ip6addr,ipaddr,16);
-        memcpy(netif->mask_v6,mask,16);
+        memcpy(netif->ip6_mask,mask,16);
     }else{
         memcpy(netif->ipaddr,ipaddr,4);
-        memcpy(netif->mask_v4,mask,4);
+        memcpy(netif->ip_mask,mask,4);
     }
 
     return 0;
@@ -310,4 +310,26 @@ int ixc_netif_is_used(int if_idx)
     netif=&netif_objs[if_idx];
 
     return netif->is_used;
+}
+
+int ixc_netif_is_subnet(struct ixc_netif *netif,unsigned char *ip,int is_ipv6,int is_ip6_local_link)
+{
+    unsigned char result[16];
+
+    if(!is_ipv6){
+        subnet_calc_with_msk(ip,netif->ip_mask,0,result);
+        if(!memcmp(result,netif->ip_subnet,4)) return 1;
+        return 0;
+    }
+
+    if(is_ip6_local_link){
+        subnet_calc_with_msk(ip,netif->ip6_local_link_mask,1,result);
+        if(!memcmp(result,netif->ip6_local_link_subnet,16)) return 1;
+        return 0;
+    }
+
+    subnet_calc_with_msk(ip,netif->ip6_mask,1,result);
+    if(!memcmp(result,netif->ip6_subnet,16)) return 1;
+
+    return 0;
 }

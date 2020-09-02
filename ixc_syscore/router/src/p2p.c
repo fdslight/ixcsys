@@ -1,9 +1,11 @@
-
+#include<string.h>
 
 #include "p2p.h"
 #include "ether.h"
 #include "nat.h"
 #include "natv6.h"
+
+#include "../../../pywind/clib/debug.h"
 
 static int p2p_enable=0;
 static struct ixc_p2p p2p;

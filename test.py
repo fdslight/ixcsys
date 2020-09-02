@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
-import ixc_syscore.router.pylib.router as router
+import random
 
+seq = []
 
-def send():
-    pass
+for x in range(100):
+    a = 1
+    b = 7
+    c = random.randint(124, 50000)
+    seq.append(
+        (a << 24) | (7 << 16) | c
+    )
 
+results = []
+for x in seq:
+    results.append(x % 1024)
 
-def x():
-    pass
-
-
-r = router.router(send, x)
-fd, name = r.netif_create("mydev")
-
-if fd:
-    r.netif_delete()
-
-print(fd,name)
+print(results)
