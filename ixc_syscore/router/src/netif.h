@@ -24,6 +24,11 @@ struct ixc_netif{
     unsigned char ip6addr[16];
     unsigned char mask_v6[16];
 
+    // IPv6的本地链路地址
+    unsigned char ip6_local_link_addr[16];
+    // IPv6的本地链路前缀
+    unsigned char ip6_local_link_prefix;
+
     unsigned char hwaddr[6];
 };
 
