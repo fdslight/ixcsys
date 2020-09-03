@@ -6,6 +6,9 @@
 #include "netif.h"
 #include "route.h"
 #include "icmp.h"
+#include "addr_map.h"
+#include "arp.h"
+#include "ether.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
@@ -57,4 +60,26 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
             ixc_route_handle(mbuf,0);
             break;
     }
+}
+
+int ixc_ip_send(struct ixc_mbuf *m)
+{
+    struct ixc_netif *netif=m->netif;
+    struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
+    struct ixc_addr_map_record *r=ixc_addr_map_get(header->dst_addr,0);
+    unsigned char dst_hwaddr[]={0xff,0xff,0xff,0xff,0xff,0xff};
+
+    memcpy(m->src_hwaddr,netif->hwaddr,6);
+
+    // 找不到地址映射记录就发送ARP请求包并丢弃当前数据包
+    if(!r){
+        ixc_arp_send(netif,dst_hwaddr,header->dst_addr,IXC_ARP_OP_REQ);
+        ixc_mbuf_put(m);
+    }
+
+    m->link_proto=htons(0x800);
+    memcpy(m->dst_hwaddr,r->hwaddr,6);
+    ixc_ether_send(m,1);
+
+    return 0;
 }
