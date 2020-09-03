@@ -8,6 +8,7 @@ if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MY
 
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
+import pywind.lib.configfile as conf
 
 import ixc_syscore.router.pylib.router as router
 import ixc_syscore.router.handlers.tapdev as tapdev
@@ -68,6 +69,11 @@ class service(dispatcher.dispatcher):
     __if_lan_fd = None
     __devname = None
 
+    __lan_configs = None
+    __wan_configs = None
+
+    __is_linux = None
+
     def _write_ev_tell(self, fd: int, flags: int):
         if flags:
             self.add_evt_write(fd)
@@ -84,9 +90,20 @@ class service(dispatcher.dispatcher):
         """
         self.__router.send_netpkt(byte_data, flags)
 
+    def load_lan_configs(self):
+        path = "%s/lan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__lan_configs = conf.ini_parse_from_file(path)
+
+    def save_lan_configs(self):
+        path = "%s/lan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+
     @property
     def router(self):
         return self.__router
+
+    @property
+    def is_linux(self):
+        return self.__is_linux
 
     def release(self):
         self.br_delete(LAN_BR_NAME)
@@ -136,14 +153,20 @@ class service(dispatcher.dispatcher):
         self.__router = router.router(self._recv_from_proto_stack, self._write_ev_tell)
         self.__if_lan_fd, self.__devname = self.__router.netif_create(LAN_NAME, router.IXC_NETIF_LAN)
 
+        self.load_lan_configs()
+        self.__wan_configs = {}
+
+        self.__is_linux = sys.platform.startswith("linux")
+
         self.create_poll()
         self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
 
-        phy_ifname = "enp3s0f0"
+        lan_ifconfig = self.__lan_configs["if_config"]
+        phy_ifname = lan_ifconfig["phy_ifname"]
 
         self.br_create(LAN_BR_NAME, [self.__devname, phy_ifname])
 
-        if sys.platform.startswith("linux"):
+        if self.is_linux:
             os.system("ip link set %s up" % phy_ifname)
             os.system("ip link set %s promisc on" % phy_ifname)
         else:
