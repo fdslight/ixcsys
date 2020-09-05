@@ -283,7 +283,7 @@ router_netif_set_ip(PyObject *self,PyObject *args)
     }
 
     if(!ixc_netif_is_used(if_idx)){
-        PyErr_SetString(PyExc_SystemError,"netif is not used\r\n");
+        PyErr_SetString(PyExc_SystemError,"netif is not used");
         return NULL;  
     }
     
@@ -294,22 +294,28 @@ router_netif_set_ip(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
-/// 刷新网卡硬件地址
 static PyObject *
-router_netif_refresh_hwaddr(PyObject *self,PyObject *args)
+router_netif_set_hwaddr(PyObject *self,PyObject *args)
 {
     int if_idx;
-    if(!PyArg_ParseTuple(args,"i",&if_idx)) return NULL;
+    unsigned char *s;
+    Py_ssize_t size;
+    if(!PyArg_ParseTuple(args,"iy#",&if_idx,&s,&size)) return NULL;
     if(if_idx<0 || if_idx>IXC_NETIF_MAX){
         PyErr_SetString(PyExc_ValueError,"wrong if index value");
         return NULL;
     }
     if(!ixc_netif_is_used(if_idx)){
-        PyErr_SetString(PyExc_SystemError,"netif is not used\r\n");
+        PyErr_SetString(PyExc_SystemError,"netif is not used");
         return NULL;  
     }
 
-    ixc_netif_refresh_hwaddr(if_idx);
+    if(6!=size){
+        PyErr_SetString(PyExc_ValueError,"wrong hwaddr length");
+        return NULL;  
+    }
+
+    ixc_netif_set_hwaddr(if_idx,s);
 
     Py_RETURN_NONE;
 }
@@ -327,7 +333,7 @@ static PyMethodDef routerMethods[]={
     {"netif_rx_data",(PyCFunction)router_netif_rx_data,METH_VARARGS,"receive netif data"},
     {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
-    {"netif_refresh_hwaddr",(PyCFunction)router_netif_refresh_hwaddr,METH_VARARGS,"refresh hardware address"},
+    {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
     {NULL,NULL,0,NULL}
 };
 

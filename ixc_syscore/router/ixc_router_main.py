@@ -165,6 +165,7 @@ class service(dispatcher.dispatcher):
         lan_ifconfig = self.__lan_configs["if_config"]
         phy_ifname = lan_ifconfig["phy_ifname"]
         ipinfo = self.parse_ipaddr_format(lan_ifconfig["ip_addr"])
+        hwaddr = lan_ifconfig["hwaddr"]
 
         if not ipinfo:
             raise SystemExit("wrong IP address format")
@@ -176,13 +177,14 @@ class service(dispatcher.dispatcher):
 
         byte_ip = socket.inet_pton(socket.AF_INET, ip)
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
+        self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
 
         self.br_create(LAN_BR_NAME, [self.__devname, phy_ifname])
 
         if self.is_linux:
             os.system("ip link set %s up" % phy_ifname)
             os.system("ip link set %s promisc on" % phy_ifname)
-            os.system("ip link set %s promisc on" % LAN_BR_NAME)
+            os.system("ip link set dev %s address %s" % (LAN_NAME, hwaddr,))
         else:
             os.system("ifconfig %s up" % phy_ifname)
 

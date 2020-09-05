@@ -42,8 +42,8 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx);
 void ixc_netif_delete(int if_idx);
 int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int is_ipv6);
 
-/// 刷新硬件地址
-int ixc_netif_refresh_hwaddr(int if_idx);
+/// 设置硬件地址
+int ixc_netif_set_hwaddr(int if_idx,unsigned char *hwaddr);
 
 int ixc_netif_send(struct ixc_mbuf *m);
 
@@ -57,7 +57,6 @@ struct ixc_netif *ixc_netif_get(int if_idx);
 int ixc_netif_no_used_get(void);
 /// 检查是否在使用
 int ixc_netif_is_used(int if_idx);
-
 /// 检查是否和当前网卡在同一个网段
 // 如果指定is_ipv6不为空,那么后面的is_ip6_local_link参数将不会被忽略
 int ixc_netif_is_subnet(struct ixc_netif *netif,unsigned char *ip,int is_ipv6,int is_ip6_local_link);
