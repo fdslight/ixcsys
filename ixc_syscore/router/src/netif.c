@@ -75,8 +75,6 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     netif->fd=fd;
     netif->type=if_idx;
 
-    ixc_netif_refresh_hwaddr(if_idx);
-
     return fd;
 }
 
@@ -141,7 +139,7 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
     return 0;
 }
 
-int ixc_netif_refresh_hwaddr(int if_idx)
+int ixc_netif_set_hwaddr(int if_idx,unsigned char *hwaddr)
 {
     struct ixc_netif *netif;
 
@@ -156,8 +154,9 @@ int ixc_netif_refresh_hwaddr(int if_idx)
         STDERR("cannot set ip,it is not opened\r\n");
         return -1;
     }
-    
-    return hwinfo_get(netif->devname,netif->hwaddr);
+
+    memcpy(netif->hwaddr,hwaddr,6);
+    return 0;
 }
 
 int ixc_netif_send(struct ixc_mbuf *m)
@@ -204,7 +203,7 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
         if(NULL==m) break;
         wsize=write(netif->fd,m->data+m->begin,m->end-m->begin);
         
-        STDERR("%x:%x:%x:%x:%x:%x\r\n",m->src_hwaddr[0],m->src_hwaddr[1],m->src_hwaddr[2],m->src_hwaddr[3],m->src_hwaddr[4],m->src_hwaddr[5]);
+        //STDERR("%x:%x:%x:%x:%x:%x\r\n",m->src_hwaddr[0],m->src_hwaddr[1],m->src_hwaddr[2],m->src_hwaddr[3],m->src_hwaddr[4],m->src_hwaddr[5]);
 
         if(wsize<0){
             if(EAGAIN==errno){

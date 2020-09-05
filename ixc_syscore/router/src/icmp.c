@@ -4,6 +4,7 @@
 #include "ip.h"
 
 #include "../../../pywind/clib/netutils.h"
+#include "../../../pywind/clib/debug.h"
 
 static void ixc_icmp_handle_self(struct ixc_mbuf *m)
 {

@@ -39,6 +39,8 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
         return;
     }
 
+    STDERR("%d.%d.%d.%d\r\n",header->dst_addr[0],header->dst_addr[1],header->dst_addr[2],header->dst_addr[3]);
+
     // 首先检查IP长度是否合法
     tot_len=ntohs(header->tot_len);
 
