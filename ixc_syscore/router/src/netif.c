@@ -251,6 +251,7 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
         m->next=NULL;
 
         rsize=read(netif->fd,m->data+IXC_MBUF_BEGIN,IXC_MBUF_END-IXC_MBUF_BEGIN);
+        
         if(rsize<0){
             if(EAGAIN==errno){
                 ixc_mbuf_put(m);

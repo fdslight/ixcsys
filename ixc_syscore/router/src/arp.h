@@ -7,6 +7,8 @@
 #pragma pack(1)
 
 struct ixc_arp{
+    unsigned short htype;
+    unsigned short proto_type;
     unsigned char hwaddr_len;
     unsigned char protoaddr_len;
 #define IXC_ARP_OP_REQ 1

@@ -286,9 +286,12 @@ router_netif_set_ip(PyObject *self,PyObject *args)
         PyErr_SetString(PyExc_SystemError,"netif is not used\r\n");
         return NULL;  
     }
-    ixc_netif_set_ip(if_idx,ip,prefix,is_ipv6);
+    
+    if(ixc_netif_set_ip(if_idx,ip,prefix,is_ipv6)){
+        Py_RETURN_FALSE;
+    }
 
-    Py_RETURN_NONE;
+    Py_RETURN_TRUE;
 }
 
 /// 刷新网卡硬件地址

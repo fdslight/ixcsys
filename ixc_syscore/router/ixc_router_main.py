@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal
+import sys, os, signal, socket
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -9,6 +9,7 @@ if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MY
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
+import pywind.lib.netutils as netutils
 
 import ixc_syscore.router.pylib.router as router
 import ixc_syscore.router.handlers.tapdev as tapdev
@@ -163,6 +164,18 @@ class service(dispatcher.dispatcher):
 
         lan_ifconfig = self.__lan_configs["if_config"]
         phy_ifname = lan_ifconfig["phy_ifname"]
+        ipinfo = self.parse_ipaddr_format(lan_ifconfig["ip_addr"])
+
+        if not ipinfo:
+            raise SystemExit("wrong IP address format")
+        ip, prefix = ipinfo
+        if prefix > 32 or prefix < 1:
+            raise ValueError("wrong IP address prefix")
+        if not netutils.is_ipv4_address(ip):
+            raise ValueError("wrong IPv4 address format")
+
+        byte_ip = socket.inet_pton(socket.AF_INET, ip)
+        self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
 
         self.br_create(LAN_BR_NAME, [self.__devname, phy_ifname])
 
@@ -174,6 +187,23 @@ class service(dispatcher.dispatcher):
 
     def myloop(self):
         pass
+
+    def parse_ipaddr_format(self, s: str):
+        """解析例如 xxx/x格式的IP地址
+        :param s:
+        :return:
+        """
+        p = s.find("/")
+        if p < 0: return None
+
+        ip = s[0:p]
+        p += 1
+        try:
+            r = (ip, int(s[p:]),)
+        except ValueError:
+            return None
+
+        return r
 
 
 def main():
