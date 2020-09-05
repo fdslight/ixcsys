@@ -6,6 +6,8 @@
 #include "ip.h"
 #include "ip6.h"
 
+#include "../../../pywind/clib/debug.h"
+
 int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
 {
     struct ixc_ether_header eth_header;
@@ -29,6 +31,7 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
     memcpy(mbuf->data+mbuf->begin,&eth_header,sizeof(struct ixc_ether_header));
 
     size=mbuf->end-mbuf->begin;
+
     // 填充以太网以便满足60字节
     if(size<60){
         bzero(mbuf->data+mbuf->end,60-size);

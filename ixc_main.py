@@ -32,8 +32,11 @@ def stop_all():
     for x in must_services: stop(x)
 
 
-def start(uri: str):
-    start_file = "sh %s/%s/start.sh" % (sys_dir, uri)
+def start(uri: str, debug=False):
+    if not debug:
+        start_file = "sh %s/%s/start.sh" % (sys_dir, uri)
+    else:
+        start_file = "sh %s/%s/debug.sh" % (sys_dir, uri)
     os.putenv("IXC_MYAPP_DIR", "%s/%s" % (sys_dir, uri))
 
     p = uri.find("/")
@@ -57,14 +60,14 @@ def stop(uri: str):
 
 def main():
     __helper = """
-    start | stop [app_uri]
+    start [app_uri] | stop [app_uri]  | debug [app_uri]
     """
     if len(sys.argv) < 2:
         print(__helper)
         return
     set_pub_env()
     action = sys.argv[1]
-    if action not in ("start", "stop",):
+    if action not in ("start", "stop", "debug",):
         print(__helper)
         return
 
@@ -80,8 +83,12 @@ def main():
             stop_all()
         return
 
-    if action == "start":
-        start(uri)
+    if action != "start":
+        if action == "debug":
+            debug = True
+        else:
+            debug = False
+        start(uri, debug=debug)
     else:
         stop(uri)
 
