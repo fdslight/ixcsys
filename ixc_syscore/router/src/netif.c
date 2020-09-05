@@ -203,6 +203,8 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
         m=netif->sent_first;
         if(NULL==m) break;
         wsize=write(netif->fd,m->data+m->begin,m->end-m->begin);
+        
+        STDERR("%x:%x:%x:%x:%x:%x\r\n",m->src_hwaddr[0],m->src_hwaddr[1],m->src_hwaddr[2],m->src_hwaddr[3],m->src_hwaddr[4],m->src_hwaddr[5]);
 
         if(wsize<0){
             if(EAGAIN==errno){
