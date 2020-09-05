@@ -12,7 +12,6 @@
 static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 {
     struct ixc_netif *netif=mbuf->netif;
-    unsigned char tmp[32];
     //unsigned char brd[]={0xff,0xff,0xff,0xff,0xff,0xff};
 
     // 检查是否是本机的IP地址,不是的话那么就丢弃ARP数据包
@@ -22,16 +21,15 @@ static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     }
 
     memcpy(mbuf->dst_hwaddr,mbuf->src_hwaddr,6);
+    //memcpy(mbuf->dst_hwaddr,brd,6);
     memcpy(mbuf->src_hwaddr,netif->hwaddr,6);
 
-    memcpy(tmp,arp->src_ipaddr,4);
-
+    memcpy(arp->dst_ipaddr,arp->src_ipaddr,4);
     memcpy(arp->src_ipaddr,netif->ipaddr,4);
+
+    memcpy(arp->dst_hwaddr,arp->src_hwaddr,6);
     memcpy(arp->src_hwaddr,netif->hwaddr,6);
-
-    memcpy(arp->dst_ipaddr,tmp,4);
-    memcpy(arp->dst_hwaddr,mbuf->dst_hwaddr,6);
-
+    
     arp->op=htons(IXC_ARP_OP_RESP);
    
     ixc_ether_send(mbuf,1);

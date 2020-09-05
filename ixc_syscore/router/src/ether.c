@@ -47,7 +47,7 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
 {
     struct ixc_ether_header *header;
     unsigned short type;
-
+    
     // 检查长度是否合法,不合法直接丢包
     if(mbuf->end-mbuf->begin<60){
         ixc_mbuf_put(mbuf);
