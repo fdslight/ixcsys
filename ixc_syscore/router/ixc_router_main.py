@@ -182,6 +182,7 @@ class service(dispatcher.dispatcher):
         if self.is_linux:
             os.system("ip link set %s up" % phy_ifname)
             os.system("ip link set %s promisc on" % phy_ifname)
+            os.system("ip link set %s promisc on" % LAN_BR_NAME)
         else:
             os.system("ifconfig %s up" % phy_ifname)
 
