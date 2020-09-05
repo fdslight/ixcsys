@@ -3,7 +3,7 @@
 
 #include "mbuf.h"
 
-#define IXC_NETIF_READ_NUM 10
+#define IXC_NETIF_READ_NUM 100
 #define IXC_NETIF_MAX 2
 
 #define IXC_NETIF_LAN 0
