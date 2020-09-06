@@ -18,12 +18,6 @@ import ixc_syslib.pylib.logging as logging
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
-WAN_BR_NAME = "ixwanbr"
-LAN_BR_NAME = "ixclanbr"
-
-LAN_NAME = "ixclan"
-WAN_NAME = "ixcwan"
-
 
 def __stop_service():
     pid = proc.get_pid(PID_FILE)
@@ -64,11 +58,16 @@ def __start_service(debug):
 
 
 class service(dispatcher.dispatcher):
+    __WAN_BR_NAME = None
+    __LAN_BR_NAME = None
+
+    __LAN_NAME = None
+    __WAN_NAME = None
+
     __router = None
     __debug = None
 
     __if_lan_fd = None
-    __devname = None
 
     __lan_configs = None
     __wan_configs = None
@@ -108,7 +107,9 @@ class service(dispatcher.dispatcher):
 
     def release(self):
         if self.is_linux:
-            os.system("ip link del %s" % LAN_BR_NAME)
+            os.system("ip link del %s" % self.__LAN_BR_NAME)
+        else:
+            os.system("ifconfig %s destroy" % self.__LAN_BR_NAME)
 
         if self.__if_lan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_LAN)
@@ -132,11 +133,11 @@ class service(dispatcher.dispatcher):
         s = s.replace("\n", "")
         s = s.replace(" ", "")
 
-        _list=["ifconfig %s" % s,]
+        _list = ["ifconfig %s" % s, ]
         for name in added_bind_ifs:
             _list.append("addm %s" % name)
         _list.append("up")
-        cmd=" ".join(_list)
+        cmd = " ".join(_list)
         os.system(cmd)
 
         return s
@@ -145,15 +146,29 @@ class service(dispatcher.dispatcher):
         self.__debug = debug
         self.__if_lan_fd = -1
         self.__router = router.router(self._recv_from_proto_stack, self._write_ev_tell)
-        self.__if_lan_fd, self.__devname = self.__router.netif_create(LAN_NAME, router.IXC_NETIF_LAN)
 
-        self.load_lan_configs()
+        self.__WAN_BR_NAME = "ixwanbr"
+        self.__LAN_BR_NAME = "ixclanbr"
+
+        self.__LAN_NAME = "ixclan"
+        self.__WAN_NAME = "ixcwan"
+
         self.__wan_configs = {}
-
         self.__is_linux = sys.platform.startswith("linux")
+
+        # 此处检查FreeBSD是否加载了if_tap.ko模块
+        if not self.is_linux:
+            fd = os.popen("kldstat")
+            s = fd.read()
+            fd.close()
+            p = s.find("if_tap.ko")
+            if p < 0: os.system("kldload if_tap")
+
+        self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
 
         self.create_poll()
         self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
+        self.load_lan_configs()
 
         lan_ifconfig = self.__lan_configs["if_config"]
         lan_phy_ifname = lan_ifconfig["phy_ifname"]
@@ -173,11 +188,13 @@ class service(dispatcher.dispatcher):
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
 
         if self.is_linux:
-            self.linux_br_create(LAN_BR_NAME, [lan_phy_ifname, self.__devname, ])
-            os.system("ip link set %s up" % lan_phy_ifname)
+            self.linux_br_create(self.__LAN_BR_NAME, [lan_phy_ifname, self.__LAN_NAME, ])
             os.system("ip link set %s promisc on" % lan_phy_ifname)
+            os.system("ip link set %s up" % lan_phy_ifname)
             # os.system("ip link set %s promisc on" % LAN_NAME)
         else:
+            self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
+            os.system("ifconfig %s promisc" % lan_phy_ifname)
             os.system("ifconfig %s up" % lan_phy_ifname)
 
     def myloop(self):
