@@ -172,26 +172,32 @@ class service(dispatcher.dispatcher):
 
         lan_ifconfig = self.__lan_configs["if_config"]
         lan_phy_ifname = lan_ifconfig["phy_ifname"]
-        ipinfo = self.parse_ipaddr_format(lan_ifconfig["ip_addr"])
+        gw_addr = self.parse_ipaddr_format(lan_ifconfig["gw_addr"])
         hwaddr = lan_ifconfig["hwaddr"]
+        manage_addr = self.parse_ipaddr_format(lan_ifconfig["manage_addr"])
 
-        if not ipinfo:
+        if not gw_addr:
             raise SystemExit("wrong IP address format")
-        ip, prefix = ipinfo
+        if not manage_addr:
+            raise
+        ip, prefix = gw_addr
         if prefix > 32 or prefix < 1:
             raise ValueError("wrong IP address prefix")
         if not netutils.is_ipv4_address(ip):
             raise ValueError("wrong IPv4 address format")
 
         byte_ip = socket.inet_pton(socket.AF_INET, ip)
+
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
 
         if self.is_linux:
             self.linux_br_create(self.__LAN_BR_NAME, [lan_phy_ifname, self.__LAN_NAME, ])
+
             os.system("ip link set %s promisc on" % lan_phy_ifname)
             os.system("ip link set %s up" % lan_phy_ifname)
-            # os.system("ip link set %s promisc on" % LAN_NAME)
+            os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+            os.system("ip addr add %s/%d dev %s" % (manage_addr[0], manage_addr[1], self.__LAN_BR_NAME))
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
             os.system("ifconfig %s promisc" % lan_phy_ifname)
