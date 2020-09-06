@@ -163,7 +163,7 @@ class service(dispatcher.dispatcher):
         self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
 
         lan_ifconfig = self.__lan_configs["if_config"]
-        phy_ifname = lan_ifconfig["phy_ifname"]
+        lan_phy_ifname = lan_ifconfig["phy_ifname"]
         ipinfo = self.parse_ipaddr_format(lan_ifconfig["ip_addr"])
         hwaddr = lan_ifconfig["hwaddr"]
 
@@ -179,14 +179,14 @@ class service(dispatcher.dispatcher):
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
 
-        self.br_create(LAN_BR_NAME, [phy_ifname, self.__devname, ])
+        self.br_create(LAN_BR_NAME, [lan_phy_ifname, self.__devname, ])
 
         if self.is_linux:
-            os.system("ip link set %s up" % phy_ifname)
-            os.system("ip link set %s promisc on" % phy_ifname)
+            os.system("ip link set %s up" % lan_phy_ifname)
+            os.system("ip link set %s promisc on" % lan_phy_ifname)
             #os.system("ip link set %s promisc on" % LAN_NAME)
         else:
-            os.system("ifconfig %s up" % phy_ifname)
+            os.system("ifconfig %s up" % lan_phy_ifname)
 
     def myloop(self):
         pass
