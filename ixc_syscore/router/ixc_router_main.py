@@ -107,7 +107,8 @@ class service(dispatcher.dispatcher):
         return self.__is_linux
 
     def release(self):
-        self.br_delete(LAN_BR_NAME)
+        if self.is_linux:
+            os.system("ip link del %s" % LAN_BR_NAME)
 
         if self.__if_lan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_LAN)
@@ -124,29 +125,21 @@ class service(dispatcher.dispatcher):
             cmd = "ip link set dev %s master %s" % (if_name, br_name,)
             os.system(cmd)
 
-    def freebsd_br_create(self, br_name: str, added_bind_ifs: list):
-        pass
+    def freebsd_br_create(self, added_bind_ifs: list):
+        fd = os.popen("ifconfig bridge create")
+        s = fd.read()
+        fd.close()
+        s = s.replace("\n", "")
+        s = s.replace(" ", "")
 
-    def br_create(self, br_name: str, added_bind_ifs: list):
-        """桥接网络创建
-        :param br_name:
-        :param added_bind_ifs:
-        :return:
-        """
-        if sys.platform.startswith("linux"):
-            self.linux_br_create(br_name, added_bind_ifs)
-        else:
-            self.freebsd_br_create(br_name, added_bind_ifs)
+        _list=["ifconfig %s" % s,]
+        for name in added_bind_ifs:
+            _list.append("addm %s" % name)
+        _list.append("up")
+        cmd=" ".join(_list)
+        os.system(cmd)
 
-    def br_delete(self, br_name: str):
-        """桥接网络删除
-        :param br_name:
-        :return:
-        """
-        if sys.platform.startswith("linux"):
-            os.system("ip link del %s" % br_name)
-        else:
-            pass
+        return s
 
     def init_func(self, debug):
         self.__debug = debug
@@ -179,12 +172,11 @@ class service(dispatcher.dispatcher):
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
 
-        self.br_create(LAN_BR_NAME, [lan_phy_ifname, self.__devname, ])
-
         if self.is_linux:
+            self.linux_br_create(LAN_BR_NAME, [lan_phy_ifname, self.__devname, ])
             os.system("ip link set %s up" % lan_phy_ifname)
             os.system("ip link set %s promisc on" % lan_phy_ifname)
-            #os.system("ip link set %s promisc on" % LAN_NAME)
+            # os.system("ip link set %s promisc on" % LAN_NAME)
         else:
             os.system("ifconfig %s up" % lan_phy_ifname)
 
