@@ -69,6 +69,7 @@ int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char
 {
     struct ixc_arp arp;
     struct ixc_mbuf *m;
+    unsigned char no_hwaddr[6]={0x00,0x00,0x00,0x00,0x00,0x00};
 
     arp.htype=htons(1);
     arp.proto_type=htons(0x800);
@@ -79,7 +80,7 @@ int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char
     memcpy(arp.src_hwaddr,netif->hwaddr,6);
     memcpy(arp.src_ipaddr,netif->ipaddr,4);
 
-    memcpy(arp.dst_hwaddr,dst_hwaddr,6);
+    memcpy(arp.dst_hwaddr,no_hwaddr,6);
     memcpy(arp.dst_ipaddr,dst_ipaddr,4);
 
     m=ixc_mbuf_get();
@@ -92,9 +93,11 @@ int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char
     m->netif=netif;
     m->begin=IXC_MBUF_BEGIN;
     m->offset=m->begin;
-    m->tail=sizeof(struct ixc_arp);
+    m->tail=m->begin+sizeof(struct ixc_arp);
     m->end=m->tail;
     m->link_proto=0x806;
+
+    memcpy(m->data+m->begin,&arp,sizeof(struct ixc_arp));
 
     memcpy(m->src_hwaddr,netif->hwaddr,6);
     memcpy(m->dst_hwaddr,dst_hwaddr,6);
