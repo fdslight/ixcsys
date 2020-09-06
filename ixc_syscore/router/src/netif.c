@@ -58,6 +58,7 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
 
     if(netif->is_used){
         STDERR("ERROR:tap device has been opened\r\n");
+        return -1;
     }
 
     strcpy(res_devname,devname);

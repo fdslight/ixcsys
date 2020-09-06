@@ -79,7 +79,7 @@ static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
 
 static void ixc_route_prefix_del(unsigned char prefix,int is_ipv6)
 {
-    struct ixc_route_prefix *p,*t,**head;
+    struct ixc_route_prefix *p=NULL,*t,**head;
 
     if(is_ipv6){
         t=route.ip6_pre_head;
