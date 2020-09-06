@@ -309,4 +309,7 @@ void rewrite_ip_addr(struct netutil_iphdr *iphdr,unsigned char *new_addr,int is_
             udphdr->checksum=csum;
             break;
     }
+
+    if(is_src) memcpy(iphdr->src_addr,new_addr,4);
+    else memcpy(iphdr->dst_addr,new_addr,4);
 }

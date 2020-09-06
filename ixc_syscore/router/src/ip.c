@@ -39,7 +39,7 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
         return;
     }
 
-    STDERR("%d.%d.%d.%d\r\n",header->dst_addr[0],header->dst_addr[1],header->dst_addr[2],header->dst_addr[3]);
+    //STDERR("%d.%d.%d.%d\r\n",header->dst_addr[0],header->dst_addr[1],header->dst_addr[2],header->dst_addr[3]);
 
     // 首先检查IP长度是否合法
     tot_len=ntohs(header->tot_len);
@@ -73,14 +73,20 @@ int ixc_ip_send(struct ixc_mbuf *m)
 
     memcpy(m->src_hwaddr,netif->hwaddr,6);
 
+    //STDERR("%d.%d.%d.%d\r\n",header->src_addr[0],header->src_addr[1],header->src_addr[2],header->src_addr[3]);
+    STDERR("%d.%d.%d.%d\r\n",header->dst_addr[0],header->dst_addr[1],header->dst_addr[2],header->dst_addr[3]);
+
     // 找不到地址映射记录就发送ARP请求包并丢弃当前数据包
     if(!r){
         ixc_arp_send(netif,dst_hwaddr,header->dst_addr,IXC_ARP_OP_REQ);
         ixc_mbuf_put(m);
+        return 0;
     }
 
     m->link_proto=htons(0x800);
     memcpy(m->dst_hwaddr,r->hwaddr,6);
+
+    //STDERR("%x:%x:%x:%x:%x:%x\r\n",r->hwaddr[0],r->hwaddr[1],r->hwaddr[2],r->hwaddr[3],r->hwaddr[4],r->hwaddr[5]);
     ixc_ether_send(m,1);
 
     return 0;

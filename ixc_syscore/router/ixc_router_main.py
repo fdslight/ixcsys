@@ -179,12 +179,12 @@ class service(dispatcher.dispatcher):
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
 
-        self.br_create(LAN_BR_NAME, [self.__devname, phy_ifname])
+        self.br_create(LAN_BR_NAME, [phy_ifname, self.__devname, ])
 
         if self.is_linux:
             os.system("ip link set %s up" % phy_ifname)
             os.system("ip link set %s promisc on" % phy_ifname)
-            os.system("ip link set dev %s address %s" % (LAN_NAME, hwaddr,))
+            #os.system("ip link set %s promisc on" % LAN_NAME)
         else:
             os.system("ifconfig %s up" % phy_ifname)
 
