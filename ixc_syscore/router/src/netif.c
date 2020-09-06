@@ -41,8 +41,8 @@ void ixc_netif_uninit(void)
 
 int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
 {
-    int fd,flags;
     struct ixc_netif *netif=NULL;
+    int fd=-1;
 
     if(if_idx<0 || if_idx>IXC_NETIF_MAX){
         STDERR("wrong if index value\r\n");
@@ -67,9 +67,8 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     if(fd<0) return -1;
 
     tapdev_up(res_devname);
-    flags=fcntl(fd,F_GETFL,0);
-    fcntl(fd,F_SETFL,flags | O_NONBLOCK);
 
+    tapdev_set_nonblocking(fd);
     strcpy(netif->devname,res_devname);
 
     netif->is_used=1;
