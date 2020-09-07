@@ -197,6 +197,7 @@ class service(dispatcher.dispatcher):
             os.system("ip link set %s promisc on" % lan_phy_ifname)
             os.system("ip link set %s up" % lan_phy_ifname)
             os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+            # 设置桥接网卡IP地址
             os.system("ip addr add %s/%d dev %s" % (manage_addr[0], manage_addr[1], self.__LAN_BR_NAME))
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
