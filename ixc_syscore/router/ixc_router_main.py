@@ -197,6 +197,9 @@ class service(dispatcher.dispatcher):
             os.system("ip link set %s promisc on" % lan_phy_ifname)
             os.system("ip link set %s up" % lan_phy_ifname)
             os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+            os.system("ip link set %s promisc on" % self.__LAN_NAME)
+            os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_BR_NAME)
+            os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_NAME)
             # 设置桥接网卡IP地址
             os.system("ip addr add %s/%d dev %s" % (manage_addr[0], manage_addr[1], self.__LAN_BR_NAME))
         else:
