@@ -14,7 +14,7 @@ static void ixc_icmp_handle_self(struct ixc_mbuf *m)
     unsigned char src_ipaddr[4],dst_ipaddr[4];
 
     // 只处理echo请求
-    if(0!=icmphdr->type && 0!=icmphdr->code){
+    if(8!=icmphdr->type && 0!=icmphdr->code){
         ixc_mbuf_put(m);
         return;
     }
@@ -22,8 +22,12 @@ static void ixc_icmp_handle_self(struct ixc_mbuf *m)
     memcpy(src_ipaddr,header->dst_addr,4);
     memcpy(dst_ipaddr,header->src_addr,4);
 
+    STDERR("%d.%d.%d.%d\r\n",dst_ipaddr[0],dst_ipaddr[1],dst_ipaddr[2],dst_ipaddr[3]);
+
     rewrite_ip_addr(header,src_ipaddr,1);
     rewrite_ip_addr(header,dst_ipaddr,0);
+
+    icmphdr->type=0;
 
     ixc_ip_send(m);
 }
