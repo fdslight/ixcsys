@@ -14,13 +14,11 @@ import ixc_syscore.sysadm.handlers.httpd as httpd
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
-
 def __stop_service():
     pid = proc.get_pid(PID_FILE)
     if pid < 0: return
 
     os.kill(pid, signal.SIGINT)
-
 
 def __start_service(debug):
     if not debug and os.path.isfile(PID_FILE):
