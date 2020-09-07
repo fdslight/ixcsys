@@ -161,7 +161,12 @@ class httpd_handler(ssl_handler.ssl_handler):
     def convert_to_cgi_env(self, request: tuple, kv_pairs: list):
         """转换成CGI环境变量
         """
-        pass
+        env={
+            "REQUEST_METHOD":request[0].upper(),
+            "REQUEST_URI":request[1],
+        }
+
+        return env
 
     def http1_header_send(self, status: str, kv_pairs: list):
         pass
