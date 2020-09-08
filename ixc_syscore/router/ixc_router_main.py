@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, socket
+import sys, os, signal, socket, json
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -73,6 +73,12 @@ class service(dispatcher.dispatcher):
     __wan_configs = None
 
     __is_linux = None
+
+    # 是否告知系统管理进程
+    __is_notify_sysadm_proc = None
+
+    __lan_manage_addr = None
+    __lan_manage_addr6 = None
 
     def _write_ev_tell(self, fd: int, flags: int):
         if flags:
@@ -155,6 +161,7 @@ class service(dispatcher.dispatcher):
 
         self.__wan_configs = {}
         self.__is_linux = sys.platform.startswith("linux")
+        self.__is_notify_sysadm_proc = False
 
         # 此处检查FreeBSD是否加载了if_tap.ko模块
         if not self.is_linux:
@@ -179,12 +186,17 @@ class service(dispatcher.dispatcher):
         if not gw_addr:
             raise SystemExit("wrong IP address format")
         if not manage_addr:
-            raise
+            raise SystemExit("please set manage address")
+
         ip, prefix = gw_addr
+
         if prefix > 32 or prefix < 1:
             raise ValueError("wrong IP address prefix")
         if not netutils.is_ipv4_address(ip):
             raise ValueError("wrong IPv4 address format")
+
+        self.__lan_manage_addr = manage_addr[0]
+        self.__lan_manage_addr6 = "::1"
 
         byte_ip = socket.inet_pton(socket.AF_INET, ip)
 
@@ -197,9 +209,9 @@ class service(dispatcher.dispatcher):
             os.system("ip link set %s promisc on" % lan_phy_ifname)
             os.system("ip link set %s up" % lan_phy_ifname)
             os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
-            os.system("ip link set %s promisc on" % self.__LAN_NAME)
-            os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_BR_NAME)
-            os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_NAME)
+            # os.system("ip link set %s promisc on" % self.__LAN_NAME)
+            # os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_BR_NAME)
+            # os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_NAME)
             # 设置桥接网卡IP地址
             os.system("ip addr add %s/%d dev %s" % (manage_addr[0], manage_addr[1], self.__LAN_BR_NAME))
         else:
@@ -207,8 +219,29 @@ class service(dispatcher.dispatcher):
             os.system("ifconfig %s promisc" % lan_phy_ifname)
             os.system("ifconfig %s up" % lan_phy_ifname)
 
+    def notify_sysadm_proc(self):
+        path = "%s/../sysadm/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
+        pid = proc.get_pid(path)
+
+        if pid < 0: return
+        self.__is_notify_sysadm_proc = True
+
+        o = {
+            "ip": self.__lan_manage_addr,
+            "ipv6": self.__lan_manage_addr6
+        }
+
+        s = json.dumps(o)
+        # 向系统管理进程传递IP配置文件
+        info_file = "%s/../sysadm/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
+        with open(info_file, "w") as f: f.write(s)
+        f.close()
+
+        os.kill(pid, signal.SIGUSR1)
+
     def myloop(self):
-        pass
+        if not self.__is_notify_sysadm_proc:
+            self.notify_sysadm_proc()
 
     def parse_ipaddr_format(self, s: str):
         """解析例如 xxx/x格式的IP地址

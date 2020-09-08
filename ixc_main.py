@@ -25,7 +25,7 @@ def set_pub_env():
 
 
 def start_all():
-    for x in must_services: start(x)
+    for x in must_services: start(x, debug=False)
 
 
 def stop_all():
@@ -60,7 +60,7 @@ def stop(uri: str):
 
 def main():
     __helper = """
-    start [app_uri] | stop [app_uri]  | debug [app_uri]
+    start [app_uri] | stop [app_uri]  | debug app_uri
     """
     if len(sys.argv) < 2:
         print(__helper)
@@ -80,6 +80,9 @@ def main():
         if action == "start":
             start_all()
         else:
+            if action == "debug":
+                print(__helper)
+                return
             stop_all()
         return
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, signal
+import os, sys, signal, json
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -66,6 +66,9 @@ class service(dispatcher.dispatcher):
     __httpd_cfg_path = None
     __httpd_configs = None
 
+    __httpd_listen_addr = None
+    __httpd_listen_addr6 = None
+
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
 
@@ -73,7 +76,7 @@ class service(dispatcher.dispatcher):
         pass
 
     def service_start(self):
-        listen = self.__httpd_configs["listen"]
+        self.__httpd_fd = self.create_handler(-1, httpd.httpd_listener, (self.__httpd_listen_addr, 8080,))
 
     def init_func(self, debug):
         self.__httpd_fd = -1
@@ -88,14 +91,41 @@ class service(dispatcher.dispatcher):
         self.load_configs()
         self.create_poll()
 
-        self.service_start()
+        signal.signal(signal.SIGUSR1, self.__sig_load_service)
+
+    def myloop(self):
+        pass
 
     @property
     def debug(self):
         return self.__debug
 
     def release(self):
-        pass
+        if self.__httpd_fd > 0:
+            self.delete_handler(self.__httpd_fd)
+            self.__httpd_fd = -1
+        if self.__httpd_fd6 > 0:
+            self.delete_handler(self.__httpd_fd6)
+            self.__httpd_fd6 = -1
+        if self.__httpd_ssl_fd > 0:
+            self.delete_handler(self.__httpd_ssl_fd)
+            self.__httpd_ssl_fd = -1
+        if self.__httpd_ssl_fd6 > 0:
+            self.delete_handler(self.__httpd_ssl_fd6)
+            self.__httpd_ssl_fd6 = -1
+
+    def __sig_load_service(self, signum, frame):
+        info_file = "%s/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
+
+        with open(info_file, "r") as f: s = f.read()
+        f.close()
+
+        o = json.loads(s)
+
+        self.__httpd_listen_addr = o["ip"]
+        self.__httpd_listen_addr6 = o["ipv6"]
+
+        self.service_start()
 
 
 def main():

@@ -70,8 +70,11 @@ class httpd_listener(tcp_handler.tcp_handler):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         self.set_socket(s)
+
         self.bind(address)
         self.listen(10)
+        self.register(self.fileno)
+        self.add_evt_read(self.fileno)
 
         return self.fileno
 
@@ -81,7 +84,7 @@ class httpd_listener(tcp_handler.tcp_handler):
                 cs, caddr = self.accept()
             except BlockingIOError:
                 break
-            self.create_handler(self.fileno, cs, caddr, ssl_on=self.__ssl_on, ssl_key=self.__ssl_key,
+            self.create_handler(self.fileno, httpd_handler, cs, caddr, ssl_on=self.__ssl_on, ssl_key=self.__ssl_key,
                                 ssl_cert=self.__ssl_cert, is_ipv6=self.__is_ipv6)
         ''''''
 
@@ -161,10 +164,30 @@ class httpd_handler(ssl_handler.ssl_handler):
     def convert_to_cgi_env(self, request: tuple, kv_pairs: list):
         """转换成CGI环境变量
         """
-        env={
-            "REQUEST_METHOD":request[0].upper(),
-            "REQUEST_URI":request[1],
+
+        env = {
+            "REQUEST_METHOD": request[0].upper(),
+            "REQUEST_URI": request[1],
+            "QUERY_STRING": ""
         }
+
+        request_uri = request[1]
+        p = request_uri.find("?")
+
+        if p > 0:
+            env["PATH_INFO"] = request_uri[0:p]
+            p += 1
+            env["QUERY_STRING"] = request_uri[p:]
+        else:
+            env["PATH_INFO"] = request_uri
+        env["SERVER_PROTOCOL"] = request[2].upper()
+
+        excepts = ("content_length", "content_type",)
+        for k, v in kv_pairs:
+            k = k.replace("-", "_")
+            if k.lower() not in excepts:
+                k = "HTTP_%s" % k.upper()
+            env[k] = v
 
         return env
 
@@ -231,10 +254,20 @@ class httpd_handler(ssl_handler.ssl_handler):
 
         # 检查content-length是否为数字
         try:
-            int(content_length)
+            length = int(content_length)
         except ValueError:
             self.__is_error = True
             self.send_header(xid, "400 Bad Request", [])
+            self.delete_this_no_sent_data()
+            return
+        # 当为None的时候报错忽略,因为前面已经检查过有些方法必须带长度,没有长度那么就是None
+        except TypeError:
+            length = 0
+
+        # 除了POST和PUT外其他方法长度必须为0
+        if method not in ("POST", "PUT",) and length != 0:
+            self.__is_error = True
+            self.send_header(HTTP1_xID, "411 Length Required", [])
             self.delete_this_no_sent_data()
             return
 
@@ -263,6 +296,7 @@ class httpd_handler(ssl_handler.ssl_handler):
         rdata = self.reader.read()
 
         p = rdata.find(b"\r\n\r\n")
+
         # 限制请求头部长度
         if p < 0 and size > 4096:
             self.__is_error = True
