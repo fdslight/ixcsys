@@ -7,6 +7,7 @@
 #include "ether.h"
 #include "addr_map.h"
 #include "arp.h"
+#include "ip.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
@@ -45,7 +46,11 @@ static void ixc_nat_wan_send(struct ixc_mbuf *m)
 
 static void ixc_nat_lan_send(struct ixc_mbuf *m)
 {
-
+    // 未开启NAT那么直接发送数据包
+    if(!nat_enable){
+        ixc_ip_send(m);
+        return;
+    }
 }
 
 int ixc_nat_init(void)
