@@ -100,5 +100,7 @@ int check_ippkt_is_ok(struct netutil_iphdr *iphdr);
 
 /// 重写IP地址,is_src不为0表示重写源地址,否则重写目标地址
 void rewrite_ip_addr(struct netutil_iphdr *iphdr,unsigned char *new_addr,int is_src);
+/// 重写IPv6地址
+void rewrite_ip6_addr(struct netutil_ip6hdr *ip6hr,unsigned char new_addr,int is_src);
 
 #endif
