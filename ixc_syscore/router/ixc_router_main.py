@@ -80,6 +80,8 @@ class service(dispatcher.dispatcher):
     __lan_manage_addr = None
     __lan_manage_addr6 = None
 
+    __scgi_fd = None
+
     def _write_ev_tell(self, fd: int, flags: int):
         if flags:
             self.add_evt_write(fd)
@@ -119,7 +121,11 @@ class service(dispatcher.dispatcher):
 
         if self.__if_lan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_LAN)
+        if self.__scgi_fd:
+            self.delete_handler(self.__scgi_fd)
+
         self.__if_lan_fd = -1
+        self.__scgi_fd = -1
 
     def linux_br_create(self, br_name: str, added_bind_ifs: list):
         cmds = [
@@ -162,6 +168,7 @@ class service(dispatcher.dispatcher):
         self.__wan_configs = {}
         self.__is_linux = sys.platform.startswith("linux")
         self.__is_notify_sysadm_proc = False
+        self.__scgi_fd = -1
 
         # 此处检查FreeBSD是否加载了if_tap.ko模块
         if not self.is_linux:

@@ -9,8 +9,9 @@ import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as cfg
 
-import ixc_syslib.pylib.logging as logging
+import pywind.web.handlers.scgi as scgi
 
+import ixc_syslib.pylib.logging as logging
 import ixc_syscore.sysadm.handlers.httpd as httpd
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -69,6 +70,8 @@ class service(dispatcher.dispatcher):
     __httpd_listen_addr = None
     __httpd_listen_addr6 = None
 
+    __scgi_fd = None
+
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
 
@@ -88,8 +91,12 @@ class service(dispatcher.dispatcher):
 
         self.__httpd_cfg_path = "%s/httpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
+        self.__scgi_fd = -1
+
         self.load_configs()
         self.create_poll()
+
+        self.__scgi_fd=self.create_handler(-1,scgi.scgid_listener,)
 
         signal.signal(signal.SIGUSR1, self.__sig_load_service)
 
@@ -101,6 +108,9 @@ class service(dispatcher.dispatcher):
         return self.__debug
 
     def release(self):
+        if self.__scgi_fd > 0:
+            self.delete_handler(self.__scgi_fd)
+            self.__scgi_fd = -1
         if self.__httpd_fd > 0:
             self.delete_handler(self.__httpd_fd)
             self.__httpd_fd = -1
