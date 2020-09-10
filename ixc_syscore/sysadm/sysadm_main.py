@@ -12,6 +12,7 @@ import pywind.lib.configfile as cfg
 import pywind.web.handlers.scgi as scgi
 
 import ixc_syslib.pylib.logging as logging
+import ixc_syslib.UI.route as webroute
 import ixc_syscore.sysadm.handlers.httpd as httpd
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -96,7 +97,13 @@ class service(dispatcher.dispatcher):
         self.load_configs()
         self.create_poll()
 
-        self.__scgi_fd=self.create_handler(-1,scgi.scgid_listener,)
+        scgi_configs = {
+            "use_unix_socket": True,
+            "listen": os.getenv("IXC_MYAPP_SCGI_PATH"),
+            "application": webroute.app_route()
+        }
+
+        self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
 
         signal.signal(signal.SIGUSR1, self.__sig_load_service)
 
@@ -123,6 +130,8 @@ class service(dispatcher.dispatcher):
         if self.__httpd_ssl_fd6 > 0:
             self.delete_handler(self.__httpd_ssl_fd6)
             self.__httpd_ssl_fd6 = -1
+        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")):
+            os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
     def __sig_load_service(self, signum, frame):
         info_file = "%s/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")

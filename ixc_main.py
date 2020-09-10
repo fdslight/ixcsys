@@ -46,6 +46,8 @@ def start(uri: str, debug=False):
     os.putenv("IXC_MYAPP_TMP_DIR", "/tmp/ixcsys/%s" % name)
     os.putenv("IXC_MYAPP_CONF_DIR", "%s/ixc_configs/%s" % (sys_dir, name,))
     os.putenv("IXC_MYAPP_SCGI_PATH", "/tmp/ixcsys/%s/scgi.sock" % name)
+    os.putenv("IXC_MYAPP_RELATIVE_DIR", uri)
+    os.putenv("IXC_MYAPP_NAME", name)
 
     os.system(start_file)
 
