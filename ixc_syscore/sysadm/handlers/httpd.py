@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket, time
+import socket, time, os
 
 import pywind.evtframework.handlers.tcp_handler as tcp_handler
 import pywind.evtframework.handlers.ssl_handler as ssl_handler
@@ -12,8 +12,33 @@ HTTP1_xID = 0
 class SCGIClient(tcp_handler.tcp_handler):
     __xid = None
 
-    def init_func(self, creator_fd, xid: int, address):
+    def get_static_scgi_path(self, path_info: str):
+        pass
+
+    def get_app_path_info(self, path_info: str):
+        if path_info == "/": return (os.getenv("IXC_MYAPP_NAME"), path_info,)
+
+        p = path_info[1:].find("/")
+        if p < 0: return path_info
+        p += 1
+
+        return (path_info[1:p], path_info[p:],)
+
+    def get_scgi_path(self, path_info: str):
+        p = path_info.find("/staticfiles")
+
+        if p == "0":
+            return self.get_static_scgi_path(path_info)
+        app_name, path_info = self.get_app_path_info(path_info)
+
+        return "/tmp/ixcsys/%s/scgi.scok" % app_name
+
+    def init_func(self, creator_fd, xid: int, cgi_env: dict):
         self.__xid = xid
+        address = self.get_scgi_path(cgi_env["PATH_INFO"])
+
+        if not os.path.exists(address): return -1
+
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.set_socket(s)
         self.connect(address)
@@ -34,9 +59,6 @@ class SCGIClient(tcp_handler.tcp_handler):
         pass
 
     def tcp_delete(self):
-        pass
-
-    def send_request_header(self, cgi_env: dict):
         pass
 
     def send_body(self, byte_data: bytes):
@@ -290,6 +312,17 @@ class httpd_handler(ssl_handler.ssl_handler):
         if self.__http_version == 1:
             self.__http1_parssed_header = True
         # 此处打开SCGI会话
+        env = self.convert_to_cgi_env(request, kv_pairs)
+
+        fd = self.create_handler(self.fileno, SCGIClient, xid, env)
+
+        if fd < 0:
+            self.__is_error = True
+            self.send_header(xid, "502 Bad Gateway", [])
+            self.delete_this_no_sent_data()
+            return
+
+        self.__sessions[xid] = (fd, None,)
 
     def parse_http1_request_header(self):
         size = self.reader.size()
