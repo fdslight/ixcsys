@@ -82,6 +82,8 @@ class service(dispatcher.dispatcher):
 
     __scgi_fd = None
 
+    __info_file = None
+
     def _write_ev_tell(self, fd: int, flags: int):
         if flags:
             self.add_evt_write(fd)
@@ -114,6 +116,7 @@ class service(dispatcher.dispatcher):
         return self.__is_linux
 
     def release(self):
+        if os.path.isfile(self.__info_file): os.remove(self.__info_file)
         if self.is_linux:
             os.system("ip link del %s" % self.__LAN_BR_NAME)
         else:
@@ -169,6 +172,8 @@ class service(dispatcher.dispatcher):
         self.__is_linux = sys.platform.startswith("linux")
         self.__is_notify_sysadm_proc = False
         self.__scgi_fd = -1
+
+        self.__info_file = "%s/../sysadm/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
 
         # 此处检查FreeBSD是否加载了if_tap.ko模块
         if not self.is_linux:
@@ -239,9 +244,7 @@ class service(dispatcher.dispatcher):
         }
 
         s = json.dumps(o)
-        # 向系统管理进程传递IP配置文件
-        info_file = "%s/../sysadm/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
-        with open(info_file, "w") as f: f.write(s)
+        with open(self.__info_file, "w") as f: f.write(s)
         f.close()
 
         os.kill(pid, signal.SIGUSR1)

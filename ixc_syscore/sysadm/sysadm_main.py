@@ -104,7 +104,7 @@ class service(dispatcher.dispatcher):
         }
 
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
-
+        self.reset_service()
         signal.signal(signal.SIGUSR1, self.__sig_load_service)
 
     def myloop(self):
@@ -114,8 +114,8 @@ class service(dispatcher.dispatcher):
     def debug(self):
         return self.__debug
 
-    def release(self):
-        if self.__scgi_fd > 0:
+    def release(self, only_http=False):
+        if self.__scgi_fd > 0 and not only_http:
             self.delete_handler(self.__scgi_fd)
             self.__scgi_fd = -1
         if self.__httpd_fd > 0:
@@ -130,11 +130,13 @@ class service(dispatcher.dispatcher):
         if self.__httpd_ssl_fd6 > 0:
             self.delete_handler(self.__httpd_ssl_fd6)
             self.__httpd_ssl_fd6 = -1
-        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")):
+        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")) and not only_http:
             os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-    def __sig_load_service(self, signum, frame):
+    def reset_service(self):
         info_file = "%s/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
+        if not os.path.isfile(info_file): return
+        self.release(only_http=True)
 
         with open(info_file, "r") as f: s = f.read()
         f.close()
@@ -145,6 +147,9 @@ class service(dispatcher.dispatcher):
         self.__httpd_listen_addr6 = o["ipv6"]
 
         self.service_start()
+
+    def __sig_load_service(self, signum, frame):
+        self.reset_service()
 
 
 def main():
