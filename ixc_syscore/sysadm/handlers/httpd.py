@@ -13,7 +13,11 @@ class SCGIClient(tcp_handler.tcp_handler):
     __xid = None
 
     def get_static_scgi_path(self, path_info: str):
-        pass
+        s = path_info.replace("/staticfiles", '')
+        if s == "/":
+            return (None, "",)
+
+        return self.get_app_path_info(s)
 
     def get_app_path_info(self, path_info: str):
         if path_info == "/": return (os.getenv("IXC_MYAPP_NAME"), path_info,)
@@ -27,7 +31,7 @@ class SCGIClient(tcp_handler.tcp_handler):
     def get_scgi_path(self, path_info: str):
         p = path_info.find("/staticfiles")
 
-        if p == "0":
+        if p == 0:
             return self.get_static_scgi_path(path_info)
         app_name, path_info = self.get_app_path_info(path_info)
 
@@ -237,7 +241,7 @@ class httpd_handler(ssl_handler.ssl_handler):
     def send_header(self, xid: int, status: str, kv_pairs: list):
         pass
 
-    def send_body(self, xid: int, body_data: list):
+    def send_body(self, xid: int, body_data: bytes):
         pass
 
     def handle_scgi_resp_header(self, xid: int, status: int, kv_pairs: list):
