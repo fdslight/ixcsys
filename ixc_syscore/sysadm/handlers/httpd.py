@@ -9,8 +9,26 @@ import pywind.web.lib.httputils as httputils
 HTTP1_xID = 0
 
 
+def slice_bytes(byte_data: bytes, slice_size=2048):
+    results = []
+    a, b = (0, slice_size,)
+    while 1:
+        t = byte_data[a:b]
+        if not t: break
+        a = b
+        b += slice_size
+        results.append(t)
+
+    return results
+
+
 class SCGIClient(tcp_handler.tcp_handler):
     __xid = None
+    __env = None
+    __sent = None
+    __creator_fd = None
+    __is_resp_header = None
+    __up_time = None
 
     def get_static_scgi_path(self, path_info: str):
         s = path_info.replace("/staticfiles", '')
@@ -35,10 +53,16 @@ class SCGIClient(tcp_handler.tcp_handler):
             return self.get_static_scgi_path(path_info)
         app_name, path_info = self.get_app_path_info(path_info)
 
-        return "/tmp/ixcsys/%s/scgi.scok" % app_name
+        return "/tmp/ixcsys/%s/scgi.sock" % app_name
 
     def init_func(self, creator_fd, xid: int, cgi_env: dict):
+        self.__creator_fd = creator_fd
         self.__xid = xid
+        self.__env = cgi_env
+        self.__sent = []
+        self.__is_resp_header = False
+        self.__up_time = time.time()
+
         address = self.get_scgi_path(cgi_env["PATH_INFO"])
 
         if not os.path.exists(address): return -1
@@ -52,27 +76,106 @@ class SCGIClient(tcp_handler.tcp_handler):
     def connect_ok(self):
         self.register(self.fileno)
         self.add_evt_read(self.fileno)
+        self.set_timeout(self.fileno, 10)
+        self.__send_scgi_header()
 
     def tcp_readable(self):
-        pass
+        if not self.__is_resp_header:
+            self.handle_resp_header()
+        if self.__is_resp_header:
+            self.handle_resp_body()
 
     def tcp_writable(self):
-        pass
+        if self.__sent:
+            self.writer.write(self.__sent.pop(0))
+        if self.writer.size() == 0:
+            self.remove_evt_write(self.fileno)
 
     def tcp_timeout(self):
         pass
 
-    def tcp_delete(self):
-        pass
+    def tcp_error(self):
+        if not self.__is_resp_header:
+            self.get_handler(self.__creator_fd).handle_scgi_resp_error(self.__xid)
+            return
+        self.handle_resp_body()
+        self.get_handler(self.__creator_fd).handle_scgi_resp_finish(self.__xid)
 
-    def send_body(self, byte_data: bytes):
-        pass
+    def tcp_delete(self):
+        self.unregister(self.fileno)
+        self.close()
 
     def handle_resp_header(self):
-        pass
+        size = self.reader.size()
+        rdata = self.reader.read()
+        p = rdata.find(b"\r\n\r\n")
+
+        if p < 0 and size > 8192:
+            self.get_handler(self.__creator_fd).handle_scgi_resp_error(self.__xid)
+            return
+
+        p += 4
+        self.reader._putvalue(rdata[p:])
+        s = rdata[0:p].decode("iso-8859-1")
+        tp = s.split("\r\n\r\n")
+        _list = []
+
+        for s in tp:
+            if not s: continue
+            _list.append(s)
+
+        kv_pairs = []
+        for s in _list:
+            p = s.find(":")
+            if p < 0:
+                self.get_handler(self.__creator_fd).handle_scgi_error(self.__xid)
+                return
+            name = s[0:p]
+            p += 1
+            value = s[p:].strip()
+            kv_pairs.append((name, value,))
+
+        name, status = kv_pairs.pop(0)
+
+        if name.lower() != "status":
+            self.get_handler(self.__creator_fd).handle_scgi_error(self.__xid)
+            return
+
+        self.get_handler(self.__creator_fd).handle_scgi_resp_header(self.__xid, status, kv_pairs)
+        self.__is_resp_header = True
 
     def handle_resp_body(self):
-        pass
+        rdata = self.reader.read()
+        self.get_handler(self.__creator_fd).handle_scgi_resp_body(self.__xid, rdata)
+
+    def send_data(self, byte_data: bytes):
+        self.__sent += slice_bytes(byte_data)
+        self.add_evt_write(self.fileno)
+
+    def __send_scgi_header(self):
+        content_length = int(self.__env["CONTENT_LENGTH"])
+
+        del self.__env["CONTENT_LENGTH"]
+
+        tp = [
+            "CONTENT_LENGTH", str(content_length)
+        ]
+
+        for name, value in self.__env.items():
+            tp.append(name)
+            tp.append(value)
+
+        s = "\0".join(tp)
+        byte_s = s.encode("iso-8859-1")
+        tot_len = len(byte_s) + content_length
+
+        x = "%d:" % tot_len
+        sent_data = b"".join([x.encode(), byte_s, b","])
+        self.send_data(sent_data)
+
+    def send_scgi_body(self, byte_data: bytes):
+        self.writer.write(byte_data)
+        self.add_evt_write(self.fileno)
 
 
 class httpd_listener(tcp_handler.tcp_handler):
@@ -145,6 +248,8 @@ class httpd_handler(ssl_handler.ssl_handler):
 
     __is_error = None
 
+    __SERVER = None
+
     def ssl_init(self, cs, caddr, ssl_on=False, ssl_key=None, ssl_cert=None, is_ipv6=False):
         self.__ssl_on = ssl_on
         self.__ssl_cert = ssl_cert
@@ -160,6 +265,8 @@ class httpd_handler(ssl_handler.ssl_handler):
 
         self.__sessions = {}
         self.__is_error = False
+
+        self.__SERVER = "ixcsys"
 
         if ssl_on:
             self.set_ssl_on()
@@ -215,13 +322,19 @@ class httpd_handler(ssl_handler.ssl_handler):
                 k = "HTTP_%s" % k.upper()
             env[k] = v
 
+        if "CONTENT_LENGTH" not in env:
+            env["CONTENT_LENGTH"] = 0
+
         return env
 
     def http1_header_send(self, status: str, kv_pairs: list):
-        pass
+        s = httputils.build_http1x_resp_header(status, kv_pairs)
+        self.writer.write(s.encode())
+        self.add_evt_write(self.fileno)
 
     def http1_body_send(self, body_data: bytes):
-        pass
+        self.writer.write(body_data)
+        self.add_evt_write(self.fileno)
 
     def http1_finish(self):
         if not self.__http1_keep_conn:
@@ -232,29 +345,55 @@ class httpd_handler(ssl_handler.ssl_handler):
     def http2_header_send(self, xid: int, status: str, kv_pairs: list):
         pass
 
-    def http2_body_send(self, xid: int, status: str, kv_pairs: list):
+    def http2_body_send(self, xid: int, body_data: bytes):
         pass
 
     def http2_finish(self, xid: int):
         pass
 
+    def http_finish(self, xid: int):
+        fd, cls = self.__sessions[xid]
+
+        if self.__http_version == 1:
+            self.http1_finish()
+        else:
+            self.http2_finish(xid)
+
+        self.delete_handler(fd)
+
     def send_header(self, xid: int, status: str, kv_pairs: list):
-        pass
+        drop_names = ("server",)
+        new_kv_pairs = []
+
+        for name, value in kv_pairs:
+            if name.lower() in drop_names: continue
+            new_kv_pairs.append((name, value,))
+
+        new_kv_pairs.append(("Server", self.__SERVER,))
+
+        if self.__http_version == 1:
+            self.http1_header_send(status, kv_pairs)
+        else:
+            self.http2_header_send(xid, status, kv_pairs)
 
     def send_body(self, xid: int, body_data: bytes):
-        pass
+        if self.__http_version == 1:
+            self.http1_body_send(body_data)
+        else:
+            self.http2_body_send(xid, body_data)
 
     def handle_scgi_resp_header(self, xid: int, status: int, kv_pairs: list):
-        pass
+        self.send_header(xid, status, kv_pairs)
 
     def handle_scgi_resp_body(self, xid: int, body_data: bytes):
-        pass
+        self.send_body(xid, body_data)
 
     def handle_scgi_resp_finish(self, xid: int):
-        pass
+        self.http_finish(xid)
 
     def handle_scgi_error(self, xid: int):
-        pass
+        self.send_header(xid, "502 Bad Gateway", [])
+        self.http_finish(xid)
 
     def handle_http_request_header(self, xid, request: tuple, kv_pairs: list):
         # 检查头部格式是否合法
@@ -356,12 +495,14 @@ class httpd_handler(ssl_handler.ssl_handler):
 
     def handle_http1_request_body(self):
         scgi_fd, cls = self.__sessions[HTTP1_xID]
+        self.get_handler(scgi_fd).send_scgi_body(self.reader.read())
 
     def handle_http1_request(self):
         if not self.__http1_parssed_header:
             self.parse_http1_request_header()
         if not self.__http1_parssed_header:
             return
+        if self.__is_error: return
         self.handle_http1_request_body()
 
     def handle_http2_request(self):
@@ -378,13 +519,21 @@ class httpd_handler(ssl_handler.ssl_handler):
             self.handle_http2_request()
 
     def tcp_writable(self):
-        pass
+        if self.writer.size() == 0: self.remove_evt_write(self.fileno)
 
     def tcp_timeout(self):
-        pass
+        t = time.time()
+        if t - self.__time_up > self.__conn_timeout:
+            self.delete_handler(self.fileno)
+            return
+        self.set_timeout(self.fileno, 10)
 
     def tcp_error(self):
-        pass
+        self.delete_handler(self.fileno)
 
     def tcp_delete(self):
-        pass
+        for xid in self.__sessions:
+            fd, cls = self.__sessions[xid]
+            self.delete_handler(fd)
+        self.unregister(self.fileno)
+        self.close()

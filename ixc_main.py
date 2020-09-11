@@ -91,14 +91,15 @@ def main():
             stop_all()
         return
 
-    if action != "start":
+    if action in ("start", "debug",):
         if action == "debug":
             debug = True
         else:
             debug = False
         start(uri, debug=debug)
-    else:
-        stop(uri)
+        return
+
+    stop(uri)
 
 
 if __name__ == '__main__': main()
