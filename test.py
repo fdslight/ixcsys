@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-import os
+import ixc_syslib.pylib.RPCClient as RPCClient
 
-fd=os.popen("ifconfig bridge create")
-s=fd.read()
-fd.close()
+client = RPCClient.RPCClient("/tmp/ixcsys/sysadm/scgi.sock", is_unix_socket=True)
 
-print(s.encode())
-
-os.system("ifconfig bridge0 destroy")
+env = {
+    "CONTENT_LENGTH": 0,
+    "REQUEST_URI": "/",
+    "PATH_INFO": "/",
+    "HTTP_USER_AGENT": "SCGIClient",
+    "REQUEST_METHOD": "GET"
+}
+client.send_scgi_header(env)
+client.send_scgi_body(b"")
+client.handle_response()

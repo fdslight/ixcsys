@@ -46,7 +46,7 @@ class SCGIClient(object):
                 raise SCGIErr("cannot send data to server")
             byte_data = byte_data[sent_size:]
 
-    def send_scgi_header(self, request: tuple, cgi_env: dict):
+    def send_scgi_header(self, cgi_env: dict):
         """发送SCGI头部
         :param request,(method,url,version,)
         """
@@ -103,7 +103,7 @@ class SCGIClient(object):
         header_data = byte_data[0:p]
         self.__reader._putvalue(byte_data[p:])
 
-        header_data_s = byte_data.decode("iso-8859-1")
+        header_data_s = header_data.decode("iso-8859-1")
         tmplist_a = header_data_s.split("\r\n")
         p = tmplist_a[0].lower().find("status")
 
@@ -129,10 +129,24 @@ class SCGIClient(object):
         self.__resp_headers = results
         self.__parsed_header = True
 
+    @property
+    def resp_headers(self):
+        return self.__resp_headers
+
+    @property
+    def reader(self):
+        return self.__reader
+
     def handle_response_body(self):
+        """重写这个方法
+        :return:
+        """
         pass
 
     def handle_response_finish(self):
+        """重写这个方法
+        :return:
+        """
         pass
 
     def handle_response(self):
@@ -140,7 +154,10 @@ class SCGIClient(object):
         while 1:
             try:
                 recv_data = self.__s.recv(4096)
-                self.__reader._putvalue(recv_data)
+                if recv_data:
+                    self.__reader._putvalue(recv_data)
+                else:
+                    conn_err = True
             except ConnectionError:
                 conn_err = True
 
@@ -150,6 +167,8 @@ class SCGIClient(object):
             if self.__parsed_header:
                 self.handle_response_body()
 
+            if conn_err and not self.__parsed_header:
+                raise SCGIErr("server disconnect")
             if conn_err:
                 self.handle_response_finish()
                 break
