@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import ixc_syslib.pylib.RPCClient as RPCClient
 
-client = RPCClient.RPCClient("/tmp/ixcsys/sysadm/scgi.sock", is_unix_socket=True)
+client = RPCClient.RPCClient("/tmp/ixcsys/syscall/scgi.sock", is_unix_socket=True)
 
 env = {
     "CONTENT_LENGTH": 0,

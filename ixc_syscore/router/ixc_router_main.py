@@ -173,7 +173,7 @@ class service(dispatcher.dispatcher):
         self.__is_notify_sysadm_proc = False
         self.__scgi_fd = -1
 
-        self.__info_file = "%s/../sysadm/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
+        self.__info_file = "%s/../syscall/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
 
         # 此处检查FreeBSD是否加载了if_tap.ko模块
         if not self.is_linux:
@@ -232,7 +232,7 @@ class service(dispatcher.dispatcher):
             os.system("ifconfig %s up" % lan_phy_ifname)
 
     def notify_sysadm_proc(self):
-        path = "%s/../sysadm/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
+        path = "%s/../syscall/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
         pid = proc.get_pid(path)
 
         if pid < 0: return
