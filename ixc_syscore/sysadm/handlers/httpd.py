@@ -155,6 +155,12 @@ class SCGIClient(tcp_handler.tcp_handler):
             self.get_handler(self.__creator_fd).handle_scgi_error(self.__xid)
             return
 
+        try:
+            int(status[0:3])
+        except ValueError:
+            self.get_handler(self.__creator_fd).handle_scgi_error(self.__xid)
+            return
+
         self.get_handler(self.__creator_fd).handle_scgi_resp_header(self.__xid, status, kv_pairs)
         self.__is_resp_header = True
 
