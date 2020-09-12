@@ -104,6 +104,7 @@ class service(dispatcher.dispatcher):
         }
 
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
+        self.get_handler(self.__scgi_fd).after()
         self.reset_service()
         signal.signal(signal.SIGUSR1, self.__sig_load_service)
 
