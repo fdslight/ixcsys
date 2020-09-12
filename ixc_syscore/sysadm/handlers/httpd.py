@@ -396,9 +396,9 @@ class httpd_handler(ssl_handler.ssl_handler):
         new_kv_pairs.append(("Server", self.__SERVER,))
 
         if self.__http_version == 1:
-            self.http1_header_send(status, kv_pairs)
+            self.http1_header_send(status, new_kv_pairs)
         else:
-            self.http2_header_send(xid, status, kv_pairs)
+            self.http2_header_send(xid, status, new_kv_pairs)
 
     def send_body(self, xid: int, body_data: bytes):
         self.__time_up = time.time()
