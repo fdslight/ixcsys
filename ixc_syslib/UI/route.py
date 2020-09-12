@@ -33,7 +33,7 @@ class app_route(object):
 
         return o
 
-    def __call__(self, start_response, environ: dict):
+    def __call__(self, environ: dict, start_response):
         path_info = environ["PATH_INFO"]
         m = self.get_module(path_info)
 

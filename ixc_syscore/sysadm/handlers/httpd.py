@@ -29,6 +29,7 @@ class SCGIClient(tcp_handler.tcp_handler):
     __creator_fd = None
     __is_resp_header = None
     __up_time = None
+    __conn_timeout = None
 
     def get_static_scgi_path(self, path_info: str):
         s = path_info.replace("/staticfiles", '')
@@ -41,7 +42,7 @@ class SCGIClient(tcp_handler.tcp_handler):
         if path_info == "/": return (os.getenv("IXC_MYAPP_NAME"), path_info,)
 
         p = path_info[1:].find("/")
-        if p < 0: return path_info
+        if p < 0: return (os.getenv("IXC_MYAPP_NAME"), path_info)
         p += 1
 
         return (path_info[1:p], path_info[p:],)
@@ -51,7 +52,9 @@ class SCGIClient(tcp_handler.tcp_handler):
 
         if p == 0:
             return self.get_static_scgi_path(path_info)
-        app_name, path_info = self.get_app_path_info(path_info)
+
+        rs = self.get_app_path_info(path_info)
+        app_name, url = rs
 
         return "/tmp/ixcsys/%s/scgi.sock" % app_name
 
@@ -62,6 +65,7 @@ class SCGIClient(tcp_handler.tcp_handler):
         self.__sent = []
         self.__is_resp_header = False
         self.__up_time = time.time()
+        self.__conn_timeout = 120
 
         address = self.get_scgi_path(cgi_env["PATH_INFO"])
 
@@ -92,7 +96,14 @@ class SCGIClient(tcp_handler.tcp_handler):
             self.remove_evt_write(self.fileno)
 
     def tcp_timeout(self):
-        pass
+        if not self.is_conn_ok():
+            self.get_handler(self.__creator_fd).handle_scgi_resp_error(self.__xid)
+            return
+        t = time.time()
+        if t - self.__up_time > self.__conn_timeout:
+            self.get_handler(self.__creator_fd).handle_scgi_resp_error(self.__xid)
+            return
+        self.set_timeout(self.fileno, 10)
 
     def tcp_error(self):
         if not self.__is_resp_header:
@@ -106,6 +117,8 @@ class SCGIClient(tcp_handler.tcp_handler):
         self.close()
 
     def handle_resp_header(self):
+        self.__conn_timeout = time.time()
+
         size = self.reader.size()
         rdata = self.reader.read()
         p = rdata.find(b"\r\n\r\n")
@@ -125,6 +138,7 @@ class SCGIClient(tcp_handler.tcp_handler):
             _list.append(s)
 
         kv_pairs = []
+
         for s in _list:
             p = s.find(":")
             if p < 0:
@@ -145,6 +159,7 @@ class SCGIClient(tcp_handler.tcp_handler):
         self.__is_resp_header = True
 
     def handle_resp_body(self):
+        self.__conn_timeout = time.time()
         rdata = self.reader.read()
         self.get_handler(self.__creator_fd).handle_scgi_resp_body(self.__xid, rdata)
 
@@ -158,7 +173,8 @@ class SCGIClient(tcp_handler.tcp_handler):
         del self.__env["CONTENT_LENGTH"]
 
         tp = [
-            "CONTENT_LENGTH", str(content_length)
+            "CONTENT_LENGTH", str(content_length),
+            "SCGI", str(1),
         ]
 
         for name, value in self.__env.items():
@@ -362,6 +378,8 @@ class httpd_handler(ssl_handler.ssl_handler):
         self.delete_handler(fd)
 
     def send_header(self, xid: int, status: str, kv_pairs: list):
+        self.__time_up = time.time()
+
         drop_names = ("server",)
         new_kv_pairs = []
 
@@ -377,6 +395,8 @@ class httpd_handler(ssl_handler.ssl_handler):
             self.http2_header_send(xid, status, kv_pairs)
 
     def send_body(self, xid: int, body_data: bytes):
+        self.__time_up = time.time()
+
         if self.__http_version == 1:
             self.http1_body_send(body_data)
         else:
