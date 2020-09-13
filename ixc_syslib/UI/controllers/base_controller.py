@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import os, json
+import os, json, hashlib
 import pywind.web.appframework.app_handler as app_handler
 import pywind.lib.tpl.Template as template
 
 
 class controller(app_handler.handler):
     __LANG = None
+    __user = None
 
     def load_lang(self, name: str):
         lang_dir = "%s/web/languages" % os.getenv("IXC_MYAPP_DIR")
@@ -14,14 +15,15 @@ class controller(app_handler.handler):
             path = "%s/default.json" % lang_dir
         if not os.path.isfile(path): return {}
 
-        with open(path, "r",encoding="iso-8859-1") as f:
+        with open(path, "r", encoding="iso-8859-1") as f:
             s = f.read()
         f.close()
 
         return json.loads(s)
 
     def initialize(self):
-        self.__LANG=self.load_lang(self.match_lang())
+        self.__user = {}
+        self.__LANG = self.load_lang(self.match_lang())
 
         return self.myinit()
 
@@ -58,11 +60,26 @@ class controller(app_handler.handler):
         return first_lang
 
     def is_signed(self):
-        pass
+        file_path = "/tmp/ixcsys/session.json"
+        if not os.path.isfile(file_path): return False
+        user_id = self.request.cookie.get("USER_ID", None)
+
+        if not user_id: return False
+
+        with open(file_path, "r") as f:
+            s = f.read()
+        f.close()
+
+        o = json.loads(s)
+        hash_v = hashlib.md5(o["user"].encode()).hexdigest()
+        if hash_v != user_id: return False
+
+        self.__user = o
+        return True
 
     @property
     def user(self):
-        return {}
+        return self.__user
 
     def LA(self, name: str):
         """语言翻译
