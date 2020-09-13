@@ -27,7 +27,7 @@ def __stop_service():
 
 def __start_service(debug):
     if not debug and os.path.isfile(PID_FILE):
-        print("the syscall process exists")
+        print("the sysadm process exists")
         return
 
     if not debug:
@@ -154,7 +154,7 @@ class service(dispatcher.dispatcher):
 
 
 def main():
-    __helper = "ixc_syscore/syscall helper: start | stop | debug"
+    __helper = "ixc_syscore/sysadm helper: start | stop | debug"
 
     if len(sys.argv) != 2:
         print(__helper)
