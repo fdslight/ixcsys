@@ -68,6 +68,7 @@ class service(dispatcher.dispatcher):
     __debug = None
 
     __if_lan_fd = None
+    __if_wan_fd = None
 
     __lan_configs = None
     __wan_configs = None
@@ -107,6 +108,13 @@ class service(dispatcher.dispatcher):
     def save_lan_configs(self):
         path = "%s/lan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
+    def load_wan_configs(self):
+        path = "%s/wan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__wan_configs = conf.ini_parse_from_file(path)
+
+    def save_wan_configs(self):
+        path = "%s/wan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+
     @property
     def router(self):
         return self.__router
@@ -119,15 +127,20 @@ class service(dispatcher.dispatcher):
         if os.path.isfile(self.__info_file): os.remove(self.__info_file)
         if self.is_linux:
             os.system("ip link del %s" % self.__LAN_BR_NAME)
+            os.system("ip link del %s" % self.__WAN_BR_NAME)
         else:
             os.system("ifconfig %s destroy" % self.__LAN_BR_NAME)
+            os.system("ifconfig %s destroy" % self.__WAN_BR_NAME)
 
         if self.__if_lan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_LAN)
+        if self.__if_wan_fd > 0:
+            self.router.netif_delete(router.IXC_NETIF_WAN)
         if self.__scgi_fd:
             self.delete_handler(self.__scgi_fd)
 
         self.__if_lan_fd = -1
+        self.__if_wan_fd = -1
         self.__scgi_fd = -1
 
     def linux_br_create(self, br_name: str, added_bind_ifs: list):
@@ -160,9 +173,10 @@ class service(dispatcher.dispatcher):
     def init_func(self, debug):
         self.__debug = debug
         self.__if_lan_fd = -1
+        self.__if_wan_fd = -1
         self.__router = router.router(self._recv_from_proto_stack, self._write_ev_tell)
 
-        self.__WAN_BR_NAME = "ixwanbr"
+        self.__WAN_BR_NAME = "ixcwanbr"
         self.__LAN_BR_NAME = "ixclanbr"
 
         self.__LAN_NAME = "ixclan"
@@ -184,10 +198,12 @@ class service(dispatcher.dispatcher):
             if p < 0: os.system("kldload if_tap")
 
         self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
+        self.__if_wan_fd, self.__WAN_NAME = self.__router.netif_create(self.__WAN_NAME, router.IXC_NETIF_WAN)
 
         self.create_poll()
         self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
         self.load_lan_configs()
+        self.load_wan_configs()
 
         lan_ifconfig = self.__lan_configs["if_config"]
         lan_phy_ifname = lan_ifconfig["phy_ifname"]
@@ -215,17 +231,29 @@ class service(dispatcher.dispatcher):
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
 
+        wan_public = self.__wan_configs["public"]
+        wan_phy_ifname = wan_public["phy_ifname"]
+        wan_ifhwaddr = wan_public["hwaddr"]
+
+        self.router.netif_set_hwaddr(router.IXC_NETIF_WAN, netutils.ifaddr_to_bytes(wan_ifhwaddr))
+
         if self.is_linux:
             self.linux_br_create(self.__LAN_BR_NAME, [lan_phy_ifname, self.__LAN_NAME, ])
+            self.linux_br_create(self.__WAN_BR_NAME, [wan_phy_ifname, self.__WAN_NAME, ])
 
             os.system("ip link set %s promisc on" % lan_phy_ifname)
+            os.system("ip link set %s promisc on" % wan_phy_ifname)
+
             os.system("ip link set %s up" % lan_phy_ifname)
+            os.system("ip link set %s up" % wan_phy_ifname)
+
             os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
             # os.system("ip link set %s promisc on" % self.__LAN_NAME)
             # os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_BR_NAME)
             # os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_NAME)
             # 设置桥接网卡IP地址
             os.system("ip addr add %s/%d dev %s" % (manage_addr[0], manage_addr[1], self.__LAN_BR_NAME))
+
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
             os.system("ifconfig %s promisc" % lan_phy_ifname)

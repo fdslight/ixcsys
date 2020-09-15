@@ -7,7 +7,7 @@ sys.path.append(sys_dir)
 
 # 必须要启动的服务
 must_services = [
-    "ixc_syscore/syscall", "ixc_syscore/router"
+    "ixc_syscore/sysadm", "ixc_syscore/router"
 ]
 
 
