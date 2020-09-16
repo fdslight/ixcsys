@@ -37,6 +37,10 @@ class SCGIClient(object):
         self.__s = s
         self.__s.connect(address)
 
+    @property
+    def sock(self):
+        return self.__s
+
     def send(self, byte_data: bytes):
         while 1:
             if not byte_data: break
@@ -124,7 +128,7 @@ class SCGIClient(object):
 
             name = s[0:p]
             p += 1
-            value = s[p:]
+            value = s[p:].strip()
             results.append((name, value,))
         self.__resp_headers = results
         self.__parsed_header = True

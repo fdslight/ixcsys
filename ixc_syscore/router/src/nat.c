@@ -13,6 +13,9 @@
 #include "../../../pywind/clib/netutils.h"
 
 static int nat_enable=0;
+static int nat_is_initialized=0;
+
+struct ixc_nat nat;
 
 static void ixc_nat_wan_send(struct ixc_mbuf *m)
 {   
@@ -44,6 +47,36 @@ static void ixc_nat_wan_send(struct ixc_mbuf *m)
     ixc_ether_send(m,1);
 }
 
+static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
+{
+    struct netutil_iphdr *iphdr;
+    unsigned char old_addr[4];
+    int hdr_len=0;
+
+    iphdr=(struct netutil_iphdr *)(m->data+m->offset);
+    hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
+
+    if(is_src) memcpy(old_addr,iphdr->src_addr,4);
+    else memcpy(old_addr,iphdr->dst_addr,4);
+
+    switch(iphdr->protocol){
+        case 1:
+            break;
+        case 7:
+            break;
+        case 17:
+            break;
+        case 132:
+            break;
+        case 136:
+            break;
+        // 不支持的协议直接丢弃数据包
+        default:
+            ixc_mbuf_put(m);
+            return NULL;
+    }
+}
+
 static void ixc_nat_lan_send(struct ixc_mbuf *m)
 {
     // 未开启NAT那么直接发送数据包
@@ -51,15 +84,45 @@ static void ixc_nat_lan_send(struct ixc_mbuf *m)
         ixc_ip_send(m);
         return;
     }
+
+    m=ixc_nat_do(m,1);
+    if(NULL==m) return;
 }
 
 int ixc_nat_init(void)
 {
+    struct map *m;
+    int rs;
+
+    bzero(&nat,sizeof(struct ixc_nat));
+
+    nat.icmp_set.cur_id=IXC_NAT_BEGIN;
+    nat.tcp_set.cur_id=IXC_NAT_BEGIN;
+    nat.udp_set.cur_id=IXC_NAT_BEGIN;
+    nat.udplite_set.cur_id=IXC_NAT_BEGIN;
+    nat.sctp_set.cur_id=IXC_NAT_BEGIN;
+
+    rs=map_new(&m,7);
+    if(rs){
+        STDERR("cannot init map\r\n");
+        return -1;
+    }
+    nat.lan2wan=m;
+    rs=map_new(&m,7);
+    if(rs){
+        STDERR("cannot init map\r\n");
+        return -1;
+    }
+    nat.wan2lan=m;
+
+    nat_is_initialized=1;
     return 0;
 }
 
 void ixc_nat_uninit(void)
 {
+
+    nat_is_initialized=0;
     return;
 }
 
