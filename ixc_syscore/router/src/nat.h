@@ -5,18 +5,20 @@
 
 #include "../../../pywind/clib/map.h"
 
+struct ixc_nat_id;
+
 struct ixc_nat_session{
+    struct ixc_nat_id *wan_id;
     unsigned char addr[4];
     unsigned short lan_id;
-    unsigned short wan_id;
     unsigned char protocol;
     // 引用计数
     unsigned char refcnt;
 };
 
 
-#define IXC_NAT_BEGIN 10000
-#define IXC_NAT_END 60000
+#define IXC_NAT_ID_MIN 10000
+#define IXC_NAT_ID_MAX 60000
 
 struct ixc_nat_id{
     struct ixc_nat_id *next;
