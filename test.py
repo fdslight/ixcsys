@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-import ixc_syslib.pylib.RPCClient as RPCClient
 
-client = RPCClient.RPCClient("sysadm")
+import ixc_syslib.pylib.RPCClient as client
 
-client.send_request("/WAN", b"")
-r = client.get_result()
-print(r)
+rs = client.fn_call("sysadm", "/WAN/dhcp_client", "dhcp_client_enable", False)
+print(rs)

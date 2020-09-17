@@ -12,7 +12,7 @@ import pywind.lib.configfile as cfg
 import pywind.web.handlers.scgi as scgi
 
 import ixc_syslib.pylib.logging as logging
-import ixc_syslib.UI.route as webroute
+import ixc_syslib.web.route as webroute
 import ixc_syscore.sysadm.handlers.httpd as httpd
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")

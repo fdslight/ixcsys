@@ -347,6 +347,9 @@ class httpd_handler(ssl_handler.ssl_handler):
         if "CONTENT_LENGTH" not in env:
             env["CONTENT_LENGTH"] = 0
 
+        # 设置RPC不可用
+        env["HTTP_X_IXCSYS_RPC"] = 0
+
         return env
 
     def http1_header_send(self, status: str, kv_pairs: list):

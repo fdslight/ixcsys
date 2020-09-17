@@ -17,6 +17,44 @@ static int nat_is_initialized=0;
 
 struct ixc_nat nat;
 
+
+/// 获取可用的NAT ID
+static struct ixc_nat_id *ixc_nat_id_get(struct ixc_nat_id_set *id_set)
+{
+    struct ixc_nat_id *id=id_set->head;
+
+    if(NULL!=id){
+        id_set->head=id->next;
+        id->next=NULL;
+
+        return id;
+    }
+
+    if(id_set->cur_id>IXC_NAT_ID_MAX) return NULL;
+
+    id=malloc(sizeof(struct ixc_nat_id));
+
+    if(NULL==id){
+        STDERR("no memory for malloc struct ixc_nat_id\r\n");
+        return NULL;
+    }
+
+    id->id=id_set->cur_id;
+    id_set->cur_id+=1;
+
+    return id;
+}
+
+/// 释放使用过的NAT ID
+static void ixc_nat_id_put(struct ixc_nat_id_set *id_set,struct ixc_nat_id *id)
+{
+    if(NULL==id) return;
+
+    id->next=id_set->head;
+    id_set->head=id;
+}
+
+
 static void ixc_nat_wan_send(struct ixc_mbuf *m)
 {   
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
@@ -75,6 +113,9 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             ixc_mbuf_put(m);
             return NULL;
     }
+
+    // 首先检查NAT记录是否存在
+
 }
 
 static void ixc_nat_lan_send(struct ixc_mbuf *m)
