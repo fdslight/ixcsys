@@ -116,6 +116,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
     // 首先检查NAT记录是否存在
 
+    return NULL;
 }
 
 static void ixc_nat_lan_send(struct ixc_mbuf *m)
@@ -137,11 +138,11 @@ int ixc_nat_init(void)
 
     bzero(&nat,sizeof(struct ixc_nat));
 
-    nat.icmp_set.cur_id=IXC_NAT_BEGIN;
-    nat.tcp_set.cur_id=IXC_NAT_BEGIN;
-    nat.udp_set.cur_id=IXC_NAT_BEGIN;
-    nat.udplite_set.cur_id=IXC_NAT_BEGIN;
-    nat.sctp_set.cur_id=IXC_NAT_BEGIN;
+    nat.icmp_set.cur_id=IXC_NAT_ID_MIN;
+    nat.tcp_set.cur_id=IXC_NAT_ID_MIN;
+    nat.udp_set.cur_id=IXC_NAT_ID_MIN;
+    nat.udplite_set.cur_id=IXC_NAT_ID_MIN;
+    nat.sctp_set.cur_id=IXC_NAT_ID_MIN;
 
     rs=map_new(&m,7);
     if(rs){

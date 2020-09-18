@@ -2,5 +2,5 @@
 
 import ixc_syslib.pylib.RPCClient as client
 
-rs = client.fn_call("sysadm", "/WAN/dhcp_client", "dhcp_client_enable", False)
+rs = client.fn_call("router", "/WAN/dhcp_client", "dhcp_client_enable", True)
 print(rs)

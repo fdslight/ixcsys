@@ -11,8 +11,10 @@
 #include "../src/route.h"
 #include "../src/p2p.h"
 #include "../src/vpn.h"
+#include "../src/dhcp_client.h"
 
 #include "../../../pywind/clib/debug.h"
+#include "../../../pywind/clib/sysloop.h"
 
 typedef struct{
     PyObject_HEAD
@@ -63,6 +65,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self=(routerObject *)type->tp_alloc(type,0);
     if(NULL==self) return NULL;
 
+    rs=sysloop_init();
+    if(rs<0){
+        STDERR("cannot init sysloop\r\n");
+        return NULL;
+    }
+
     rs=ixc_mbuf_init(512);
     if(rs<0){
         STDERR("cannot init mbuf\r\n");
@@ -96,6 +104,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_p2p_init();
     if(rs<0){
         STDERR("cannot init P2P\r\n");
+        return NULL;
+    }
+
+    rs=ixc_dhcp_client_init();
+    if(rs<0){
+        STDERR("cannot init DHCP\r\n");
         return NULL;
     }
 
@@ -167,8 +181,8 @@ router_iowait(PyObject *self,PyObject *args)
 static PyObject *
 router_myloop(PyObject *self,PyObject *args)
 {
-    
     ixc_addr_map_do();
+    sysloop_do();
     
     Py_RETURN_NONE;
 }
@@ -320,6 +334,17 @@ router_netif_set_hwaddr(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_dhcp_client_enable(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+
+    ixc_dhcp_client_enable(enable);
+
+    Py_RETURN_NONE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -334,6 +359,7 @@ static PyMethodDef routerMethods[]={
     {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
+    {"dhcp_client_enable",(PyCFunction)router_dhcp_client_enable,METH_VARARGS,"enable or disable dhcp client"},
     {NULL,NULL,0,NULL}
 };
 

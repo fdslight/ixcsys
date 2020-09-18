@@ -72,7 +72,7 @@ int subnet_calc_with_msk(unsigned char *address,unsigned char *msk,int is_ipv6,u
 
 /** calc inrement csum **/
 unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field,unsigned short old_csum);
-unsigned short csum_calc(char *buffer,size_t size);
+unsigned short csum_calc(unsigned char *buffer,size_t size);
 
 /// 计算广播地址
 int net_broadcast_calc(unsigned char *address,unsigned char prefix,int is_ipv6,unsigned char *res);
