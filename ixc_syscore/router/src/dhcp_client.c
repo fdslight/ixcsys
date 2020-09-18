@@ -78,7 +78,7 @@ static void ixc_dhcp_client_request_send(void)
     memset(iphdr->dst_addr,0xff,4);
 
     // 先计算IP头部检验和
-    csum=csum_calc((unsigned char *)iphdr,20);
+    csum=csum_calc((unsigned short *)iphdr,20);
     iphdr->checksum=htons(csum);
 
     udphdr->src_port=htons(68);
@@ -100,7 +100,7 @@ static void ixc_dhcp_client_request_send(void)
     memcpy(data,&ps_hdr,12);
     memcmp(data+12,udphdr,244);
 
-    csum=csum_calc(data,256);
+    csum=csum_calc((unsigned short *)data,256);
     udphdr->checksum=htons(csum);
 
     ixc_ether_send(m,1);
