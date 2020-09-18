@@ -9,6 +9,7 @@
 #include "addr_map.h"
 #include "arp.h"
 #include "ether.h"
+#include "dhcp_client.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
@@ -28,11 +29,53 @@ static void ixc_ip_handle_icmp(struct ixc_mbuf *m,struct netutil_iphdr *header)
 }
 
 
+static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphdr)
+{
+    struct netutil_udphdr *udphdr;
+    int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
+
+    if(1==iphdr->protocol){
+        ixc_ip_handle_icmp(m,iphdr);
+        return;
+    }
+    
+    if(17!=iphdr->protocol){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
+
+    // 检查是DHCP报文并且开启DHCP的那么处理DHCP报文
+    if(ntohs(udphdr->dst_port)==68 && ntohs(udphdr->src_port)==67 && ixc_dhcp_client_is_enabled()){
+        ixc_dhcp_client_handle(m);
+        return;
+    }
+
+    ixc_mbuf_put(m);
+
+}
+
+static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphdr)
+{
+    struct netutil_udphdr *udphdr;
+    int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
+
+    if(1==iphdr->protocol){
+        ixc_ip_handle_icmp(m,iphdr);
+        return;
+    }
+
+    ixc_mbuf_put(m);
+}
+
+
 void ixc_ip_handle(struct ixc_mbuf *mbuf)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(mbuf->data+mbuf->offset);
     int version=(header->ver_and_ihl & 0xf0) >> 4;
     unsigned short tot_len;
+    struct ixc_netif *netif=mbuf->netif;
 
     if(4!=version){
         ixc_mbuf_put(mbuf);
@@ -54,13 +97,10 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     // 除去以太网的填充字节
     mbuf->tail=mbuf->offset+tot_len;
 
-    switch(header->protocol){
-        case 1:
-            ixc_ip_handle_icmp(mbuf,header);
-            break;
-        default:
-            ixc_route_handle(mbuf,0);
-            break;
+    if(IXC_NETIF_WAN==netif->type){
+        ixc_ip_handle_from_wan(mbuf,header);
+    }else{
+        ixc_ip_handle_from_lan(mbuf,header);
     }
 }
 

@@ -6,14 +6,17 @@ sys.path.append(os.getenv("IXC_SYS_DIR"))
 
 if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MYAPP_TMP_DIR"))
 
+from pywind.global_vars import global_vars
+
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 import pywind.lib.netutils as netutils
+import pywind.web.handlers.scgi as scgi
 
 import ixc_syscore.router.pylib.router as router
 import ixc_syscore.router.handlers.tapdev as tapdev
-
+import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -126,6 +129,11 @@ class service(dispatcher.dispatcher):
     def release(self):
         if os.path.isfile(self.__info_file): os.remove(self.__info_file)
         if self.is_linux:
+            os.system("ip link set %s down" % self.__LAN_NAME)
+            os.system("ip link set %s down" % self.__WAN_NAME)
+            os.system("ip link set %s down" % self.__LAN_BR_NAME)
+            os.system("ip link set %s down" % self.__WAN_BR_NAME)
+
             os.system("ip link del %s" % self.__LAN_BR_NAME)
             os.system("ip link del %s" % self.__WAN_BR_NAME)
         else:
@@ -138,6 +146,8 @@ class service(dispatcher.dispatcher):
             self.router.netif_delete(router.IXC_NETIF_WAN)
         if self.__scgi_fd:
             self.delete_handler(self.__scgi_fd)
+
+        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
@@ -170,6 +180,21 @@ class service(dispatcher.dispatcher):
 
         return s
 
+    def start_wan(self):
+        wan_configs = self.__wan_configs
+        ip_cfg = wan_configs["ipv4"]
+        if ip_cfg["addr_alloc_type"].lower() == "dhcp":
+            self.router.dhcp_client_enable(True)
+
+    def start_scgi(self):
+        scgi_configs = {
+            "use_unix_socket": True,
+            "listen": os.getenv("IXC_MYAPP_SCGI_PATH"),
+            "application": webroute.app_route()
+        }
+        self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
+        self.get_handler(self.__scgi_fd).after()
+
     def init_func(self, debug):
         self.__debug = debug
         self.__if_lan_fd = -1
@@ -201,6 +226,9 @@ class service(dispatcher.dispatcher):
         self.__if_wan_fd, self.__WAN_NAME = self.__router.netif_create(self.__WAN_NAME, router.IXC_NETIF_WAN)
 
         self.create_poll()
+
+        global_vars["ixcsys.router"] = self.__router
+
         self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
         self.load_lan_configs()
         self.load_wan_configs()
@@ -247,7 +275,6 @@ class service(dispatcher.dispatcher):
             os.system("ip link set %s up" % lan_phy_ifname)
             os.system("ip link set %s up" % wan_phy_ifname)
 
-            os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
             # os.system("ip link set %s promisc on" % self.__LAN_NAME)
             # os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_BR_NAME)
             # os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_NAME)
@@ -258,6 +285,9 @@ class service(dispatcher.dispatcher):
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
             os.system("ifconfig %s promisc" % lan_phy_ifname)
             os.system("ifconfig %s up" % lan_phy_ifname)
+
+        self.start_scgi()
+        self.start_wan()
 
     def notify_sysadm_proc(self):
         path = "%s/../syscall/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -280,6 +310,7 @@ class service(dispatcher.dispatcher):
     def myloop(self):
         if not self.__is_notify_sysadm_proc:
             self.notify_sysadm_proc()
+        self.router.myloop()
 
     def parse_ipaddr_format(self, s: str):
         """解析例如 xxx/x格式的IP地址

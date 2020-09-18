@@ -61,23 +61,19 @@ unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field
     return csum;
 }
 
-unsigned short csum_calc(char *buffer,size_t size)
+unsigned short csum_calc(unsigned char *buffer,size_t size)
 {
     unsigned long sum;
     
     sum = 0;
+
     while (size > 1) {
-            sum += *buffer++;
-            size -= 2;
+        sum += *buffer++;
+        size -= 2;
     }
-
-    /*  Add left-over byte, if any */
-    if (size)
-            sum += *(unsigned char *)buffer;
-
-    /*  Fold 32-bit sum to 16 bits */
-    while (sum >> 16)
-            sum  = (sum & 0xffff) + (sum >> 16);
+    
+    if (size) sum += *(unsigned char *)buffer;
+    while (sum >> 16) sum  = (sum & 0xffff) + (sum >> 16);
 
     return (unsigned short)(~sum);
 }
@@ -139,7 +135,7 @@ int build_ipv4_header(struct netutil_iphdr *iphdr,const char options[][40],unsig
     if(header_len>60) return -1;
     t->ver_and_ihl|=(header_len & 0xff); 
 
-    csum=csum_calc((char *)res,header_len);
+    csum=csum_calc(res,header_len);
     t->checksum=htons(csum);
 
     return 0;
@@ -154,7 +150,7 @@ int is_udplite,int udplite_csum_coverage)
 
     unsigned char protocol=is_udplite?136:17;
     unsigned short csum=0,length;
-    char *s=NULL;
+    unsigned char *s=NULL;
     int size=0;
 
     struct pseudo_header{
@@ -200,7 +196,7 @@ int is_udplite,int udplite_csum_coverage)
         header6.protocol=protocol;
         header6.length=length;
 
-        s=(char *)(&header6);
+        s=(unsigned char *)(&header6);
         size=sizeof(struct pseudo_header6);
     }else {
         memcpy(header.src_addr,src_addr,4);
@@ -210,7 +206,7 @@ int is_udplite,int udplite_csum_coverage)
         header.protocol=protocol;
         header.length=length;
 
-        s=(char *)(&header);
+        s=(unsigned char *)(&header);
         size=sizeof(struct pseudo_header);
     }
 
