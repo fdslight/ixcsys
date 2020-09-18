@@ -61,7 +61,7 @@ unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field
     return csum;
 }
 
-unsigned short csum_calc(unsigned char *buffer,size_t size)
+unsigned short csum_calc(unsigned short *buffer,size_t size)
 {
     unsigned long sum;
     
@@ -135,7 +135,7 @@ int build_ipv4_header(struct netutil_iphdr *iphdr,const char options[][40],unsig
     if(header_len>60) return -1;
     t->ver_and_ihl|=(header_len & 0xff); 
 
-    csum=csum_calc(res,header_len);
+    csum=csum_calc((unsigned short *)res,header_len);
     t->checksum=htons(csum);
 
     return 0;
@@ -224,7 +224,7 @@ int is_udplite,int udplite_csum_coverage)
     if(is_udplite){
         csum=0;
     }else{
-        csum=csum_calc(s,size+8+user_data_len);
+        csum=csum_calc((unsigned short *)s,size+8+user_data_len);
         udphdr->checksum=htons(csum);
     }
 
