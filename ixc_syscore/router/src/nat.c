@@ -88,14 +88,17 @@ static void ixc_nat_wan_send(struct ixc_mbuf *m)
 static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 {
     struct netutil_iphdr *iphdr;
-    unsigned char old_addr[4];
+    unsigned char addr[4];
     int hdr_len=0;
+    unsigned short id=0;
+    char key[7],is_found;
+    struct ixc_nat_session *session;
 
     iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
 
-    if(is_src) memcpy(old_addr,iphdr->src_addr,4);
-    else memcpy(old_addr,iphdr->dst_addr,4);
+    if(is_src) memcpy(addr,iphdr->src_addr,4);
+    else memcpy(addr,iphdr->dst_addr,4);
 
     switch(iphdr->protocol){
         case 1:
@@ -115,6 +118,22 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     }
 
     // 首先检查NAT记录是否存在
+    memcpy(key,addr,4);
+    key[4]=iphdr->protocol;
+    memcpy(key+5,&id,2);
+
+    if(is_src) session=map_find(nat.lan2wan,key,&is_found);
+    else session=map_find(nat.wan2lan,key,&is_found);
+
+    // WAN口找不到的那么直接丢弃数据包
+    if(NULL==session && !is_src){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    
+
+
 
     return NULL;
 }
