@@ -94,22 +94,45 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     char key[7],is_found;
     struct ixc_nat_session *session;
 
+    unsigned short *csum_ptr,csum;
+    unsigned char *id_ptr;
+
+    struct netutil_udphdr *udphdr;
+    struct netutil_tcphdr *tcphdr;
+    struct netutil_icmpecho *icmpecho;
+    struct netutil_icmphdr *icmphdr;
+
     iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
 
     if(is_src) memcpy(addr,iphdr->src_addr,4);
     else memcpy(addr,iphdr->dst_addr,4);
 
+    // 对ICMP进行特殊处理,ICMP只支持echo request和echo response
+    if(1==iphdr->protocol){
+        icmphdr=(struct netutil_icmphdr *)(m->data+m->offset+hdr_len);
+        if(8!=icmphdr->type || 0!=icmphdr->type){
+            ixc_mbuf_put(m);
+            return;
+        }
+    }
+
     switch(iphdr->protocol){
         case 1:
+            icmpecho=(struct netutil_icmpecho *)(m->data+m->offset+hdr_len);
+            csum_ptr=&(icmpecho->icmphdr.checksum);
+            id_ptr=&(icmpecho->id);
             break;
         case 7:
+            tcphdr=(struct netutil_tcphdr *)(m->data+m->offset+hdr_len);
+            csum_ptr=&tcphdr->csum;
+            id_ptr=is_src?&(tcphdr->src_port):&(tcphdr->dst_port);
             break;
         case 17:
-            break;
-        case 132:
-            break;
         case 136:
+            udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
+            csum_ptr=&(udphdr->checksum);
+            id_ptr=is_src?&(udphdr->src_port):&(udphdr->dst_port);
             break;
         // 不支持的协议直接丢弃数据包
         default:
@@ -131,9 +154,11 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         return;
     }
 
+    // 来自于LAN但没有会话记录那么创建session
+    if(NULL==session && is_src){
+    }
+
     
-
-
 
     return NULL;
 }
