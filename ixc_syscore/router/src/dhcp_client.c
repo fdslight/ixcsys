@@ -248,6 +248,17 @@ static void ixc_dhcp_client_handle_response(struct ixc_mbuf *m)
         return;
     }**/
 
+    if(!dhcp_client.is_selected){
+        dhcp_client.is_selected=1;
+        memcpy(dhcp_client.selected_shwaddr,m->src_hwaddr,6);
+    }else{
+        // 检查是否是选择的DHCP服务器,如果不是那么直接丢弃数据包
+        if(memcmp(dhcp_client.selected_shwaddr,m->src_hwaddr,6)){
+            ixc_mbuf_put(m);
+            return;
+        }
+    }
+
     memcpy(&magic_cookie,opt_ptr,4);
     opt_ptr+=4;
 

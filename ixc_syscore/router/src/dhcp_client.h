@@ -12,12 +12,15 @@ struct ixc_dhcp_client{
     unsigned int xid;
     int is_got_ip;
     int is_sent_renew;
+    // 是否已经选择了DHCP服务器
+    int is_selected;
     char hostname[256];
     char vendor[256];
     unsigned char nameserver1[4];
     unsigned char nameserver2[4];
     unsigned char gateway[4];
-    
+    // 选择的DHCP服务器硬件地址
+    unsigned char selected_shwaddr[6];
     unsigned short dhcp_secs;
 };
 
