@@ -6,6 +6,7 @@
 #include "dhcp.h"
 #include "netif.h"
 #include "ether.h"
+#include "arp.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/debug.h"
@@ -236,7 +237,8 @@ static void ixc_dhcp_client_handle_response(struct ixc_mbuf *m)
     unsigned char *opt_ptr=m->data+m->offset+hdr_len+244;
     unsigned char dhcp_opt[2048];
     unsigned char dhcp_type=0;
-    unsigned short magic_cookie;
+    unsigned int magic_cookie;
+    unsigned char dhcp_msg_type=0;
 
     //udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
 
@@ -250,11 +252,13 @@ static void ixc_dhcp_client_handle_response(struct ixc_mbuf *m)
     opt_ptr+=4;
 
     // 检查是否是DHCP报文
-    /**if(ntohl(0x63825363)!=magic_cookie){
-        STDERR("hello,world\r\n");
+    if(ntohl(0x63825363)!=magic_cookie){
         ixc_mbuf_put(m);
         return;
-    }**/
+    }
+
+    STDERR("AAA\r\n");
+    memcpy(netif->ipaddr,dhcp->yiaddr,4);
 
     while(NULL!=opt_ptr){
         opt_ptr=ixc_dhcp_client_parse_opt(opt_ptr,&dhcp_type,dhcp_opt);
@@ -270,6 +274,10 @@ static void ixc_dhcp_client_handle_response(struct ixc_mbuf *m)
             // 广播地址接收
             case 28:
                 break;
+            // DHCP消息类型
+            case 53:
+                dhcp_msg_type=dhcp_opt[0];
+                break;
             // renewal time
             case 58:
                 break;
@@ -280,10 +288,21 @@ static void ixc_dhcp_client_handle_response(struct ixc_mbuf *m)
                 break;
         }
     }
-    
-    STDERR("%d.%d.%d.%d\r\n",dhcp->yiaddr[0],dhcp->yiaddr[1],dhcp->yiaddr[2],dhcp->yiaddr[3]);
 
     ixc_mbuf_put(m);
+
+    switch(dhcp_msg_type){
+        case IXC_DHCP_OFFER:
+            ixc_dhcp_client_request_send(dhcp_client.xid,IXC_DHCP_REQUEST);
+            break;
+        case IXC_DHCP_ACK:
+            STDERR("DHCP ACK\r\n");
+            break;
+        default:
+            break;
+    }
+
+    STDERR("CCC\r\n");
 }
 
 

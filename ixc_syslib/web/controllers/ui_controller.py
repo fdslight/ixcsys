@@ -71,8 +71,8 @@ class controller(app_handler.handler):
         f.close()
 
         o = json.loads(s)
-        hash_v = hashlib.md5(o["user"].encode()).hexdigest()
-        if hash_v != user_id: return False
+        session_id = o["session_id"]
+        if session_id != user_id: return False
 
         self.__user = o
         return True
