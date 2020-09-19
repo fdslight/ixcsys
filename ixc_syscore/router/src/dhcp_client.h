@@ -7,7 +7,8 @@
 
 struct ixc_dhcp_client{
     time_t up_time;
-
+    char hostname[256];
+    char vendor[256];
     unsigned char nameserver1[4];
     unsigned char nameserver2[4];
     unsigned char gateway[4];
