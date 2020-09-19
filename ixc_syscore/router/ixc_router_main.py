@@ -180,11 +180,72 @@ class service(dispatcher.dispatcher):
 
         return s
 
+    def start_lan(self):
+        self.load_lan_configs()
+
+        lan_ifconfig = self.__lan_configs["if_config"]
+        lan_phy_ifname = lan_ifconfig["phy_ifname"]
+        gw_addr = self.parse_ipaddr_format(lan_ifconfig["gw_addr"])
+        hwaddr = lan_ifconfig["hwaddr"]
+        manage_addr = self.parse_ipaddr_format(lan_ifconfig["manage_addr"])
+
+        if not gw_addr:
+            raise SystemExit("wrong IP address format")
+        if not manage_addr:
+            raise SystemExit("please set manage address")
+
+        ip, prefix = gw_addr
+
+        if prefix > 32 or prefix < 1:
+            raise ValueError("wrong IP address prefix")
+        if not netutils.is_ipv4_address(ip):
+            raise ValueError("wrong IPv4 address format")
+
+        self.__lan_manage_addr = manage_addr[0]
+        self.__lan_manage_addr6 = "::1"
+
+        byte_ip = socket.inet_pton(socket.AF_INET, ip)
+
+        self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
+        self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
+        self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
+        self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
+
+        if self.is_linux:
+            self.linux_br_create(self.__LAN_BR_NAME, [lan_phy_ifname, self.__LAN_NAME, ])
+            os.system("ip link set %s promisc on" % lan_phy_ifname)
+            os.system("ip link set %s up" % lan_phy_ifname)
+            # 设置桥接网卡IP地址
+            os.system("ip addr add %s/%d dev %s" % (manage_addr[0], manage_addr[1], self.__LAN_BR_NAME))
+
+        else:
+            self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
+            os.system("ifconfig %s promisc" % lan_phy_ifname)
+            os.system("ifconfig %s up" % lan_phy_ifname)
+
     def start_wan(self):
+        self.load_wan_configs()
+
         wan_configs = self.__wan_configs
         ip_cfg = wan_configs["ipv4"]
+
         if ip_cfg["addr_alloc_type"].lower() == "dhcp":
             self.router.dhcp_client_enable(True)
+
+        wan_public = self.__wan_configs["public"]
+        wan_phy_ifname = wan_public["phy_ifname"]
+        wan_ifhwaddr = wan_public["hwaddr"]
+
+        self.__if_wan_fd, self.__WAN_NAME = self.__router.netif_create(self.__WAN_NAME, router.IXC_NETIF_WAN)
+        self.router.netif_set_hwaddr(router.IXC_NETIF_WAN, netutils.ifaddr_to_bytes(wan_ifhwaddr))
+        self.create_handler(-1, tapdev.tapdevice, self.__if_wan_fd, router.IXC_NETIF_WAN)
+
+        if self.is_linux:
+            self.linux_br_create(self.__WAN_BR_NAME, [wan_phy_ifname, self.__WAN_NAME, ])
+            os.system("ip link set %s promisc on" % wan_phy_ifname)
+            os.system("ip link set %s up" % wan_phy_ifname)
+        else:
+            pass
 
     def start_scgi(self):
         scgi_configs = {
@@ -222,71 +283,12 @@ class service(dispatcher.dispatcher):
             p = s.find("if_tap.ko")
             if p < 0: os.system("kldload if_tap")
 
-        self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
-        self.__if_wan_fd, self.__WAN_NAME = self.__router.netif_create(self.__WAN_NAME, router.IXC_NETIF_WAN)
-
         self.create_poll()
 
         global_vars["ixcsys.router"] = self.__router
 
-        self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
-        self.load_lan_configs()
-        self.load_wan_configs()
-
-        lan_ifconfig = self.__lan_configs["if_config"]
-        lan_phy_ifname = lan_ifconfig["phy_ifname"]
-        gw_addr = self.parse_ipaddr_format(lan_ifconfig["gw_addr"])
-        hwaddr = lan_ifconfig["hwaddr"]
-        manage_addr = self.parse_ipaddr_format(lan_ifconfig["manage_addr"])
-
-        if not gw_addr:
-            raise SystemExit("wrong IP address format")
-        if not manage_addr:
-            raise SystemExit("please set manage address")
-
-        ip, prefix = gw_addr
-
-        if prefix > 32 or prefix < 1:
-            raise ValueError("wrong IP address prefix")
-        if not netutils.is_ipv4_address(ip):
-            raise ValueError("wrong IPv4 address format")
-
-        self.__lan_manage_addr = manage_addr[0]
-        self.__lan_manage_addr6 = "::1"
-
-        byte_ip = socket.inet_pton(socket.AF_INET, ip)
-
-        self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
-        self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
-
-        wan_public = self.__wan_configs["public"]
-        wan_phy_ifname = wan_public["phy_ifname"]
-        wan_ifhwaddr = wan_public["hwaddr"]
-
-        self.router.netif_set_hwaddr(router.IXC_NETIF_WAN, netutils.ifaddr_to_bytes(wan_ifhwaddr))
-
-        if self.is_linux:
-            self.linux_br_create(self.__LAN_BR_NAME, [lan_phy_ifname, self.__LAN_NAME, ])
-            self.linux_br_create(self.__WAN_BR_NAME, [wan_phy_ifname, self.__WAN_NAME, ])
-
-            os.system("ip link set %s promisc on" % lan_phy_ifname)
-            os.system("ip link set %s promisc on" % wan_phy_ifname)
-
-            os.system("ip link set %s up" % lan_phy_ifname)
-            os.system("ip link set %s up" % wan_phy_ifname)
-
-            # os.system("ip link set %s promisc on" % self.__LAN_NAME)
-            # os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_BR_NAME)
-            # os.system("iptables -A FORWARD -i %s -j ACCEPT" % self.__LAN_NAME)
-            # 设置桥接网卡IP地址
-            os.system("ip addr add %s/%d dev %s" % (manage_addr[0], manage_addr[1], self.__LAN_BR_NAME))
-
-        else:
-            self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
-            os.system("ifconfig %s promisc" % lan_phy_ifname)
-            os.system("ifconfig %s up" % lan_phy_ifname)
-
         self.start_scgi()
+        self.start_lan()
         self.start_wan()
 
     def notify_sysadm_proc(self):

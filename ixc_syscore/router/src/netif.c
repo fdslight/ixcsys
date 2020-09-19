@@ -75,6 +75,9 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     netif->fd=fd;
     netif->type=if_idx;
 
+    bzero(netif->ipaddr,4);
+    bzero(netif->ip6addr,16);
+
     return fd;
 }
 

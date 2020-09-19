@@ -7,6 +7,11 @@
 
 struct ixc_dhcp_client{
     time_t up_time;
+    // DHCP租用时间
+    time_t dhcp_lease_time;
+    unsigned int xid;
+    int is_got_ip;
+    int is_sent_renew;
     char hostname[256];
     char vendor[256];
     unsigned char nameserver1[4];

@@ -24,4 +24,15 @@ struct ixc_dhcp{
 
 #pragma pack(pop)
 
+enum{
+    IXC_DHCP_DISCOVER=1,
+    IXC_DHCP_OFFER,
+    IXC_DHCP_REQUEST,
+    IXC_DHCP_DECLINE,
+    IXC_DHCP_ACK,
+    IXC_DHCP_NAK,
+    IXC_DHCP_RELEASE,
+    IXC_DHCP_INFORM
+};
+
 #endif
