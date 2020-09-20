@@ -11,12 +11,13 @@
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
+#include "../../../pywind/clib/sysloop.h"
 
 static int nat_enable=0;
 static int nat_is_initialized=0;
-
 struct ixc_nat nat;
-
+struct time_wheel nat_time_wheel;
+struct sysloop *nat_sysloop=NULL;
 
 /// 获取可用的NAT ID
 static struct ixc_nat_id *ixc_nat_id_get(struct ixc_nat_id_set *id_set)
@@ -40,6 +41,7 @@ static struct ixc_nat_id *ixc_nat_id_get(struct ixc_nat_id_set *id_set)
     }
 
     id->id=id_set->cur_id;
+    id->net_id=htons(id->id);
     id_set->cur_id+=1;
 
     return id;
@@ -91,7 +93,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     unsigned char addr[4];
     int hdr_len=0;
     unsigned short id=0;
-    char key[7],is_found;
+    char key[7],tmp[7],is_found;
     struct ixc_nat_session *session;
 
     unsigned short *csum_ptr,csum;
@@ -101,6 +103,9 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     struct netutil_tcphdr *tcphdr;
     struct netutil_icmpecho *icmpecho;
     struct netutil_icmphdr *icmphdr;
+    struct ixc_netif *netif;
+    struct ixc_nat_id *nat_id=NULL;
+    struct ixc_nat_id_set *id_set;
 
     iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
@@ -108,12 +113,12 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     if(is_src) memcpy(addr,iphdr->src_addr,4);
     else memcpy(addr,iphdr->dst_addr,4);
 
-    // 对ICMP进行特殊处理,ICMP只支持echo request和echo response
+    // 对ICMP进行特殊处理,ICMP只支持echo request和echo reply
     if(1==iphdr->protocol){
         icmphdr=(struct netutil_icmphdr *)(m->data+m->offset+hdr_len);
         if(8!=icmphdr->type || 0!=icmphdr->type){
             ixc_mbuf_put(m);
-            return;
+            return NULL;
         }
     }
 
@@ -122,17 +127,20 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             icmpecho=(struct netutil_icmpecho *)(m->data+m->offset+hdr_len);
             csum_ptr=&(icmpecho->icmphdr.checksum);
             id_ptr=&(icmpecho->id);
+            id_set=&(nat.icmp_set);
             break;
         case 7:
             tcphdr=(struct netutil_tcphdr *)(m->data+m->offset+hdr_len);
             csum_ptr=&tcphdr->csum;
             id_ptr=is_src?&(tcphdr->src_port):&(tcphdr->dst_port);
+            id_set=&(nat.tcp_set);
             break;
         case 17:
         case 136:
             udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
             csum_ptr=&(udphdr->checksum);
             id_ptr=is_src?&(udphdr->src_port):&(udphdr->dst_port);
+            id_set=&(nat.udp_set);
             break;
         // 不支持的协议直接丢弃数据包
         default:
@@ -151,16 +159,67 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     // WAN口找不到的那么直接丢弃数据包
     if(NULL==session && !is_src){
         ixc_mbuf_put(m);
-        return;
+        return NULL;
     }
 
     // 来自于LAN但没有会话记录那么创建session
     if(NULL==session && is_src){
+        nat_id=ixc_nat_id_get(id_set);
+        if(NULL==nat_id){
+            ixc_mbuf_put(m);
+            STDERR("cannot get NAT ID for protocol %d\r\n",iphdr->protocol);
+            return NULL;
+        }
+
+        session=malloc(sizeof(struct ixc_nat_session));
+        if(NULL==session){
+            ixc_mbuf_put(m);
+            ixc_nat_id_put(id_set,nat_id);
+            STDERR("no memory for malloc struct ixc_nat_session\r\n");
+            return NULL;
+        }
+
+        // LAN to WAN映射添加
+        if(0!=map_add(nat.lan2wan,key,session)){
+            ixc_mbuf_put(m);
+            ixc_nat_id_put(id_set,nat_id);
+
+            STDERR("nat map add failed\r\n");
+            return NULL;
+        }
+
+        memcpy(tmp,key,7);
+        memcpy(tmp+5,nat_id->id,2);
+
+        if(0!=map_add(nat.wan2lan,tmp,session)){
+            ixc_mbuf_put(m);
+            ixc_nat_id_put(id_set,nat_id);
+            map_del(nat.lan2wan,key,NULL);
+            STDERR("nat map add failed\r\n");
+            return NULL;
+        }
+        session->refcnt=2;
+
+        session->nat_id=nat_id;
+        session->lan_id=*id_ptr;
+        session->wan_id=nat_id->net_id;
+
+        session->protocol=iphdr->protocol;
+
+        memcpy(session->addr,iphdr->src_addr,4);
     }
 
-    
+    if(!is_src){
+        rewrite_ip_addr(iphdr,session->addr,is_src);
+        csum=csum_calc_incre(*id_ptr,session->lan_id,*csum_ptr);
+        session->up_time=time(NULL);
+    }else {
+        rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
+        csum=csum_calc_incre(*id_ptr,session->wan_id,*csum_ptr);
+    }
+    *csum_ptr=csum;
 
-    return NULL;
+    return m;
 }
 
 static void ixc_nat_lan_send(struct ixc_mbuf *m)
@@ -175,6 +234,31 @@ static void ixc_nat_lan_send(struct ixc_mbuf *m)
     if(NULL==m) return;
 }
 
+static void ixc_nat_timeout_cb(void *data)
+{
+    struct ixc_nat_session *session=data;
+    struct time_data *tdata;
+    time_t now_time=time(NULL);
+
+    // 如果超时那么就删除数据
+    if(now_time-session->up_time>IXC_NAT_TIMEOUT){
+
+        return;
+    }
+
+    // 处理未超时的情况
+    tdata=time_wheel_add(&nat_time_wheel,session,now_time-session->up_time);
+    if(NULL==tdata){
+        STDERR("cannot add to time wheel\r\n");
+        return;
+    }
+}
+
+static void ixc_nat_sysloop_cb(struct sysloop *lp)
+{
+
+}
+
 int ixc_nat_init(void)
 {
     struct map *m;
@@ -185,29 +269,38 @@ int ixc_nat_init(void)
     nat.icmp_set.cur_id=IXC_NAT_ID_MIN;
     nat.tcp_set.cur_id=IXC_NAT_ID_MIN;
     nat.udp_set.cur_id=IXC_NAT_ID_MIN;
-    nat.udplite_set.cur_id=IXC_NAT_ID_MIN;
-    nat.sctp_set.cur_id=IXC_NAT_ID_MIN;
+
+    rs=time_wheel_new(&nat_time_wheel,(IXC_NAT_TIMEOUT/10)+8,10,ixc_nat_timeout_cb,2048);
+
+    if(0!=rs){
+        STDERR("cannot create time wheel\r\n");
+        return -1;
+    }
 
     rs=map_new(&m,7);
     if(rs){
+        time_wheel_release(&nat_time_wheel);
         STDERR("cannot init map\r\n");
         return -1;
     }
     nat.lan2wan=m;
     rs=map_new(&m,7);
     if(rs){
+        map_release(nat.lan2wan,NULL);
+        time_wheel_release(&nat_time_wheel);
         STDERR("cannot init map\r\n");
         return -1;
     }
     nat.wan2lan=m;
 
     nat_is_initialized=1;
+    nat_sysloop=sysloop_add(ixc_nat_sysloop_cb,NULL);
+
     return 0;
 }
 
 void ixc_nat_uninit(void)
 {
-
     nat_is_initialized=0;
     return;
 }
