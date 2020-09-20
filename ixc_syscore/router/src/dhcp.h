@@ -35,4 +35,10 @@ enum{
     IXC_DHCP_INFORM
 };
 
+struct ixc_dhcp_opt{
+    unsigned char code;
+    unsigned char len;
+    unsigned char data[256];
+};
+
 #endif

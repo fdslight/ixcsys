@@ -97,13 +97,13 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     struct ixc_nat_session *session;
 
     unsigned short *csum_ptr,csum;
-    unsigned char *id_ptr;
+    unsigned short *id_ptr;
 
     struct netutil_udphdr *udphdr;
     struct netutil_tcphdr *tcphdr;
     struct netutil_icmpecho *icmpecho;
     struct netutil_icmphdr *icmphdr;
-    struct ixc_netif *netif;
+    struct ixc_netif *netif=m->netif;
     struct ixc_nat_id *nat_id=NULL;
     struct ixc_nat_id_set *id_set;
 
@@ -189,7 +189,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         }
 
         memcpy(tmp,key,7);
-        memcpy(tmp+5,nat_id->id,2);
+        memcpy(tmp+5,&(nat_id->id),2);
 
         if(0!=map_add(nat.wan2lan,tmp,session)){
             ixc_mbuf_put(m);
