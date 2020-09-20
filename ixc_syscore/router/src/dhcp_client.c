@@ -42,7 +42,7 @@ static int ixc_dhcp_client_opt_fill(unsigned char *buf,unsigned char code,unsign
     return r;
 }
 
-static void ixc_dhcp_client_request_send(unsigned int xid,unsigned char dhcp_type)
+static void ixc_dhcp_client_request_send(unsigned char *dst_hwaddr,unsigned char *siaddr,unsigned int xid,unsigned char dhcp_type,struct ixc_dhcp_opt *opts[])
 {
     struct ixc_mbuf *m=ixc_mbuf_get();
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
@@ -51,6 +51,7 @@ static void ixc_dhcp_client_request_send(unsigned int xid,unsigned char dhcp_typ
     struct netutil_iphdr *iphdr;
     struct netutil_udphdr *udphdr;
     struct ixc_dhcp_opt_msgtype *msgtype;
+    struct ixc_dhcp_opt *opt;
 
     unsigned char data[512];
     unsigned char *s_ptr;
@@ -82,7 +83,12 @@ static void ixc_dhcp_client_request_send(unsigned int xid,unsigned char dhcp_typ
     m->end=m->tail;
 
     memcpy(m->src_hwaddr,netif->hwaddr,6);
-    memset(m->dst_hwaddr,0xff,6);
+
+    if(NULL==dst_hwaddr){
+        memset(m->dst_hwaddr,0xff,6);
+    }else{
+        memcpy(m->dst_hwaddr,dst_hwaddr,6);
+    }
 
     iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     udphdr=(struct netutil_udphdr *)(m->data+m->offset+20);
@@ -112,6 +118,8 @@ static void ixc_dhcp_client_request_send(unsigned int xid,unsigned char dhcp_typ
     dhcp->xid=htonl(xid);
     //dhcp->flags=htons(0x8000);
 
+    if(NULL!=siaddr) memcpy(dhcp->siaddr,siaddr,4);
+
     memcpy(dhcp->ciaddr,netif->ipaddr,4);
     memcpy(dhcp->chaddr,netif->hwaddr,6);
 
@@ -121,7 +129,7 @@ static void ixc_dhcp_client_request_send(unsigned int xid,unsigned char dhcp_typ
     memcpy(s_ptr,&magic_cookie,4);
     s_ptr+=4;
     m->tail+=4;
-    
+
     // 填充消息类型
     size=ixc_dhcp_client_opt_fill(s_ptr,53,1,&dhcp_type,0);
     m->tail+=size;
@@ -142,6 +150,15 @@ static void ixc_dhcp_client_request_send(unsigned int xid,unsigned char dhcp_typ
     m->tail+=size;
     s_ptr+=size;
 
+    // 填充额外的头部
+    for(int n=0;;n++){
+        opt=opts[n];
+        if(NULL==opt) break;
+        size=ixc_dhcp_client_opt_fill(s_ptr,opt->code,opt->len,opt->data,0);
+        m->tail+=size;
+        s_ptr+=size;
+    }
+
     // 填充请求列表
     // 子网掩码
     data[0]=1; 
@@ -154,7 +171,7 @@ static void ixc_dhcp_client_request_send(unsigned int xid,unsigned char dhcp_typ
     s_ptr+=size;
 
     m->end=m->tail;
-
+    
     // 计算UDP检验和
     memcpy(ps_hdr.src_addr,iphdr->src_addr,4);
     memcpy(ps_hdr.dst_addr,iphdr->dst_addr,4);
@@ -171,7 +188,7 @@ static void ixc_dhcp_client_request_send(unsigned int xid,unsigned char dhcp_typ
 
     csum=csum_calc((unsigned short *)data,length+12);
     udphdr->checksum=csum;
-
+  
     // 计算IP头部检验和
     iphdr->tot_len=htons(m->tail-m->offset);
     csum=csum_calc((unsigned short *)iphdr,20);
@@ -186,6 +203,7 @@ static void ixc_dhcp_client_sysloop_cb(struct sysloop *lp)
 {
     time_t now_time=time(NULL);
     unsigned int xid=0;
+    struct ixc_dhcp_opt *opts[]={NULL};
 
     // 每隔30s钟检查一次
     if(now_time-dhcp_client.up_time < 30) return;
@@ -196,7 +214,7 @@ static void ixc_dhcp_client_sysloop_cb(struct sysloop *lp)
         srand(time(NULL));
         xid=rand();
         dhcp_client.xid=xid;
-        ixc_dhcp_client_request_send(xid,IXC_DHCP_DISCOVER);
+        ixc_dhcp_client_request_send(NULL,NULL,xid,IXC_DHCP_DISCOVER,opts);
         return;
     }
 
@@ -240,13 +258,17 @@ static void ixc_dhcp_client_handle_response(struct ixc_mbuf *m)
     unsigned int magic_cookie;
     unsigned char dhcp_msg_type=0;
 
+    struct ixc_dhcp_opt opt_server_id;
+
+    struct ixc_dhcp_opt *opts[]={&opt_server_id,NULL};
+
     //udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
 
     // 首先检查事务ID是否一致,不一致那么丢弃该DHCP数据包
-    /**if(ntohs(dhcp->xid)!=dhcp_client.xid){
+    if(ntohl(dhcp->xid)!=dhcp_client.xid){
         ixc_mbuf_put(m);
         return;
-    }**/
+    }
 
     if(!dhcp_client.is_selected){
         dhcp_client.is_selected=1;
@@ -263,7 +285,7 @@ static void ixc_dhcp_client_handle_response(struct ixc_mbuf *m)
     opt_ptr+=4;
 
     // 检查是否是DHCP报文
-    if(ntohl(0x63825363)!=magic_cookie){
+    if(htonl(0x63825363)!=magic_cookie){
         ixc_mbuf_put(m);
         return;
     }
@@ -300,19 +322,23 @@ static void ixc_dhcp_client_handle_response(struct ixc_mbuf *m)
         }
     }
 
-    ixc_mbuf_put(m);
-
     switch(dhcp_msg_type){
         case IXC_DHCP_OFFER:
-            ixc_dhcp_client_request_send(dhcp_client.xid,IXC_DHCP_REQUEST);
+            opt_server_id.code=54;
+            opt_server_id.len=4;
+            memcpy(opt_server_id.data,dhcp->yiaddr,4);
+            STDERR("ZZZ\r\n");
+            ixc_dhcp_client_request_send(NULL,dhcp->siaddr,dhcp_client.xid,IXC_DHCP_REQUEST,opts);
             break;
         case IXC_DHCP_ACK:
             STDERR("DHCP ACK\r\n");
             break;
         default:
+            STDERR("code:%d\r\n",dhcp_msg_type);
             break;
     }
-
+    STDERR("CXX\r\n");
+    ixc_mbuf_put(m);
     STDERR("CCC\r\n");
 }
 

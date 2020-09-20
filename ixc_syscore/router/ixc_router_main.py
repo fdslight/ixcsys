@@ -273,6 +273,7 @@ class service(dispatcher.dispatcher):
         self.__is_notify_sysadm_proc = False
         self.__scgi_fd = -1
 
+        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
         self.__info_file = "%s/../syscall/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
 
         # 此处检查FreeBSD是否加载了if_tap.ko模块
