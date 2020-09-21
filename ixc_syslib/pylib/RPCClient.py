@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, pickle
+import os, pickle, socket
 import ixc_syslib.pylib.SCGIClient as SCGIClient
 
 
@@ -28,6 +28,22 @@ ERR_ARGS = -2
 ERR_PROTO = -3
 # 系统发生故障
 ERR_SYS = -4
+
+
+def RPCReadyOk(app_name: str):
+    """检查需要调用的应用RPC是否准备OK
+    :param app_name:
+    :return:
+    """
+    path = "/tmp/ixcsys/%s/scgi.sock" % app_name
+    if not os.path.exists(path): return False
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        s.connect(path)
+    except:
+        return False
+
+    return True
 
 
 class RPCClient(SCGIClient.SCGIClient):

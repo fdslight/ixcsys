@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """数据包重定向
 """
-import socket, struct
+import socket, struct, os
 import pywind.evtframework.handlers.udp_handler as udp_handler
+
+import ixc_syscore.router.pylib.router as router
 
 HEADER_FMT = "!16sHbb"
 
@@ -18,8 +20,14 @@ class pfwd(udp_handler.udp_handler):
     __pkt_size = None
 
     def init_func(self, creator_fd):
-        self.__link_fwd_tb = {}
-        self.__ip_fwd_tb = {}
+        self.__link_fwd_tb = {
+            router.IXC_FLAG_DHCP_CLIENT: None,
+            router.IXC_FLAG_DHCP_SERVER: None,
+        }
+
+        self.__ip_fwd_tb = {
+
+        }
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.set_socket(s)
@@ -43,7 +51,7 @@ class pfwd(udp_handler.udp_handler):
         if self.__pkt_size < 40: return
 
     def udp_writable(self):
-        pass
+        self.remove_evt_write(self.fileno)
 
     def udp_error(self):
         self.delete_handler(self.fileno)
@@ -53,7 +61,16 @@ class pfwd(udp_handler.udp_handler):
         self.close()
 
     def handle_link_from_netstack(self, link_proto: int, ipproto: int, flags: int, msg: bytes):
-        pass
+        fwd_info = self.__link_fwd_tb[flags]
+
+        if not fwd_info: return
+
+        new_msg = [
+            struct.pack(HEADER_FMT, fwd_info[0], link_proto, 0, flags),
+            msg
+        ]
+        self.sendto(b"".join(new_msg), ("127.0.0.1", fwd_info[1]))
+        self.add_evt_write(self.fileno)
 
     def handle_ip_from_netstack(self, link_proto: int, ipproto: int, flags: int, msg: bytes):
         pass
@@ -70,3 +87,27 @@ class pfwd(udp_handler.udp_handler):
             self.handle_link_from_netstack(link_proto, ipproto, flags, msg)
         else:
             self.handle_ip_from_netstack(link_proto, ipproto, flags, msg)
+
+    def set_fwd_port(self, is_link_data: bool, flags: int, fwd_port: int):
+        if fwd_port < 1 or fwd_port > 0xfffe:
+            return (False, "wrong fwd_port value",)
+
+        if is_link_data and flags not in self.__link_fwd_tb:
+            return (False, "link data not have flags value %s" % flags,)
+
+        if not is_link_data and flags not in self.__ip_fwd_tb:
+            return (False, "ip data not have flags value %s" % flags,)
+
+        if is_link_data:
+            if self.__link_fwd_tb[flags]:
+                return (False, "link data flags %s have been set" % flags,)
+            self.__link_fwd_tb[flags] = (os.urandom(16), fwd_port,)
+            return (True, self.__link_fwd_tb[flags][0],)
+
+    def unset_fwd_port(self, is_link_data: bool, flags: int):
+        if is_link_data:
+            if flags not in self.__link_fwd_tb: return
+            self.__link_fwd_tb[flags] = None
+
+    def get_server_recv_port(self):
+        return self.__sock_info[1]
