@@ -93,3 +93,8 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
             break;
     }
 }
+
+int ixc_ether_send2(void *buf,size_t size)
+{
+    return 0;
+}
