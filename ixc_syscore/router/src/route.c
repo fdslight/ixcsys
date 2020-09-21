@@ -283,8 +283,8 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
     
-    if(r->is_linked) ixc_router_send(m->data+m->begin,m->end-m->begin,IXC_PKT_FLAGS_LINK);
-    else ixc_router_send(m->data+m->offset,m->tail-m->offset,IXC_PKT_FLAGS_IP);
+    if(r->is_linked) ixc_router_send(0x800,iphdr->protocol,0,m->data+m->begin,m->end-m->begin);
+    else ixc_router_send(0,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
 }
 
 void ixc_route_handle(struct ixc_mbuf *m,int is_ipv6)

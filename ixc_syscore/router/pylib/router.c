@@ -12,6 +12,7 @@
 #include "../src/p2p.h"
 #include "../src/vpn.h"
 #include "../src/dhcp_client.h"
+#include "../src/dhcp_server.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -23,14 +24,14 @@ typedef struct{
 static PyObject *router_sent_cb=NULL;
 static PyObject *router_write_ev_tell_cb=NULL;
 
-int ixc_router_send(void *buf,size_t size,int flags)
+int ixc_router_send(unsigned short link_proto,unsigned char ipproto,unsigned char flags,void *buf,size_t size)
 {
     PyObject *arglist,*result;
     if(NULL==router_sent_cb) return -1;
 
-    arglist=Py_BuildValue("(y#i)",buf,size,flags);
+    arglist=Py_BuildValue("(Hbby#)",link_proto,ipproto,flags,buf,size);
     result=PyObject_CallObject(router_sent_cb,arglist);
-
+ 
     Py_XDECREF(arglist);
     Py_XDECREF(result);
 
@@ -109,7 +110,13 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     rs=ixc_dhcp_client_init();
     if(rs<0){
-        STDERR("cannot init DHCP\r\n");
+        STDERR("cannot init DHCP client\r\n");
+        return NULL;
+    }
+
+    rs=ixc_dhcp_server_init();
+    if(rs<0){
+        STDERR("cannot init DHCP server\r\n");
         return NULL;
     }
 
@@ -150,19 +157,10 @@ router_send_netpkt(PyObject *self,PyObject *args)
 {
     char *sent_data;
     Py_ssize_t size;
-    int flags;
+    unsigned char flags;
+    unsigned short proto;
 
-    if(!PyArg_ParseTuple(args,"y#i",&sent_data,&size,&flags)) return NULL;
-    if(IXC_PKT_FLAGS_IP!=flags && IXC_PKT_FLAGS_LINK!=flags){
-        PyErr_SetString(PyExc_ValueError,"wrong flags value");
-        return NULL;
-    }
-
-    if(IXC_PKT_FLAGS_LINK==flags){
-
-    }else{
-
-    }
+    if(!PyArg_ParseTuple(args,"Hby#i",&proto,&flags,&sent_data,&size)) return NULL;
 
     Py_RETURN_NONE;
 }
@@ -345,6 +343,17 @@ router_dhcp_client_enable(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_dhcp_server_enable(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+
+    ixc_dhcp_server_enable(enable);
+
+    Py_RETURN_NONE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -360,6 +369,7 @@ static PyMethodDef routerMethods[]={
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
     {"dhcp_client_enable",(PyCFunction)router_dhcp_client_enable,METH_VARARGS,"enable or disable dhcp client"},
+    {"dhcp_server_enable",(PyCFunction)router_dhcp_server_enable,METH_VARARGS,"enable or disable dhcp server"},
     {NULL,NULL,0,NULL}
 };
 
@@ -401,8 +411,8 @@ PyInit_router(void){
         return NULL;
     }
 
-    PyModule_AddIntMacro(m,IXC_PKT_FLAGS_LINK);
-    PyModule_AddIntMacro(m,IXC_PKT_FLAGS_IP);
+    PyModule_AddIntMacro(m,IXC_FLAG_DHCP_CLIENT);
+    PyModule_AddIntMacro(m,IXC_FLAG_DHCP_SERVER);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //

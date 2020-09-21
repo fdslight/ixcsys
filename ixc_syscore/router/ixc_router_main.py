@@ -16,6 +16,8 @@ import pywind.web.handlers.scgi as scgi
 
 import ixc_syscore.router.pylib.router as router
 import ixc_syscore.router.handlers.tapdev as tapdev
+import ixc_syscore.router.handlers.pfwd as pfwd
+
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
 
@@ -88,21 +90,33 @@ class service(dispatcher.dispatcher):
 
     __info_file = None
 
+    __pfwd_fd = None
+
     def _write_ev_tell(self, fd: int, flags: int):
         if flags:
             self.add_evt_write(fd)
         else:
             self.remove_evt_write(fd)
 
-    def _recv_from_proto_stack(self, byte_data: bytes, flags: int):
-        """从协议栈接收消息
+    def _recv_from_proto_stack(self, link_proto: int, ipproto: int, flags: int, byte_data: bytes):
+        """从协议栈接收链路层数据或者IP数据包
+        :param link_proto:链路层协议,0表示IP数据包,该数值是一个主机序
+        :param ipproto:IP协议号
+        :param flags:额外附带的标记
+        :param byte_data:
+        :return:
         """
-        print(byte_data)
+        if not self.handler_exists(self.__pfwd_fd): return
+        self.get_handler(self.__pfwd_fd).recv_from_netstack(link_proto, ipproto, flags, byte_data)
 
-    def send_to_proto_stack(self, byte_data: bytes, flags: int):
-        """向协议栈发送消息
+    def send_to_proto_stack(self, link_proto: int, flags: int, byte_data: bytes):
+        """发送链路层数据或者IP数据包到协议栈
+        :param link_proto:链路层协议,如果是0表示IP数据包,该数值是一个主机序
+        :param flags: 额外的附带标志
+        :param byte_data:
+        :return:
         """
-        self.__router.send_netpkt(byte_data, flags)
+        self.__router.send_netpkt(link_proto, flags, byte_data, flags)
 
     def load_lan_configs(self):
         path = "%s/lan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
@@ -146,12 +160,15 @@ class service(dispatcher.dispatcher):
             self.router.netif_delete(router.IXC_NETIF_WAN)
         if self.__scgi_fd:
             self.delete_handler(self.__scgi_fd)
+        if self.__pfwd_fd > 0:
+            self.delete_handler(self.__pfwd_fd)
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
         self.__scgi_fd = -1
+        self.__pfwd_fd = -1
 
     def linux_br_create(self, br_name: str, added_bind_ifs: list):
         cmds = [
@@ -262,6 +279,8 @@ class service(dispatcher.dispatcher):
         self.__if_wan_fd = -1
         self.__router = router.router(self._recv_from_proto_stack, self._write_ev_tell)
 
+        self.router.dhcp_server_enable(True)
+
         self.__WAN_BR_NAME = "ixcwanbr"
         self.__LAN_BR_NAME = "ixclanbr"
 
@@ -272,6 +291,7 @@ class service(dispatcher.dispatcher):
         self.__is_linux = sys.platform.startswith("linux")
         self.__is_notify_sysadm_proc = False
         self.__scgi_fd = -1
+        self.__pfwd_fd = -1
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
         self.__info_file = "%s/../syscall/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -287,10 +307,14 @@ class service(dispatcher.dispatcher):
         self.create_poll()
 
         global_vars["ixcsys.router"] = self.__router
+        global_vars["ixcsys.runtime"] = self
 
-        self.start_scgi()
         self.start_lan()
         self.start_wan()
+
+        self.__pfwd_fd = self.create_handler(-1, pfwd.pfwd)
+
+        self.start_scgi()
 
     def notify_sysadm_proc(self):
         path = "%s/../syscall/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
