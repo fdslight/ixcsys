@@ -94,7 +94,40 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     }
 }
 
-int ixc_ether_send2(void *buf,size_t size)
+int ixc_ether_send2(struct ixc_mbuf *m)
 {
+    struct ixc_ether_header *header;
+    int size=0;
+
+    if(NULL==m) return 0;
+    
+    if(NULL==m->netif){
+        STDERR("empty netif\r\n");
+        ixc_mbuf_put(m);
+        return -1;
+    }
+
+    header=(struct ixc_ether_header *)(m->data+m->begin);
+
+    size=m->end-m->begin;
+
+    // 检查数据包是否合法
+    if(size<13){
+        ixc_mbuf_put(m);
+        return -1;
+    }
+
+    if(ntohs(header->type)<0x0101){
+        ixc_mbuf_put(m);
+        return -1;
+    }
+
+    if(size<60){
+        bzero(m->data+m->end,60-size);
+        m->end+=(60-size);
+    }
+
+    ixc_netif_send(m);
+
     return 0;
 }

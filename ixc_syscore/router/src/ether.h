@@ -22,6 +22,6 @@ struct ixc_ether_header{
 int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header);
 void ixc_ether_handle(struct ixc_mbuf *mbuf);
 
-int ixc_ether_send2(void *buf,size_t size);
+int ixc_ether_send2(struct ixc_mbuf *m);
 
 #endif
