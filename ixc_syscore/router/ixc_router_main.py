@@ -11,8 +11,8 @@ from pywind.global_vars import global_vars
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
-import pywind.lib.netutils as netutils
 import pywind.web.handlers.scgi as scgi
+import pywind.lib.netutils as netutils
 
 import ixc_syscore.router.pylib.router as router
 import ixc_syscore.router.handlers.tapdev as tapdev
@@ -246,9 +246,6 @@ class service(dispatcher.dispatcher):
         wan_configs = self.__wan_configs
         ip_cfg = wan_configs["ipv4"]
 
-        if ip_cfg["addr_alloc_type"].lower() == "dhcp":
-            self.router.dhcp_client_enable(True)
-
         wan_public = self.__wan_configs["public"]
         wan_phy_ifname = wan_public["phy_ifname"]
         wan_ifhwaddr = wan_public["hwaddr"]
@@ -273,13 +270,17 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
 
+    def get_fwd_instance(self):
+        """获取重定向类实例
+        :return:
+        """
+        return self.get_handler(self.__pfwd_fd)
+
     def init_func(self, debug):
         self.__debug = debug
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
         self.__router = router.router(self._recv_from_proto_stack, self._write_ev_tell)
-
-        self.router.dhcp_server_enable(True)
 
         self.__WAN_BR_NAME = "ixcwanbr"
         self.__LAN_BR_NAME = "ixclanbr"

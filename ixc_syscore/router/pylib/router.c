@@ -11,8 +11,6 @@
 #include "../src/route.h"
 #include "../src/p2p.h"
 #include "../src/vpn.h"
-#include "../src/dhcp_client.h"
-#include "../src/dhcp_server.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -107,19 +105,6 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         STDERR("cannot init P2P\r\n");
         return NULL;
     }
-
-    rs=ixc_dhcp_client_init();
-    if(rs<0){
-        STDERR("cannot init DHCP client\r\n");
-        return NULL;
-    }
-
-    rs=ixc_dhcp_server_init();
-    if(rs<0){
-        STDERR("cannot init DHCP server\r\n");
-        return NULL;
-    }
-
 
     return (PyObject *)self;
 }
@@ -332,28 +317,6 @@ router_netif_set_hwaddr(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-router_dhcp_client_enable(PyObject *self,PyObject *args)
-{
-    int enable;
-    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
-
-    ixc_dhcp_client_enable(enable);
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-router_dhcp_server_enable(PyObject *self,PyObject *args)
-{
-    int enable;
-    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
-
-    ixc_dhcp_server_enable(enable);
-
-    Py_RETURN_NONE;
-}
-
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -368,8 +331,6 @@ static PyMethodDef routerMethods[]={
     {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
-    {"dhcp_client_enable",(PyCFunction)router_dhcp_client_enable,METH_VARARGS,"enable or disable dhcp client"},
-    {"dhcp_server_enable",(PyCFunction)router_dhcp_server_enable,METH_VARARGS,"enable or disable dhcp server"},
     {NULL,NULL,0,NULL}
 };
 
