@@ -92,6 +92,9 @@ class service(dispatcher.dispatcher):
 
     __pfwd_fd = None
 
+    __lan_local_link_ip6addr = None
+    __wan_local_link_ip6addr = None
+
     def _write_ev_tell(self, fd: int, flags: int):
         if flags:
             self.add_evt_write(fd)
@@ -139,6 +142,22 @@ class service(dispatcher.dispatcher):
     @property
     def is_linux(self):
         return self.__is_linux
+
+    @property
+    def lan_configs(self):
+        return self.__lan_configs
+
+    @property
+    def wan_configs(self):
+        return self.__wan_configs
+
+    @property
+    def lan_local_link_ip6addr(self):
+        return self.__lan_local_link_ip6addr
+
+    @property
+    def wan_local_link_ip6addr(self):
+        return self.__wan_local_link_ip6addr
 
     def release(self):
         if os.path.isfile(self.__info_file): os.remove(self.__info_file)
