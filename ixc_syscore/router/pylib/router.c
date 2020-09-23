@@ -144,10 +144,21 @@ router_send_netpkt(PyObject *self,PyObject *args)
     Py_ssize_t size;
     unsigned char flags;
     unsigned short proto;
+    struct ixc_mbuf *m;
 
     if(!PyArg_ParseTuple(args,"Hby#i",&proto,&flags,&sent_data,&size)) return NULL;
 
-    Py_RETURN_NONE;
+    m=ixc_mbuf_get();
+    if(NULL==m){
+        STDERR("cannot get mbuf for send\r\n");
+        Py_RETURN_FALSE;
+    }
+
+    
+
+
+
+    Py_RETURN_TRUE;
 }
 
 /// 是否需要等待,如果有需要待发送的数据包等内容,那么就不能等待
