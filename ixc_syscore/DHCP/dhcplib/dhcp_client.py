@@ -29,3 +29,9 @@ class dhcp_client(object):
         """自动执行
         """
         pass
+
+    def send_dhcp_request(self):
+        pass
+
+    def dhcp_ok(self):
+        pass
