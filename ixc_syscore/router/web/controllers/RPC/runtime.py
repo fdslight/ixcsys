@@ -17,7 +17,7 @@ class controller(rpc.controller):
         self.__runtime = global_vars["ixcsys.runtime"]
 
         self.fobjs = {
-            "get_all_pkt_flags": self.get_all_pkt_flags,
+            "get_all_consts": self.get_all_consts,
             "get_wan_hwaddr": self.get_wan_hwaddr,
             "get_lan_hwaddr": self.get_lan_hwaddr,
             "get_lan_ipaddr": self.get_lan_ipaddr,
@@ -25,13 +25,15 @@ class controller(rpc.controller):
             "get_lan_manage_ipaddr": self.get_lan_manage_ipaddr
         }
 
-    def get_all_pkt_flags(self):
+    def get_all_consts(self):
         """获取所有转发数据包的flags
         :return:
         """
         values = {
             "IXC_FLAG_DHCP_CLIENT": router.IXC_FLAG_DHCP_CLIENT,
-            "IXC_FLAG_DHCP_SERVER": router.IXC_FLAG_DHCP_SERVER
+            "IXC_FLAG_DHCP_SERVER": router.IXC_FLAG_DHCP_SERVER,
+            "IXC_NETIF_LAN":router.IXC_NETIF_LAN,
+            "IXC_NETIF_WAN":router.IXC_NETIF_WAN
         }
 
         return (0, values,)

@@ -47,7 +47,7 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
 
     // 检查是DHCP client报文并且开启DHCP的那么处理DHCP报文
     if(ntohs(udphdr->dst_port)==68 && ntohs(udphdr->src_port)==67){
-        ixc_router_send(m->link_proto,17,IXC_FLAG_DHCP_CLIENT,m->data+m->begin,m->end-m->begin);
+        ixc_router_send(IXC_NETIF_WAN,0,IXC_FLAG_DHCP_CLIENT,m->data+m->begin,m->end-m->begin);
         return;
     }
 
@@ -69,7 +69,7 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
 
     // 检查是DHCP client报文并且开启DHCP的那么处理DHCP报文
     if(ntohs(udphdr->dst_port)==67 && ntohs(udphdr->src_port)==68){
-        ixc_router_send(m->link_proto,17,IXC_FLAG_DHCP_SERVER,m->data+m->begin,m->end-m->begin);
+        ixc_router_send(IXC_NETIF_LAN,0,IXC_FLAG_DHCP_SERVER,m->data+m->begin,m->end-m->begin);
         return;
     }
 

@@ -101,25 +101,26 @@ class service(dispatcher.dispatcher):
         else:
             self.remove_evt_write(fd)
 
-    def _recv_from_proto_stack(self, link_proto: int, ipproto: int, flags: int, byte_data: bytes):
+    def _recv_from_proto_stack(self, if_type: int, ipproto: int, flags: int, byte_data: bytes):
         """从协议栈接收链路层数据或者IP数据包
-        :param link_proto:链路层协议,0表示IP数据包,该数值是一个主机序
+        :param if_type:链路层协议,0表示IP数据包,该数值是一个主机序
         :param ipproto:IP协议号
         :param flags:额外附带的标记
         :param byte_data:
         :return:
         """
         if not self.handler_exists(self.__pfwd_fd): return
-        self.get_handler(self.__pfwd_fd).recv_from_netstack(link_proto, ipproto, flags, byte_data)
+        self.get_handler(self.__pfwd_fd).recv_from_netstack(if_type, ipproto, flags, byte_data)
 
-    def send_to_proto_stack(self, link_proto: int, flags: int, byte_data: bytes):
+    def send_to_proto_stack(self, if_type: int, ipproto: int, flags: int, byte_data: bytes):
         """发送链路层数据或者IP数据包到协议栈
-        :param link_proto:链路层协议,如果是0表示IP数据包,该数值是一个主机序
+        :param if_type:链路层协议,如果是0表示IP数据包,该数值是一个主机序
+        :param ipproto,IP层协议
         :param flags: 额外的附带标志
         :param byte_data:
         :return:
         """
-        self.__router.send_netpkt(link_proto, flags, byte_data, flags)
+        self.__router.send_netpkt(if_type, ipproto, flags, byte_data, flags)
 
     def load_lan_configs(self):
         path = "%s/lan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")

@@ -22,12 +22,12 @@ typedef struct{
 static PyObject *router_sent_cb=NULL;
 static PyObject *router_write_ev_tell_cb=NULL;
 
-int ixc_router_send(unsigned short link_proto,unsigned char ipproto,unsigned char flags,void *buf,size_t size)
+int ixc_router_send(unsigned char if_type,unsigned char ipproto,unsigned char flags,void *buf,size_t size)
 {
     PyObject *arglist,*result;
     if(NULL==router_sent_cb) return -1;
 
-    arglist=Py_BuildValue("(Hbby#)",link_proto,ipproto,flags,buf,size);
+    arglist=Py_BuildValue("(bbby#)",if_type,ipproto,flags,buf,size);
     result=PyObject_CallObject(router_sent_cb,arglist);
  
     Py_XDECREF(arglist);
@@ -143,10 +143,20 @@ router_send_netpkt(PyObject *self,PyObject *args)
     char *sent_data;
     Py_ssize_t size;
     unsigned char flags;
-    unsigned short proto;
-    struct ixc_mbuf *m;
+    unsigned char if_type;
+    unsigned char ipproto;
 
-    if(!PyArg_ParseTuple(args,"Hby#i",&proto,&flags,&sent_data,&size)) return NULL;
+    struct ixc_mbuf *m;
+    struct ixc_netif *netif=NULL;
+
+    if(!PyArg_ParseTuple(args,"bbby#i",&if_type,&ipproto,&flags,&sent_data,&size)) return NULL;
+
+    if(0!=ipproto){
+        netif=ixc_netif_get(if_type);
+        if(NULL==netif){
+            Py_RETURN_FALSE;
+        }
+    }
 
     m=ixc_mbuf_get();
     if(NULL==m){
@@ -154,9 +164,19 @@ router_send_netpkt(PyObject *self,PyObject *args)
         Py_RETURN_FALSE;
     }
 
-    
+    m->netif=netif;
+    m->begin=IXC_MBUF_BEGIN;
+    m->offset=m->begin;
+    m->tail=m->begin+size;
+    m->end=m->tail;
 
+    memcpy(m->data+m->begin,sent_data,size);
 
+    if(0!=ipproto){
+        
+    }else{
+        
+    }
 
     Py_RETURN_TRUE;
 }
