@@ -11,6 +11,9 @@
 #include "../src/route.h"
 #include "../src/p2p.h"
 #include "../src/vpn.h"
+#include "../src/ether.h"
+#include "../src/ip.h"
+#include "../src/ip6.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -149,9 +152,9 @@ router_send_netpkt(PyObject *self,PyObject *args)
     struct ixc_mbuf *m;
     struct ixc_netif *netif=NULL;
 
-    if(!PyArg_ParseTuple(args,"bbby#i",&if_type,&ipproto,&flags,&sent_data,&size)) return NULL;
+    if(!PyArg_ParseTuple(args,"bbby#",&if_type,&ipproto,&flags,&sent_data,&size)) return NULL;
 
-    if(0!=ipproto){
+    if(0==ipproto){
         netif=ixc_netif_get(if_type);
         if(NULL==netif){
             Py_RETURN_FALSE;
@@ -173,9 +176,9 @@ router_send_netpkt(PyObject *self,PyObject *args)
     memcpy(m->data+m->begin,sent_data,size);
 
     if(0!=ipproto){
-        
+        ixc_ip_send(m);
     }else{
-        
+        ixc_ether_send2(m);
     }
 
     Py_RETURN_TRUE;

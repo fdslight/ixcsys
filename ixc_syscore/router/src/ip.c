@@ -111,30 +111,22 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     }
 }
 
+
 int ixc_ip_send(struct ixc_mbuf *m)
 {
-    struct ixc_netif *netif=m->netif;
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
-    struct ixc_addr_map_record *r=ixc_addr_map_get(header->dst_addr,0);
-    unsigned char dst_hwaddr[]={0xff,0xff,0xff,0xff,0xff,0xff};
+    int ip_ver= (header->ver_and_ihl & 0xf0) >> 4;
 
-    memcpy(m->src_hwaddr,netif->hwaddr,6);
-
-    //STDERR("src:%d.%d.%d.%d\r\n",header->src_addr[0],header->src_addr[1],header->src_addr[2],header->src_addr[3]);
-    //STDERR("dst:%d.%d.%d.%d\r\n",header->dst_addr[0],header->dst_addr[1],header->dst_addr[2],header->dst_addr[3]);
-
-    // 找不到地址映射记录就发送ARP请求包并丢弃当前数据包
-    if(!r){
-        ixc_arp_send(netif,dst_hwaddr,header->dst_addr,IXC_ARP_OP_REQ);
+    // 检查IP版本是否符合要求
+    if(4!=ip_ver && 6!=ip_ver){
         ixc_mbuf_put(m);
-        return 0;
+        return -1;
     }
 
-    m->link_proto=0x800;
-    memcpy(m->dst_hwaddr,r->hwaddr,6);
+    if(6!=ip_ver) return ixc_ip6_send(m);
 
-    //STDERR("%x:%x:%x:%x:%x:%x\r\n",r->hwaddr[0],r->hwaddr[1],r->hwaddr[2],r->hwaddr[3],r->hwaddr[4],r->hwaddr[5]);
-    ixc_ether_send(m,1);
+    ixc_mbuf_put(m);
+
 
     return 0;
 }

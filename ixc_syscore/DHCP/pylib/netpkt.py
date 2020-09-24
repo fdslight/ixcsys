@@ -55,7 +55,7 @@ def build_udppkt(src_ipaddr: bytes, dst_ipaddr: bytes, src_port: int, dst_port: 
                  is_ipv6=False):
     """构建UDP数据包
     """
-    length = len(payload_data)
+    length = len(payload_data) + 8
     header = struct.pack("!HHHH", src_port, dst_port, length, 0)
     udp_data = b"".join([header, payload_data])
 
@@ -68,26 +68,31 @@ def build_udppkt(src_ipaddr: bytes, dst_ipaddr: bytes, src_port: int, dst_port: 
 
     csum = csum_calc(tmp_data)
 
-    udp_data[4] = (csum & 0xff00) >> 8
-    udp_data[5] = csum & 0x00ff
+    _list = list(udp_data)
 
-    return udp_data
+    _list[6] = (csum & 0xff00) >> 8
+    _list[7] = csum & 0x00ff
+
+    return bytes(_list)
 
 
 def build_ippkt(src_ipaddr: bytes, dst_ipaddr: bytes, protocol: int, payload_data: bytes):
     """构建IP数据包
     """
     header = struct.pack("!BBHHHBBH4s4s",
-                         0x45, 0, len(payload_data),
-                         random.randint(1, 0xfffe), 0b0100_0000_0000_0000_0000_0000_0000_0000,
+                         0x45, 0, len(payload_data) + 20,
+                         random.randint(1, 0xfffe), 0b0100_0000_0000_0000,
                          64, protocol, 0,
                          src_ipaddr, dst_ipaddr
                          )
     csum = csum_calc(header)
-    header[10] = (csum & 0xff00) >> 8
-    header[11] = csum & 0xff
 
-    return b"".join([header, payload_data])
+    _list = list(header)
+
+    _list[10] = (csum & 0xff00) >> 8
+    _list[11] = csum & 0xff
+
+    return b"".join([bytes(_list), payload_data])
 
 
 def parse_ippkt(byte_data: bytes):

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import struct, random
+import ixc_syscore.DHCP.pylib.netpkt as netpkt
 
 DHCP_OP_REQ = 1
 DHCP_OP_RESP = 2
@@ -115,6 +116,24 @@ class dhcp_parser(dhcp):
     def my_init(self):
         pass
 
+    def parse_from_link_data(self, link_data):
+        dst_hwaddr, src_hwaddr, proto_type, ippkt = netpkt.parse_ether_data(link_data)
+        src_addr, dst_addr, protocol, udpdata = netpkt.parse_ippkt(ippkt)
+        src_port, dst_port, dhcpdata = netpkt.parse_udppkt(udpdata)
+        self.parse_public_header(dhcpdata[0:HDR_LENGTH])
+        options = self.parse_options(dhcpdata[HDR_LENGTH:])
+
+        if dst_port == 67:
+            is_server = True
+        else:
+            is_server = False
+
+        r = (
+            dst_hwaddr, src_hwaddr, dst_addr, src_addr, options, is_server,
+        )
+
+        return r
+
 
 class dhcp_builder(dhcp):
     def my_init(self):
@@ -161,3 +180,26 @@ class dhcp_builder(dhcp):
         opt_data = b"".join(_list)
 
         return b"".join([pub_data, opt_data, ])
+
+    def build_to_link_data(self, dst_hwaddr: bytes, src_hwaddr: bytes, dst_ipaddr: bytes, src_ipaddr: bytes,
+                           options: list, is_server=False):
+        """
+        :param dst_hwaddr:
+        :param src_hwaddr:
+        :param dst_ipaddr:
+        :param src_ipaddr:
+        :param options:
+        :param is_server:是否是DHCP服务器报文
+        :return:
+        """
+        if is_server:
+            src_port, dst_port = (67, 68,)
+        else:
+            src_port, dst_port = (68, 67,)
+
+        dhcp_data = self.build(options)
+        udp_data = netpkt.build_udppkt(src_ipaddr, dst_ipaddr, src_port, dst_port, dhcp_data)
+        ippkt = netpkt.build_ippkt(src_ipaddr, dst_ipaddr, 17, udp_data)
+        link_data = netpkt.build_ether_data(dst_hwaddr, src_hwaddr, 0x0800, ippkt)
+
+        return link_data
