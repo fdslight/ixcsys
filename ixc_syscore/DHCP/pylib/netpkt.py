@@ -6,7 +6,7 @@
 import struct, random
 
 
-class TCPIPErr(Exception): pass
+class NetPktErr(Exception): pass
 
 
 def csum_calc(packet: bytes):
@@ -43,7 +43,7 @@ def parse_ether_data(byte_data: bytes):
     """解析以太网数据包
     """
     if len(byte_data) < 14:
-        raise TCPIPErr("wrong ethernet packet")
+        raise NetPktErr("wrong ethernet packet")
 
     dst_hwaddr, src_hwaddr, proto = struct.unpack("!6s6sH", byte_data[0:14])
     r = (dst_hwaddr, src_hwaddr, proto, byte_data[14:],)
@@ -92,10 +92,10 @@ def build_ippkt(src_ipaddr: bytes, dst_ipaddr: bytes, protocol: int, payload_dat
 
 def parse_ippkt(byte_data: bytes):
     size = len(byte_data)
-    hdr_len = (byte_data[0] & 0x00ff) * 4
+    hdr_len = (byte_data[0] & 0x0f) * 4
 
     if size < hdr_len:
-        raise TCPIPErr("wrong data length")
+        raise NetPktErr("wrong data length")
 
     payload_data = byte_data[hdr_len:]
 
@@ -105,7 +105,7 @@ def parse_ippkt(byte_data: bytes):
 
 
 def parse_udppkt(udp_data: bytes):
-    if len(udp_data) < 9: return TCPIPErr("wrong UDP packet")
+    if len(udp_data) < 9: return NetPktErr("wrong UDP packet")
 
     src_port, dst_port, length, csum = struct.unpack("!HHHH", udp_data[0:8])
     r = (src_port, dst_port, udp_data[8:],)

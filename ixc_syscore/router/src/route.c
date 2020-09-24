@@ -269,6 +269,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct ixc_route_info *r=ixc_route_match(iphdr->dst_addr,0);
+    struct ixc_netif *netif=m->netif;
 
     // 检查是否是组播地址,如果是组播地址那么直接丢弃该数据包
     // 单网卡路由不需要组播数据包
@@ -283,8 +284,8 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
     
-    if(r->is_linked) ixc_router_send(0x800,iphdr->protocol,0,m->data+m->begin,m->end-m->begin);
-    else ixc_router_send(0,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
+    if(r->is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
+    else ixc_router_send(netif->type,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
 }
 
 void ixc_route_handle(struct ixc_mbuf *m,int is_ipv6)

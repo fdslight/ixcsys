@@ -12,6 +12,10 @@ class dhcp_service(udp_handler.udp_handler):
     __dhcp_server = None
     __dhcp_client = None
 
+    @property
+    def consts(self):
+        return self.dispatcher.router_consts
+
     def init_func(self, creator_fd):
         self.__server_port = -1
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -27,6 +31,22 @@ class dhcp_service(udp_handler.udp_handler):
     def udp_readable(self, message, address):
         if address[0] != "127.0.0.1": return
         if address[1] != self.__server_port: return
+
+        if len(message) < 34: return
+
+        _id, if_type, _, ipproto, flags = struct.unpack("!16sbbbb", message[0:20])
+        if _id != self.__id: return
+        # 必须是链路层协议
+        if ipproto != 0: return
+
+        ether_data = message[20:]
+
+        if if_type == self.consts["IXC_NETIF_LAN"] and flags == self.consts["IXC_FLAG_DHCP_SERVER"]:
+            self.dispatcher.server.handle(ether_data)
+            return
+
+        if if_type == self.consts["IXC_NETIF_WAN"] and flags == self.consts["IXC_FLAG_DHCP_CLIENT"]:
+            return
 
     def udp_writable(self):
         self.remove_evt_write(self.fileno)
@@ -50,8 +70,8 @@ class dhcp_service(udp_handler.udp_handler):
         self.__id = _id
         self.__server_port = server_port
 
-    def send_dhcp_msg(self, _id: bytes, flags: int, message: bytes):
-        header = struct.pack("!16sHbb", _id, 0x0800, 0, flags)
+    def send_dhcp_msg(self, if_type: int, flags: int, message: bytes):
+        header = struct.pack("!16sbbbb", self.__id, if_type, 0, 0, flags)
         sent_msg = b"".join([header, message])
 
         self.add_evt_write(self.fileno)

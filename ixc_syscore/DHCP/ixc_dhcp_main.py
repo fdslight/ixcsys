@@ -11,8 +11,8 @@ import pywind.lib.configfile as conf
 import pywind.web.handlers.scgi as scgi
 
 import ixc_syscore.DHCP.handlers.dhcpd as dhcp
-import ixc_syscore.DHCP.dhcplib.dhcp_client as dhcp_client
-import ixc_syscore.DHCP.dhcplib.dhcp_server as dhcp_server
+import ixc_syscore.DHCP.pylib.dhcp_client as dhcp_client
+import ixc_syscore.DHCP.pylib.dhcp_server as dhcp_server
 
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
@@ -71,6 +71,8 @@ class service(dispatcher.dispatcher):
     __lan_hwaddr = None
     __wan_hwaddr = None
 
+    __router_consts = None
+
     def init_func(self, debug):
         self.__scgi_fd = -1
         self.__dhcp_fd = -1
@@ -99,9 +101,9 @@ class service(dispatcher.dispatcher):
             else:
                 break
 
-        flag_info = RPCClient.fn_call("router", "/runtime", "get_all_pkt_flags")
-        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", True, flag_info["IXC_FLAG_DHCP_SERVER"])
-        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", True, flag_info["IXC_FLAG_DHCP_SERVER"],
+        consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
+        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", True, consts["IXC_FLAG_DHCP_SERVER"])
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", True, consts["IXC_FLAG_DHCP_SERVER"],
                                         port)
         port = RPCClient.fn_call("router", "/netpkt", "get_server_recv_port")
         if not ok:
@@ -111,8 +113,15 @@ class service(dispatcher.dispatcher):
         _, self.__wan_hwaddr = RPCClient.fn_call("router", "/runtime", "get_wan_hwaddr")
         _, self.__lan_hwaddr = RPCClient.fn_call("router", "/runtime", "get_lan_hwaddr")
 
+        self.__router_consts = consts
+
+        self.__dhcp_server = dhcp_server.dhcp_server(self,self.__hostname,self.__lan_hwaddr,"","")
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
         self.__dhcp_client.send_dhcp_request()
+
+    @property
+    def router_consts(self):
+        return self.__router_consts
 
     @property
     def client(self):

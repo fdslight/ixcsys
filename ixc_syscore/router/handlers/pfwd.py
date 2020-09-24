@@ -6,7 +6,7 @@ import pywind.evtframework.handlers.udp_handler as udp_handler
 
 import ixc_syscore.router.pylib.router as router
 
-HEADER_FMT = "!16sHbb"
+HEADER_FMT = "!16sbbbb"
 
 
 class pfwd(udp_handler.udp_handler):
@@ -60,13 +60,13 @@ class pfwd(udp_handler.udp_handler):
         self.unregister(self.fileno)
         self.close()
 
-    def handle_link_from_netstack(self, link_proto: int, ipproto: int, flags: int, msg: bytes):
+    def handle_link_from_netstack(self, if_type: int, flags: int, msg: bytes):
         fwd_info = self.__link_fwd_tb[flags]
 
         if not fwd_info: return
 
         new_msg = [
-            struct.pack(HEADER_FMT, fwd_info[0], link_proto, 0, flags),
+            struct.pack(HEADER_FMT, fwd_info[0], if_type, 0, 0, flags),
             msg
         ]
         self.sendto(b"".join(new_msg), ("127.0.0.1", fwd_info[1]))
@@ -75,18 +75,18 @@ class pfwd(udp_handler.udp_handler):
     def handle_ip_from_netstack(self, link_proto: int, ipproto: int, flags: int, msg: bytes):
         pass
 
-    def recv_from_netstack(self, link_proto: int, ipproto: int, flags: int, msg: bytes):
+    def recv_from_netstack(self, if_type: int, ipproto: int, flags: int, msg: bytes):
         """从协议栈接收数据
-        :param link_proto:
+        :param if_type:
         :param ipproto:
         :param flags:
         :param msg:
         :return:
         """
-        if link_proto:
-            self.handle_link_from_netstack(link_proto, ipproto, flags, msg)
+        if not ipproto:
+            self.handle_link_from_netstack(if_type, flags, msg)
         else:
-            self.handle_ip_from_netstack(link_proto, ipproto, flags, msg)
+            self.handle_ip_from_netstack(if_type, ipproto, flags, msg)
 
     def set_fwd_port(self, is_link_data: bool, flags: int, fwd_port: int):
         if fwd_port < 1 or fwd_port > 0xfffe:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import ixc_syscore.DHCP.dhcplib.dhcp as dhcp
+import ixc_syscore.DHCP.pylib.dhcp as dhcp
 
 
 class dhcp_client(object):
