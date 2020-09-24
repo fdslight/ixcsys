@@ -116,6 +116,7 @@ int ixc_ip_send(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
     int ip_ver= (header->ver_and_ihl & 0xf0) >> 4;
+    struct ixc_netif *netif;
 
     // 检查IP版本是否符合要求
     if(4!=ip_ver && 6!=ip_ver){
@@ -124,6 +125,21 @@ int ixc_ip_send(struct ixc_mbuf *m)
     }
 
     if(6!=ip_ver) return ixc_ip6_send(m);
+
+
+    // 组播或者广播数据包直接发送到LAN口
+    if(header->dst_addr[0]>=224){
+        netif=ixc_netif_get(IXC_NETIF_LAN);
+
+        m->netif=netif;
+        m->link_proto=0x0800;
+        
+        memcpy(m->src_hwaddr,netif->hwaddr,6);
+        memset(m->dst_hwaddr,0xff,6);
+
+        ixc_ether_send2(m);
+        return;
+    }
 
     ixc_mbuf_put(m);
 
