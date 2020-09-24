@@ -115,9 +115,27 @@ class service(dispatcher.dispatcher):
 
         self.__router_consts = consts
 
-        self.__dhcp_server = dhcp_server.dhcp_server(self,self.__hostname,self.__lan_hwaddr,"","")
+        self.__dhcp_server = dhcp_server.dhcp_server(self, self.__hostname, self.__lan_hwaddr, "", "")
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
         self.__dhcp_client.send_dhcp_request()
+
+    def send_dhcp_client_msg(self, msg: bytes):
+        if not self.handler_exists(self.__dhcp_fd): return
+
+        self.get_handler(self.__dhcp_fd).send_dhcp_msg(
+            self.router_consts["IXC_NETIF_LAN"],
+            self.router_consts["IXC_FLAG_DHCP_CLIENT"],
+            msg
+        )
+
+    def send_dhcp_server_msg(self, msg: bytes):
+        if not self.handler_exists(self.__dhcp_fd): return
+
+        self.get_handler(self.__dhcp_fd).send_dhcp_msg(
+            self.router_consts["IXC_NETIF_WAN"],
+            self.router_consts["IXC_FLAG_DHCP_SERVER"],
+            msg
+        )
 
     @property
     def router_consts(self):

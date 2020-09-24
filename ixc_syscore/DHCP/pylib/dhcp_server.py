@@ -36,20 +36,4 @@ class dhcp_server(object):
         return self.__bind
 
     def handle(self, msg: bytes):
-        try:
-            dst_hwaddr, src_hwaddr, proto_type, ippkt = netpkt.parse_ether_data(msg)
-        except:
-            return
-        self.__dst_hwaddr = src_hwaddr
-        try:
-            src_addr, dst_addr, protocol, udpdata = netpkt.parse_ippkt(ippkt)
-            src_port, dst_port, dhcpdata = netpkt.parse_udppkt(udpdata)
-        except:
-            return
-
-        try:
-            self.__dhcp_parser.parse_public_header(dhcpdata[0:dhcp.HDR_LENGTH])
-            options = self.__dhcp_parser.parse_options(dhcpdata[dhcp.HDR_LENGTH:])
-        except:
-            return
-
+        result = self.__dhcp_parser.parse_from_link_data(msg)

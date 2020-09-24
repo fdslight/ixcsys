@@ -108,6 +108,7 @@ int ixc_ether_send2(struct ixc_mbuf *m)
     }
 
     header=(struct ixc_ether_header *)(m->data+m->begin);
+    m->link_proto=ntohs(header->type);
 
     size=m->end-m->begin;
 
