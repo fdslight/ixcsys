@@ -164,6 +164,7 @@ class dhcp_builder(dhcp):
             raise DHCPErr("wrong DHCP data format")
 
         _list = []
+
         for code, byte_value in options:
             length = len(byte_value)
 
@@ -175,8 +176,7 @@ class dhcp_builder(dhcp):
             _list.append(x)
             _list.append(byte_value)
 
-        _list.append(struct.pack("!I", self.magic_cookie))
-
+        _list.append(struct.pack("B", 0xff))
         opt_data = b"".join(_list)
 
         return b"".join([pub_data, opt_data, ])

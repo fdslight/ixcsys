@@ -46,6 +46,7 @@ class dhcp_service(udp_handler.udp_handler):
             return
 
         if if_type == self.consts["IXC_NETIF_WAN"] and flags == self.consts["IXC_FLAG_DHCP_CLIENT"]:
+            self.dispatcher.client.handle(ether_data)
             return
 
     def udp_writable(self):

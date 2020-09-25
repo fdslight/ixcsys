@@ -117,7 +117,7 @@ class service(dispatcher.dispatcher):
 
         self.__dhcp_server = dhcp_server.dhcp_server(self, self.__hostname, self.__lan_hwaddr, "", "")
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
-        self.__dhcp_client.send_dhcp_request()
+        self.__dhcp_client.do()
 
     def send_dhcp_client_msg(self, msg: bytes):
         if not self.handler_exists(self.__dhcp_fd): return
