@@ -23,7 +23,7 @@ def csum_calc(packet: bytes):
         b += 2
 
     if size:
-        checksum += packet[a]
+        checksum += (packet[a] << 8)
 
     checksum = (checksum >> 16) + (checksum & 0xffff)
     checksum += (checksum >> 16)
