@@ -23,6 +23,9 @@ class dhcp_client(object):
 
     __dhcp_ok = None
 
+    __rebind_time = None
+    __renewal_time = None
+
     def __init__(self, runtime, hostname: str, hwaddr: str):
         self.__runtime = runtime
         self.__hostname = hostname
@@ -66,8 +69,16 @@ class dhcp_client(object):
             options,
             is_server=False
         )
-
         self.__runtime.send_dhcp_client_msg(link_data)
+
+    def get_dhcp_opt_value(self, options: list, code: int):
+        rs = None
+        for name, length, value in options:
+            if name == code:
+                rs = value
+                break
+            ''''''
+        return rs
 
     def send_dhcp_request(self):
         """发送DHCP请求报文
@@ -103,6 +114,7 @@ class dhcp_client(object):
         return self.__dhcp_ok
 
     def handle(self, msg: bytes):
+        print(msg)
         self.handle_dhcp_response(msg)
 
     def dhcp_keep_handle(self):
