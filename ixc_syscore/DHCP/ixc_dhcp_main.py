@@ -102,10 +102,16 @@ class service(dispatcher.dispatcher):
                 break
 
         consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
+        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", True, consts["IXC_FLAG_DHCP_CLIENT"])
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", True, consts["IXC_FLAG_DHCP_CLIENT"],
+                                        port)
+        """
         RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", True, consts["IXC_FLAG_DHCP_SERVER"])
         ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", True, consts["IXC_FLAG_DHCP_SERVER"],
                                         port)
+                                        """
         port = RPCClient.fn_call("router", "/netpkt", "get_server_recv_port")
+
         if not ok:
             raise SystemError(message)
         self.get_handler(self.__dhcp_fd).set_message_auth(message, port)
@@ -123,7 +129,7 @@ class service(dispatcher.dispatcher):
         if not self.handler_exists(self.__dhcp_fd): return
 
         self.get_handler(self.__dhcp_fd).send_dhcp_msg(
-            self.router_consts["IXC_NETIF_LAN"],
+            self.router_consts["IXC_NETIF_WAN"],
             self.router_consts["IXC_FLAG_DHCP_CLIENT"],
             msg
         )
@@ -132,7 +138,7 @@ class service(dispatcher.dispatcher):
         if not self.handler_exists(self.__dhcp_fd): return
 
         self.get_handler(self.__dhcp_fd).send_dhcp_msg(
-            self.router_consts["IXC_NETIF_WAN"],
+            self.router_consts["IXC_NETIF_LAN"],
             self.router_consts["IXC_FLAG_DHCP_SERVER"],
             msg
         )
