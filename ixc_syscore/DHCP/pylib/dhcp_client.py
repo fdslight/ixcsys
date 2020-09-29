@@ -25,6 +25,12 @@ class dhcp_client(object):
 
     __rebind_time = None
     __renewal_time = None
+    __lease_time = None
+
+    __tmp_dst_hwaddr = None
+    __tmp_src_hwaddr = None
+    __tmp_dst_addr = None
+    __tmp_src_addr = None
 
     def __init__(self, runtime, hostname: str, hwaddr: str):
         self.__runtime = runtime
@@ -44,7 +50,45 @@ class dhcp_client(object):
         except:
             return
 
-        print(options)
+        if is_server: return
+
+        self.__tmp_dst_hwaddr = dst_hwaddr
+        self.__tmp_src_hwaddr = src_hwaddr
+        self.__tmp_dst_addr = dst_addr
+        self.__tmp_src_addr = src_addr
+
+        x = self.get_dhcp_opt_value(options, 53)
+        msg_type = x[0]
+        if not msg_type: return
+
+        if 2 == msg_type:
+            self.handle_dhcp_offer(options)
+
+    def handle_dhcp_offer(self, optons: list):
+        dhcp_server_id = self.get_dhcp_opt_value(options, 54)
+        if not dhcp_server_id: return
+
+        ipaddr_lease_time = self.get_dhcp_opt_value(options, 51)
+        if not ipaddr_lease_time: return
+        if len(ipaddr_lease_time) != 4: return
+
+        renewal_time = self.get_dhcp_opt_value(options, 58)
+        if not renewal_time: return
+        if len(renewal_time) != 4: return
+
+        rebinding_time = self.get_dhcp_opt_value(options, 59)
+        if not renewal_time: return
+        if len(rebinding_time) != 4: return
+
+        subnet_mask = self.get_dhcp_opt_value(options, 1)
+        if not subnet_mask: return
+        if len(subnet_mask) != 4: return
+
+        broadcast_addr = self.get_dhcp_opt_value(options, 28)
+        if not broadcast_addr: return
+        if len(broadcast_addr) != 4: return
+
+
 
     def send_dhcp_discover(self):
         self.__dhcp_parser.xid = random.randint(1, 0xfffffffe)
@@ -114,7 +158,6 @@ class dhcp_client(object):
         return self.__dhcp_ok
 
     def handle(self, msg: bytes):
-        print(msg)
         self.handle_dhcp_response(msg)
 
     def dhcp_keep_handle(self):
