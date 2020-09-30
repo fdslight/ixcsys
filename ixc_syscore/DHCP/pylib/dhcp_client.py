@@ -247,7 +247,12 @@ class dhcp_client(object):
         # 只允许广播和发送到本机器的ARP数据包
         brd = bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
         if dst_hwaddr != brd or dst_hwaddr != self.__hwaddr: return
+        op, _dst_hwaddr, _src_hwaddr, src_ipaddr, dst_ipaddr = arp_info
 
+        if _dst_hwaddr != self.__hwaddr: return
+        # IP地址如果不冲突那么直接返回
+        if src_ipaddr != self.__my_ipaddr: return
+        #  此处处理DHCP分配到的IP地址与局域网其他机器冲突的情况
 
 
     def dhcp_keep_handle(self):

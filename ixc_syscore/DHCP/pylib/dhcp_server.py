@@ -43,5 +43,8 @@ class dhcp_server(object):
         brd = bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
         if dst_hwaddr != brd or dst_hwaddr != self.__hwaddr: return
 
+        op, _dst_hwaddr, _src_hwaddr, src_ipaddr, dst_ipaddr = arp_info
+        if _dst_hwaddr != self.__hwaddr: return
+
     def loop(self):
         pass
