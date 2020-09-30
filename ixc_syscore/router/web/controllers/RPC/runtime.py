@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import socket
+
+import pywind.lib.netutils as netutils
 
 import ixc_syslib.web.controllers.rpc_controller as rpc
 import ixc_syscore.router.pylib.router as router
 
 from pywind.global_vars import global_vars
-
 
 class controller(rpc.controller):
     __runtime = None
@@ -70,3 +72,54 @@ class controller(rpc.controller):
 
     def get_lan_manage_ipaddr(self, is_ipv6=False):
         pass
+
+    def check_ipaddr_args(self, ipaddr: str, prefix: int, is_ipv6=False):
+        if is_ipv6 and not netutils.is_ipv6_address(ipaddr):
+            return False, "wrong IPv6 address format"
+        if not is_ipv6 and not netutils.is_ipv4_address(ipaddr):
+            return False, "wrong IP address format"
+        try:
+            prefix = int(prefix)
+        except ValueError:
+            return False, "wrong prefix value %s" % prefix
+
+        if prefix < 0:
+            return False, "wrong prefix value %d" % prefix
+        if is_ipv6 and prefix > 128:
+            return False, "wrong IPv6 prefix value %d" % prefix
+        if not is_ipv6 and prefix > 32:
+            return False, "wrong IP prefix value %d" % prefix
+
+        return True, ""
+
+    def set_lan_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
+        """设置LAN口的IP地址
+        """
+        check_ok, err_msg = self.check_ipaddr_args(ipaddr, prefix, is_ipv6=is_ipv6)
+        if not check_ok:
+            return 0, (check_ok, err_msg,)
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+        byte_ip = socket.inet_pton(fa, ipaddr)
+        set_ok = self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, is_ipv6)
+
+        return 0, (set_ok, "")
+
+    def set_wan_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
+        """设置WAN口的IP地址
+        """
+        check_ok, err_msg = self.check_ipaddr_args(ipaddr, prefix, is_ipv6=is_ipv6)
+        if not check_ok:
+            return 0, (check_ok, err_msg,)
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+        byte_ip = socket.inet_pton(fa, ipaddr)
+        set_ok = self.router.netif_set_ip(router.IXC_NETIF_WAN, byte_ip, prefix, is_ipv6)
+
+        return 0, (set_ok, "")
