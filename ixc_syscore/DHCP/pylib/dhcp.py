@@ -39,7 +39,7 @@ class dhcp(object):
 
     __magic_cookie = None
 
-    def __init__(self):
+    def reset(self):
         self.op = DHCP_OP_REQ
         self.hw_type = 1
         self.hw_len = 6
@@ -58,8 +58,9 @@ class dhcp(object):
         self.sname = bytes(64)
         self.file = bytes(128)
 
+    def __init__(self):
+        self.reset()
         self.__magic_cookie = 0x63825363
-
         self.my_init()
 
     def my_init(self):
