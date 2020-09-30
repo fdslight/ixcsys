@@ -236,7 +236,7 @@ class service(dispatcher.dispatcher):
 
 
 def main():
-    __helper = "ixc_syscore/netpkt helper: start | stop | debug"
+    __helper = "ixc_syscore/DHCP helper: start | stop | debug"
     if len(sys.argv) != 2:
         print(__helper)
         return
