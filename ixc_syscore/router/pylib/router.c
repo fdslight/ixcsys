@@ -9,7 +9,7 @@
 #include "../src/addr_map.h"
 #include "../src/qos.h"
 #include "../src/route.h"
-#include "../src/p2p.h"
+#include "../src/udp_src_filter.h"
 #include "../src/vpn.h"
 #include "../src/ether.h"
 #include "../src/ip.h"
@@ -103,7 +103,7 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    rs=ixc_p2p_init();
+    rs=ixc_udp_src_filter_init();
     if(rs<0){
         STDERR("cannot init P2P\r\n");
         return NULL;
@@ -406,8 +406,12 @@ PyInit_router(void){
         return NULL;
     }
 
+    PyModule_AddIntMacro(m,IXC_FLAG_ARP);
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_CLIENT);
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_SERVER);
+    PyModule_AddIntMacro(m,IXC_FLAG_L2VPN);
+    PyModule_AddIntMacro(m,IXC_FLAG_SRC_UDP_FILTER);
+    PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //

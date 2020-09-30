@@ -138,7 +138,7 @@ int ixc_ip_send(struct ixc_mbuf *m)
         memset(m->dst_hwaddr,0xff,6);
 
         ixc_ether_send2(m);
-        return;
+        return 0;
     }
 
     ixc_mbuf_put(m);
