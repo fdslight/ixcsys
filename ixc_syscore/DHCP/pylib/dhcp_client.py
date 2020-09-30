@@ -29,12 +29,12 @@ class dhcp_client(object):
 
     __router = None
     __dnsserver = None
+    __subnet_mask = None
+    __broadcast_addr = None
 
-    __tmp_dst_hwaddr = None
-    __tmp_src_hwaddr = None
-    __tmp_dst_addr = None
-    __tmp_src_addr = None
     __dhcp_server_id = None
+
+    __is_first = None
 
     def __init__(self, runtime, hostname: str, hwaddr: str):
         self.__runtime = runtime
@@ -46,6 +46,7 @@ class dhcp_client(object):
         self.__dhcp_builder = dhcp.dhcp_builder()
         self.__up_time = time.time()
         self.__dhcp_ok = False
+        self.__is_first = False
 
     def handle_dhcp_response(self, response_data: bytes):
         try:
@@ -55,11 +56,6 @@ class dhcp_client(object):
             return
 
         if is_server: return
-
-        self.__tmp_dst_hwaddr = dst_hwaddr
-        self.__tmp_src_hwaddr = src_hwaddr
-        self.__tmp_dst_addr = dst_addr
-        self.__tmp_src_addr = src_addr
 
         x = self.get_dhcp_opt_value(options, 53)
         msg_type = x[0]
@@ -106,11 +102,16 @@ class dhcp_client(object):
 
         self.__router = router
         self.__my_ipaddr = self.__dhcp_parser.yiaddr
-
-
+        self.__dhcp_ok = True
+        self.__up_time = time.time()
+        self.__lease_time, = struct.unpack("!I", ipaddr_lease_time)
+        self.__rebind_time, = struct.unpack("!I", rebinding_time)
+        self.__renewal_time, = struct.unpack("!I", renewal_time)
+        self.__subnet_mask = subnet_mask
+        self.__broadcast_addr = broadcast_addr
 
     def handle_dhcp_nak(self, options: list):
-        pass
+        t = time.time()
 
     def handle_dhcp_offer(self, options: list):
         dhcp_server_id = self.get_dhcp_opt_value(options, 54)
@@ -125,8 +126,6 @@ class dhcp_client(object):
         self.__dhcp_builder.reset()
         self.__dhcp_builder.ciaddr = self.__hwaddr
         self.__dhcp_builder.xid = self.__xid
-
-        self.__my_ipaddr = self.__dhcp_parser.yiaddr
 
         new_opts = [
             (53, struct.pack("!B", 3)),
@@ -149,6 +148,7 @@ class dhcp_client(object):
         self.__runtime.send_dhcp_client_msg(byte_data)
 
     def send_dhcp_discover(self):
+        self.__up_time = time.time()
         self.__dhcp_parser.xid = random.randint(1, 0xfffffffe)
         self.__xid = self.__dhcp_parser.xid
 
@@ -199,16 +199,38 @@ class dhcp_client(object):
         """
         pass
 
-    def do(self):
+    def loop(self):
         """自动执行
         """
         if self.dhcp_ok:
             self.dhcp_keep_handle()
             return
 
+        if not self.__is_first:
+            t = time.time()
+            if t - self.__up_time < 60: return
+        else:
+            self.__is_first = True
+
         if 0 == self.__dhcp_step:
             self.__dhcp_step = 1
             self.send_dhcp_discover()
+
+    def ip_addr_get(self):
+        return socket.inet_ntoa(self.__my_ipaddr)
+
+    def subnet_mask_get(self):
+        return socket.inet_ntoa(self.__subnet_mask)
+
+    def broadcast_addr_get(self):
+        return socket.inet_ntoa(self.__broadcast_addr)
+
+    def router_addr_get(self):
+        return socket.inet_ntoa(self.__router)
+
+    def dnsserver_addr_get(self):
+        if self.__dnsserver: return socket.inet_ntoa(self.__dnsserver)
+        return None
 
     @property
     def dhcp_ok(self):

@@ -10,6 +10,8 @@ import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 import pywind.web.handlers.scgi as scgi
 
+from pywind.global_vars import global_vars
+
 import ixc_syscore.DHCP.handlers.dhcpd as dhcp
 import ixc_syscore.DHCP.pylib.dhcp_client as dhcp_client
 import ixc_syscore.DHCP.pylib.dhcp_server as dhcp_server
@@ -73,9 +75,16 @@ class service(dispatcher.dispatcher):
 
     __router_consts = None
 
+    __enable_dhcp_client = None
+    __enable_dhcp_server = None
+
     def init_func(self, debug):
         self.__scgi_fd = -1
         self.__dhcp_fd = -1
+        self.__enable_dhcp_client = True
+        self.__enable_dhcp_server = False
+
+        global_vars["ixcsys.dhcp"] = self
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
@@ -123,7 +132,6 @@ class service(dispatcher.dispatcher):
 
         self.__dhcp_server = dhcp_server.dhcp_server(self, self.__hostname, self.__lan_hwaddr, "", "")
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
-        self.__dhcp_client.do()
 
     def send_dhcp_client_msg(self, msg: bytes):
         if not self.handler_exists(self.__dhcp_fd): return
@@ -177,7 +185,10 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__scgi_fd).after()
 
     def myloop(self):
-        pass
+        if self.__enable_dhcp_client:
+            self.__dhcp_client.loop()
+        if self.__enable_dhcp_server:
+            self.__dhcp_server.loop()
 
     def release(self):
         if self.__scgi_fd > 0:
