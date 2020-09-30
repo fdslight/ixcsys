@@ -236,8 +236,19 @@ class dhcp_client(object):
     def dhcp_ok(self):
         return self.__dhcp_ok
 
-    def handle(self, msg: bytes):
+    @property
+    def my_hwaddr(self):
+        return self.__hwaddr
+
+    def handle_dhcp_msg(self, msg: bytes):
         self.handle_dhcp_response(msg)
+
+    def handle_arp(self, dst_hwaddr: bytes, src_hwaddr: bytes, arp_info):
+        # 只允许广播和发送到本机器的ARP数据包
+        brd = bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+        if dst_hwaddr != brd or dst_hwaddr != self.__hwaddr: return
+
+
 
     def dhcp_keep_handle(self):
         """保持DHCP地址

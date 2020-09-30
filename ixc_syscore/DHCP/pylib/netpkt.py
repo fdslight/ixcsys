@@ -133,6 +133,10 @@ def arp_parse(arp_data: bytes):
     """
     arp_data = arp_data[0:28]
     try:
-        return struct.unpack("!HHBBH6s4s6s4s", arp_data)
+        hw_type, proto_type, hwaddr_len, proto_addr_len, op, src_hwaddr, src_ipaddr, dst_hwaddr, dst_ipaddr = struct.unpack(
+            "!HHBBH6s4s6s4s", arp_data)
     except struct.error:
         return None
+    r = (op, src_hwaddr, dst_hwaddr, src_ipaddr, dst_ipaddr,)
+
+    return r

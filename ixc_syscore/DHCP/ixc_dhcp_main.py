@@ -15,6 +15,7 @@ from pywind.global_vars import global_vars
 import ixc_syscore.DHCP.handlers.dhcpd as dhcp
 import ixc_syscore.DHCP.pylib.dhcp_client as dhcp_client
 import ixc_syscore.DHCP.pylib.dhcp_server as dhcp_server
+import ixc_syscore.DHCP.pylib.netpkt as netpkt
 
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
@@ -191,7 +192,14 @@ class service(dispatcher.dispatcher):
     def handle_arp_data(self, link_data: bytes):
         """处理ARP数据包
         """
-        pass
+        dst_hwaddr, src_hwaddr, link_proto, arp_data = netpkt.parse_ether_data(link_data)
+        arp_info = netpkt.arp_parse(arp_data)
+        if not arp_info: return
+        # 只处理ARP响应,ARP主要应用于检查IP地址是否冲突
+        if arp_info[0] != 2: return
+
+        if self.dhcp_server_enable: self.server.handle_arp(dst_hwaddr, src_hwaddr, arp_info)
+        if self.dhcp_client_enable: self.client.handle_arp(dst_hwaddr, src_hwaddr, arp_info)
 
     @property
     def hostname(self):

@@ -35,8 +35,13 @@ class dhcp_server(object):
     def bind(self):
         return self.__bind
 
-    def handle(self, msg: bytes):
+    def handle_dhcp_msg(self, msg: bytes):
         result = self.__dhcp_parser.parse_from_link_data(msg)
+
+    def handle_arp(self, dst_hwaddr: bytes, src_hwaddr: bytes, arp_info):
+        # 只允许广播和发送到本机器的ARP数据包
+        brd = bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+        if dst_hwaddr != brd or dst_hwaddr != self.__hwaddr: return
 
     def loop(self):
         pass
