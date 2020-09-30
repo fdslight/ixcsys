@@ -37,3 +37,6 @@ class dhcp_server(object):
 
     def handle(self, msg: bytes):
         result = self.__dhcp_parser.parse_from_link_data(msg)
+
+    def loop(self):
+        pass
