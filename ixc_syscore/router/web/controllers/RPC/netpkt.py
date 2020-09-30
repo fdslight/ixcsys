@@ -21,13 +21,13 @@ class controller(rpc.controller):
             "get_server_recv_port": self.get_sever_recv_port
         }
 
-    def set_fwd_port(self, is_link_data: bool, flags: int, fwd_port: int):
+    def set_fwd_port(self, flags: int, fwd_port: int):
         pfwd = self.__runtime.get_fwd_instance()
-        return (0, pfwd.set_fwd_port(is_link_data, flags, fwd_port),)
+        return (0, pfwd.set_fwd_port(flags, fwd_port),)
 
-    def unset_fwd_port(self, is_link_data: bool, flags: int):
+    def unset_fwd_port(self, flags: int):
         pfwd = self.__runtime.get_fwd_instance()
-        return (0, pfwd.unset_fwd_port(is_link_data, flags),)
+        return (0, pfwd.unset_fwd_port(flags),)
 
     def get_sever_recv_port(self):
         """获取服务端接收端口

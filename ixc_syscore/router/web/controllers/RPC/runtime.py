@@ -32,8 +32,12 @@ class controller(rpc.controller):
         values = {
             "IXC_FLAG_DHCP_CLIENT": router.IXC_FLAG_DHCP_CLIENT,
             "IXC_FLAG_DHCP_SERVER": router.IXC_FLAG_DHCP_SERVER,
-            "IXC_NETIF_LAN":router.IXC_NETIF_LAN,
-            "IXC_NETIF_WAN":router.IXC_NETIF_WAN
+            "IXC_FLAG_ARP": router.IXC_FLAG_ARP,
+            "IXC_FLAG_L2VPN": router.IXC_FLAG_L2VPN,
+            "IXC_FLAG_SRC_UDP_FILTER": router.IXC_FLAG_SRC_UDP_FILTER,
+            "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
+            "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
+            "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
         }
 
         return (0, values,)

@@ -13,20 +13,17 @@ class pfwd(udp_handler.udp_handler):
     __sock_info = None
 
     # 链路层重定向表
-    __link_fwd_tb = None
-    # IP层重定向表
-    __ip_fwd_tb = None
-
+    __fwd_tb = None
     __pkt_size = None
 
     def init_func(self, creator_fd):
-        self.__link_fwd_tb = {
+        self.__fwd_tb = {
             router.IXC_FLAG_DHCP_CLIENT: None,
             router.IXC_FLAG_DHCP_SERVER: None,
-        }
-
-        self.__ip_fwd_tb = {
-
+            router.IXC_FLAG_ARP: None,
+            router.IXC_FLAG_L2VPN: None,
+            router.IXC_FLAG_SRC_UDP_FILTER: None,
+            router.IXC_FLAG_ROUTE_FWD: None,
         }
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -66,21 +63,6 @@ class pfwd(udp_handler.udp_handler):
         self.unregister(self.fileno)
         self.close()
 
-    def handle_link_from_netstack(self, if_type: int, flags: int, msg: bytes):
-        fwd_info = self.__link_fwd_tb[flags]
-
-        if not fwd_info: return
-
-        new_msg = [
-            struct.pack(HEADER_FMT, fwd_info[0], if_type, 0, 0, flags),
-            msg
-        ]
-        self.sendto(b"".join(new_msg), ("127.0.0.1", fwd_info[1]))
-        self.add_evt_write(self.fileno)
-
-    def handle_ip_from_netstack(self, link_proto: int, ipproto: int, flags: int, msg: bytes):
-        pass
-
     def recv_from_netstack(self, if_type: int, ipproto: int, flags: int, msg: bytes):
         """从协议栈接收数据
         :param if_type:
@@ -89,31 +71,39 @@ class pfwd(udp_handler.udp_handler):
         :param msg:
         :return:
         """
-        if not ipproto:
-            self.handle_link_from_netstack(if_type, flags, msg)
+        if flags == router.IXC_FLAG_ARP:
+            _list = [
+                router.IXC_FLAG_ARP,
+                router.IXC_FLAG_L2VPN,
+                router.IXC_FLAG_DHCP_SERVER,
+                router.IXC_FLAG_DHCP_CLIENT,
+            ]
         else:
-            self.handle_ip_from_netstack(if_type, ipproto, flags, msg)
+            _list = [flags]
 
-    def set_fwd_port(self, is_link_data: bool, flags: int, fwd_port: int):
+        for i in _list:
+            fwd_info = self.__fwd_tb[i]
+            if not fwd_info: continue
+            new_msg = [
+                struct.pack(HEADER_FMT, fwd_info[0], if_type, 0, 0, flags),
+                msg
+            ]
+            self.sendto(b"".join(new_msg), ("127.0.0.1", fwd_info[1]))
+        self.add_evt_write(self.fileno)
+
+    def set_fwd_port(self, flags: int, fwd_port: int):
         if fwd_port < 1 or fwd_port > 0xfffe:
             return (False, "wrong fwd_port value",)
 
-        if is_link_data and flags not in self.__link_fwd_tb:
-            return (False, "link data not have flags value %s" % flags,)
+        if flags not in self.__fwd_tb:
+            return (False, "not found flags value %s" % flags,)
 
-        if not is_link_data and flags not in self.__ip_fwd_tb:
-            return (False, "ip data not have flags value %s" % flags,)
+        self.__fwd_tb[flags] = (os.urandom(16), fwd_port,)
+        return (True, self.__fwd_tb[flags][0],)
 
-        if is_link_data:
-            if self.__link_fwd_tb[flags]:
-                return (False, "link data flags %s have been set" % flags,)
-            self.__link_fwd_tb[flags] = (os.urandom(16), fwd_port,)
-            return (True, self.__link_fwd_tb[flags][0],)
-
-    def unset_fwd_port(self, is_link_data: bool, flags: int):
-        if is_link_data:
-            if flags not in self.__link_fwd_tb: return
-            self.__link_fwd_tb[flags] = None
+    def unset_fwd_port(self, flags: int):
+        if flags not in self.__fwd_tb: return
+        self.__fwd_tb[flags] = None
 
     def get_server_recv_port(self):
         return self.__sock_info[1]

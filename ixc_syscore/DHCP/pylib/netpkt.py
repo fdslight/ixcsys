@@ -118,13 +118,21 @@ def parse_udppkt(udp_data: bytes):
     return r
 
 
-def arp_build():
+def arp_build(op: int, src_hwaddr: bytes, dst_hwaddr: bytes, src_ipaddr: bytes, dst_ipaddr: bytes):
     """构建ARP数据包
     """
-    pass
+    try:
+        rs = struct.pack("!HHBBH6s4s6s4s", 1, 0x0800, 6, 4, op, src_hwaddr, src_ipaddr, dst_hwaddr, dst_ipaddr)
+    except struct.error:
+        return None
+    return rs
 
 
-def arp_parse(byte_data: bytes):
+def arp_parse(arp_data: bytes):
     """解析ARP数据包
     """
-    pass
+    arp_data = arp_data[0:28]
+    try:
+        return struct.unpack("!HHBBH6s4s6s4s", arp_data)
+    except struct.error:
+        return None

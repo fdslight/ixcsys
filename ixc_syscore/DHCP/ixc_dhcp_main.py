@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, os, signal, time
+import sys, os, signal, time, json
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -75,28 +75,41 @@ class service(dispatcher.dispatcher):
 
     __router_consts = None
 
-    __enable_dhcp_client = None
-    __enable_dhcp_server = None
+    __dhcp_client_conf_path = None
+    __dhcp_server_conf_path = None
+
+    __dhcp_client_configs = None
+    __dhcp_server_configs = None
 
     def init_func(self, debug):
         self.__scgi_fd = -1
         self.__dhcp_fd = -1
-        self.__enable_dhcp_client = True
-        self.__enable_dhcp_server = False
+
+        self.__dhcp_client_conf_path = "%s/dhcp_client.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__dhcp_server_conf_path = "%s/dhcp_server.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         global_vars["ixcsys.dhcp"] = self
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+
+        self.load_dhcp_client_configs()
+        self.load_dhcp_server_configs()
 
         self.create_poll()
 
         self.start_scgi()
         self.start_dhcp()
 
-    def load_dhcp_configs(self):
+    def load_dhcp_client_configs(self):
+        self.__dhcp_client_configs = conf.ini_parse_from_file(self.__dhcp_client_conf_path)
+
+    def save_dhcp_client_configs(self):
         pass
 
-    def save_dhcp_configs(self):
+    def load_dhcp_server_configs(self):
+        self.__dhcp_server_configs = conf.ini_parse_from_file(self.__dhcp_server_conf_path)
+
+    def save_dhcp_server_configs(self):
         pass
 
     def start_dhcp(self):
@@ -111,12 +124,12 @@ class service(dispatcher.dispatcher):
                 break
 
         consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
-        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", True, consts["IXC_FLAG_DHCP_CLIENT"])
-        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", True, consts["IXC_FLAG_DHCP_CLIENT"],
+        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"])
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"],
                                         port)
         """
         RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", True, consts["IXC_FLAG_DHCP_SERVER"])
-        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", True, consts["IXC_FLAG_DHCP_SERVER"],
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port",consts["IXC_FLAG_DHCP_SERVER"],
                                         port)
                                         """
         port = RPCClient.fn_call("router", "/netpkt", "get_server_recv_port")
@@ -160,8 +173,25 @@ class service(dispatcher.dispatcher):
         return self.__dhcp_client
 
     @property
+    def dhcp_client_enable(self):
+        conf_pub = self.__dhcp_client_configs["public"]
+        enable = bool(int(conf_pub["enable"]))
+        return enable
+
+    @property
+    def dhcp_server_enable(self):
+        conf_pub = self.__dhcp_server_configs["public"]
+        enable = bool(int(conf_pub["enable"]))
+        return enable
+
+    @property
     def server(self):
         return self.__dhcp_server
+
+    def handle_arp_data(self, link_data: bytes):
+        """处理ARP数据包
+        """
+        pass
 
     @property
     def hostname(self):
@@ -185,10 +215,8 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__scgi_fd).after()
 
     def myloop(self):
-        if self.__enable_dhcp_client:
-            self.__dhcp_client.loop()
-        if self.__enable_dhcp_server:
-            self.__dhcp_server.loop()
+        if self.dhcp_client_enable: self.client.loop()
+        if self.dhcp_server_enable: self.server.loop()
 
     def release(self):
         if self.__scgi_fd > 0:

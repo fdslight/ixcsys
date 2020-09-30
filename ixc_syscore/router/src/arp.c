@@ -6,6 +6,7 @@
 #include "netif.h"
 #include "ether.h"
 #include "addr_map.h"
+#include "router.h"
 
 #include "../../../pywind/clib/debug.h"
 
@@ -14,8 +15,9 @@ static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     struct ixc_netif *netif=mbuf->netif;
     //unsigned char brd[]={0xff,0xff,0xff,0xff,0xff,0xff};
 
-    // 检查是否是本机的IP地址,不是的话那么就丢弃ARP数据包
+    // 检查是否是本机的IP地址,不是本机的IP地址那么转发给其它应用
     if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
+        ixc_router_send(netif->type,0,IXC_FLAG_ARP,mbuf->data+mbuf->begin,mbuf->end-mbuf->begin);
         ixc_mbuf_put(mbuf);
         return;
     }
@@ -42,6 +44,7 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 
     // 响应非本网卡丢弃数据包
     if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
+        ixc_router_send(netif->type,0,IXC_FLAG_ARP,mbuf->data+mbuf->begin,mbuf->end-mbuf->begin);
         ixc_mbuf_put(mbuf);
         return;
     }

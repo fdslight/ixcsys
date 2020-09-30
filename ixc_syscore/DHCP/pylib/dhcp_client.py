@@ -153,7 +153,7 @@ class dhcp_client(object):
         self.__xid = self.__dhcp_parser.xid
 
         options = [
-            # dhcp msg type
+            # DHCP msg type
             (53, struct.pack("b", 1)),
             # client id
             (61, self.__hwaddr,),
@@ -243,4 +243,8 @@ class dhcp_client(object):
         """保持DHCP地址
         :return:
         """
-        pass
+        t = time.time()
+        v = t = self.__up_time
+
+        # 此处执行续约操作
+        if v > self.__renewal_time: self.send_dhcp_request()

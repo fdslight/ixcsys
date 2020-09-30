@@ -2,7 +2,7 @@
 #include <arpa/inet.h>
 
 #include "qos.h"
-#include "p2p.h"
+#include "udp_src_filter.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
@@ -140,7 +140,7 @@ void ixc_qos_pop(void)
 
     while (NULL != slot){
         m = ixc_qos.mbuf_slots_head[slot->slot];
-        ixc_p2p_handle(m);
+        ixc_udp_src_filter_handle(m);
         m = m->next;
 
         ixc_qos.tot_pkt_num-=1;
