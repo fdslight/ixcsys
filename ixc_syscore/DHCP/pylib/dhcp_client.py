@@ -49,7 +49,7 @@ class dhcp_client(object):
         self.__dhcp_builder = dhcp.dhcp_builder()
         self.__up_time = time.time()
         self.__dhcp_ok = False
-        self.__is_first = False
+        self.__is_first = True
         self.__dhcp_ip_conflict_check_ok = False
         self.__cur_step = 1
 
@@ -127,6 +127,7 @@ class dhcp_client(object):
         if not ipaddr_lease_time: return
         if len(ipaddr_lease_time) != 4: return
 
+        self.__up_time = time.time()
         self.__cur_step = 3
         self.__dhcp_server_id = dhcp_server_id
 
@@ -250,13 +251,14 @@ class dhcp_client(object):
             self.dhcp_keep_handle()
             return
 
-        if not self.__is_first:
-            return
-        else:
-            self.__is_first = True
-
-        if 0 == self.__dhcp_step:
+        if self.__is_first:
             self.send_dhcp_discover()
+            self.__is_first = False
+            return
+
+        if v > 10 and not self.__dhcp_ok:
+            self.send_dhcp_discover()
+            return
 
     def ip_addr_get(self):
         return socket.inet_ntoa(self.__my_ipaddr)
@@ -306,7 +308,8 @@ class dhcp_client(object):
         :return:
         """
         t = time.time()
-        v = t = self.__up_time
+        v = t - self.__up_time
 
         # 此处执行续约操作
         if v > self.__renewal_time: self.send_dhcp_request()
+        if v > self.__rebind_time: self.send_dhcp_discover()
