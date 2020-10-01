@@ -23,7 +23,10 @@ def build(base_dir, my_dir, cflags, debug=True):
         "%s/pylib/router.c" % my_dir
     ]
 
-    if debug: cflags += " -D DEBUG"
+    if debug:
+        cflags += "-D DEBUG"
+    else:
+        cflags += "-O2"
 
     sys_build.do_compile(files, "%s/pylib/router.so" % my_dir, cflags, is_shared=True)
 

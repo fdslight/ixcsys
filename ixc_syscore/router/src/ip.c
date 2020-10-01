@@ -10,6 +10,7 @@
 #include "arp.h"
 #include "ether.h"
 #include "router.h"
+#include "nat.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
@@ -20,7 +21,7 @@ static void ixc_ip_handle_icmp(struct ixc_mbuf *m,struct netutil_iphdr *header)
 
     // 不是发送本机的ICMP直接发送到路由
     if(memcmp(netif->ipaddr,header->dst_addr,4)){
-        ixc_route_handle(m,0);
+        ixc_route_handle(m);
         return;
     }
 
@@ -51,8 +52,7 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         return;
     }
 
-    ixc_mbuf_put(m);
-
+    ixc_nat_handle(m);
 }
 
 static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphdr)

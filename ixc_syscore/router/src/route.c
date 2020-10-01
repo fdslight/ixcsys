@@ -2,8 +2,8 @@
 #include<stdlib.h>
 
 #include "route.h"
-#include "qos.h"
 #include "router.h"
+#include "udp_src_filter.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/debug.h"
@@ -278,9 +278,9 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 
-    // 找不到匹配匹配路由直接发送到QOS
+    // 找不到匹配匹配路由直接发送到udp src filter
     if(!r){
-        ixc_qos_add(m,0);
+        ixc_udp_src_filter_handle(m);
         return;
     }
     
@@ -288,8 +288,8 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     else ixc_router_send(netif->type,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
 }
 
-void ixc_route_handle(struct ixc_mbuf *m,int is_ipv6)
+void ixc_route_handle(struct ixc_mbuf *m)
 {
-    if(is_ipv6) ixc_route_handle_for_ipv6(m);
+    if(m->is_ipv6) ixc_route_handle_for_ipv6(m);
     else ixc_route_handle_for_ip(m);
 }

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-import struct, random, time, socket
-import pywind.lib.netutils as netutils
-import ixc_syscore.DHCP.pylib.dhcp as dhcp
 
+import struct, random, time, socket
+
+import pywind.lib.netutils as netutils
+
+import ixc_syscore.DHCP.pylib.dhcp as dhcp
 
 class dhcp_client(object):
     __my_ipaddr = None

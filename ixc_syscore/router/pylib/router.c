@@ -103,6 +103,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    rs=ixc_vpn_init();
+    if(rs<0){
+        STDERR("cannot init vpn\r\n");
+        return NULL;
+    }
+
     rs=ixc_udp_src_filter_init();
     if(rs<0){
         STDERR("cannot init P2P\r\n");
@@ -351,6 +357,48 @@ router_netif_set_hwaddr(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_udp_src_filter_set_ip(PyObject *self,PyObject *args)
+{
+    unsigned char *subnet;
+    Py_ssize_t size;
+    unsigned char prefix;
+    int is_ipv6,rs;
+
+    if(!PyArg_ParseTuple(args,"y#bp",&subnet,&size,&prefix,&is_ipv6)) return NULL;
+
+    if(is_ipv6 && prefix>128){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv6 prefix value");
+        return NULL;  
+    }
+
+    if(!is_ipv6 && prefix>32){
+        PyErr_SetString(PyExc_ValueError,"wrong IP prefix value");
+        return NULL;  
+    }
+
+    rs=ixc_udp_src_filter_set_ip(subnet,prefix,is_ipv6);
+
+    if(!rs){
+        Py_RETURN_TRUE;
+    }
+
+    Py_RETURN_FALSE;
+}
+
+static PyObject *
+router_udp_src_filter_enable(PyObject *self,PyObject *args)
+{
+    int enable,is_linked;
+
+    if(!PyArg_ParseTuple(args,"pp",&enable,&is_linked)) return NULL;
+    
+    ixc_udp_src_filter_enable(enable,is_linked);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -365,6 +413,8 @@ static PyMethodDef routerMethods[]={
     {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
+    {"udp_src_filter_set_ip",(PyCFunction)router_udp_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
+    {"udp_src_filter_enable",(PyCFunction)router_udp_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
     {NULL,NULL,0,NULL}
 };
 
