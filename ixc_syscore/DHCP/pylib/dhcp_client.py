@@ -22,6 +22,8 @@ class dhcp_client(object):
     __up_time = None
 
     __dhcp_ok = None
+    # IP地址是否检查通过
+    __dhcp_ip_conflict_check_ok = None
 
     __rebind_time = None
     __renewal_time = None
@@ -33,8 +35,9 @@ class dhcp_client(object):
     __broadcast_addr = None
 
     __dhcp_server_id = None
-
     __is_first = None
+
+    __cur_step = None
 
     def __init__(self, runtime, hostname: str, hwaddr: str):
         self.__runtime = runtime
@@ -47,6 +50,8 @@ class dhcp_client(object):
         self.__up_time = time.time()
         self.__dhcp_ok = False
         self.__is_first = False
+        self.__dhcp_ip_conflict_check_ok = False
+        self.__cur_step = 1
 
     def handle_dhcp_response(self, response_data: bytes):
         try:
@@ -100,6 +105,7 @@ class dhcp_client(object):
         router = self.get_dhcp_opt_value(options, 3)
         if router and len(router) != 4: return
 
+        self.__cur_step = 4
         self.__router = router
         self.__my_ipaddr = self.__dhcp_parser.yiaddr
         self.__dhcp_ok = True
@@ -121,11 +127,13 @@ class dhcp_client(object):
         if not ipaddr_lease_time: return
         if len(ipaddr_lease_time) != 4: return
 
+        self.__cur_step = 3
         self.__dhcp_server_id = dhcp_server_id
 
         self.__dhcp_builder.reset()
         self.__dhcp_builder.ciaddr = self.__hwaddr
         self.__dhcp_builder.xid = self.__xid
+        self.__my_ipaddr = self.__dhcp_parser.yiaddr
 
         new_opts = [
             (53, struct.pack("!B", 3)),
@@ -146,8 +154,11 @@ class dhcp_client(object):
             is_server=False
         )
         self.__runtime.send_dhcp_client_msg(byte_data)
+        # 此处发送ARP数据包进行验证IP地址是否重复
+        self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, is_server=False)
 
     def send_dhcp_discover(self):
+        self.__cur_step = 1
         self.__up_time = time.time()
         self.__dhcp_parser.xid = random.randint(1, 0xfffffffe)
         self.__xid = self.__dhcp_parser.xid
@@ -194,26 +205,57 @@ class dhcp_client(object):
         pass
 
     def send_dhcp_decline(self):
-        """发送DHCP decline报文
+        """广播发送DHCP decline报文,告知地址已经被使用
         :return:
         """
-        pass
+        if self.__dhcp_step not in (3, 4,): return
+
+        self.__dhcp_builder.reset()
+        self.__dhcp_builder.ciaddr = self.__hwaddr
+        self.__dhcp_builder.xid = self.__xid
+
+        new_opts = [
+            (53, struct.pack("!B", 4)),
+            (54, self.__dhcp_server_id),
+            (12, self.__hostname.encode()),
+            (61, self.__hwaddr,),
+            (50, self.__dhcp_parser.yiaddr),
+            (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
+        ]
+
+        byte_data = self.__dhcp_builder.build_to_link_data(
+            bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+            self.__hwaddr,
+            bytes([0xff, 0xff, 0xff, 0xff]),
+            bytes(4),
+            new_opts,
+            is_server=False
+        )
+        self.__runtime.send_dhcp_client_msg(byte_data)
 
     def loop(self):
         """自动执行
         """
+        t = time.time()
+        v = t - self.__up_time
+
+        # 如果DHCP分配成功,并且超时都没有收到重复ARP数据包,那么该IP地址不存在
+        if self.__dhcp_ok and not self.__dhcp_ip_conflict_check_ok:
+            if v > 10:
+                self.__dhcp_ip_conflict_check_ok = True
+            else:
+                return
+
         if self.dhcp_ok:
             self.dhcp_keep_handle()
             return
 
         if not self.__is_first:
-            t = time.time()
-            if t - self.__up_time < 60: return
+            return
         else:
             self.__is_first = True
 
         if 0 == self.__dhcp_step:
-            self.__dhcp_step = 1
             self.send_dhcp_discover()
 
     def ip_addr_get(self):
@@ -234,7 +276,7 @@ class dhcp_client(object):
 
     @property
     def dhcp_ok(self):
-        return self.__dhcp_ok
+        return self.__dhcp_ok and self.__dhcp_ip_conflict_check_ok
 
     @property
     def my_hwaddr(self):
@@ -252,8 +294,12 @@ class dhcp_client(object):
         if _dst_hwaddr != self.__hwaddr: return
         # IP地址如果不冲突那么直接返回
         if src_ipaddr != self.__my_ipaddr: return
-        #  此处处理DHCP分配到的IP地址与局域网其他机器冲突的情况
 
+        #  此处处理DHCP分配到的IP地址与局域网其他机器冲突的情况
+        self.__dhcp_ip_conflict_check_ok = False
+        self.__dhcp_ok = False
+
+        self.send_dhcp_decline()
 
     def dhcp_keep_handle(self):
         """保持DHCP地址
