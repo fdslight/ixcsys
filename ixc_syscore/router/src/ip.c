@@ -126,7 +126,6 @@ int ixc_ip_send(struct ixc_mbuf *m)
 
     if(6!=ip_ver) return ixc_ip6_send(m);
 
-
     // 组播或者广播数据包直接发送到LAN口
     if(header->dst_addr[0]>=224){
         netif=ixc_netif_get(IXC_NETIF_LAN);
