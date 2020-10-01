@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, os, signal, time, json
+import sys, os, signal, time
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -212,6 +212,13 @@ class service(dispatcher.dispatcher):
             self.send_dhcp_server_msg(link_data)
         else:
             self.send_dhcp_client_msg(link_data)
+
+    def set_wan_ip(self, ip: str, prefix: int, is_ipv6=False):
+        """设置WAN口的IP地址
+        """
+        rs = RPCClient.fn_call("router", "/runtime", "set_wan_ipaddr", ip, prefix, is_ipv6=is_ipv6)
+        ok, msg = rs
+        if not ok: logging.print_error(msg)
 
     @property
     def hostname(self):

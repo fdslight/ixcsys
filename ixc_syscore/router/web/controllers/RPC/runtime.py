@@ -8,6 +8,7 @@ import ixc_syscore.router.pylib.router as router
 
 from pywind.global_vars import global_vars
 
+
 class controller(rpc.controller):
     __runtime = None
 
@@ -24,7 +25,9 @@ class controller(rpc.controller):
             "get_lan_hwaddr": self.get_lan_hwaddr,
             "get_lan_ipaddr": self.get_lan_ipaddr,
             "get_wan_ipaddr": self.get_wan_ipaddr,
-            "get_lan_manage_ipaddr": self.get_lan_manage_ipaddr
+            "get_lan_manage_ipaddr": self.get_lan_manage_ipaddr,
+            "set_wan_ipaddr": self.set_wan_ipaddr,
+            "set_lan_ipaddr": self.set_lan_ipaddr
         }
 
     def get_all_consts(self):
