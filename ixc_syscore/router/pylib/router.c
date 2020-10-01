@@ -14,9 +14,11 @@
 #include "../src/ether.h"
 #include "../src/ip.h"
 #include "../src/ip6.h"
+#include "../src/local.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
+#include "../../../pywind/clib/netif/tuntap.h"
 
 typedef struct{
     PyObject_HEAD
@@ -82,6 +84,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_netif_init();
     if(rs<0){
         STDERR("cannot init netif\r\n");
+        return NULL;
+    }
+
+    rs=ixc_local_init();
+    if(rs<0){
+        STDERR("cannot init local\r\n");
         return NULL;
     }
 
@@ -208,6 +216,57 @@ router_myloop(PyObject *self,PyObject *args)
     sysloop_do();
     
     Py_RETURN_NONE;
+}
+
+static PyObject *
+router_tundev_create(PyObject *self,PyObject *args)
+{
+    const char *name;
+    char name_new[512];
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"s",&name)) return NULL;
+    strcpy(name_new,name);
+
+    rs=ixc_local_dev_create(name_new);
+    if(rs<0){
+        Py_RETURN_NONE;
+    }
+
+    return Py_BuildValue("is",rs,name_new);
+}
+
+static PyObject *
+router_tundev_delete(PyObject *self,PyObject *args)
+{
+    ixc_local_dev_delete();
+    
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_tundev_set_ip(PyObject *self,PyObject *args)
+{
+    Py_ssize_t size;
+    unsigned char *ipaddr;
+    int is_ipv6,is_ipv6_local_linked;
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"y#pp",&ipaddr,&size,&is_ipv6,&is_ipv6_local_linked)) return NULL;
+
+    if(is_ipv6 && size!=16){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv6 address");
+        return NULL;
+    }
+
+    if(!is_ipv6 && size!=4){
+        PyErr_SetString(PyExc_ValueError,"wrong IP address");
+        return NULL;
+    }
+
+    rs=ixc_local_set_ip(ipaddr,is_ipv6,is_ipv6_local_linked);
+
+    return PyLong_FromLong(rs);
 }
 
 static PyObject *
@@ -407,6 +466,9 @@ static PyMethodDef routerMethods[]={
     {"send_netpkt",(PyCFunction)router_send_netpkt,METH_VARARGS,"send network packet to protocol statck"},
     {"iowait",(PyCFunction)router_iowait,METH_VARARGS,"tell if wait"},
     {"myloop",(PyCFunction)router_myloop,METH_VARARGS,"loop call"},
+    {"tundev_create",(PyCFunction)router_tundev_create,METH_VARARGS,"create tun device"},
+    {"tundev_delete",(PyCFunction)router_tundev_delete,METH_NOARGS,"delete tun device"},
+    {"tundev_set_ip",(PyCFunction)router_tundev_set_ip,METH_VARARGS,"set local ip address"},
     {"netif_create",(PyCFunction)router_netif_create,METH_VARARGS,"create tap device"},
     {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},
     {"netif_rx_data",(PyCFunction)router_netif_rx_data,METH_VARARGS,"receive netif data"},
