@@ -201,6 +201,18 @@ class service(dispatcher.dispatcher):
         if self.dhcp_server_enable: self.server.handle_arp(dst_hwaddr, src_hwaddr, arp_info)
         if self.dhcp_client_enable: self.client.handle_arp(dst_hwaddr, src_hwaddr, arp_info)
 
+    def send_arp_request(self, my_hwaddr: bytes, my_ipaddr: bytes, is_server=False):
+        """发送ARP请求验证IP地址冲突
+        """
+        link_brd = bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+        arp_data = netpkt.arp_build(1, my_hwaddr, link_brd, my_ipaddr, my_ipaddr)
+        link_data = netpkt.build_ether_data(link_brd, my_hwaddr, 0x806, arp_data)
+
+        if is_server:
+            self.send_dhcp_server_msg(link_data)
+        else:
+            self.send_dhcp_client_msg(link_data)
+
     @property
     def hostname(self):
         return self.__hostname
