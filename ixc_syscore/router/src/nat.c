@@ -56,7 +56,6 @@ static void ixc_nat_id_put(struct ixc_nat_id_set *id_set,struct ixc_nat_id *id)
     id_set->head=id;
 }
 
-
 static void ixc_nat_wan_send(struct ixc_mbuf *m)
 {   
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);

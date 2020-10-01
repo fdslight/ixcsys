@@ -122,9 +122,9 @@ void ixc_qos_uninit(void)
     ixc_qos_is_initialized = 0;
 }
 
-void ixc_qos_add(struct ixc_mbuf *m, int is_ipv6)
+void ixc_qos_add(struct ixc_mbuf *m)
 {
-    if (is_ipv6)
+    if (m->is_ipv6)
         ixc_qos_add_for_ipv6(m);
     else
         ixc_qos_add_for_ip(m);

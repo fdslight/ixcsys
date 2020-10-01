@@ -3,7 +3,6 @@
 import ixc_syscore.DHCP.pylib.dhcp as dhcp
 import ixc_syscore.DHCP.pylib.netpkt as netpkt
 
-
 class dhcp_server(object):
     __my_ipaddr = None
 

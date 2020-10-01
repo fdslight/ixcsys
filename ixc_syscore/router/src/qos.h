@@ -26,7 +26,7 @@ int ixc_qos_init(void);
 void ixc_qos_uninit(void);
 
 /// 把流量加入到QOS槽中
-void ixc_qos_add(struct ixc_mbuf *m,int is_ipv6);
+void ixc_qos_add(struct ixc_mbuf *m);
 
 /// 自动弹出槽中的数据
 void ixc_qos_pop(void);

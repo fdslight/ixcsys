@@ -38,6 +38,6 @@ int ixc_route_add(unsigned char *subnet,unsigned char prefix,int is_ipv6,int is_
 void ixc_route_del(unsigned char *subnet,unsigned char prefix,int is_ipv6);
 struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6);
 
-void ixc_route_handle(struct ixc_mbuf *m,int is_ipv6);
+void ixc_route_handle(struct ixc_mbuf *m);
 
 #endif
