@@ -16,6 +16,7 @@ import pywind.lib.netutils as netutils
 
 import ixc_syscore.router.pylib.router as router
 import ixc_syscore.router.handlers.tapdev as tapdev
+import ixc_syscore.router.handlers.tundev as tundev
 import ixc_syscore.router.handlers.pfwd as pfwd
 
 import ixc_syslib.web.route as webroute
@@ -74,12 +75,12 @@ class service(dispatcher.dispatcher):
 
     __if_lan_fd = None
     __if_wan_fd = None
+    __tun_fd = None
 
     __lan_configs = None
     __wan_configs = None
 
     __is_linux = None
-
     # 是否告知系统管理进程
     __is_notify_sysadm_proc = None
 
@@ -187,6 +188,7 @@ class service(dispatcher.dispatcher):
 
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
+        self.__tun_fd = -1
         self.__scgi_fd = -1
         self.__pfwd_fd = -1
 
@@ -244,12 +246,15 @@ class service(dispatcher.dispatcher):
         byte_ip = socket.inet_pton(socket.AF_INET, ip)
 
         self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
+
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
+
         self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
 
         if self.is_linux:
             self.linux_br_create(self.__LAN_BR_NAME, [lan_phy_ifname, self.__LAN_NAME, ])
+
             os.system("ip link set %s promisc on" % lan_phy_ifname)
             os.system("ip link set %s up" % lan_phy_ifname)
             # 设置桥接网卡IP地址
@@ -257,6 +262,7 @@ class service(dispatcher.dispatcher):
 
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
+
             os.system("ifconfig %s promisc" % lan_phy_ifname)
             os.system("ifconfig %s up" % lan_phy_ifname)
 
