@@ -211,3 +211,36 @@ def str_hwaddr_to_bytes(s: str):
         new_seq.append(n)
 
     return bytes(new_seq)
+
+
+def mask_to_prefix(mask: str, is_ipv6=False):
+    """掩码地址转换成prefix
+    """
+    map_values = {
+        0b1111_1111: 8,
+        0b1111_1110: 7,
+        0b1111_1100: 6,
+        0b1111_1000: 5,
+        0b1111_0000: 4,
+        0b1110_0000: 3,
+        0b1100_0000: 2,
+        0b1000_0000: 1,
+        0b0000_0000: 0
+    }
+
+    if is_ipv6:
+        fa = socket.AF_INET6
+    else:
+        fa = socket.AF_INET
+    byte_mask = socket.inet_pton(fa, mask)
+    old_value = None
+    prefix = 0
+
+    for x in byte_mask:
+        if old_value is not None:
+            if x != 0 and old_value != 0xff: return None
+        if x not in map_values: return None
+        old_value = x
+        prefix += map_values[x]
+
+    return prefix
