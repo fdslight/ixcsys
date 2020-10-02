@@ -3,7 +3,6 @@
 import socket, struct
 import pywind.evtframework.handlers.udp_handler as udp_handler
 
-
 class dhcp_service(udp_handler.udp_handler):
     __sock_info = None
     __id = None

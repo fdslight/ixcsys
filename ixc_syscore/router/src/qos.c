@@ -2,13 +2,22 @@
 #include <arpa/inet.h>
 
 #include "qos.h"
-#include "udp_src_filter.h"
+#include "nat.h"
+#include "natv6.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
+#include "../../../pywind/clib/sysloop.h"
 
 static struct ixc_qos ixc_qos;
 static int ixc_qos_is_initialized = 0;
+static struct sysloop *qos_sysloop=NULL;
+
+static void ixc_qos_sysloop_cb(struct sysloop *lp)
+{
+    // 一次性弹出多个数据包
+    for(int n=0;n<10;n++) ixc_qos_pop();
+}
 
 inline static int ixc_qos_calc_slot(unsigned char a, unsigned char b, unsigned short _id)
 {
@@ -87,14 +96,19 @@ int ixc_qos_init(void)
 
     for (int n = 0; n < IXC_QOS_SLOT_NUM; n++){
         slot = malloc(sizeof(struct ixc_qos_slot));
-        if (NULL == slot)
-        {
+        if (NULL == slot){
             ixc_qos_uninit();
             STDERR("cannot create slot for qos\r\n");
             break;
         }
         slot->next = ixc_qos.empty_slot_head;
         ixc_qos.empty_slot_head = slot;
+    }
+    qos_sysloop=sysloop_add(ixc_qos_sysloop_cb,NULL);
+    if(NULL==qos_sysloop){
+        ixc_qos_uninit();
+        STDERR("cannot add to sysloop\r\n");
+        return -1;
     }
 
     return 0;
@@ -112,13 +126,13 @@ void ixc_qos_uninit(void)
     }
 
     slot = ixc_qos.used_slots_head;
-    while (NULL != slot)
-    {
+    while (NULL != slot){
         t = slot->next;
         free(slot);
         slot = t;
     }
 
+    if(NULL!=qos_sysloop) sysloop_del(qos_sysloop);
     ixc_qos_is_initialized = 0;
 }
 
@@ -140,7 +154,10 @@ void ixc_qos_pop(void)
 
     while (NULL != slot){
         m = ixc_qos.mbuf_slots_head[slot->slot];
-        ixc_udp_src_filter_handle(m);
+        
+        if(m->is_ipv6) ixc_natv6_handle(m);
+        else ixc_nat_handle(m);
+
         m = m->next;
 
         ixc_qos.tot_pkt_num-=1;

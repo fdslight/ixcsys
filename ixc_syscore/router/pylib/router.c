@@ -15,6 +15,8 @@
 #include "../src/ip.h"
 #include "../src/ip6.h"
 #include "../src/local.h"
+#include "../src/nat.h"
+#include "../src/natv6.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -212,7 +214,6 @@ router_iowait(PyObject *self,PyObject *args)
 static PyObject *
 router_myloop(PyObject *self,PyObject *args)
 {
-    ixc_addr_map_do();
     sysloop_do();
     
     Py_RETURN_NONE;
@@ -403,12 +404,7 @@ router_netif_set_hwaddr(PyObject *self,PyObject *args)
     }
     if(!ixc_netif_is_used(if_idx)){
         PyErr_SetString(PyExc_SystemError,"netif is not used");
-        return NULL;  
-    }
-
-    if(6!=size){
-        PyErr_SetString(PyExc_ValueError,"wrong hwaddr length");
-        return NULL;  
+        return NULL;
     }
 
     ixc_netif_set_hwaddr(if_idx,s);
@@ -457,6 +453,24 @@ router_udp_src_filter_enable(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_nat_set(PyObject *self,PyObject *args)
+{
+    int status,type,is_ipv6;
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"ppp",&status,&type,&is_ipv6)) return NULL;
+
+    if(is_ipv6) rs=ixc_natv6_enable(status,type);
+    else rs=ixc_nat_enable(status,type);
+
+    if(rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
 
 static PyMemberDef router_members[]={
     {NULL}
@@ -477,6 +491,7 @@ static PyMethodDef routerMethods[]={
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
     {"udp_src_filter_set_ip",(PyCFunction)router_udp_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"udp_src_filter_enable",(PyCFunction)router_udp_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
+    {"nat_set",(PyCFunction)router_nat_set,METH_VARARGS,"set IP NAT and IPv6 NAT status and type"},
     {NULL,NULL,0,NULL}
 };
 

@@ -62,6 +62,11 @@ static void ixc_nat_wan_send(struct ixc_mbuf *m)
     struct ixc_addr_map_record *r;
     unsigned char dst_hwaddr[6]={0xff,0xff,0xff,0xff,0xff,0xff};
 
+    // 处理nat没有开启的情况
+    if(!nat_enable){
+        ixc_mbuf_put(m);
+    }
+
     r=ixc_addr_map_get(header->dst_addr,0);
 
     // 找不到地址记录那么现在发送ARP请求包并且丢弃数据包
@@ -311,4 +316,11 @@ void ixc_nat_handle(struct ixc_mbuf *m)
     if(IXC_NETIF_WAN==netif->type) ixc_nat_wan_send(m);
     else ixc_nat_lan_send(m);
 
+}
+
+int ixc_nat_enable(int status,int type)
+{
+    nat_enable=status;
+    
+    return 0;
 }

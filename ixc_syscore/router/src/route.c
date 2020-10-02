@@ -262,8 +262,8 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
 static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
-    struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
-    struct ixc_netif *netif=m->netif;
+    //struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
+    //struct ixc_netif *netif=m->netif;
 
     // 检查地址是否可以被转发
     if(header->dst_addr[0]==0 || ((header->dst_addr[0]) & 0xf0)==0xf0){
