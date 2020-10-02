@@ -151,7 +151,7 @@ int ixc_ip_send(struct ixc_mbuf *m)
     // 如果源地址和目的地址一样那么丢弃该数据包
     if(!memcmp(header->dst_addr,header->src_addr,4)){
         ixc_mbuf_put(m);
-        return;
+        return -1;
     }
 
     ixc_mbuf_put(m);

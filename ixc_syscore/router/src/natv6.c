@@ -16,3 +16,8 @@ void ixc_natv6_handle(struct ixc_mbuf *m)
 {
     ixc_mbuf_put(m);
 }
+
+int ixc_natv6_enable(int status,int type)
+{
+    return 0;
+}

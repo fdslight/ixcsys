@@ -6,9 +6,20 @@
 #include "arp.h"
 
 #include "../../../pywind/clib/debug.h"
+#include "../../../pywind/clib/sysloop.h"
 
 static struct ixc_addr_map addr_map;
 static int addr_map_is_initialized=0;
+static struct sysloop *addr_map_sysloop=NULL;
+
+static void ixc_addr_map_sysloop_cb(struct sysloop *lp)
+{
+    if(!addr_map_is_initialized){
+        STDERR("addr map not initialized\r\n");
+        return;
+    }
+    time_wheel_handle(&(addr_map.time_wheel));
+}
 
 static void ixc_addr_map_timeout_cb(void *data)
 {
@@ -53,14 +64,23 @@ int ixc_addr_map_init(void)
     struct map *m;
     bzero(&addr_map,sizeof(struct ixc_addr_map));
 
+    addr_map_sysloop=sysloop_add(ixc_addr_map_sysloop_cb,NULL);
+
+    if(NULL==addr_map_sysloop){
+        STDERR("cannot add to sysloop\r\n");
+        return -1;
+    }
+
     rs=time_wheel_new(&(addr_map.time_wheel),IXC_ADDR_MAP_TIMEOUT*2/10,10,ixc_addr_map_timeout_cb,256);
     if(rs){
+        sysloop_del(addr_map_sysloop);
         STDERR("cannot create time wheel for address map\r\n");
         return -1;
     }
 
     rs=map_new(&m,4);
     if(rs){
+        sysloop_del(addr_map_sysloop);
         time_wheel_release(&(addr_map.time_wheel));
         STDERR("cannot create map for ipv4 address map\r\n");
         return -1;
@@ -69,6 +89,7 @@ int ixc_addr_map_init(void)
     addr_map.ip_record=m;
     rs=map_new(&m,16);
     if(rs){
+        sysloop_del(addr_map_sysloop);
         map_release(addr_map.ip_record,NULL);
         time_wheel_release(&(addr_map.time_wheel));
         STDERR("cannot create map for ipv6 address map\r\n");
@@ -89,6 +110,7 @@ void ixc_addr_map_uninit(void)
     map_release(addr_map.ip6_record,ixc_addr_map_del_cb);
 
     time_wheel_release(&(addr_map.time_wheel));
+    sysloop_del(addr_map_sysloop);
 
     addr_map_is_initialized=0;
 }
@@ -157,13 +179,3 @@ struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6)
 
     return r;
 }
-
-void ixc_addr_map_do(void)
-{
-    if(!addr_map_is_initialized){
-        STDERR("addr map not initialized\r\n");
-        return;
-    }
-    time_wheel_handle(&(addr_map.time_wheel));
-}
-

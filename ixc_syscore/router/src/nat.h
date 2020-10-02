@@ -26,6 +26,11 @@ struct ixc_nat_session{
 #define IXC_NAT_ID_MIN 10000
 #define IXC_NAT_ID_MAX 60000
 
+/// NAT PASS即不执行NAT操作,而是直接PASS
+#define IXC_NAT_TYPE_PASS 0
+/// CONE NAT 模式
+#define IXC_NAT_TYPE_CONE 1
+
 // NAT 超时时间
 #define IXC_NAT_TIMEOUT 300
 
@@ -60,5 +65,6 @@ int ixc_nat_init(void);
 void ixc_nat_uninit(void);
 
 void ixc_nat_handle(struct ixc_mbuf *m);
+int ixc_nat_enable(int status,int type);
 
 #endif

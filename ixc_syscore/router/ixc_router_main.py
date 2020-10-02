@@ -366,6 +366,12 @@ class service(dispatcher.dispatcher):
     def myloop(self):
         if not self.__is_notify_sysadm_proc:
             self.notify_sysadm_proc()
+
+        if not self.router.iowait():
+            self.set_default_io_wait_time(0)
+        else:
+            self.set_default_io_wait_time(10)
+
         self.router.myloop()
 
     def parse_ipaddr_format(self, s: str):
