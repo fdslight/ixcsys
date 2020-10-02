@@ -13,7 +13,6 @@
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
 
-static int nat_enable=0;
 static int nat_is_initialized=0;
 struct ixc_nat nat;
 struct time_wheel nat_time_wheel;
@@ -62,9 +61,10 @@ static void ixc_nat_wan_send(struct ixc_mbuf *m)
     struct ixc_addr_map_record *r;
     unsigned char dst_hwaddr[6]={0xff,0xff,0xff,0xff,0xff,0xff};
 
-    // 处理nat没有开启的情况
-    if(!nat_enable){
+    // 没有开启NAT那么直接发送数据包
+    if(!nat.enable){
         ixc_mbuf_put(m);
+        return;
     }
 
     r=ixc_addr_map_get(header->dst_addr,0);
@@ -80,12 +80,6 @@ static void ixc_nat_wan_send(struct ixc_mbuf *m)
     memcpy(m->dst_hwaddr,r->hwaddr,6);
 
     m->link_proto=htons(0x800);
-
-    // WAN口开启PPPOE那么直接发送PPPOE报文
-    if(ixc_pppoe_enable()){
-        ixc_pppoe_send(m);
-        return;
-    }
 
     // 不是PPPOE直接发送以太网报文
     ixc_ether_send(m,1);
@@ -229,7 +223,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 static void ixc_nat_lan_send(struct ixc_mbuf *m)
 {
     // 未开启NAT那么直接发送数据包
-    if(!nat_enable){
+    if(!nat.enable){
         ixc_ip_send(m);
         return;
     }
@@ -244,9 +238,9 @@ static void ixc_nat_timeout_cb(void *data)
     struct time_data *tdata;
     time_t now_time=time(NULL);
 
-    // 如果超时那么就删除数据
+    // 如果NAT会话超时那么就删除数据
     if(now_time-session->up_time>IXC_NAT_TIMEOUT){
-
+        
         return;
     }
 
@@ -260,7 +254,10 @@ static void ixc_nat_timeout_cb(void *data)
 
 static void ixc_nat_sysloop_cb(struct sysloop *lp)
 {
-
+    //  如果NAT没有被开启那么直接跳过
+    if(!nat.enable) return;
+    // 执行时间函数,定期检查NAT会话是否过期
+    time_wheel_handle(&nat_time_wheel);
 }
 
 int ixc_nat_init(void)
@@ -320,7 +317,7 @@ void ixc_nat_handle(struct ixc_mbuf *m)
 
 int ixc_nat_enable(int status,int type)
 {
-    nat_enable=status;
+    nat.enable=status;
     
     return 0;
 }

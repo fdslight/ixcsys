@@ -13,12 +13,12 @@ static int tundev_fd=-1;
 static char tundev_name[4096];
 static int tundev_is_initialized=0;
 
-static unsigned char *local_ipaddr[4];
+static unsigned char local_ipaddr[4];
 
 /// 全局单一IPv6地址
-static unsigned char *local_uniq_ip6addr[16];
+static unsigned char local_uniq_ip6addr[16];
 /// 全局链路地址
-static unsigned char *local_linked_ip6addr[16];
+static unsigned char local_linked_ip6addr[16];
 
 struct ixc_mbuf *local_mbuf_sent_first=NULL;
 struct ixc_mbuf *local_mbuf_sent_last=NULL;
@@ -197,4 +197,13 @@ void ixc_local_send(struct ixc_mbuf *m)
         ixc_router_write_ev_tell(tundev_fd,1);
         tundev_wflags=1;
     }
+}
+
+inline
+unsigned char *ixc_local_get(int is_ipv6,int is_ipv6_local_linked)
+{
+    if(!is_ipv6) return local_ipaddr;
+    if(is_ipv6_local_linked) return local_linked_ip6addr;
+
+    return local_uniq_ip6addr;
 }
