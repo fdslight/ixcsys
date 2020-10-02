@@ -18,13 +18,14 @@ struct ixc_pppoe_header{
     unsigned short session_id;
     unsigned short length;
 };
-#pragma pack(pop)
 
 /// PPPoE tag描述
 struct ixc_pppoe_tag_header{
     unsigned short type;
     unsigned short length;
 };
+
+#pragma pack(pop)
 
 struct ixc_pppoe{
     // 是否开启PPPoE会话
