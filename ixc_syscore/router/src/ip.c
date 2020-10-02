@@ -73,7 +73,8 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         return;
     }
 
-    ixc_mbuf_put(m);
+    // 发送数据到router
+    ixc_route_handle(m);
 }
 
 
@@ -100,9 +101,14 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     }
 
     mbuf->is_ipv6=0;
-    
     // 除去以太网的填充字节
     mbuf->tail=mbuf->offset+tot_len;
+
+    // 源地址与目的地址一样那么丢弃该数据包
+    if(!memcmp(header->dst_addr,header->src_addr,4)){
+        ixc_mbuf_put(mbuf);
+        return;
+    }
 
     if(IXC_NETIF_WAN==netif->type){
         ixc_ip_handle_from_wan(mbuf,header);
@@ -126,6 +132,8 @@ int ixc_ip_send(struct ixc_mbuf *m)
 
     if(6!=ip_ver) return ixc_ip6_send(m);
 
+    m->is_ipv6=0;
+
     // 组播或者广播数据包直接发送到LAN口
     if(header->dst_addr[0]>=224){
         netif=ixc_netif_get(IXC_NETIF_LAN);
@@ -138,6 +146,12 @@ int ixc_ip_send(struct ixc_mbuf *m)
 
         ixc_ether_send2(m);
         return 0;
+    }
+
+    // 如果源地址和目的地址一样那么丢弃该数据包
+    if(!memcmp(header->dst_addr,header->src_addr,4)){
+        ixc_mbuf_put(m);
+        return;
     }
 
     ixc_mbuf_put(m);

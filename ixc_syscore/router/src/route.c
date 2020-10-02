@@ -261,22 +261,41 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
 
 static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 {
+    struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
+    struct ixc_netif *netif=m->netif;
+
+    // 检查地址是否可以被转发
+    if(header->dst_addr[0]==0 || ((header->dst_addr[0]) & 0xf0)==0xf0){
+        ixc_mbuf_put(m);
+        return;
+    }
+    
     ixc_mbuf_put(m);
 }
-
 
 static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct ixc_route_info *r=ixc_route_match(iphdr->dst_addr,0);
     struct ixc_netif *netif=m->netif;
+    unsigned short csum;
 
-    // 检查是否是组播地址,如果是组播地址那么直接丢弃该数据包
-    // 单网卡路由不需要组播数据包
-    if(iphdr->dst_addr[0] >=223 || iphdr->dst_addr[0]<=239){
+    // 组播数据包不能经过路由器,因此丢弃组播数据包
+    if(iphdr->dst_addr[0] >=224 && iphdr->dst_addr[0]<=239){
         ixc_mbuf_put(m);
         return;
     }
+
+    // 如果ttl为1那么发送ICMP报文告知
+    if(iphdr->ttl<1){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 减少头部ttl的数值
+    csum=csum_calc_incre(iphdr->ttl,iphdr->ttl-1,iphdr->checksum);
+    iphdr->checksum=csum;
 
     // 找不到匹配匹配路由直接发送到udp src filter
     if(!r){
