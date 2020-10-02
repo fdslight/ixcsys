@@ -1,4 +1,5 @@
 #include<string.h>
+#include<arpa/inet.h>
 
 #include "pppoe.h"
 #include "ether.h"
@@ -24,6 +25,7 @@ static void ixc_pppoe_send_discovery(void)
     struct ixc_mbuf *m=ixc_mbuf_get();
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
     struct ixc_pppoe_header *header;
+    struct ixc_pppoe_tag_header *tag_header;
 
     unsigned char brd[]={
         0xff,0xff,0xff,
@@ -54,7 +56,16 @@ static void ixc_pppoe_send_discovery(void)
     header->ver_and_type=0x11;
     header->code=IXC_PPPOE_CODE_PADI;
     header->session_id=0x0000;
+    header->length=htons(4);
 
+    tag_header=(struct ixc_pppoe_tag_header *)(((char *)header)+6);
+    tag_header->type=htons(0x0101);
+    tag_header->length=0;
+
+    m->tail=m->begin+10;
+    m->end=m->tail;
+
+    ixc_ether_send(m,1);
 }
 
 int ixc_pppoe_init(void)
