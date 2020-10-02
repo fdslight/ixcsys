@@ -22,7 +22,6 @@ struct ixc_nat_session{
     unsigned char refcnt;
 };
 
-
 #define IXC_NAT_ID_MIN 10000
 #define IXC_NAT_ID_MAX 60000
 
@@ -57,6 +56,7 @@ struct ixc_nat{
     struct ixc_nat_id_set icmp_set;
     struct ixc_nat_id_set tcp_set;
     struct ixc_nat_id_set udp_set;
+    int enable;
 };
 
 #include "mbuf.h"

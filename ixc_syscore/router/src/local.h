@@ -19,4 +19,6 @@ int ixc_local_tx_data(void);
 int ixc_local_set_ip(unsigned char *ipaddr,int is_ipv6,int is_ipv6_local_linked);
 void ixc_local_send(struct ixc_mbuf *m);
 
+unsigned char *ixc_local_get(int is_ipv6,int is_ipv6_local_linked);
+
 #endif
