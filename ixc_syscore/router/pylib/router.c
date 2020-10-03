@@ -83,6 +83,18 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    rs=ixc_nat_init();
+    if(rs<0){
+        STDERR("cannot init nat\r\n");
+        return -1;
+    }
+
+    rs=ixc_natv6_init();
+    if(rs<0){
+        STDERR("cannot init natv6\r\n");
+        return -1;
+    }
+
     rs=ixc_netif_init();
     if(rs<0){
         STDERR("cannot init netif\r\n");

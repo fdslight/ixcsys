@@ -187,6 +187,7 @@ class dhcp_client(object):
         self.__dhcp_builder.reset()
         self.__dhcp_builder.ciaddr = self.__hwaddr
         self.__dhcp_builder.xid = self.__xid
+        # 注意这里的时间要更新，避免连续发送dhcp request数据包
         self.__up_time = time.time()
 
         options = [
