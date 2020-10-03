@@ -305,6 +305,9 @@ class service(dispatcher.dispatcher):
         self.__tun_fd, self.__TUN_NAME = rs
         self.create_handler(-1, tundev.tundevice, self.__tun_fd)
 
+        # 设置本机器的默认路由指向
+        os.system("ip route add default dev %s" % self.__TUN_NAME)
+
     def get_fwd_instance(self):
         """获取重定向类实例
         :return:
