@@ -8,7 +8,6 @@ if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MY
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as cfg
-
 import pywind.web.handlers.scgi as scgi
 
 import ixc_syslib.pylib.logging as logging
