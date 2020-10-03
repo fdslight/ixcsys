@@ -222,6 +222,13 @@ class service(dispatcher.dispatcher):
 
         return ok
 
+    def set_wan_gw(self, ip: str, is_ipv6=False):
+        rs = RPCClient.fn_call("router", "/runtime", "set_wan_gw", ip, is_ipv6=is_ipv6)
+        ok, msg = rs
+        if not ok: logging.print_error(msg)
+
+        return ok
+
     @property
     def hostname(self):
         return self.__hostname

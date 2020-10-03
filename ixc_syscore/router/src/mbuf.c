@@ -66,6 +66,7 @@ struct ixc_mbuf *ixc_mbuf_get(void)
 
         m->next=NULL;
         m->netif=NULL;
+        m->loop_trace=0;
 
         return m;
     }
@@ -80,6 +81,7 @@ struct ixc_mbuf *ixc_mbuf_get(void)
 
     m->next=NULL;
     m->netif=NULL;
+    m->loop_trace=0;
 
     ixc_mbuf_used_num+=1;
 

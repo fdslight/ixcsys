@@ -86,13 +86,13 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_nat_init();
     if(rs<0){
         STDERR("cannot init nat\r\n");
-        return -1;
+        return NULL;
     }
 
     rs=ixc_natv6_init();
     if(rs<0){
         STDERR("cannot init natv6\r\n");
-        return -1;
+        return NULL;
     }
 
     rs=ixc_netif_init();
@@ -428,6 +428,44 @@ router_netif_set_ip(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
+/// 设置网卡网关
+static PyObject *
+router_netif_set_gw(PyObject *self,PyObject *args)
+{
+    unsigned char *gw;
+    int is_ipv6,if_idx;
+    Py_ssize_t size;
+    struct ixc_netif *netif;
+
+    if(!PyArg_ParseTuple(args,"iy#p",&if_idx,&gw,&size,&is_ipv6)) return NULL;
+
+    if(if_idx<0 || if_idx>=IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
+
+    if(is_ipv6 && size!=16){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv6 address length");
+        return NULL;
+    }
+
+    if(!is_ipv6 && size!=4){
+        PyErr_SetString(PyExc_ValueError,"wrong IP address length");
+        return NULL;
+    }
+
+    if(!ixc_netif_is_used(if_idx)){
+        PyErr_SetString(PyExc_SystemError,"netif is not used");
+        return NULL;  
+    }
+
+    netif=ixc_netif_get(if_idx);
+    if(is_ipv6) memcpy(netif->ip6_gw,gw,16);
+    else memcpy(netif->ip_gw,gw,4);
+
+    Py_RETURN_NONE;
+}
+
 static PyObject *
 router_netif_set_hwaddr(PyObject *self,PyObject *args)
 {
@@ -496,7 +534,7 @@ router_nat_set(PyObject *self,PyObject *args)
     int status,type,is_ipv6;
     int rs;
 
-    if(!PyArg_ParseTuple(args,"ppp",&status,&type,&is_ipv6)) return NULL;
+    if(!PyArg_ParseTuple(args,"pip",&status,&type,&is_ipv6)) return NULL;
 
     if(is_ipv6) rs=ixc_natv6_enable(status,type);
     else rs=ixc_nat_enable(status,type);
@@ -527,6 +565,7 @@ static PyMethodDef routerMethods[]={
     {"netif_rx_data",(PyCFunction)router_netif_rx_data,METH_VARARGS,"receive netif data"},
     {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
+    {"netif_set_gw",(PyCFunction)router_netif_set_gw,METH_VARARGS,"set gateway for IP and IPv6"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
     {"udp_src_filter_set_ip",(PyCFunction)router_udp_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"udp_src_filter_enable",(PyCFunction)router_udp_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},

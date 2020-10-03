@@ -327,7 +327,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     }
 
     // 如果ttl为1那么发送ICMP报文告知
-    if(iphdr->ttl<1){
+    if(iphdr->ttl<=1){
         ixc_mbuf_put(m);
         return;
     }
@@ -338,17 +338,40 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     iphdr->checksum=csum;
 
     // 找不到匹配匹配路由直接发送到udp src filter
-    if(!r){
-        ixc_udp_src_filter_handle(m);
+    if(r){
+        // 避免造成应用收到的数据包发送给应用
+        if(NULL==m->netif){
+            ixc_mbuf_put(m);
+            return;
+        }
+        if(r->is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
+        else ixc_router_send(netif->type,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
         return;
     }
-    
-    if(r->is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
-    else ixc_router_send(netif->type,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
+
+    netif=ixc_netif_get(IXC_NETIF_WAN);
+
+    // 此处查找网关,网关不存在那么就丢弃数据包
+    addr_map_r=ixc_addr_map_get(netif->ip_gw,0);
+    if(NULL!=addr_map_r){
+        ixc_arp_send(netif,link_brd,iphdr->dst_addr,IXC_ARP_OP_REQ);
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    memcpy(m->src_hwaddr,netif->hwaddr,6);
+    memcpy(m->dst_hwaddr,addr_map_r->hwaddr,6);
+
+    m->link_proto=0x0800;
+    m->netif=netif;
+
+    ixc_udp_src_filter_handle(m);
 }
 
 void ixc_route_handle(struct ixc_mbuf *m)
 {
+    IXC_MBUF_LOOP_TRACE(m);
+    
     if(m->is_ipv6) ixc_route_handle_for_ipv6(m);
     else ixc_route_handle_for_ip(m);
 }
