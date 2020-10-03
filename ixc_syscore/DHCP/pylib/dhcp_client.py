@@ -6,6 +6,7 @@ import pywind.lib.netutils as netutils
 
 import ixc_syscore.DHCP.pylib.dhcp as dhcp
 
+
 class dhcp_client(object):
     __my_ipaddr = None
 
@@ -27,8 +28,6 @@ class dhcp_client(object):
     # IP地址是否检查通过
     __dhcp_ip_conflict_check_ok = None
 
-    __rebind_time = None
-    __renewal_time = None
     __lease_time = None
 
     __router = None
@@ -76,20 +75,11 @@ class dhcp_client(object):
     def handle_dhcp_ack(self, options: list):
         dhcp_server_id = self.get_dhcp_opt_value(options, 54)
         if not dhcp_server_id: return
-
         if dhcp_server_id != self.__dhcp_server_id: return
 
         ipaddr_lease_time = self.get_dhcp_opt_value(options, 51)
         if not ipaddr_lease_time: return
         if len(ipaddr_lease_time) != 4: return
-
-        renewal_time = self.get_dhcp_opt_value(options, 58)
-        if not renewal_time: return
-        if len(renewal_time) != 4: return
-
-        rebinding_time = self.get_dhcp_opt_value(options, 59)
-        if not renewal_time: return
-        if len(rebinding_time) != 4: return
 
         subnet_mask = self.get_dhcp_opt_value(options, 1)
         if not subnet_mask: return
@@ -108,13 +98,12 @@ class dhcp_client(object):
         if router and len(router) != 4: return
 
         self.__cur_step = 4
-        self.__router = router
         self.__my_ipaddr = self.__dhcp_parser.yiaddr
         self.__dhcp_ok = True
         self.__up_time = time.time()
+
+        self.__router = router
         self.__lease_time, = struct.unpack("!I", ipaddr_lease_time)
-        self.__rebind_time, = struct.unpack("!I", rebinding_time)
-        self.__renewal_time, = struct.unpack("!I", renewal_time)
         self.__subnet_mask = subnet_mask
         self.__broadcast_addr = broadcast_addr
 
@@ -125,18 +114,14 @@ class dhcp_client(object):
         dhcp_server_id = self.get_dhcp_opt_value(options, 54)
         if not dhcp_server_id: return
 
-        ipaddr_lease_time = self.get_dhcp_opt_value(options, 51)
-        if not ipaddr_lease_time: return
-        if len(ipaddr_lease_time) != 4: return
-
         self.__up_time = time.time()
         self.__cur_step = 3
         self.__dhcp_server_id = dhcp_server_id
+        self.__my_ipaddr = self.__dhcp_parser.yiaddr
 
         self.__dhcp_builder.reset()
         self.__dhcp_builder.ciaddr = self.__hwaddr
         self.__dhcp_builder.xid = self.__xid
-        self.__my_ipaddr = self.__dhcp_parser.yiaddr
 
         new_opts = [
             (53, struct.pack("!B", 3)),
@@ -144,7 +129,6 @@ class dhcp_client(object):
             (12, self.__hostname.encode()),
             (61, self.__hwaddr,),
             (50, self.__dhcp_parser.yiaddr),
-            (51, ipaddr_lease_time,),
             (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
         ]
 
@@ -165,6 +149,7 @@ class dhcp_client(object):
         self.__up_time = time.time()
         self.__dhcp_parser.xid = random.randint(1, 0xfffffffe)
         self.__xid = self.__dhcp_parser.xid
+        self.__dhcp_ip_conflict_check_ok = False
 
         options = [
             # DHCP msg type
@@ -199,13 +184,29 @@ class dhcp_client(object):
         """发送DHCP请求报文
         :return:
         """
-        pass
+        self.__dhcp_builder.reset()
+        self.__dhcp_builder.ciaddr = self.__hwaddr
+        self.__dhcp_builder.xid = self.__xid
+        self.__up_time = time.time()
 
-    def send_dhcp_release(self):
-        """发送DHCP release报文
-        :return:
-        """
-        pass
+        options = [
+            (53, struct.pack("!B", 3)),
+            (54, self.__dhcp_server_id),
+            (12, self.__hostname.encode()),
+            (61, self.__hwaddr,),
+            (50, self.__dhcp_parser.yiaddr),
+            (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
+        ]
+
+        link_data = self.__dhcp_builder.build_to_link_data(
+            bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+            self.__hwaddr,
+            bytes([0xff, 0xff, 0xff, 0xff]),
+            bytes(4),
+            options,
+            is_server=False
+        )
+        self.__runtime.send_dhcp_client_msg(link_data)
 
     def send_dhcp_decline(self):
         """广播发送DHCP decline报文,告知地址已经被使用
@@ -245,6 +246,12 @@ class dhcp_client(object):
         # 如果DHCP分配成功,并且超时都没有收到重复ARP数据包,那么该IP地址不存在
         if self.__dhcp_ok and not self.__dhcp_ip_conflict_check_ok:
             if v > 10:
+                s_ip = socket.inet_ntop(socket.AF_INET, self.__my_ipaddr)
+                s_mask = socket.inet_ntop(socket.AF_INET, self.__subnet_mask)
+                prefix = netutils.mask_to_prefix(s_mask, is_ipv6=False)
+
+                ok = self.__runtime.set_wan_ip(s_ip, prefix, is_ipv6=False)
+
                 self.__dhcp_ip_conflict_check_ok = True
             else:
                 return
@@ -313,5 +320,4 @@ class dhcp_client(object):
         v = t - self.__up_time
 
         # 此处执行续约操作
-        if v > self.__renewal_time: self.send_dhcp_request()
-        if v > self.__rebind_time: self.send_dhcp_discover()
+        if v > int(self.__lease_time / 2): self.send_dhcp_request()

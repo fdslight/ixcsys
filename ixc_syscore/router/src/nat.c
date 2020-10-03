@@ -8,6 +8,7 @@
 #include "addr_map.h"
 #include "arp.h"
 #include "ip.h"
+#include "qos.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
@@ -55,35 +56,34 @@ static void ixc_nat_id_put(struct ixc_nat_id_set *id_set,struct ixc_nat_id *id)
     id_set->head=id;
 }
 
-static void ixc_nat_wan_send(struct ixc_mbuf *m)
-{   
-    struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
-    struct ixc_addr_map_record *r;
-    unsigned char dst_hwaddr[6]={0xff,0xff,0xff,0xff,0xff,0xff};
+static void ixc_nat_del_cb(void *data)
+{
+    struct ixc_nat_session *s=data;
+    struct ixc_nat_id_set *id_set;
+    s->refcnt-=1;
+    // 引用计数不为0那么直接返回
+    if(0!=s) return;
 
-    // 没有开启NAT那么直接发送数据包
-    if(!nat.enable){
-        ixc_mbuf_put(m);
-        return;
+    switch(s->protocol){
+        case 1:
+            id_set=&(nat.icmp_set);
+            break;
+        case 7:
+            id_set=&(nat.tcp_set);
+            break;
+        case 17:
+        case 136:
+            id_set=&(nat.udp_set);
+            break;
+        default:
+            STDERR("system nat protocol bug\r\n");
+            break;
     }
 
-    r=ixc_addr_map_get(header->dst_addr,0);
-
-    // 找不到地址记录那么现在发送ARP请求包并且丢弃数据包
-    if(!r){
-        ixc_arp_send(m->netif,dst_hwaddr,header->dst_addr,IXC_ARP_OP_REQ);
-        ixc_mbuf_put(m);
-        return;
-    }
-
-    memcpy(m->src_hwaddr,m->netif->hwaddr,6);
-    memcpy(m->dst_hwaddr,r->hwaddr,6);
-
-    m->link_proto=htons(0x800);
-
-    // 不是PPPOE直接发送以太网报文
-    ixc_ether_send(m,1);
+    ixc_nat_id_put(id_set,s->nat_id);
+    free(s);
 }
+
 
 static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 {
@@ -177,6 +177,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             return NULL;
         }
 
+        memcpy(session->lan_key,key,7);
         // LAN to WAN映射添加
         if(0!=map_add(nat.lan2wan,key,session)){
             ixc_mbuf_put(m);
@@ -188,14 +189,17 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
         memcpy(tmp,key,7);
         memcpy(tmp+5,&(nat_id->id),2);
+        memcpy(session->wan_key,tmp,7);
 
         if(0!=map_add(nat.wan2lan,tmp,session)){
+            free(session);
             ixc_mbuf_put(m);
             ixc_nat_id_put(id_set,nat_id);
             map_del(nat.lan2wan,key,NULL);
             STDERR("nat map add failed\r\n");
             return NULL;
         }
+
         session->refcnt=2;
 
         session->nat_id=nat_id;
@@ -215,16 +219,31 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
         csum=csum_calc_incre(*id_ptr,session->wan_id,*csum_ptr);
     }
+
     *csum_ptr=csum;
 
     return m;
 }
 
-static void ixc_nat_lan_send(struct ixc_mbuf *m)
+static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
+{   
+    // 没有开启NAT那么直接发送数据包
+    if(!nat.enable){
+        ixc_qos_add(m);
+        return;
+    }
+
+    m=ixc_nat_do(m,0);
+    if(NULL==m) return;
+
+    ixc_qos_add(m);
+}
+
+static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
 {
     // 未开启NAT那么直接发送数据包
     if(!nat.enable){
-        ixc_ip_send(m);
+        ixc_pppoe_handle(m);
         return;
     }
 
@@ -240,10 +259,11 @@ static void ixc_nat_timeout_cb(void *data)
 
     // 如果NAT会话超时那么就删除数据
     if(now_time-session->up_time>IXC_NAT_TIMEOUT){
-        
+        map_del(nat.wan2lan,(char *)(session->wan_key),ixc_nat_del_cb);
+        map_del(nat.lan2wan,(char *)(session->lan_key),ixc_nat_del_cb);
         return;
     }
-
+    
     // 处理未超时的情况
     tdata=time_wheel_add(&nat_time_wheel,session,now_time-session->up_time);
     if(NULL==tdata){
@@ -303,16 +323,21 @@ int ixc_nat_init(void)
 void ixc_nat_uninit(void)
 {
     nat_is_initialized=0;
+
     return;
 }
 
 void ixc_nat_handle(struct ixc_mbuf *m)
 {
-    struct ixc_netif *netif=m->netif;
+    
+    if(!nat_is_initialized){
+        ixc_mbuf_put(m);
+        STDERR("please init nat\r\n");
+        return;
+    }
 
-    if(IXC_NETIF_WAN==netif->type) ixc_nat_wan_send(m);
-    else ixc_nat_lan_send(m);
-
+    if(IXC_MBUF_FROM_LAN==m->from) ixc_nat_handle_from_lan(m);
+    else ixc_nat_handle_from_wan(m);
 }
 
 int ixc_nat_enable(int status,int type)

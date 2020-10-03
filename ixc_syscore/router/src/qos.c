@@ -4,6 +4,7 @@
 #include "qos.h"
 #include "nat.h"
 #include "natv6.h"
+#include "route.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
@@ -15,8 +16,8 @@ static struct sysloop *qos_sysloop=NULL;
 
 static void ixc_qos_sysloop_cb(struct sysloop *lp)
 {
-    // 一次性弹出多个数据包
-    for(int n=0;n<10;n++) ixc_qos_pop();
+    // 弹出数据包
+    ixc_qos_pop();
 }
 
 inline static int ixc_qos_calc_slot(unsigned char a, unsigned char b, unsigned short _id)
@@ -154,9 +155,14 @@ void ixc_qos_pop(void)
 
     while (NULL != slot){
         m = ixc_qos.mbuf_slots_head[slot->slot];
-        
-        if(m->is_ipv6) ixc_natv6_handle(m);
-        else ixc_nat_handle(m);
+
+        // 来自于LAN那么发送给NAT节点,如果不是那么发送到route节点
+        if(IXC_MBUF_FROM_LAN==m->from){
+            if(m->is_ipv6) ixc_natv6_handle(m);
+            else ixc_nat_handle(m);
+        }else{
+            ixc_route_handle(m);
+        }
 
         m = m->next;
 

@@ -7,11 +7,9 @@
 #include "route.h"
 #include "icmp.h"
 #include "addr_map.h"
-#include "arp.h"
 #include "ether.h"
 #include "router.h"
 #include "nat.h"
-#include "local.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
@@ -124,7 +122,6 @@ int ixc_ip_send(struct ixc_mbuf *m)
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
     int ip_ver= (header->ver_and_ihl & 0xf0) >> 4;
     struct ixc_netif *netif;
-    unsigned char *local_addr;
 
     // 检查IP版本是否符合要求
     if(4!=ip_ver && 6!=ip_ver){
@@ -156,15 +153,7 @@ int ixc_ip_send(struct ixc_mbuf *m)
         return -1;
     }
 
-    local_addr=ixc_local_get(0,0);
-
-    // 是local地址那么发送到local设备
-    if(!memcmp(local_addr,header->dst_addr,4)){
-        ixc_local_send(m);
-        return 0;
-    }
-
-    ixc_mbuf_put(m);
+    ixc_route_handle(m);
 
     return 0;
 }

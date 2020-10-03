@@ -101,15 +101,20 @@ int ixc_pppoe_set_user(char *username,char *passwd)
 void ixc_pppoe_start(void)
 {
     pppoe.is_started=1;
-
     // 发送PPPoE的会话报文
 
 }
 
 /// 把数据包发送PPPOE进行处理
-void ixc_pppoe_send(struct ixc_mbuf *m)
+void ixc_pppoe_handle(struct ixc_mbuf *m)
 {
-
+    // 未开启PPPoE直接发送数据
+    if(!pppoe.enable){
+        ixc_ether_send(m,1);
+        return;
+    }
+    
+    ixc_mbuf_put(m);
 }
 
 int ixc_pppoe_ok(void)

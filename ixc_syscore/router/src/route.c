@@ -4,6 +4,10 @@
 #include "route.h"
 #include "router.h"
 #include "udp_src_filter.h"
+#include "local.h"
+#include "addr_map.h"
+#include "arp.h"
+#include "qos.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/debug.h"
@@ -277,12 +281,47 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
-    struct ixc_route_info *r=ixc_route_match(iphdr->dst_addr,0);
-    struct ixc_netif *netif=m->netif;
+    struct ixc_route_info *r;
+    struct ixc_netif *netif;
+    struct ixc_addr_map_record *addr_map_r;
+    unsigned char link_brd[]={
+        0xff,0xff,0xff,
+        0xff,0xff,0xff
+    };
+
+    unsigned char *local_addr=ixc_local_get(0,0);
     unsigned short csum;
 
     // 组播数据包不能经过路由器,因此丢弃组播数据包
     if(iphdr->dst_addr[0] >=224 && iphdr->dst_addr[0]<=239){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 如果目标地址是本地地址,那么发送到本地机器
+    if(!memcmp(local_addr,iphdr->dst_addr,4)){
+        ixc_local_send(m);
+        return;
+    }
+
+    // 如果是本地网络的地址,那么发送到本地网络
+    netif=ixc_netif_get(IXC_NETIF_LAN);
+    if(ixc_netif_is_subnet(netif,iphdr->dst_addr,0,0)){
+        m->netif=netif;
+        addr_map_r=ixc_addr_map_get(iphdr->dst_addr,0);
+
+        // 如果找到本地网络的地址映射记录,那么发送到本地网络
+        if(NULL!=addr_map_r){
+            memcpy(m->src_hwaddr,netif->hwaddr,6);
+            memcpy(m->dst_hwaddr,addr_map_r->hwaddr,6);
+            m->link_proto=0x0800;
+
+            // 加入到QOS
+            ixc_qos_add(m);
+            return;
+        }
+        // 找不到数据包那么就发送ARP请求并丢弃当前数据包
+        ixc_arp_send(netif,link_brd,iphdr->dst_addr,IXC_ARP_OP_REQ);
         ixc_mbuf_put(m);
         return;
     }
@@ -293,6 +332,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 
+    r=ixc_route_match(iphdr->dst_addr,0);
     // 减少头部ttl的数值
     csum=csum_calc_incre(iphdr->ttl,iphdr->ttl-1,iphdr->checksum);
     iphdr->checksum=csum;

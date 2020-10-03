@@ -220,6 +220,8 @@ class service(dispatcher.dispatcher):
         ok, msg = rs
         if not ok: logging.print_error(msg)
 
+        return ok
+
     @property
     def hostname(self):
         return self.__hostname

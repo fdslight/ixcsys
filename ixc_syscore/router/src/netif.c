@@ -269,6 +269,9 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
             }
         }
 
+        if(IXC_NETIF_LAN==netif->type) m->from=IXC_MBUF_FROM_LAN;
+        else m->from=IXC_MBUF_FROM_WAN;
+
         m->begin=IXC_MBUF_BEGIN;
         m->offset=m->begin;
         m->tail=m->offset+rsize;

@@ -113,6 +113,7 @@ int ixc_local_rx_data(void)
             }
         }
 
+        m->from=IXC_MBUF_FROM_LAN;
         m->begin=IXC_MBUF_BEGIN;
         m->offset=m->begin;
         m->tail=m->offset+rsize;

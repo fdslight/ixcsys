@@ -318,6 +318,7 @@ class service(dispatcher.dispatcher):
         self.__debug = debug
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
+        self.__tun_fd = -1
         self.__router = router.router(self._recv_from_proto_stack, self._write_ev_tell)
 
         self.__WAN_BR_NAME = "ixcwanbr"

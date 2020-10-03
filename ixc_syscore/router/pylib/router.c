@@ -184,6 +184,7 @@ router_send_netpkt(PyObject *self,PyObject *args)
     }
 
     m->netif=netif;
+    m->from=IXC_MBUF_FROM_LAN;
     m->begin=IXC_MBUF_BEGIN;
     m->offset=m->begin;
     m->tail=m->begin+size;

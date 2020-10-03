@@ -17,6 +17,11 @@ struct ixc_nat_session{
     unsigned char addr[4];
     unsigned short lan_id;
     unsigned short wan_id;
+
+    unsigned char lan_key[7];
+    unsigned char _pad1[1];
+    unsigned char wan_key[7];
+    unsigned char _pad2[1];
     unsigned char protocol;
     // 引用计数
     unsigned char refcnt;
