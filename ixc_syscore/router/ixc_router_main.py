@@ -70,6 +70,8 @@ class service(dispatcher.dispatcher):
     __LAN_NAME = None
     __WAN_NAME = None
 
+    __TUN_NAME = None
+
     __router = None
     __debug = None
 
@@ -175,6 +177,8 @@ class service(dispatcher.dispatcher):
             os.system("ifconfig %s destroy" % self.__LAN_BR_NAME)
             os.system("ifconfig %s destroy" % self.__WAN_BR_NAME)
 
+        if self.__tun_fd > 0:
+            self.router.tundev_delete()
         if self.__if_lan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_LAN)
         if self.__if_wan_fd > 0:
@@ -296,6 +300,11 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
 
+    def start_local(self):
+        rs = self.router.tundev_create("ixclocal")
+        self.__tun_fd, self.__TUN_NAME = rs
+        self.create_handler(-1, tundev.tundevice, self.__tun_fd)
+
     def get_fwd_instance(self):
         """获取重定向类实例
         :return:
@@ -340,6 +349,7 @@ class service(dispatcher.dispatcher):
 
         self.start_lan()
         self.start_wan()
+        self.start_local()
 
         self.__pfwd_fd = self.create_handler(-1, pfwd.pfwd)
 
