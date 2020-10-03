@@ -12,10 +12,12 @@ class tundevice(handler.handler):
         return self.fileno
 
     def evt_read(self):
-        pass
+        r = self.dispatcher.router.tundev_rx_data()
+        if not r: self.error()
 
     def evt_write(self):
-        pass
+        r = self.dispatcher.router.tundev_tx_data()
+        if not r: self.error()
 
     def error(self):
         self.delete_handler(self.fileno)

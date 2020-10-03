@@ -246,6 +246,30 @@ router_tundev_delete(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_tundev_rx_data(PyObject *self,PyObject *args)
+{
+    int rs=ixc_local_rx_data();
+
+    if(rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_tundev_tx_data(PyObject *self,PyObject *args)
+{
+    int rs=ixc_local_tx_data();
+
+    if(rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
 router_tundev_set_ip(PyObject *self,PyObject *args)
 {
     Py_ssize_t size;
@@ -482,6 +506,8 @@ static PyMethodDef routerMethods[]={
     {"myloop",(PyCFunction)router_myloop,METH_VARARGS,"loop call"},
     {"tundev_create",(PyCFunction)router_tundev_create,METH_VARARGS,"create tun device"},
     {"tundev_delete",(PyCFunction)router_tundev_delete,METH_NOARGS,"delete tun device"},
+    {"tundev_rx_data",(PyCFunction)router_tundev_rx_data,METH_NOARGS,"read tun device data"},
+    {"tundev_tx_data",(PyCFunction)router_tundev_tx_data,METH_NOARGS,"tun device data write"},
     {"tundev_set_ip",(PyCFunction)router_tundev_set_ip,METH_VARARGS,"set local ip address"},
     {"netif_create",(PyCFunction)router_netif_create,METH_VARARGS,"create tap device"},
     {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},

@@ -87,11 +87,11 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
 
     switch (type){
         // IP
-        case 0x800:
+        case 0x0800:
             ixc_ip_handle(mbuf);
             break;
         // ARP
-        case 0x806:
+        case 0x0806:
             ixc_arp_handle(mbuf);
             break;
         // IPv6
