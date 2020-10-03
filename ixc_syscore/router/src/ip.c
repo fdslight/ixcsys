@@ -132,7 +132,7 @@ int ixc_ip_send(struct ixc_mbuf *m)
         return -1;
     }
 
-    if(6!=ip_ver) return ixc_ip6_send(m);
+    if(6==ip_ver) return ixc_ip6_send(m);
 
     m->is_ipv6=0;
 
