@@ -54,7 +54,7 @@ void ixc_pppoe_start(void);
 void ixc_pppoe_stop(void);
 
 /// 把数据包发送PPPOE进行处理
-void ixc_pppoe_send(struct ixc_mbuf *m);
+void ixc_pppoe_handle(struct ixc_mbuf *m);
 
 /// 检查PPPoE是否握手成功
 int ixc_pppoe_ok(void);
