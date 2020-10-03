@@ -247,6 +247,7 @@ static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
         return;
     }
 
+    DBG_FLAGS;
     m=ixc_nat_do(m,1);
     if(NULL==m) return;
 }

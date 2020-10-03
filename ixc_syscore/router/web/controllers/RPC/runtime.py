@@ -27,7 +27,8 @@ class controller(rpc.controller):
             "get_wan_ipaddr": self.get_wan_ipaddr,
             "get_lan_manage_ipaddr": self.get_lan_manage_ipaddr,
             "set_wan_ipaddr": self.set_wan_ipaddr,
-            "set_lan_ipaddr": self.set_lan_ipaddr
+            "set_lan_ipaddr": self.set_lan_ipaddr,
+            "set_wan_gw": self.set_wan_gw
         }
 
     def get_all_consts(self):
@@ -126,3 +127,21 @@ class controller(rpc.controller):
         set_ok = self.router.netif_set_ip(router.IXC_NETIF_WAN, byte_ip, prefix, is_ipv6)
 
         return 0, (set_ok, "")
+
+    def set_wan_gw(self, gw_addr: str, is_ipv6=False):
+        """设置WAN网关地址
+        """
+        # 首先检查IP地址是否合法
+        if is_ipv6 and not netutils.is_ipv6_address(gw_addr):
+            return 0, (False, "Wrong IPv6 address format")
+        if not is_ipv6 and not netutils.is_ipv4_address(gw_addr):
+            return 0, (False, "Wrong IP address format")
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+        byte_ip = socket.inet_pton(fa, gw_addr)
+        self.router.netif_set_gw(router.IXC_NETIF_WAN, byte_ip, is_ipv6)
+
+        return 0, (True, "")

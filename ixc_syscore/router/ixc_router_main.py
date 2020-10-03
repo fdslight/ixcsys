@@ -279,9 +279,13 @@ class service(dispatcher.dispatcher):
         wan_public = self.__wan_configs["public"]
         wan_phy_ifname = wan_public["phy_ifname"]
         wan_ifhwaddr = wan_public["hwaddr"]
+        nat_enable = bool(int(ip_cfg["nat_enable"]))
 
         self.__if_wan_fd, self.__WAN_NAME = self.__router.netif_create(self.__WAN_NAME, router.IXC_NETIF_WAN)
         self.router.netif_set_hwaddr(router.IXC_NETIF_WAN, netutils.ifaddr_to_bytes(wan_ifhwaddr))
+
+        if nat_enable: self.router.nat_set(True, 0, False)
+
         self.create_handler(-1, tapdev.tapdevice, self.__if_wan_fd, router.IXC_NETIF_WAN)
 
         if self.is_linux:
