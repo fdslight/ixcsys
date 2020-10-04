@@ -31,6 +31,8 @@ static void ixc_ip_handle_icmp(struct ixc_mbuf *m,struct netutil_iphdr *header)
 static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphdr)
 {
     struct netutil_udphdr *udphdr;
+    struct ixc_netif *netif=m->netif;
+
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
 
     if(1==iphdr->protocol){
@@ -48,6 +50,23 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     // 检查是DHCP client报文并且开启DHCP的那么处理DHCP报文
     if(ntohs(udphdr->dst_port)==68 && ntohs(udphdr->src_port)==67){
         ixc_router_send(IXC_NETIF_WAN,0,IXC_FLAG_DHCP_CLIENT,m->data+m->begin,m->end-m->begin);
+        return;
+    }
+
+    // 注意这里的数据包检查要在DHCP报文之后
+    // 没有设置IP地址那么就丢弃数据包
+    if(!netif->isset_ip){
+        ixc_mbuf_put(m);
+        return;
+    }
+    // 多播地址和广播地址丢弃数据包
+    if(iphdr->dst_addr[0]>=224){
+        ixc_mbuf_put(m);
+        return;
+    }
+    // 如果目标地址是WAN网卡地址,那么丢弃数据包
+    if(!memcmp(iphdr->dst_addr,netif->ipaddr,4)){
+        ixc_mbuf_put(m);
         return;
     }
 
@@ -71,7 +90,6 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         ixc_router_send(IXC_NETIF_LAN,0,IXC_FLAG_DHCP_SERVER,m->data+m->begin,m->end-m->begin);
         return;
     }
-
     // 发送数据到router
     ixc_route_handle(m);
 }

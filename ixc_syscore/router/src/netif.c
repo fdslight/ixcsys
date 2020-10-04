@@ -8,6 +8,7 @@
 #include "netif.h"
 #include "router.h"
 #include "ether.h"
+#include "addr_map.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -60,6 +61,8 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
         STDERR("ERROR:tap device has been opened\r\n");
         return -1;
     }
+
+    bzero(netif,sizeof(struct ixc_netif));
 
     strcpy(res_devname,devname);
     fd=tapdev_create(res_devname);
@@ -137,6 +140,7 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
     }else{
         memcpy(netif->ipaddr,ipaddr,4);
         memcpy(netif->ip_mask,mask,4);
+        netif->isset_ip=1;
     }
 
     return 0;

@@ -82,7 +82,10 @@ class service(dispatcher.dispatcher):
     __dhcp_client_configs = None
     __dhcp_server_configs = None
 
+    __debug = None
+
     def init_func(self, debug):
+        self.__debug = debug
         self.__scgi_fd = -1
         self.__dhcp_fd = -1
 
@@ -240,6 +243,10 @@ class service(dispatcher.dispatcher):
     @property
     def lan_hwaddr(self):
         return self.__lan_hwaddr
+
+    @property
+    def debug(self):
+        return self.__debug
 
     def start_scgi(self):
         scgi_configs = {

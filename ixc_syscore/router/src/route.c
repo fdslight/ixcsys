@@ -351,19 +351,26 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     netif=ixc_netif_get(IXC_NETIF_WAN);
 
+    // 查找网关是否是自己
+    if(memcmp(netif->ip_gw,netif->ipaddr,4)){
     // 此处查找网关,网关不存在那么就丢弃数据包
-    addr_map_r=ixc_addr_map_get(netif->ip_gw,0);
-    if(NULL!=addr_map_r){
-        ixc_arp_send(netif,link_brd,iphdr->dst_addr,IXC_ARP_OP_REQ);
-        ixc_mbuf_put(m);
-        return;
+        addr_map_r=ixc_addr_map_get(netif->ip_gw,0);
+        if(NULL!=addr_map_r){
+            ixc_arp_send(netif,link_brd,iphdr->dst_addr,IXC_ARP_OP_REQ);
+            ixc_mbuf_put(m);
+            return;
+        }
+        memcpy(m->dst_hwaddr,addr_map_r->hwaddr,6);
     }
-
+    
     memcpy(m->src_hwaddr,netif->hwaddr,6);
-    memcpy(m->dst_hwaddr,addr_map_r->hwaddr,6);
-
+    
     m->link_proto=0x0800;
     m->netif=netif;
+
+    //DBG("%d.%d.%d.%d\r\n",iphdr->src_addr[0],iphdr->src_addr[1],iphdr->src_addr[2],iphdr->src_addr[3]);
+    //DBG("%d.%d.%d.%d\r\n",iphdr->dst_addr[0],iphdr->dst_addr[1],iphdr->dst_addr[2],iphdr->dst_addr[3]);
+    //DBG("protocol %d\r\n",iphdr->protocol);
 
     ixc_udp_src_filter_handle(m);
 }

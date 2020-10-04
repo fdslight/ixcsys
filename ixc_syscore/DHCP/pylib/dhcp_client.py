@@ -253,8 +253,10 @@ class dhcp_client(object):
 
                 ok = self.__runtime.set_wan_ip(s_ip, prefix, is_ipv6=False)
 
+                if self.__runtime.debug: print("IP address:", s_ip, s_mask)
                 if self.__router:
                     s_gw = socket.inet_ntop(socket.AF_INET, self.__router)
+                    if self.__runtime.debug: print("gateway:", s_gw)
                     ok = self.__runtime.set_wan_gw(s_gw, is_ipv6=False)
 
                 self.__dhcp_ip_conflict_check_ok = True
