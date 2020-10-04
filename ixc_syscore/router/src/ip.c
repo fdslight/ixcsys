@@ -5,7 +5,6 @@
 #include "ip6.h"
 #include "netif.h"
 #include "route.h"
-#include "icmp.h"
 #include "addr_map.h"
 #include "ether.h"
 #include "router.h"
@@ -14,20 +13,6 @@
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
 
-static void ixc_ip_handle_icmp(struct ixc_mbuf *m,struct netutil_iphdr *header)
-{
-    struct ixc_netif *netif=m->netif;
-
-    // 不是发送本机的ICMP直接发送到路由
-    if(memcmp(netif->ipaddr,header->dst_addr,4)){
-        ixc_route_handle(m);
-        return;
-    }
-
-    ixc_icmp_handle(m,1);
-}
-
-
 static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphdr)
 {
     struct netutil_udphdr *udphdr;
@@ -35,11 +20,13 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
 
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
     
+    // 检查是否是DHCP Client报文
     if(17==iphdr->protocol){
         udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
         // 检查是DHCP client报文并且开启DHCP的那么处理DHCP报文
         if(ntohs(udphdr->dst_port)==68 && ntohs(udphdr->src_port)==67){
             ixc_router_send(IXC_NETIF_WAN,0,IXC_FLAG_DHCP_CLIENT,m->data+m->begin,m->end-m->begin);
+            ixc_mbuf_put(m);
             return;
         }
     }
@@ -49,13 +36,9 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         ixc_mbuf_put(m);
         return;
     }
+
     // 多播地址和广播地址丢弃数据包
     if(iphdr->dst_addr[0]>=224){
-        ixc_mbuf_put(m);
-        return;
-    }
-    // 如果目标地址是WAN网卡地址,那么丢弃数据包
-    if(!memcmp(iphdr->dst_addr,netif->ipaddr,4)){
         ixc_mbuf_put(m);
         return;
     }
@@ -68,18 +51,18 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     struct netutil_udphdr *udphdr;
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
 
-    if(1==iphdr->protocol){
-        ixc_ip_handle_icmp(m,iphdr);
-        return;
+
+    // 检查是否是DHCP Server报文
+    if(17==iphdr->protocol){
+        udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
+        // 检查是DHCP server报文并且开启DHCP的那么处理DHCP报文
+        if(ntohs(udphdr->dst_port)==67 && ntohs(udphdr->src_port)==68){
+            ixc_router_send(IXC_NETIF_LAN,0,IXC_FLAG_DHCP_SERVER,m->data+m->begin,m->end-m->begin);
+            ixc_mbuf_put(m);
+            return;
+        }
     }
 
-    udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
-
-    // 检查是DHCP client报文并且开启DHCP的那么处理DHCP报文
-    if(ntohs(udphdr->dst_port)==67 && ntohs(udphdr->src_port)==68){
-        ixc_router_send(IXC_NETIF_LAN,0,IXC_FLAG_DHCP_SERVER,m->data+m->begin,m->end-m->begin);
-        return;
-    }
     // 发送数据到router
     ixc_route_handle(m);
 }
