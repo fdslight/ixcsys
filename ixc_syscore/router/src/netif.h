@@ -18,6 +18,10 @@ struct ixc_netif{
     int fd;
     // 写入标志
     int write_flags;
+    // 是否设置了IPv4
+    int isset_ip;
+    // 是否设置了IPv6
+    int isset_ip6;
 
     unsigned char ipaddr[4];
     unsigned char ip_mask[4];

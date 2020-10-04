@@ -241,6 +241,7 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
 
 static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
 {
+    DBG_FLAGS;
     // 未开启NAT那么直接发送数据包
     if(!nat.enable){
         ixc_pppoe_handle(m);
@@ -336,6 +337,8 @@ void ixc_nat_handle(struct ixc_mbuf *m)
         STDERR("please init nat\r\n");
         return;
     }
+
+    IXC_MBUF_LOOP_TRACE(m);
 
     if(IXC_MBUF_FROM_LAN==m->from) ixc_nat_handle_from_lan(m);
     else ixc_nat_handle_from_wan(m);
