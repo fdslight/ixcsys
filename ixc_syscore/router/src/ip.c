@@ -34,25 +34,15 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     struct ixc_netif *netif=m->netif;
 
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
-
-    if(1==iphdr->protocol){
-        ixc_ip_handle_icmp(m,iphdr);
-        return;
-    }
     
-    if(17!=iphdr->protocol){
-        ixc_mbuf_put(m);
-        return;
+    if(17==iphdr->protocol){
+        udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
+        // 检查是DHCP client报文并且开启DHCP的那么处理DHCP报文
+        if(ntohs(udphdr->dst_port)==68 && ntohs(udphdr->src_port)==67){
+            ixc_router_send(IXC_NETIF_WAN,0,IXC_FLAG_DHCP_CLIENT,m->data+m->begin,m->end-m->begin);
+            return;
+        }
     }
-
-    udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
-
-    // 检查是DHCP client报文并且开启DHCP的那么处理DHCP报文
-    if(ntohs(udphdr->dst_port)==68 && ntohs(udphdr->src_port)==67){
-        ixc_router_send(IXC_NETIF_WAN,0,IXC_FLAG_DHCP_CLIENT,m->data+m->begin,m->end-m->begin);
-        return;
-    }
-
     // 注意这里的数据包检查要在DHCP报文之后
     // 没有设置IP地址那么就丢弃数据包
     if(!netif->isset_ip){
