@@ -62,4 +62,7 @@ int ixc_pppoe_ok(void);
 /// 启用PPPoE
 int ixc_pppoe_enable(int status);
 
+/// PPPoE是否启用
+int ixc_pppoe_is_enabled(void);
+
 #endif

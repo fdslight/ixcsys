@@ -5,7 +5,6 @@
 #include "router.h"
 #include "udp_src_filter.h"
 #include "local.h"
-#include "addr_map.h"
 #include "arp.h"
 #include "qos.h"
 
@@ -173,7 +172,7 @@ void ixc_route_uninit(void)
     route_is_initialized=0;
 }
 
-int ixc_route_add(unsigned char *subnet,unsigned char prefix,int is_ipv6,int is_linked)
+int ixc_route_add(unsigned char *subnet,unsigned char prefix,int is_ipv6,struct ixc_netif *netif,int is_linked)
 {
     struct ixc_route_info *r;
     char key[17],is_found;
@@ -262,6 +261,22 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
     return r;
 }
 
+struct ixc_route_info *ixc_route_get(unsigned char *subnet,unsigned char prefix,int is_ipv6)
+{
+    struct ixc_route_info *r_info;
+    char key[17];
+    int size=is_ipv6?16:4;
+    struct map *m=is_ipv6?route.ip6_rt:route.ip_rt;
+    char is_found;
+
+    memcpy(key,subnet,size);
+    key[size]=prefix;
+
+    r_info=map_find(m,key,&is_found);
+
+    return r_info;
+}
+
 
 static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 {
@@ -282,21 +297,10 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct ixc_route_info *r;
-    struct ixc_netif *netif;
-    struct ixc_addr_map_record *addr_map_r;
-    unsigned char link_brd[]={
-        0xff,0xff,0xff,
-        0xff,0xff,0xff
-    };
+    struct ixc_netif *netif=m->netif;
 
     unsigned char *local_addr=ixc_local_get(0,0);
     unsigned short csum;
-
-    // 组播数据包不能经过路由器,因此丢弃组播数据包
-    if(iphdr->dst_addr[0] >=224 && iphdr->dst_addr[0]<=239){
-        ixc_mbuf_put(m);
-        return;
-    }
 
     // 如果目标地址是本地地址,那么发送到本地机器
     if(!memcmp(local_addr,iphdr->dst_addr,4)){
@@ -304,24 +308,10 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 
-    // 如果是本地网络的地址,那么发送到本地网络
-    netif=ixc_netif_get(IXC_NETIF_LAN);
-    if(ixc_netif_is_subnet(netif,iphdr->dst_addr,0,0)){
-        m->netif=netif;
-        addr_map_r=ixc_addr_map_get(iphdr->dst_addr,0);
+    r=ixc_route_match(iphdr->dst_addr,0);
 
-        // 如果找到本地网络的地址映射记录,那么发送到本地网络
-        if(NULL!=addr_map_r){
-            memcpy(m->src_hwaddr,netif->hwaddr,6);
-            memcpy(m->dst_hwaddr,addr_map_r->hwaddr,6);
-            m->link_proto=0x0800;
-
-            // 加入到QOS
-            ixc_qos_add(m);
-            return;
-        }
-        // 找不到数据包那么就发送ARP请求并丢弃当前数据包
-        ixc_arp_send(netif,link_brd,iphdr->dst_addr,IXC_ARP_OP_REQ);
+    // 如果找不到理由,那么就丢弃数据包
+    if(NULL==r){
         ixc_mbuf_put(m);
         return;
     }
@@ -332,47 +322,36 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 
-    r=ixc_route_match(iphdr->dst_addr,0);
-    // 减少头部ttl的数值
-    csum=csum_calc_incre(iphdr->ttl,iphdr->ttl-1,iphdr->checksum);
-    iphdr->checksum=csum;
-
-    // 找不到匹配匹配路由直接发送到udp src filter
-    if(r){
-        // 避免造成应用收到的数据包发送给应用
-        if(NULL==m->netif){
+    // 如果没有网卡,那么发送到其他应用
+    if(NULL==r->netif){
+        // 如果找不到mbuf的网卡,那么丢弃数据包
+        if(NULL==netif){
             ixc_mbuf_put(m);
             return;
         }
+
         if(r->is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
         else ixc_router_send(netif->type,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
+
+        // 这里丢弃数据包,避免内存泄漏
+        ixc_mbuf_put(m);
         return;
     }
 
-    netif=ixc_netif_get(IXC_NETIF_WAN);
+    m->netif=r->netif;
 
-    // 查找网关是否是自己
-    if(memcmp(netif->ip_gw,netif->ipaddr,4)){
-    // 此处查找网关,网关不存在那么就丢弃数据包
-        addr_map_r=ixc_addr_map_get(netif->ip_gw,0);
-        if(NULL!=addr_map_r){
-            ixc_arp_send(netif,link_brd,iphdr->dst_addr,IXC_ARP_OP_REQ);
-            ixc_mbuf_put(m);
-            return;
-        }
-        memcpy(m->dst_hwaddr,addr_map_r->hwaddr,6);
-    }
-    
+    // 减少头部ttl的数值
+    csum=csum_calc_incre(iphdr->ttl,iphdr->ttl-1,iphdr->checksum);
+    iphdr->checksum=csum;
     memcpy(m->src_hwaddr,netif->hwaddr,6);
-    
     m->link_proto=0x0800;
-    m->netif=netif;
 
-    //DBG("%d.%d.%d.%d\r\n",iphdr->src_addr[0],iphdr->src_addr[1],iphdr->src_addr[2],iphdr->src_addr[3]);
-    //DBG("%d.%d.%d.%d\r\n",iphdr->dst_addr[0],iphdr->dst_addr[1],iphdr->dst_addr[2],iphdr->dst_addr[3]);
-    //DBG("protocol %d\r\n",iphdr->protocol);
-
-    ixc_udp_src_filter_handle(m);
+    // 如果是LAN节点那么经过UDP source,否则的直接通过qos出去
+    if(IXC_MBUF_FROM_LAN){
+        ixc_udp_src_filter_handle(m);
+    }else{
+        ixc_qos_add(m);
+    }
 }
 
 void ixc_route_handle(struct ixc_mbuf *m)

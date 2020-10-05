@@ -128,3 +128,9 @@ int ixc_pppoe_enable(int status)
 
     return 0;
 }
+
+inline
+int ixc_pppoe_is_enabled(void)
+{
+    return pppoe.enable;
+}

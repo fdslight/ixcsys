@@ -34,9 +34,12 @@ struct ixc_route{
 int ixc_route_init(void);
 void ixc_route_uninit(void);
 
-int ixc_route_add(unsigned char *subnet,unsigned char prefix,int is_ipv6,int is_linked);
+int ixc_route_add(unsigned char *subnet,unsigned char prefix,int is_ipv6,struct ixc_netif *netif,int is_linked);
 void ixc_route_del(unsigned char *subnet,unsigned char prefix,int is_ipv6);
+/// 匹配路由
 struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6);
+/// 获取路由
+struct ixc_route_info *ixc_route_get(unsigned char *subnet,unsigned char prefix,int is_ipv6);
 
 void ixc_route_handle(struct ixc_mbuf *m);
 

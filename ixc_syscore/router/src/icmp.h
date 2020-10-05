@@ -3,6 +3,6 @@
 
 #include "mbuf.h"
 
-void ixc_icmp_handle(struct ixc_mbuf *m,int is_self);
+void ixc_icmp_handle_self(struct ixc_mbuf *m);
 
 #endif
