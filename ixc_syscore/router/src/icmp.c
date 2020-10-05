@@ -6,7 +6,7 @@
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
 
-static void ixc_icmp_handle_self(struct ixc_mbuf *m)
+void ixc_icmp_handle_self(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
     int hdr_len= (header->ver_and_ihl & 0x0f) * 4;
@@ -31,11 +31,4 @@ static void ixc_icmp_handle_self(struct ixc_mbuf *m)
     icmphdr->type=0;
 
     ixc_ip_send(m);
-}
-
-
-void ixc_icmp_handle(struct ixc_mbuf *m,int is_self)
-{
-    if(is_self) ixc_icmp_handle_self(m);
-    else ixc_mbuf_put(m);
 }

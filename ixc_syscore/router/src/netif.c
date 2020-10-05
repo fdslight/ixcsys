@@ -9,6 +9,7 @@
 #include "router.h"
 #include "ether.h"
 #include "addr_map.h"
+#include "route.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -119,6 +120,8 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
 {
     unsigned char mask[16];
     struct ixc_netif *netif;
+    unsigned char subnet[16];
+    int rs;
 
     if(if_idx<0 || if_idx>IXC_NETIF_MAX){
         STDERR("wrong if index value\r\n");
@@ -132,7 +135,17 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
         return -1;
     }
 
+    subnet_calc_with_prefix(ipaddr,prefix,is_ipv6,subnet);
     msk_calc(prefix,is_ipv6,mask);
+
+    // 首先对原来的路由进行删除
+    ixc_route_del(subnet,prefix,is_ipv6);
+    rs=ixc_route_add(subnet,prefix,is_ipv6,netif,0);
+
+    if(rs<0){
+        STDERR("cannot add route to system\r\n");
+        return -1;
+    }
 
     if(is_ipv6){
         memcpy(netif->ip6addr,ipaddr,16);

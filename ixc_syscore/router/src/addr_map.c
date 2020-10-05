@@ -4,9 +4,12 @@
 
 #include "addr_map.h"
 #include "arp.h"
+#include "pppoe.h"
+#include "ether.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
+#include "../../../pywind/clib/netutils.h"
 
 static struct ixc_addr_map addr_map;
 static int addr_map_is_initialized=0;
@@ -178,4 +181,61 @@ struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6)
     r=map_find(map,(char *)ip,&is_found);
 
     return r;
+}
+
+static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
+{
+    ixc_mbuf_put(m);
+}
+
+static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
+{
+    struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
+    struct ixc_addr_map_record *r=NULL;
+    struct ixc_netif *netif=m->netif;
+
+    unsigned char brd[]={
+        0xff,0xff,0xff,
+        0xff,0xff,0xff
+    };
+
+    // 对于同一个网段的处理方式
+    if(ixc_netif_is_subnet(netif,iphdr->dst_addr,0,0)){
+        r=ixc_addr_map_get(iphdr->dst_addr,0);
+
+        // 找不到地址映射记录那么发送ARP请求数据包,并且丢弃当前数据包
+        if(NULL==r){
+            ixc_arp_send(netif,brd,iphdr->dst_addr,IXC_ARP_OP_REQ);
+            ixc_mbuf_put(m);
+            return;
+        }
+        // 找到记录那么拷贝硬件地址并发送数据包
+        memcpy(m->dst_hwaddr,r->hwaddr,6);
+        ixc_ether_send(m,1);
+        return;
+    }
+
+    // 不是同一个网段地址的处理
+    // 检查WAN PPPoE是否开启,如果开启直接发送到PPPoE
+    if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){
+        ixc_pppoe_handle(m);
+        return;
+    }
+
+    // 查找网关记录是否存在,如果不存在那么就发送ARP请求
+    r=ixc_addr_map_get(netif->ip_gw,0);
+    if(NULL!=r){
+        ixc_arp_send(netif,brd,netif->ip_gw,IXC_ARP_OP_REQ);
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    memcpy(m->dst_hwaddr,r->hwaddr,6);
+    ixc_ether_send(m,1);
+}
+
+void ixc_addr_map_handle(struct ixc_mbuf *m)
+{
+    if(m->is_ipv6) ixc_addr_map_handle_for_ipv6(m);
+    else ixc_addr_map_handle_for_ip(m);
 }

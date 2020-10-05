@@ -37,12 +37,6 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         return;
     }
 
-    // 多播地址和广播地址丢弃数据包
-    if(iphdr->dst_addr[0]>=224){
-        ixc_mbuf_put(m);
-        return;
-    }
-
     ixc_nat_handle(m);
 }
 
