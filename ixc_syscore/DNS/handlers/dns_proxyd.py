@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""实现DNS服务器代理,用于高级DNS过滤功能
+"""实现DNS服务器代理,用于实现高级DNS过滤功能
 """
 import socket
 import pywind.evtframework.handlers.udp_handler as udp_handler
