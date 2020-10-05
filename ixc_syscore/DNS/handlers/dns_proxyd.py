@@ -4,6 +4,7 @@
 import socket
 import pywind.evtframework.handlers.udp_handler as udp_handler
 
+
 class proxyd(udp_handler.udp_handler):
     __is_ipv6 = None
 
