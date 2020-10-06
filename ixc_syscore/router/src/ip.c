@@ -56,7 +56,6 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         }
     }
 
-    DBG_FLAGS;
     // 发送数据到router
     ixc_route_handle(m);
 }
@@ -68,8 +67,6 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     int version=(header->ver_and_ihl & 0xf0) >> 4;
     unsigned short tot_len;
     struct ixc_netif *netif=mbuf->netif;
-
-    DBG_FLAGS;
 
     if(4!=version){
         ixc_mbuf_put(mbuf);

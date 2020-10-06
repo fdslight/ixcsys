@@ -352,8 +352,6 @@ class service(dispatcher.dispatcher):
         global_vars["ixcsys.router"] = self.__router
         global_vars["ixcsys.runtime"] = self
 
-        signal.signal(signal.SIGSEGV, self.__mem_error)
-
         self.start_lan()
         self.start_wan()
         self.start_local()
@@ -407,10 +405,6 @@ class service(dispatcher.dispatcher):
             return None
 
         return r
-
-    def __mem_error(self, signum, frame):
-        raise SystemError("Segmentation fault")
-
 
 def main():
     __helper = "ixc_syscore/router helper: start | stop | debug"

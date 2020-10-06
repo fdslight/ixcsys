@@ -225,11 +225,18 @@ class service(dispatcher.dispatcher):
 
         return ok
 
-    def set_wan_gw(self, ip: str, is_ipv6=False):
-        rs = RPCClient.fn_call("router", "/runtime", "set_wan_gw", ip, is_ipv6=is_ipv6)
+    def set_default_route(self, gw: str, is_ipv6=False):
+        if is_ipv6:
+            # 首先删除默认路由
+            RPCClient.fn_call("router", "/runtime", "del_route", "::", 0, is_ipv6=True)
+            rs = RPCClient.fn_call("router", "/runtime", "add_route", "::", 0, gw, is_ipv6=True, is_linked=False)
+        else:
+            # 首先删除默认路由
+            RPCClient.fn_call("router", "/runtime", "del_route", "0.0.0.0", 0, is_ipv6=False)
+            rs = RPCClient.fn_call("router", "/runtime", "add_route", "0.0.0.0", 0, gw, is_ipv6=False, is_linked=False)
+
         ok, msg = rs
         if not ok: logging.print_error(msg)
-
         return ok
 
     @property

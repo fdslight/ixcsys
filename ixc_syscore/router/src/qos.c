@@ -5,6 +5,7 @@
 #include "nat.h"
 #include "natv6.h"
 #include "route.h"
+#include "addr_map.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/debug.h"
@@ -31,10 +32,9 @@ inline static int ixc_qos_calc_slot(unsigned char a, unsigned char b, unsigned s
 static void ixc_qos_put(struct ixc_mbuf *m,unsigned c,unsigned char ipproto,int hdr_len)
 {
     unsigned short id;
-    int slot;
+    int slot_no;
     struct netutil_tcphdr *tcphdr;
     struct netutil_udphdr *udphdr;
-    struct ixc_mbuf *mbuf_end;
     struct ixc_qos_slot *slot_obj;
 
     // 根据协议选择
@@ -54,26 +54,22 @@ static void ixc_qos_put(struct ixc_mbuf *m,unsigned c,unsigned char ipproto,int 
     }
 
     m->next=NULL;
+    slot_no=ixc_qos_calc_slot(c,ipproto,id);
+    slot_obj=ixc_qos.slot_objs[slot_no];
 
-    slot=ixc_qos_calc_slot(c,ipproto,id);
-    mbuf_end=ixc_qos.mbuf_slots_end[slot];
-    ixc_qos.tot_pkt_num+=1;
-    
-    // 如果槽已经存在那么直接插入数据即可
-    if(NULL!=mbuf_end){
-        mbuf_end->next=m;
-        ixc_qos.mbuf_slots_end[slot]=m;
+    if(!slot_obj->is_used){
+        slot_obj->next=NULL;
+        slot_obj->is_used=1;
+        slot_obj->mbuf_first=m;
+        slot_obj->mbuf_last=m;
+
+        slot_obj->next=ixc_qos.slot_head;
+        ixc_qos.slot_head=slot_obj;
         return;
     }
 
-    slot_obj=ixc_qos.empty_slot_head;
-    ixc_qos.empty_slot_head=slot_obj->next;
-
-    slot_obj->next=NULL;
-    slot_obj->slot=slot;
-
-    ixc_qos.mbuf_slots_head[slot]=m;
-    ixc_qos.mbuf_slots_end[slot]=m;
+    m->next=slot_obj->mbuf_last;
+    slot_obj->mbuf_last=m;
 }
 
 static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
@@ -102,8 +98,9 @@ int ixc_qos_init(void)
             STDERR("cannot create slot for qos\r\n");
             break;
         }
-        slot->next = ixc_qos.empty_slot_head;
-        ixc_qos.empty_slot_head = slot;
+        bzero(slot,sizeof(struct ixc_qos_slot));
+        slot->slot=n;
+        ixc_qos.slot_objs[n]=slot;
     }
     qos_sysloop=sysloop_add(ixc_qos_sysloop_cb,NULL);
     if(NULL==qos_sysloop){
@@ -117,21 +114,7 @@ int ixc_qos_init(void)
 
 void ixc_qos_uninit(void)
 {
-    struct ixc_qos_slot *slot = ixc_qos.empty_slot_head, *t;
 
-    while (NULL != slot)
-    {
-        t = slot->next;
-        free(slot);
-        slot = t;
-    }
-
-    slot = ixc_qos.used_slots_head;
-    while (NULL != slot){
-        t = slot->next;
-        free(slot);
-        slot = t;
-    }
 
     if(NULL!=qos_sysloop) sysloop_del(qos_sysloop);
     ixc_qos_is_initialized = 0;
@@ -147,47 +130,47 @@ void ixc_qos_add(struct ixc_mbuf *m)
 
 void ixc_qos_pop(void)
 {
-    struct ixc_qos_slot *slot = NULL, *t = NULL;
-    struct ixc_mbuf *m;
+    struct ixc_qos_slot *slot_first=ixc_qos.slot_head;
+    struct ixc_qos_slot *slot_obj=slot_first;
+    struct ixc_qos_slot *slot_old=ixc_qos.slot_head;
+    struct ixc_mbuf *m=NULL;
 
-    t = ixc_qos.used_slots_head;
-    slot = ixc_qos.used_slots_head;
+    while(NULL!=slot_obj){
+        m=slot_obj->mbuf_first;
 
-    while (NULL != slot){
-        m = ixc_qos.mbuf_slots_head[slot->slot];
-
-        // 来自于LAN那么发送给NAT节点,如果不是那么发送到route节点
         if(IXC_MBUF_FROM_LAN==m->from){
             if(m->is_ipv6) ixc_natv6_handle(m);
             else ixc_nat_handle(m);
         }else{
-            DBG_FLAGS;
-            ixc_route_handle(m);
+            ixc_addr_map_handle(m);
         }
-
-        m = m->next;
-
-        ixc_qos.tot_pkt_num-=1;
-
-        if (NULL != m){
-            t = slot;
-            slot = slot->next;
-            ixc_qos.mbuf_slots_head[slot->slot]=NULL;
-            ixc_qos.mbuf_slots_end[slot->slot]=NULL;
+        m=m->next;
+        // 如果数据未发生完毕,那么跳转到下一个
+        if(NULL!=m){
+            slot_obj->mbuf_first=m;
+            slot_old=slot_obj;
+            slot_obj=slot_obj->next;
             continue;
         }
-        // 此处回收slot
-        // 如果是第一个slot
-        if (slot == ixc_qos.used_slots_head){
-            ixc_qos.used_slots_head = slot->next;
-            slot = slot->next;
+        // 重置slot_obj
+        slot_obj->is_used=0;
+        slot_obj->mbuf_first=NULL;
+        slot_obj->mbuf_last=NULL;
+
+        // 如果不是第一个的处置方式
+        if(slot_obj!=slot_first){
+            slot_old->next=slot_obj->next;
+            slot_old=slot_obj;
+            slot_obj=slot_obj->next;
             continue;
         }
 
-        t->next = slot->next;
-        slot->next = ixc_qos.empty_slot_head;
-        ixc_qos.empty_slot_head = slot;
+        ixc_qos.slot_head=slot_obj->next;
+        slot_obj=slot_obj->next;
+        slot_first=ixc_qos.slot_head;
+        slot_old=slot_first;
     }
+
 }
 
 int ixc_qos_have_data(void)

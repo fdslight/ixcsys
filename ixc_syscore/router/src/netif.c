@@ -122,7 +122,7 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
     struct ixc_netif *netif;
     unsigned char subnet[16];
     int rs=0;
-
+    
     if(if_idx<0 || if_idx>=IXC_NETIF_MAX){
         STDERR("wrong if index value\r\n");
         return -1;
@@ -150,11 +150,12 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
     if(is_ipv6){
         memcpy(netif->ip6addr,ipaddr,16);
         memcpy(netif->ip6_mask,mask,16);
+        netif->isset_ip6=1;
     }else{
         memcpy(netif->ipaddr,ipaddr,4);
         memcpy(netif->ip_mask,mask,4);
+        netif->isset_ip=1;
     }
-    netif->isset_ip=1;
 
     return 0;
 }
