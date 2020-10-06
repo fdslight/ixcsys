@@ -6,9 +6,9 @@
 #include "natv6.h"
 #include "route.h"
 #include "addr_map.h"
+#include "debug.h"
 
 #include "../../../pywind/clib/netutils.h"
-#include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
 
 static struct ixc_qos ixc_qos;
@@ -114,8 +114,6 @@ int ixc_qos_init(void)
 
 void ixc_qos_uninit(void)
 {
-
-
     if(NULL!=qos_sysloop) sysloop_del(qos_sysloop);
     ixc_qos_is_initialized = 0;
 }
