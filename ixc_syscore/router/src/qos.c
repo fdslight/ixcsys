@@ -161,6 +161,7 @@ void ixc_qos_pop(void)
             if(m->is_ipv6) ixc_natv6_handle(m);
             else ixc_nat_handle(m);
         }else{
+            DBG_FLAGS;
             ixc_route_handle(m);
         }
 

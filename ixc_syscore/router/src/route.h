@@ -16,8 +16,11 @@ struct ixc_route_prefix{
 };
 
 struct ixc_route_info{
+    // 指向的设备
     struct ixc_netif *netif;
     unsigned char subnet[16];
+    // 指向的网关
+    unsigned char gw[16];
     // 是否需要以链路层形式发送
     int is_linked;
     int is_ipv6;
@@ -34,7 +37,9 @@ struct ixc_route{
 int ixc_route_init(void);
 void ixc_route_uninit(void);
 
-int ixc_route_add(unsigned char *subnet,unsigned char prefix,int is_ipv6,struct ixc_netif *netif,int is_linked);
+/// 增加路由
+// 如果gw参数为NULL则代表该数据发向其他应用的路由
+int ixc_route_add(unsigned char *subnet,unsigned char prefix,unsigned char *gw,int is_ipv6,int is_linked);
 void ixc_route_del(unsigned char *subnet,unsigned char prefix,int is_ipv6);
 /// 匹配路由
 struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6);

@@ -7,9 +7,9 @@
 #include "local.h"
 #include "arp.h"
 #include "qos.h"
+#include "debug.h"
 
 #include "../../../pywind/clib/map.h"
-#include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
 
 static struct ixc_route route;
@@ -42,6 +42,7 @@ static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
     }
 
     t=malloc(sizeof(struct ixc_route_prefix));
+
     if(NULL==t){
         STDERR("cannot malloc for struct ixc_route_prefix\r\n");
         return -1;
@@ -172,13 +173,36 @@ void ixc_route_uninit(void)
     route_is_initialized=0;
 }
 
-int ixc_route_add(unsigned char *subnet,unsigned char prefix,int is_ipv6,struct ixc_netif *netif,int is_linked)
+int ixc_route_add(unsigned char *subnet,unsigned char prefix,unsigned char *gw,int is_ipv6,int is_linked)
 {
     struct ixc_route_info *r;
     char key[17],is_found;
     struct map *m=is_ipv6?route.ip6_rt:route.ip_rt;
-    int rs;
+    int rs,is_default;
+    unsigned char default_route[]={
+        0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00
+    };
+    struct ixc_netif *netif=NULL;
 
+    if(is_ipv6){
+        if(!memcmp(default_route,subnet,16) && 0==prefix) is_default=1;
+        else is_default=0;
+    }else{
+        if(!memcmp(default_route,subnet,4) && 0==prefix) is_default=1;
+        else is_default=0;
+    }
+
+    if(is_default) netif=ixc_netif_get(IXC_NETIF_WAN);
+    else netif=ixc_netif_get_with_subnet_ip(gw,is_ipv6);
+
+    if(NULL!=gw && NULL==netif){
+        STDERR("nout found netif for add route\r\n");
+        return -1;
+    }
+    
     if(is_ipv6){
         memcpy(key,subnet,16);
         key[16]=prefix;
@@ -196,6 +220,8 @@ int ixc_route_add(unsigned char *subnet,unsigned char prefix,int is_ipv6,struct 
         STDERR("no memory for malloc\r\n");
         return -1;
     }
+
+    bzero(r,sizeof(struct ixc_route_info));
 
     rs=ixc_route_prefix_add(prefix,is_ipv6);
     if(rs){
@@ -218,6 +244,12 @@ int ixc_route_add(unsigned char *subnet,unsigned char prefix,int is_ipv6,struct 
     r->prefix=prefix;
     r->is_linked=is_linked;
     r->is_ipv6=is_ipv6;
+    r->netif=netif;
+
+    if(NULL!=gw){
+        if(is_ipv6) memcpy(r->gw,gw,16);
+        else memcpy(r->gw,gw,4);
+    }
 
     return 0;
 }
@@ -237,8 +269,8 @@ void ixc_route_del(unsigned char *subnet,unsigned char prefix,int is_ipv6)
     }
 
     r=map_find(m,key,&is_found);
-    // 存在的话直接返回
-    if(r) return;
+    // 如果不存在的话直接返回
+    if(!r) return;
     map_del(m,key,ixc_route_del_cb);
 }
 
@@ -252,10 +284,12 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
     char is_found;
 
     while(NULL!=p){
+        DBG_FLAGS;
         subnet_calc_with_msk(ip,p->mask,is_ipv6,(unsigned char *)key);
         key[idx]=p->prefix;
         r=map_find(m,key,&is_found);
         if(r) break;
+        p=p->next;
     }
 
     return r;
@@ -312,6 +346,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果找不到理由,那么就丢弃数据包
     if(NULL==r){
+        IXC_PRINT_IP("route not found for dest ip",iphdr->dst_addr);
         ixc_mbuf_put(m);
         return;
     }
@@ -340,10 +375,12 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     m->netif=r->netif;
 
+    memcpy(m->src_hwaddr,netif->hwaddr,6);
+    memcpy(m->gw,r->gw,4);
+
     // 减少头部ttl的数值
     csum=csum_calc_incre(iphdr->ttl,iphdr->ttl-1,iphdr->checksum);
     iphdr->checksum=csum;
-    memcpy(m->src_hwaddr,netif->hwaddr,6);
     m->link_proto=0x0800;
 
     // 如果是LAN节点那么经过UDP source,否则的直接通过qos出去

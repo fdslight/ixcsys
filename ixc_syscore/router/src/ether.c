@@ -64,6 +64,9 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         return;
     }
 
+    DBG_FLAGS;
+    IXC_MBUF_LOOP_TRACE(mbuf);
+
     header=(struct ixc_ether_header *)(mbuf->data+mbuf->begin);
     type=ntohs(header->type);
 

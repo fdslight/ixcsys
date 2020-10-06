@@ -47,6 +47,8 @@ void ixc_nsself_handle(struct ixc_mbuf *m)
         return;
     }
 
+    DBG_FLAGS;
+
     if(m->is_ipv6) ixc_nsself_handle_for_ipv6(m);
     else ixc_nsself_handle_for_ip(m);
 
