@@ -175,8 +175,7 @@ void ixc_qos_pop(void)
 
 int ixc_qos_have_data(void)
 {
-    if (ixc_qos.tot_pkt_num) return 1;
-
+    if(NULL!=ixc_qos.slot_head) return 1;
     return 0;
 }
 
