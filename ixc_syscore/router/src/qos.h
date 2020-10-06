@@ -18,8 +18,6 @@ struct ixc_qos_slot{
 struct ixc_qos{
     struct ixc_qos_slot *slot_objs[IXC_QOS_SLOT_NUM];
     struct ixc_qos_slot *slot_head;
-    // 当前已有的包数量
-    unsigned int tot_pkt_num;
     int udp_udplite_first;
 };
 
