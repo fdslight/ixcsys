@@ -22,8 +22,8 @@ strftime(__time_buf,512,"%Y-%m-%d %X %A %Z",__time);fprintf(fd,"%s    ",__time_b
 #include<sys/types.h>
 
 
-#define DBG(...)  STDOUT(__VA_ARGS__)
-#define DBG_FLAGS STDOUT("\r\n")
+#define DBG(...)  STDOUT(__VA_ARGS__);fflush(stdout)
+#define DBG_FLAGS STDOUT("\r\n");fflush(stdout)
 
 #define ex_free(p) DBG(" ");free(p)
 #define ex_malloc(size) DBG(" ");malloc(size)

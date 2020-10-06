@@ -199,7 +199,7 @@ int ixc_route_add(unsigned char *subnet,unsigned char prefix,unsigned char *gw,i
     else netif=ixc_netif_get_with_subnet_ip(gw,is_ipv6);
 
     if(NULL!=gw && NULL==netif){
-        STDERR("nout found netif for add route\r\n");
+        STDERR("not found netif for add route\r\n");
         return -1;
     }
     
@@ -332,6 +332,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct ixc_route_info *r;
     struct ixc_netif *netif=m->netif;
+    unsigned short ttl;
 
     unsigned char *local_addr=ixc_local_get(0,0);
     unsigned short csum;
@@ -339,6 +340,12 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     // 如果目标地址是本地地址,那么发送到本地机器
     if(!memcmp(local_addr,iphdr->dst_addr,4)){
         ixc_local_send(m);
+        return;
+    }
+
+    // 保留地址直接丢弃
+    if(iphdr->dst_addr[0]>=224){
+        ixc_mbuf_put(m);
         return;
     }
 
@@ -350,6 +357,8 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         ixc_mbuf_put(m);
         return;
     }
+
+    IXC_PRINT_IP("route found for dest ip",iphdr->dst_addr);
 
     // 如果ttl为1那么发送ICMP报文告知
     if(iphdr->ttl<=1){
@@ -374,13 +383,15 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     }
 
     m->netif=r->netif;
+    netif=m->netif;
 
     memcpy(m->src_hwaddr,netif->hwaddr,6);
     memcpy(m->gw,r->gw,4);
 
+    //ttl=iphdr->ttl;
     // 减少头部ttl的数值
-    csum=csum_calc_incre(iphdr->ttl,iphdr->ttl-1,iphdr->checksum);
-    iphdr->checksum=csum;
+    //csum=csum_calc_incre(ttl,ttl-1,iphdr->checksum);
+    //iphdr->checksum=csum;
     m->link_proto=0x0800;
 
     // 如果是LAN节点那么经过UDP source,否则的直接通过qos出去

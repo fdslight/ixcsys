@@ -27,7 +27,9 @@ class controller(rpc.controller):
             "get_wan_ipaddr": self.get_wan_ipaddr,
             "get_lan_manage_ipaddr": self.get_lan_manage_ipaddr,
             "set_wan_ipaddr": self.set_wan_ipaddr,
-            "set_lan_ipaddr": self.set_lan_ipaddr
+            "set_lan_ipaddr": self.set_lan_ipaddr,
+            "add_route": self.add_route,
+            "del_route": self.del_route
         }
 
     def get_all_consts(self):
@@ -127,3 +129,45 @@ class controller(rpc.controller):
 
         return 0, (set_ok, "")
 
+    def add_route(self, subnet: str, prefix: int, gw: str, is_ipv6=False, is_linked=False):
+        if is_ipv6 and (not netutils.is_ipv6_address(subnet) or not netutils.is_ipv6_address(gw)):
+            return 0, (False, "Wrong subnet or gateway address format for IPv6")
+
+        if not is_ipv6 and (not netutils.is_ipv4_address(subnet) or not netutils.is_ipv4_address(gw)):
+            return 0, (False, "Wrong subnet or gateway address format for IP")
+
+        if prefix < 0:
+            return 0, (False, "Wrong prefix value %d" % prefix)
+
+        if is_ipv6 and prefix > 128:
+            return 0, (False, "Wrong prefix value %d" % prefix)
+
+        if not is_ipv6 and prefix > 32:
+            return 0, (False, "Wrong prefix value %d" % prefix)
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+
+        byte_subnet = socket.inet_pton(fa, subnet)
+        byte_gw = socket.inet_pton(fa, gw)
+
+        rs = self.router.route_add(byte_subnet, prefix, byte_gw, is_ipv6, is_linked)
+
+        return 0, (rs, "")
+
+    def del_route(self, subnet: str, prefix: int, is_ipv6=False):
+        ok, mesg = self.check_ipaddr_args(subnet, prefix, is_ipv6=is_ipv6)
+
+        if not ok: return 0, (ok, mesg)
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+
+        byte_subnet = socket.inet_pton(fa, subnet)
+        self.router.route_del(byte_subnet, prefix, is_ipv6)
+
+        return 0, (True, "")

@@ -4,18 +4,20 @@
 #include "mbuf.h"
 
 struct ixc_qos_slot{
+    struct ixc_mbuf *mbuf_first;
+    struct ixc_mbuf *mbuf_last;
+
     struct ixc_qos_slot *next;
+
     int slot;
+    int is_used;
 };
 
 #define IXC_QOS_SLOT_NUM 1024
 
 struct ixc_qos{
-    struct ixc_mbuf *mbuf_slots_head[IXC_QOS_SLOT_NUM];
-    struct ixc_mbuf *mbuf_slots_end[IXC_QOS_SLOT_NUM];
-
-    struct ixc_qos_slot *empty_slot_head;
-    struct ixc_qos_slot *used_slots_head;
+    struct ixc_qos_slot *slot_objs[IXC_QOS_SLOT_NUM];
+    struct ixc_qos_slot *slot_head;
     // 当前已有的包数量
     unsigned int tot_pkt_num;
     int udp_udplite_first;

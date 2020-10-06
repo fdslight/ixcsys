@@ -114,8 +114,9 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     // 对ICMP进行特殊处理,ICMP只支持echo request和echo reply
     if(1==iphdr->protocol){
         icmphdr=(struct netutil_icmphdr *)(m->data+m->offset+hdr_len);
-        if(8!=icmphdr->type || 0!=icmphdr->type){
+        if(8!=icmphdr->type && 0!=icmphdr->type){
             ixc_mbuf_put(m);
+            DBG_FLAGS;
             return NULL;
         }
     }
@@ -143,6 +144,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         // 不支持的协议直接丢弃数据包
         default:
             ixc_mbuf_put(m);
+            DBG_FLAGS;
             return NULL;
     }
 
@@ -157,6 +159,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     // WAN口找不到的那么直接丢弃数据包
     if(NULL==session && !is_src){
         ixc_mbuf_put(m);
+        DBG_FLAGS;
         return NULL;
     }
 
@@ -241,7 +244,6 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
 
 static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
 {
-    DBG_FLAGS;
     // 未开启NAT那么直接发送数据包
     if(!nat.enable){
         ixc_pppoe_handle(m);
@@ -251,6 +253,8 @@ static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
     DBG_FLAGS;
     m=ixc_nat_do(m,1);
     if(NULL==m) return;
+    DBG_FLAGS;
+    ixc_addr_map_handle(m);
 }
 
 static void ixc_nat_timeout_cb(void *data)

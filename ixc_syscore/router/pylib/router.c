@@ -502,6 +502,26 @@ router_route_add(PyObject *self,PyObject *args)
 
     if(!PyArg_ParseTuple(args,"y#by#pp",&subnet,&size_a,&prefix,&gw,&size_b,&is_ipv6,&is_linked)) return NULL;
 
+    if(is_ipv6 && prefix>128){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv6 prefix value");
+        return NULL;  
+    }
+
+    if(!is_ipv6 && prefix>32){
+        PyErr_SetString(PyExc_ValueError,"wrong IP prefix value");
+        return NULL;  
+    }
+
+    if(is_ipv6 && (size_a!=16 || size_b!=16)){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv6 address or gateway length");
+        return NULL;  
+    }
+
+    if(!is_ipv6 && (size_a!=4 || size_b!=4)){
+        PyErr_SetString(PyExc_ValueError,"wrong IP address or gateway length");
+        return NULL;  
+    }
+
     rs=ixc_route_add(subnet,prefix,gw,is_ipv6,is_linked);
 
     if(rs<0){
@@ -520,6 +540,26 @@ router_route_del(PyObject *self,PyObject *args)
     int is_ipv6;
 
     if(!PyArg_ParseTuple(args,"y#bp",&subnet,&size,&prefix,&is_ipv6)) return NULL;
+
+    if(is_ipv6 && prefix>128){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv6 prefix value");
+        return NULL;  
+    }
+
+    if(!is_ipv6 && prefix>32){
+        PyErr_SetString(PyExc_ValueError,"wrong IP prefix value");
+        return NULL;  
+    }
+
+    if(is_ipv6 && size!=16){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv6 address or gateway length");
+        return NULL;  
+    }
+
+    if(!is_ipv6 && size!=4){
+        PyErr_SetString(PyExc_ValueError,"wrong IP address or gateway length");
+        return NULL;  
+    }
 
     ixc_route_del(subnet,prefix,is_ipv6);
 
