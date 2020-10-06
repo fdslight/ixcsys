@@ -223,9 +223,9 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
     }
 
     // 查找网关记录是否存在,如果不存在那么就发送ARP请求
-    r=ixc_addr_map_get(netif->ip_gw,0);
+    r=ixc_addr_map_get(m->gw,0);
     if(NULL!=r){
-        ixc_arp_send(netif,brd,netif->ip_gw,IXC_ARP_OP_REQ);
+        ixc_arp_send(netif,brd,m->gw,IXC_ARP_OP_REQ);
         ixc_mbuf_put(m);
         return;
     }

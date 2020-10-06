@@ -7,20 +7,21 @@
 #include "ether.h"
 #include "addr_map.h"
 #include "router.h"
-
-#include "../../../pywind/clib/debug.h"
+#include "debug.h"
 
 static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 {
     struct ixc_netif *netif=mbuf->netif;
     //unsigned char brd[]={0xff,0xff,0xff,0xff,0xff,0xff};
-
+    
     // 检查是否是本机的IP地址,不是本机的IP地址那么转发给其它应用
     if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
         ixc_router_send(netif->type,0,IXC_FLAG_ARP,mbuf->data+mbuf->begin,mbuf->end-mbuf->begin);
         ixc_mbuf_put(mbuf);
         return;
     }
+
+    IXC_PRINT_IP("arp request from",arp->src_ipaddr);
 
     memcpy(mbuf->dst_hwaddr,mbuf->src_hwaddr,6);
     //memcpy(mbuf->dst_hwaddr,brd,6);

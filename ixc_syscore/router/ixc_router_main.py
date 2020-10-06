@@ -225,7 +225,6 @@ class service(dispatcher.dispatcher):
 
     def start_lan(self):
         self.load_lan_configs()
-
         lan_ifconfig = self.__lan_configs["if_config"]
         lan_phy_ifname = lan_ifconfig["phy_ifname"]
         gw_addr = self.parse_ipaddr_format(lan_ifconfig["gw_addr"])
@@ -251,8 +250,8 @@ class service(dispatcher.dispatcher):
 
         self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
 
-        self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
+        self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
 
         self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
 

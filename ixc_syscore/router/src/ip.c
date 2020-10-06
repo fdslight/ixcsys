@@ -9,9 +9,9 @@
 #include "ether.h"
 #include "router.h"
 #include "nat.h"
+#include "debug.h"
 
 #include "../../../pywind/clib/netutils.h"
-#include "../../../pywind/clib/debug.h"
 
 static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphdr)
 {
@@ -45,7 +45,6 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     struct netutil_udphdr *udphdr;
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
 
-
     // 检查是否是DHCP Server报文
     if(17==iphdr->protocol){
         udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
@@ -57,6 +56,7 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         }
     }
 
+    DBG_FLAGS;
     // 发送数据到router
     ixc_route_handle(m);
 }
@@ -68,6 +68,8 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     int version=(header->ver_and_ihl & 0xf0) >> 4;
     unsigned short tot_len;
     struct ixc_netif *netif=mbuf->netif;
+
+    DBG_FLAGS;
 
     if(4!=version){
         ixc_mbuf_put(mbuf);

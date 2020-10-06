@@ -121,13 +121,13 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
     unsigned char mask[16];
     struct ixc_netif *netif;
     unsigned char subnet[16];
-    int rs;
+    int rs=0;
 
-    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+    if(if_idx<0 || if_idx>=IXC_NETIF_MAX){
         STDERR("wrong if index value\r\n");
         return -1;
     }
-
+    
     netif=&netif_objs[if_idx];
 
     if(!netif->is_used){
@@ -140,7 +140,7 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
 
     // 首先对原来的路由进行删除
     ixc_route_del(subnet,prefix,is_ipv6);
-    rs=ixc_route_add(subnet,prefix,is_ipv6,netif,0);
+    rs=ixc_route_add(subnet,prefix,ipaddr,is_ipv6,0);
 
     if(rs<0){
         STDERR("cannot add route to system\r\n");
@@ -153,8 +153,8 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
     }else{
         memcpy(netif->ipaddr,ipaddr,4);
         memcpy(netif->ip_mask,mask,4);
-        netif->isset_ip=1;
     }
+    netif->isset_ip=1;
 
     return 0;
 }
@@ -175,7 +175,9 @@ int ixc_netif_set_hwaddr(int if_idx,unsigned char *hwaddr)
         return -1;
     }
 
+    DBG_FLAGS;
     memcpy(netif->hwaddr,hwaddr,6);
+
     return 0;
 }
 
@@ -357,4 +359,21 @@ int ixc_netif_is_subnet(struct ixc_netif *netif,unsigned char *ip,int is_ipv6,in
     if(!memcmp(result,netif->ip6_subnet,16)) return 1;
 
     return 0;
+}
+
+struct ixc_netif *ixc_netif_get_with_subnet_ip(unsigned char *ip,int is_ipv6)
+{
+    struct ixc_netif *rs=NULL,*netif=NULL;
+
+    if(NULL==ip) return rs;
+
+    for(int n=0;n<IXC_NETIF_MAX;n++){
+        netif=&netif_objs[n];
+        if(!netif->is_used) continue;
+        if(!ixc_netif_is_subnet(netif,ip,is_ipv6,0)) continue;
+        rs=netif;
+        break;
+    }
+
+    return rs;
 }

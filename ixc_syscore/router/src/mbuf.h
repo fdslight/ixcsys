@@ -36,6 +36,8 @@ struct ixc_mbuf{
         unsigned char ipproto;
     };
 
+    // 指向的网关
+    unsigned char gw[16];
     unsigned char data[0xffff];
     unsigned char src_hwaddr[6];
     unsigned char dst_hwaddr[6];
