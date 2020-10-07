@@ -15,6 +15,15 @@ static struct ixc_addr_map addr_map;
 static int addr_map_is_initialized=0;
 static struct sysloop *addr_map_sysloop=NULL;
 
+static void ixc_addr_map_del_cb(void *data)
+{
+    struct ixc_addr_map_record *r=data;
+    struct time_data *tdata=r->tdata;
+
+    tdata->is_deleted=1;
+    free(r);
+}
+
 static void ixc_addr_map_sysloop_cb(struct sysloop *lp)
 {
     if(!addr_map_is_initialized){
@@ -28,37 +37,31 @@ static void ixc_addr_map_timeout_cb(void *data)
 {
     struct ixc_addr_map_record *r=data;
     struct time_data *tdata=r->tdata;
-
     time_t now_time=time(NULL);
+
+    DBG_FLAGS;
 
     // 超时释放内存
     if(now_time - r->up_time >= IXC_ADDR_MAP_TIMEOUT){
-        tdata->is_deleted=1;
-        free(r);
+        if(r->is_ipv6) {
+            map_del(addr_map.ip6_record,(char *)(r->address),ixc_addr_map_del_cb);
+        }else {
+            map_del(addr_map.ip_record,(char *)(r->address),ixc_addr_map_del_cb);
+            IXC_PRINT_IP("addr map delete",r->address);
+        }
         return;
     }
 
-    tdata->is_deleted=1;
-    tdata=time_wheel_add(&(addr_map.time_wheel),r,now_time-r->up_time);
-    
+    tdata=time_wheel_add(&(addr_map.time_wheel),r,IXC_ADDR_MAP_TIMEOUT);
     r->tdata=tdata;
+    tdata->data=r;
 
     // 对IPv6的处理方式
     if(r->is_ipv6){
         return;
     }
-
     // 发送ARP请求,检查ARP记录
     ixc_arp_send(r->netif,r->hwaddr,r->address,IXC_ARP_OP_REQ);
-}
-
-static void ixc_addr_map_del_cb(void *data)
-{
-    struct ixc_addr_map_record *r=data;
-    struct time_data *tdata=r->tdata;
-
-    tdata->is_deleted=1;
-    free(r);
 }
 
 int ixc_addr_map_init(void)
@@ -149,7 +152,7 @@ int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hw
         return -1;
     }
 
-    tdata=time_wheel_add(&(addr_map.time_wheel),r,IXC_ADDR_MAP_TIMEOUT*0.8);
+    tdata=time_wheel_add(&(addr_map.time_wheel),r,IXC_ADDR_MAP_TIMEOUT);
     if(NULL==tdata){
         STDERR("cannot add to timer\r\n");
         map_del(map,(char *)ip,NULL);
@@ -159,6 +162,7 @@ int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hw
 
     r->netif=netif;
     r->tdata=tdata;
+    tdata->data=r;
 
     if(is_ipv6) memcpy(r->address,ip,16);
     else memcpy(r->address,ip,4);

@@ -2,6 +2,8 @@
 
 #include<Python.h>
 #include<structmember.h>
+#include<execinfo.h>
+#include<signal.h>
 
 #include "../src/mbuf.h"
 #include "../src/router.h"
@@ -55,6 +57,23 @@ int ixc_router_write_ev_tell(int fd,int flags)
     Py_XDECREF(result);
 
     return 0;
+}
+
+static void ixc_segfault_handle(int signum)
+{
+    void *bufs[4096];
+    char **strs;
+    int nptrs;
+
+    nptrs=backtrace(bufs,4096);
+    strs=backtrace_symbols(bufs,nptrs);
+    if(NULL==strs) return;
+
+    for(int n=0;n<nptrs;n++){
+        fprintf(stderr,"%s\r\n",strs[n]);
+    }
+    free(strs);
+    exit(EXIT_FAILURE);
 }
 
 static void
@@ -136,6 +155,8 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         STDERR("cannot init P2P\r\n");
         return NULL;
     }
+
+    signal(SIGSEGV,ixc_segfault_handle);
 
     return (PyObject *)self;
 }
@@ -228,7 +249,6 @@ static PyObject *
 router_myloop(PyObject *self,PyObject *args)
 {
     sysloop_do();
-    
     Py_RETURN_NONE;
 }
 

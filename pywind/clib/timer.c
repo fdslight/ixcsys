@@ -48,6 +48,7 @@ static void time_wheel_timeout(struct time_wheel *time_wheel,struct time_data *f
 
     while(NULL!=tdata){
         if(!tdata->is_deleted) time_wheel->timeout_fn(tdata->data);
+        tdata->is_deleted=1;
         t=tdata->next;
         // 回收data数据结构
         time_data_put(time_wheel,tdata);

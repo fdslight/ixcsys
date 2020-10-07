@@ -61,9 +61,11 @@ static void ixc_nat_del_cb(void *data)
 {
     struct ixc_nat_session *s=data;
     struct ixc_nat_id_set *id_set;
+    struct time_data *tdata=s->tdata;
     s->refcnt-=1;
+    
     // 引用计数不为0那么直接返回
-    if(0!=s) return;
+    if(s->refcnt!=0) return;
 
     switch(s->protocol){
         case 1:
@@ -81,7 +83,10 @@ static void ixc_nat_del_cb(void *data)
             break;
     }
 
+    IXC_PRINT_IP("nat session delete",s->addr);
     ixc_nat_id_put(id_set,s->nat_id);
+    tdata->is_deleted=1;
+    
     free(s);
 }
 
@@ -104,6 +109,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     struct ixc_netif *netif=m->netif;
     struct ixc_nat_id *nat_id=NULL;
     struct ixc_nat_id_set *id_set;
+    struct time_data *tdata;
 
     iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
@@ -179,13 +185,26 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         }
 
         bzero(session,sizeof(struct ixc_nat_session));
+        tdata=time_wheel_add(&nat_time_wheel,session,IXC_NAT_TIMEOUT);
 
+        if(NULL==tdata){
+            ixc_nat_id_put(id_set,nat_id);
+            ixc_mbuf_put(m);
+            free(session);
+            STDERR("cannot add to time wheel\r\n");
+            return NULL;
+        }
+
+        session->tdata=tdata;
+        tdata->data=session;
         memcpy(session->lan_key,key,7);
+        
         // LAN to WAN映射添加
         if(0!=map_add(nat.lan2wan,key,session)){
             ixc_mbuf_put(m);
             ixc_nat_id_put(id_set,nat_id);
-
+            free(session);
+            tdata->is_deleted=1;
             STDERR("nat map add failed\r\n");
             return NULL;
         }
@@ -196,6 +215,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         memcpy(session->wan_key,tmp,7);
 
         if(0!=map_add(nat.wan2lan,tmp,session)){
+            tdata->is_deleted=1;
             free(session);
             ixc_mbuf_put(m);
             ixc_nat_id_put(id_set,nat_id);
@@ -261,22 +281,34 @@ static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
 static void ixc_nat_timeout_cb(void *data)
 {
     struct ixc_nat_session *session=data;
-    struct time_data *tdata;
+    struct time_data *tdata=NULL;
     time_t now_time=time(NULL);
 
+    DBG_FLAGS;
+
     // 如果NAT会话超时那么就删除数据
-    if(now_time-session->up_time>IXC_NAT_TIMEOUT){
+    if(now_time-session->up_time>=IXC_NAT_TIMEOUT){
+        IXC_PRINT_IP("nat session timeout",session->addr);
         map_del(nat.wan2lan,(char *)(session->wan_key),ixc_nat_del_cb);
         map_del(nat.lan2wan,(char *)(session->lan_key),ixc_nat_del_cb);
         return;
     }
     
+    DBG_FLAGS;
     // 处理未超时的情况
-    tdata=time_wheel_add(&nat_time_wheel,session,now_time-session->up_time);
-    if(NULL==tdata){
-        STDERR("cannot add to time wheel\r\n");
+    tdata=time_wheel_add(&nat_time_wheel,session,IXC_NAT_TIMEOUT);
+
+    if(NULL!=tdata){
+        DBG_FLAGS;
+        tdata->data=session;
+        session->tdata=tdata;
         return;
     }
+    
+    map_del(nat.wan2lan,(char *)(session->wan_key),ixc_nat_del_cb);
+    map_del(nat.lan2wan,(char *)(session->lan_key),ixc_nat_del_cb);
+
+    STDERR("cannot add to time wheel\r\n");
 }
 
 static void ixc_nat_sysloop_cb(struct sysloop *lp)
@@ -298,15 +330,24 @@ int ixc_nat_init(void)
     nat.tcp_set.cur_id=IXC_NAT_ID_MIN;
     nat.udp_set.cur_id=IXC_NAT_ID_MIN;
 
-    rs=time_wheel_new(&nat_time_wheel,(IXC_NAT_TIMEOUT/10)+8,10,ixc_nat_timeout_cb,2048);
+    nat_sysloop=sysloop_add(ixc_nat_sysloop_cb,NULL);
+
+    if(NULL==nat_sysloop){
+        STDERR("cannot add to sysloop\r\n");
+        return -1;
+    }
+
+    rs=time_wheel_new(&nat_time_wheel,IXC_NAT_TIMEOUT*2/10,10,ixc_nat_timeout_cb,2048);
 
     if(0!=rs){
+        sysloop_del(nat_sysloop);
         STDERR("cannot create time wheel\r\n");
         return -1;
     }
 
     rs=map_new(&m,7);
     if(rs){
+        sysloop_del(nat_sysloop);
         time_wheel_release(&nat_time_wheel);
         STDERR("cannot init map\r\n");
         return -1;
@@ -314,6 +355,7 @@ int ixc_nat_init(void)
     nat.lan2wan=m;
     rs=map_new(&m,7);
     if(rs){
+        sysloop_del(nat_sysloop);
         map_release(nat.lan2wan,NULL);
         time_wheel_release(&nat_time_wheel);
         STDERR("cannot init map\r\n");
@@ -322,7 +364,8 @@ int ixc_nat_init(void)
     nat.wan2lan=m;
 
     nat_is_initialized=1;
-    nat_sysloop=sysloop_add(ixc_nat_sysloop_cb,NULL);
+    
+    
 
     return 0;
 }

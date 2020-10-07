@@ -12,6 +12,7 @@ struct ixc_nat_id;
 
 struct ixc_nat_session{
     struct ixc_nat_id *nat_id;
+    struct time_data *tdata;
     // 会话更新时间
     time_t up_time;
     unsigned char addr[4];
@@ -36,7 +37,7 @@ struct ixc_nat_session{
 #define IXC_NAT_TYPE_CONE 1
 
 // NAT 超时时间
-#define IXC_NAT_TIMEOUT 300
+#define IXC_NAT_TIMEOUT 180
 
 struct ixc_nat_id{
     struct ixc_nat_id *next;
