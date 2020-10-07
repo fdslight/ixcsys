@@ -14,8 +14,8 @@ time_t __raw_time;
 __time=localtime(&__raw_time);\
 strftime(__time_buf,512,"%Y-%m-%d %X %A %Z",__time);fprintf(fd,"%s    ",__time_buf)
 
-#define STDERR(...) __TIME(stderr);fprintf(stderr,"%s:%s %d   ",__FILE__,__func__,__LINE__);fprintf(stderr,__VA_ARGS__)
-#define STDOUT(...) __TIME(stdout);printf("%s:%s %d   ",__FILE__,__func__,__LINE__);printf(__VA_ARGS__)
+#define STDERR(...) __TIME(stderr);fprintf(stderr,"%s:%s line_no:%d   ",__FILE__,__func__,__LINE__);fprintf(stderr,__VA_ARGS__)
+#define STDOUT(...) __TIME(stdout);printf("%s:%s line_no:%d   ",__FILE__,__func__,__LINE__);printf(__VA_ARGS__)
 
 #ifdef DEBUG
 #include<sys/time.h>

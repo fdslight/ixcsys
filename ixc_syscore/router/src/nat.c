@@ -90,7 +90,6 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     struct netutil_iphdr *iphdr;
     unsigned char addr[4];
     int hdr_len=0;
-    unsigned short id=0;
     char key[7],tmp[7],is_found;
     struct ixc_nat_session *session;
 
@@ -116,7 +115,6 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         icmphdr=(struct netutil_icmphdr *)(m->data+m->offset+hdr_len);
         if(8!=icmphdr->type && 0!=icmphdr->type){
             ixc_mbuf_put(m);
-            DBG_FLAGS;
             return NULL;
         }
     }
@@ -144,14 +142,13 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         // 不支持的协议直接丢弃数据包
         default:
             ixc_mbuf_put(m);
-            DBG_FLAGS;
             return NULL;
     }
 
     // 首先检查NAT记录是否存在
     memcpy(key,addr,4);
     key[4]=iphdr->protocol;
-    memcpy(key+5,&id,2);
+    memcpy(key+5,id_ptr,2);
 
     if(is_src) session=map_find(nat.lan2wan,key,&is_found);
     else session=map_find(nat.wan2lan,key,&is_found);
@@ -180,6 +177,8 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             return NULL;
         }
 
+        bzero(session,sizeof(struct ixc_nat_session));
+
         memcpy(session->lan_key,key,7);
         // LAN to WAN映射添加
         if(0!=map_add(nat.lan2wan,key,session)){
@@ -191,7 +190,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         }
 
         memcpy(tmp,key,7);
-        memcpy(tmp+5,&(nat_id->id),2);
+        memcpy(tmp+5,&(nat_id->net_id),2);
         memcpy(session->wan_key,tmp,7);
 
         if(0!=map_add(nat.wan2lan,tmp,session)){
@@ -211,16 +210,18 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
         session->protocol=iphdr->protocol;
 
-        memcpy(session->addr,iphdr->src_addr,4);
+        memcpy(session->addr,netif->ipaddr,4);
     }
 
     if(!is_src){
         rewrite_ip_addr(iphdr,session->addr,is_src);
         csum=csum_calc_incre(*id_ptr,session->lan_id,*csum_ptr);
+        *id_ptr=session->lan_id;
         session->up_time=time(NULL);
     }else {
         rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
         csum=csum_calc_incre(*id_ptr,session->wan_id,*csum_ptr);
+        *id_ptr=session->wan_id;
     }
 
     *csum_ptr=csum;
@@ -233,12 +234,12 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
     // 没有开启NAT那么直接发送数据包
     if(!nat.enable){
         ixc_qos_add(m);
+        DBG_FLAGS;
         return;
     }
 
     m=ixc_nat_do(m,0);
     if(NULL==m) return;
-
     ixc_qos_add(m);
 }
 
@@ -250,10 +251,8 @@ static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
         return;
     }
 
-    DBG_FLAGS;
     m=ixc_nat_do(m,1);
     if(NULL==m) return;
-    DBG_FLAGS;
     ixc_addr_map_handle(m);
 }
 

@@ -130,6 +130,9 @@ int ixc_ip_send(struct ixc_mbuf *m)
         return -1;
     }
 
+    IXC_PRINT_IP("source IP",header->src_addr);
+    IXC_PRINT_IP("dest IP",header->dst_addr);
+
     m->netif=NULL;
     ixc_route_handle(m);
 

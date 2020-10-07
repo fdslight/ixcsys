@@ -388,10 +388,11 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     memcpy(m->src_hwaddr,netif->hwaddr,6);
     memcpy(m->gw,r->gw,4);
 
-    //ttl=iphdr->ttl;
+    ttl=iphdr->ttl;
     // 减少头部ttl的数值
-    //csum=csum_calc_incre(ttl,ttl-1,iphdr->checksum);
-    //iphdr->checksum=csum;
+    csum=csum_calc_incre(ttl,ttl-1,iphdr->checksum);
+    iphdr->checksum=csum;
+    iphdr->ttl-=1;
     m->link_proto=0x0800;
 
     // 如果是LAN节点那么经过UDP source,否则的直接通过qos出去
