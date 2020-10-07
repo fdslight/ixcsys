@@ -58,7 +58,6 @@ static void ixc_qos_put(struct ixc_mbuf *m,unsigned c,unsigned char ipproto,int 
     slot_obj=ixc_qos.slot_objs[slot_no];
 
     if(!slot_obj->is_used){
-        slot_obj->next=NULL;
         slot_obj->is_used=1;
         slot_obj->mbuf_first=m;
         slot_obj->mbuf_last=m;
@@ -68,7 +67,7 @@ static void ixc_qos_put(struct ixc_mbuf *m,unsigned c,unsigned char ipproto,int 
         return;
     }
 
-    m->next=slot_obj->mbuf_last;
+    slot_obj->mbuf_last->next=m;
     slot_obj->mbuf_last=m;
 }
 
@@ -131,18 +130,22 @@ void ixc_qos_pop(void)
     struct ixc_qos_slot *slot_first=ixc_qos.slot_head;
     struct ixc_qos_slot *slot_obj=slot_first;
     struct ixc_qos_slot *slot_old=ixc_qos.slot_head;
-    struct ixc_mbuf *m=NULL;
+    struct ixc_mbuf *m=NULL,*t;
 
     while(NULL!=slot_obj){
         m=slot_obj->mbuf_first;
 
+        // 这里需要创建一个临时变量,防止其他节点修改m->next导致内存访问出现问题
+        t=m->next;
+
         if(IXC_MBUF_FROM_LAN==m->from){
+            DBG_FLAGS;
             if(m->is_ipv6) ixc_natv6_handle(m);
             else ixc_nat_handle(m);
         }else{
             ixc_addr_map_handle(m);
         }
-        m=m->next;
+        m=t;
         // 如果数据未发生完毕,那么跳转到下一个
         if(NULL!=m){
             slot_obj->mbuf_first=m;

@@ -5,8 +5,8 @@
 #include "local.h"
 #include "ip.h"
 #include "router.h"
+#include "debug.h"
 
-#include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netif/tuntap.h"
 
 static int tundev_fd=-1;

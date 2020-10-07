@@ -6,8 +6,8 @@
 #include "arp.h"
 #include "pppoe.h"
 #include "ether.h"
+#include "debug.h"
 
-#include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netutils.h"
 
@@ -199,6 +199,8 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
         0xff,0xff,0xff
     };
 
+    //IXC_PRINT_IP("addr map dest ip ",iphdr->dst_addr);
+    //IXC_PRINT_IP("addr map from ip",iphdr->src_addr);
     // 对于同一个网段的处理方式
     if(ixc_netif_is_subnet(netif,iphdr->dst_addr,0,0)){
         r=ixc_addr_map_get(iphdr->dst_addr,0);
@@ -221,7 +223,7 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
         ixc_pppoe_handle(m);
         return;
     }
-
+    
     // 查找网关记录是否存在,如果不存在那么就发送ARP请求
     r=ixc_addr_map_get(m->gw,0);
     if(NULL==r){
@@ -231,7 +233,6 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
     }
 
     memcpy(m->dst_hwaddr,r->hwaddr,6);
-    DBG_FLAGS;
     ixc_ether_send(m,1);
 }
 
