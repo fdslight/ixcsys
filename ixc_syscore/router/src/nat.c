@@ -9,8 +9,9 @@
 #include "arp.h"
 #include "ip.h"
 #include "qos.h"
+#include "debug.h"
+#include "route.h"
 
-#include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
 
@@ -189,7 +190,8 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             return NULL;
         }
 
-        memcpy(tmp,key,7);
+        memcpy(tmp,netif->ipaddr,4);
+        tmp[4]=iphdr->protocol;
         memcpy(tmp+5,&(nat_id->net_id),2);
         memcpy(session->wan_key,tmp,7);
 
@@ -210,7 +212,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
         session->protocol=iphdr->protocol;
 
-        memcpy(session->addr,netif->ipaddr,4);
+        memcpy(session->addr,iphdr->src_addr,4);
     }
 
     if(!is_src){
@@ -240,7 +242,7 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
 
     m=ixc_nat_do(m,0);
     if(NULL==m) return;
-    ixc_qos_add(m);
+    ixc_route_handle(m);
 }
 
 static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
