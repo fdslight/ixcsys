@@ -32,6 +32,8 @@ int ixc_local_init(void)
     bzero(local_uniq_ip6addr,16);
     bzero(local_linked_ip6addr,16);
 
+    tundev_is_initialized=1;
+
     return 0;
 }
 
@@ -62,8 +64,9 @@ int ixc_local_dev_create(char *name)
     strcpy(tundev_name,name);
     
     return fd;
-}/// 删除tun设备
+}
 
+/// 删除tun设备
 void ixc_local_dev_delete(void)
 {
     struct ixc_mbuf *m,*t;
@@ -134,23 +137,25 @@ int ixc_local_tx_data(void)
     while(1){
         m=local_mbuf_sent_first;
         if(NULL==m) break;
-        wsize=write(tundev_fd,m->data+m->begin,m->end-m->begin);
+        wsize=write(tundev_fd,m->data+m->offset,m->tail-m->offset);
 
         if(wsize<0){
             if(EAGAIN==errno){
                 rs=0;
                 break;
             }else{
+                STDERR("error ERRNO %d\r\n",errno);
                 rs=-1;
                 break;
             }
         }
 
+        local_mbuf_sent_first=m->next;
         if(NULL==local_mbuf_sent_first) local_mbuf_sent_last=NULL;
         ixc_mbuf_put(m);
     }
 
-    if(rs>=0 && NULL==local_mbuf_sent_first) {
+    if(0==rs && NULL==local_mbuf_sent_first) {
         tundev_wflags=0;
         // 告知取消写入事件
         ixc_router_write_ev_tell(tundev_fd,0);

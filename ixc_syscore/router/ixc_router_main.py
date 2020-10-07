@@ -308,6 +308,8 @@ class service(dispatcher.dispatcher):
         self.__tun_fd, self.__TUN_NAME = rs
         self.create_handler(-1, tundev.tundevice, self.__tun_fd)
 
+        byte_ip = socket.inet_pton(socket.AF_INET, self.__lan_manage_addr)
+        self.router.tundev_set_ip(byte_ip, False, False)
         # 设置本机器的默认路由指向
         os.system("ip route add default dev %s" % self.__TUN_NAME)
 
@@ -352,6 +354,7 @@ class service(dispatcher.dispatcher):
         global_vars["ixcsys.router"] = self.__router
         global_vars["ixcsys.runtime"] = self
 
+        # 注意这里的顺序,start_lan一定要在start_local前面先调用
         self.start_lan()
         self.start_wan()
         self.start_local()
@@ -405,6 +408,7 @@ class service(dispatcher.dispatcher):
             return None
 
         return r
+
 
 def main():
     __helper = "ixc_syscore/router helper: start | stop | debug"
