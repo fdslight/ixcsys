@@ -24,9 +24,9 @@ def build(base_dir, my_dir, cflags, debug=True):
     ]
 
     if debug:
-        cflags += " -D DEBUG"
+        cflags += " -D DEBUG -rdynamic"
     else:
-        cflags += " -O2"
+        cflags += " -O2 -rdynamic"
 
     sys_build.do_compile(files, "%s/pylib/router.so" % my_dir, cflags, is_shared=True)
 
