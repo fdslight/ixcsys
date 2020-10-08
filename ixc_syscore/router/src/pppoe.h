@@ -1,6 +1,8 @@
 #ifndef IXC_PPPOE_H
 #define IXC_PPPOE_H
 
+#include<time.h>
+
 #include "mbuf.h"
 
 #pragma pack(push)
@@ -28,18 +30,23 @@ struct ixc_pppoe_tag_header{
 #pragma pack(pop)
 
 struct ixc_pppoe{
+    time_t up_time;
     // 是否开启PPPoE会话
     int is_started;
     // pppoe会话是否成功
     int pppoe_ok;
     // 是否开启PPPoE会话
     int enable;
+    // PPPoE discovery 是否成功
+    int discovery_ok;
     // PPPoE的用户名
     char username[512];
     // PPPoE的密码
     char passwd[512];
+    // 当前PPPoE发现阶段
+    unsigned char cur_discovery_stage;
     // 当前会话阶段
-    unsigned char cur_session_step;
+    unsigned char cur_session_stage;
 };
 
 int ixc_pppoe_init(void);

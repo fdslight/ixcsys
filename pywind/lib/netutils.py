@@ -3,28 +3,29 @@
 import socket, struct
 
 
-def hex_ifaddr(byte_s):
-    """ bytes硬件地址到16进制字符串
+def byte_hwaddr_to_str(byte_hwaddr: bytes):
+    """硬件地址转换成字符串类型
     """
     seq = []
-    for n in byte_s:
-        t = hex(n)[2:]
-        if len(t) == 1:
-            t = "0%s" % t
-        seq.append(t)
+    for i in byte_hwaddr:
+        s = hex(i)
+        s = s[2:]
+        if len(s) < 2: s = "0%s" % s
+        seq.append(s)
 
     return ":".join(seq)
 
 
-def ifaddr_to_bytes(s):
+def str_hwaddr_to_bytes(s: str):
     seq = s.split(":")
-    results = []
-    for v in seq:
-        v = "0x%s" % v
-        x = int(v, 16)
-        results.append(struct.pack("B", x))
+    new_seq = []
 
-    return b"".join(results)
+    for x in seq:
+        t = "0x%s" % x
+        n = int(t, 16)
+        new_seq.append(n)
+
+    return bytes(new_seq)
 
 
 def ip_prefix_convert(n, is_ipv6=False):
@@ -186,31 +187,6 @@ def is_ipv6_address(sts_ipaddr):
     except OSError:
         return False
     return True
-
-
-def byte_hwaddr_to_str(byte_hwaddr: bytes):
-    """硬件地址转换成字符串类型
-    """
-    seq = []
-    for i in byte_hwaddr:
-        s = hex(i)
-        s = s[2:]
-        if len(s) < 2: s = "0%s" % s
-        seq.append(s)
-
-    return ":".join(seq)
-
-
-def str_hwaddr_to_bytes(s: str):
-    seq = s.split(":")
-    new_seq = []
-
-    for x in seq:
-        t = "0x%s" % x
-        n = int(t, 16)
-        new_seq.append(n)
-
-    return bytes(new_seq)
 
 
 def mask_to_prefix(mask: str, is_ipv6=False):

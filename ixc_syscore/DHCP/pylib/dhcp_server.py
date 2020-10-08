@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import socket
+import socket, struct
+
+import pywind.lib.netutils as netutils
 
 import ixc_syscore.DHCP.pylib.dhcp as dhcp
 import ixc_syscore.DHCP.pylib.netpkt as netpkt
@@ -17,7 +19,7 @@ class dhcp_server(object):
     __dhcp_builder = None
 
     __runtime = None
-    __dst_hwaddr = None
+    __client_hwaddr = None
 
     __alloc = None
 
@@ -26,9 +28,9 @@ class dhcp_server(object):
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
         self.__alloc = ipalloc.alloc(addr_begin, addr_finish, subnet, prefix)
-        self.__my_ipaddr = my_ipaddr
-        self.__hostname = hostname
-        self.__hwaddr = hwaddr
+        self.__my_ipaddr = socket.inet_pton(socket.AF_INET, my_ipaddr)
+        self.__hostname = hostname.encode()
+        self.__hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
         self.__runtime = runtime
 
         self.__dhcp_parser = dhcp.dhcp_parser()
@@ -42,6 +44,36 @@ class dhcp_server(object):
                 break
             ''''''
         return rs
+
+    def build_dhcp_response(self, msg_type: int, opts: list):
+        brd_ifaddr = bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+
+        self.__dhcp_builder.op = 2
+        self.__dhcp_builder.xid = self.__dhcp_parser.xid
+        self.__dhcp_builder.secs = self.__dhcp_parser.secs
+        self.__dhcp_builder.flags = self.__dhcp_parser.flags
+
+        s_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
+        s_yiaddr = self.__alloc.get_ipaddr(s_hwaddr)
+        if not s_yiaddr: return
+
+        self.__dhcp_builder.chaddr = self.__client_hwaddr
+        self.__dhcp_builder.ciaddr = socket.inet_pton(socket.AF_INET, s_yiaddr)
+
+        src_hwaddr = self.__hwaddr
+        if self.__dhcp_parser.flags:
+            dst_hwaddr = brd_ifaddr
+        else:
+            dst_hwaddr = self.__client_hwaddr
+
+        opts.insert(0, (53, struct.pack("B", msg_type)))
+        opts.append((54, self.__my_ipaddr))
+
+        link_data = self.__dhcp_builder.build_to_link_data(
+            dst_hwaddr, src_hwaddr, bytes([0xff, 0xff, 0xff, 0xff]), self.__my_ipaddr,
+            options=opts, is_server=True
+        )
+        self.__runtime.send_dhcp_server_msg(link_data)
 
     def handle_dhcp_discover_req(self, opts: list):
         self.__dhcp_builder.reset()
@@ -61,6 +93,10 @@ class dhcp_server(object):
                 msg)
         except:
             return
+
+        if self.__dhcp_parser.ciaddr != src_hwaddr: return
+
+        self.__client_hwaddr = src_hwaddr
 
         if is_server: return
         x = self.get_dhcp_opt_value(options, 53)

@@ -1,7 +1,7 @@
 {
   "debug": true,
   "c_includes": [
-    "/opt/python38/include/python3.8"
+    "/opt/python39/include/python3.9"
   ],
   "libs": [
   ],

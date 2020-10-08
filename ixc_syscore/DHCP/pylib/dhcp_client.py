@@ -43,7 +43,7 @@ class dhcp_client(object):
     def __init__(self, runtime, hostname: str, hwaddr: str):
         self.__runtime = runtime
         self.__hostname = hostname
-        self.__hwaddr = netutils.ifaddr_to_bytes(hwaddr)
+        self.__hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
         self.__dhcp_step = 0
 
         self.__dhcp_parser = dhcp.dhcp_parser()
