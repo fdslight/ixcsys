@@ -1,8 +1,8 @@
 #include "nsself.h"
 #include "netif.h"
 #include "icmp.h"
+#include "debug.h"
 
-#include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
 
 static int nsself_is_initialized=0;
