@@ -188,4 +188,6 @@ void time_wheel_handle(struct time_wheel *time_wheel)
         time_wheel_timeout(time_wheel,tick->time_data);
         tick=tick->next;
     }
+
+    time_wheel->old_time=now;
 }
