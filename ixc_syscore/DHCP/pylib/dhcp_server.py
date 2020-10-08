@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+import socket
 
 import ixc_syscore.DHCP.pylib.dhcp as dhcp
 import ixc_syscore.DHCP.pylib.netpkt as netpkt
+
+import ixc_syscore.DHCP.pylib.ipalloc as ipalloc
+
 
 class dhcp_server(object):
     __my_ipaddr = None
@@ -13,29 +17,71 @@ class dhcp_server(object):
     __dhcp_builder = None
 
     __runtime = None
-
-    # MAC与IP地址的绑定
-    __bind = None
-
     __dst_hwaddr = None
 
-    def __init__(self, runtime, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str):
-        self.__bind = {}
+    __alloc = None
+
+    __TIMEOUT = 1800
+
+    def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
+                 subnet: str, prefix: int):
+        self.__alloc = ipalloc.alloc(addr_begin, addr_finish, subnet, prefix)
+        self.__my_ipaddr = my_ipaddr
+        self.__hostname = hostname
+        self.__hwaddr = hwaddr
         self.__runtime = runtime
+
         self.__dhcp_parser = dhcp.dhcp_parser()
         self.__dhcp_builder = dhcp.dhcp_builder()
 
-    def bind_ipaddr(self, hwaddr: str, ip_addr: str):
-        """对特定的MAC地址进行IP地址绑定
-        """
-        self.__bind[hwaddr] = ip_addr
+    def get_dhcp_opt_value(self, options: list, code: int):
+        rs = None
+        for name, length, value in options:
+            if name == code:
+                rs = value
+                break
+            ''''''
+        return rs
 
-    @property
-    def bind(self):
-        return self.__bind
+    def handle_dhcp_discover_req(self, opts: list):
+        self.__dhcp_builder.reset()
+
+    def handle_dhcp_request(self, opts: list):
+        pass
+
+    def handle_dhcp_decline(self, opts: list):
+        pass
+
+    def handle_dhcp_release(self, opts: list):
+        pass
 
     def handle_dhcp_msg(self, msg: bytes):
-        result = self.__dhcp_parser.parse_from_link_data(msg)
+        try:
+            dst_hwaddr, src_hwaddr, dst_addr, src_addr, options, is_server = self.__dhcp_parser.parse_from_link_data(
+                msg)
+        except:
+            return
+
+        if is_server: return
+        x = self.get_dhcp_opt_value(options, 53)
+        msg_type = x[0]
+        if not msg_type: return
+
+        if msg_type not in (1, 3, 4, 7,): return
+
+        if msg_type == 1:
+            self.handle_dhcp_discover_req(options)
+            return
+
+        if msg_type == 3:
+            self.handle_dhcp_request(options)
+            return
+
+        if msg_type == 4:
+            self.handle_dhcp_decline(options)
+            return
+
+        self.handle_dhcp_release(options)
 
     def handle_arp(self, dst_hwaddr: bytes, src_hwaddr: bytes, arp_info):
         # 只允许广播和发送到本机器的ARP数据包
@@ -45,5 +91,10 @@ class dhcp_server(object):
         op, _dst_hwaddr, _src_hwaddr, src_ipaddr, dst_ipaddr = arp_info
         if _dst_hwaddr != self.__hwaddr: return
 
+    def set_timeout(self, timeout: int):
+        """设置DHCP IP超时时间
+        """
+        self.__TIMEOUT = timeout
+
     def loop(self):
-        pass
+        self.__alloc.recycle()

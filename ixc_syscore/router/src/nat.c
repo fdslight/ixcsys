@@ -84,6 +84,7 @@ static void ixc_nat_del_cb(void *data)
     }
 
     IXC_PRINT_IP("nat session delete",s->addr);
+    
     ixc_nat_id_put(id_set,s->nat_id);
     tdata->is_deleted=1;
     
@@ -364,8 +365,6 @@ int ixc_nat_init(void)
     nat.wan2lan=m;
 
     nat_is_initialized=1;
-    
-    
 
     return 0;
 }
