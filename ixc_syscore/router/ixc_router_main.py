@@ -250,7 +250,7 @@ class service(dispatcher.dispatcher):
 
         self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
 
-        self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.ifaddr_to_bytes(hwaddr))
+        self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.str_hwaddr_to_bytes(hwaddr))
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
 
         self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
@@ -281,7 +281,7 @@ class service(dispatcher.dispatcher):
         nat_enable = bool(int(ip_cfg["nat_enable"]))
 
         self.__if_wan_fd, self.__WAN_NAME = self.__router.netif_create(self.__WAN_NAME, router.IXC_NETIF_WAN)
-        self.router.netif_set_hwaddr(router.IXC_NETIF_WAN, netutils.ifaddr_to_bytes(wan_ifhwaddr))
+        self.router.netif_set_hwaddr(router.IXC_NETIF_WAN, netutils.str_hwaddr_to_bytes(wan_ifhwaddr))
 
         if nat_enable: self.router.nat_set(True, 0, False)
 

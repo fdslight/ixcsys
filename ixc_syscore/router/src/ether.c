@@ -8,6 +8,7 @@
 #include "vpn.h"
 #include "netif.h"
 #include "router.h"
+#include "pppoe.h"
 
 #include "../../../pywind/clib/debug.h"
 
@@ -99,6 +100,16 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         // IPv6
         case 0x86dd:
             ixc_ip6_handle(mbuf);
+            break;
+        // PPPoE discovery
+        case 0x8863:
+            if(IXC_NETIF_LAN==netif->type) ixc_mbuf_put(mbuf);
+            else ixc_pppoe_handle(mbuf);
+            break;
+        // PPPoE session
+        case 0x8864:
+            if(IXC_NETIF_LAN==netif->type) ixc_mbuf_put(mbuf);
+            else ixc_pppoe_handle(mbuf);
             break;
         default:
             ixc_mbuf_put(mbuf);

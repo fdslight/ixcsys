@@ -4,17 +4,40 @@
 #include "pppoe.h"
 #include "ether.h"
 #include "netif.h"
+#include "debug.h"
 
-#include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
 
 static int pppoe_is_initialized=0;
 static struct ixc_pppoe pppoe;
 static struct sysloop *pppoe_sysloop=NULL;
 
-static void ixc_pppoe_sysloop_cb(struct sysloop *lp)
+static void ixc_pppoe_send_discovery(void);
+
+static void ixc_pppoe_discovery_loop(void)
+{
+    // 如果发现阶段还是0,那么发送发现数据包
+    if(pppoe.cur_discovery_stage==0){
+        ixc_pppoe_send_discovery();
+        return;
+    }
+
+
+}
+
+static void ixc_pppoe_session_loop(void)
 {
 
+}
+
+static void ixc_pppoe_sysloop_cb(struct sysloop *lp)
+{
+    time_t now=time(NULL);
+    // 检查最近更新时间
+    if(now-pppoe.up_time<5) return;
+
+    if(!pppoe.discovery_ok) ixc_pppoe_discovery_loop();
+    else ixc_pppoe_session_loop();
 }
 
 /// 构建PPPoE tag
@@ -100,9 +123,42 @@ int ixc_pppoe_set_user(char *username,char *passwd)
 /// 开始进行PPPoE的会话
 void ixc_pppoe_start(void)
 {
+    if(!pppoe_is_initialized){
+        STDERR("the pppoe is not initialized\r\n");
+        return;
+    }
+
     pppoe.is_started=1;
     // 发送PPPoE的会话报文
+    pppoe.up_time=time(NULL);
+}
 
+/// 
+void ixc_pppoe_stop(void)
+{
+
+}
+
+static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
+{
+    struct ixc_pppoe_header *header=(struct ixc_pppoe_header *)(m->data+m->offset);
+
+    // 检查服务器的响应代码是否符合要求
+    if(header->code!=IXC_PPPOE_CODE_PADO && header->code!=IXC_PPPOE_CODE_PADS){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    if(header->code==IXC_PPPOE_CODE_PADO){
+
+    }
+
+    ixc_mbuf_put(m);
+}
+
+static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
+{
+    ixc_mbuf_put(m);
 }
 
 /// 把数据包发送PPPOE进行处理
@@ -113,8 +169,10 @@ void ixc_pppoe_handle(struct ixc_mbuf *m)
         ixc_ether_send(m,1);
         return;
     }
-    
-    ixc_mbuf_put(m);
+
+    if(m->link_proto==0x8863) ixc_pppoe_handle_discovery(m);
+    else ixc_pppoe_handle_session(m);
+
 }
 
 int ixc_pppoe_ok(void)
