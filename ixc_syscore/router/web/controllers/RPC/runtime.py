@@ -23,8 +23,8 @@ class controller(rpc.controller):
             "get_all_consts": self.get_all_consts,
             "get_wan_hwaddr": self.get_wan_hwaddr,
             "get_lan_hwaddr": self.get_lan_hwaddr,
-            "get_lan_ipaddr": self.get_lan_ipaddr,
-            "get_wan_ipaddr": self.get_wan_ipaddr,
+            "get_lan_ipaddr_info": self.get_lan_ipaddr_info,
+            "get_wan_ipaddr_info": self.get_wan_ipaddr_info,
             "get_lan_manage_ipaddr": self.get_lan_manage_ipaddr,
             "set_wan_ipaddr": self.set_wan_ipaddr,
             "set_lan_ipaddr": self.set_lan_ipaddr,
@@ -69,10 +69,14 @@ class controller(rpc.controller):
 
         return r
 
-    def get_lan_ipaddr(self, is_ipv6=False):
-        pass
+    def get_lan_ipaddr_info(self, is_ipv6=False):
+        if is_ipv6:
+            return 0, ("::1", 128,)
+        rs = self.__runtime.lan_ipaddr_info
 
-    def get_wan_ipaddr(self, is_ipv6=False):
+        return 0, rs
+
+    def get_wan_ipaddr_info(self, is_ipv6=False):
         pass
 
     def get_lan_manage_ipaddr(self, is_ipv6=False):

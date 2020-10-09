@@ -9,6 +9,7 @@ import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 import pywind.web.handlers.scgi as scgi
+import pywind.lib.netutils as netutils
 
 from pywind.global_vars import global_vars
 
@@ -142,12 +143,18 @@ class service(dispatcher.dispatcher):
             raise SystemError(message)
         self.get_handler(self.__dhcp_fd).set_message_auth(message, port)
 
+        lan_ipaddr_info = RPCClient.fn_call("router", "/runtime", "get_lan_ipaddr_info")
+
         _, self.__wan_hwaddr = RPCClient.fn_call("router", "/runtime", "get_wan_hwaddr")
         _, self.__lan_hwaddr = RPCClient.fn_call("router", "/runtime", "get_lan_hwaddr")
 
         self.__router_consts = consts
 
-        self.__dhcp_server = dhcp_server.dhcp_server(self, self.__hostname, self.__lan_hwaddr, "", "")
+        self.__dhcp_server = dhcp_server.dhcp_server(self, lan_ipaddr_info[0], self.__hostname, self.__lan_hwaddr,
+                                                     "192.168.11.2",
+                                                     "192.168.11.18",
+                                                     netutils.calc_subnet(lan_ipaddr_info[0], lan_ipaddr_info[1]),
+                                                     24)
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
 
     def send_dhcp_client_msg(self, msg: bytes):

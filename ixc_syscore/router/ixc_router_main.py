@@ -89,6 +89,9 @@ class service(dispatcher.dispatcher):
     __lan_manage_addr = None
     __lan_manage_addr6 = None
 
+    __lan_ipaddr = None
+    __lan_ip_prefix = None
+
     __scgi_fd = None
 
     __info_file = None
@@ -162,6 +165,10 @@ class service(dispatcher.dispatcher):
     @property
     def wan_local_link_ip6addr(self):
         return self.__wan_local_link_ip6addr
+
+    @property
+    def lan_ipaddr_info(self):
+        return self.__lan_ipaddr, self.__lan_ip_prefix
 
     def release(self):
         if os.path.isfile(self.__info_file): os.remove(self.__info_file)
@@ -243,6 +250,8 @@ class service(dispatcher.dispatcher):
         if not netutils.is_ipv4_address(ip):
             raise ValueError("wrong IPv4 address format")
 
+        self.__lan_ipaddr = ip
+        self.__lan_ip_prefix = prefix
         self.__lan_manage_addr = manage_addr[0]
         self.__lan_manage_addr6 = "::1"
 
