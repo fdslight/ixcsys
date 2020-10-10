@@ -86,20 +86,11 @@ class service(dispatcher.dispatcher):
     # 是否告知系统管理进程
     __is_notify_sysadm_proc = None
 
-    __lan_manage_addr = None
-    __lan_manage_addr6 = None
-
-    __lan_ipaddr = None
-    __lan_ip_prefix = None
-
     __scgi_fd = None
 
     __info_file = None
 
     __pfwd_fd = None
-
-    __lan_local_link_ip6addr = None
-    __wan_local_link_ip6addr = None
 
     def _write_ev_tell(self, fd: int, flags: int):
         if flags:
@@ -157,18 +148,6 @@ class service(dispatcher.dispatcher):
     @property
     def wan_configs(self):
         return self.__wan_configs
-
-    @property
-    def lan_local_link_ip6addr(self):
-        return self.__lan_local_link_ip6addr
-
-    @property
-    def wan_local_link_ip6addr(self):
-        return self.__wan_local_link_ip6addr
-
-    @property
-    def lan_ipaddr_info(self):
-        return self.__lan_ipaddr, self.__lan_ip_prefix
 
     def release(self):
         if os.path.isfile(self.__info_file): os.remove(self.__info_file)
@@ -234,34 +213,11 @@ class service(dispatcher.dispatcher):
         self.load_lan_configs()
         lan_ifconfig = self.__lan_configs["if_config"]
         lan_phy_ifname = lan_ifconfig["phy_ifname"]
-        gw_addr = self.parse_ipaddr_format(lan_ifconfig["gw_addr"])
         hwaddr = lan_ifconfig["hwaddr"]
-        manage_addr = self.parse_ipaddr_format(lan_ifconfig["manage_addr"])
-
-        if not gw_addr:
-            raise SystemExit("wrong IP address format")
-        if not manage_addr:
-            raise SystemExit("please set manage address")
-
-        ip, prefix = gw_addr
-
-        if prefix > 32 or prefix < 1:
-            raise ValueError("wrong IP address prefix")
-        if not netutils.is_ipv4_address(ip):
-            raise ValueError("wrong IPv4 address format")
-
-        self.__lan_ipaddr = ip
-        self.__lan_ip_prefix = prefix
-        self.__lan_manage_addr = manage_addr[0]
-        self.__lan_manage_addr6 = "::1"
-
-        byte_ip = socket.inet_pton(socket.AF_INET, ip)
 
         self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
 
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.str_hwaddr_to_bytes(hwaddr))
-        self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
-
         self.create_handler(-1, tapdev.tapdevice, self.__if_lan_fd, router.IXC_NETIF_LAN)
 
         if self.is_linux:
@@ -269,8 +225,6 @@ class service(dispatcher.dispatcher):
 
             os.system("ip link set %s promisc on" % lan_phy_ifname)
             os.system("ip link set %s up" % lan_phy_ifname)
-            # 设置桥接网卡IP地址
-            os.system("ip addr add %s/%d dev %s" % (manage_addr[0], manage_addr[1], self.__LAN_BR_NAME))
 
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
@@ -317,10 +271,35 @@ class service(dispatcher.dispatcher):
         self.__tun_fd, self.__TUN_NAME = rs
         self.create_handler(-1, tundev.tundevice, self.__tun_fd)
 
-        byte_ip = socket.inet_pton(socket.AF_INET, self.__lan_manage_addr)
-        self.router.tundev_set_ip(byte_ip, False, False)
+    def set_gw_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+        byte_ip = socket.inet_pton(fa, ipaddr)
+
+        self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
+
+    def set_manage_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False, is_local=False):
+        """设置管理地址
+        :param ipaddr
+        :param prefix
+        :param is_ipv6
+        :param is_local,表示是否是本地链路IP地址,该值在is_ipv6为True时才生效
+        """
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+        byte_ip = socket.inet_pton(fa, ipaddr)
+        self.router.tundev_set_ip(byte_ip, is_ipv6, is_local)
         # 设置本机器的默认路由指向
         os.system("ip route add default dev %s" % self.__TUN_NAME)
+        if is_ipv6:
+            x = "-6"
+        else:
+            x = "-4"
+        os.system("ip %s addr add %s/%d dev %s" % (x, ipaddr, prefix, self.__LAN_BR_NAME))
 
     def get_fwd_instance(self):
         """获取重定向类实例
