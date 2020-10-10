@@ -22,12 +22,11 @@ class controller(rpc.controller):
         self.fobjs = {
             "get_all_consts": self.get_all_consts,
             "get_wan_hwaddr": self.get_wan_hwaddr,
-            "get_lan_hwaddr": self.get_lan_hwaddr,
-            "get_lan_ipaddr_info": self.get_lan_ipaddr_info,
+            "get_gw_hwaddr": self.get_gw_hwaddr,
             "get_wan_ipaddr_info": self.get_wan_ipaddr_info,
-            "get_lan_manage_ipaddr": self.get_lan_manage_ipaddr,
             "set_wan_ipaddr": self.set_wan_ipaddr,
-            "set_lan_ipaddr": self.set_lan_ipaddr,
+            "set_gw_ipaddr": self.set_gw_ipaddr,
+            "set_manage_ipaddr": self.set_manage_ipaddr,
             "add_route": self.add_route,
             "del_route": self.del_route
         }
@@ -60,7 +59,7 @@ class controller(rpc.controller):
 
         return r
 
-    def get_lan_hwaddr(self):
+    def get_gw_hwaddr(self):
         """获取LAN硬件地址
         :return:
         """
@@ -69,17 +68,7 @@ class controller(rpc.controller):
 
         return r
 
-    def get_lan_ipaddr_info(self, is_ipv6=False):
-        if is_ipv6:
-            return 0, ("::1", 128,)
-        rs = self.__runtime.lan_ipaddr_info
-
-        return 0, rs
-
     def get_wan_ipaddr_info(self, is_ipv6=False):
-        pass
-
-    def get_lan_manage_ipaddr(self, is_ipv6=False):
         pass
 
     def check_ipaddr_args(self, ipaddr: str, prefix: int, is_ipv6=False):
@@ -101,8 +90,8 @@ class controller(rpc.controller):
 
         return True, ""
 
-    def set_lan_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
-        """设置LAN口的IP地址
+    def set_gw_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
+        """设置网关的IP地址
         """
         check_ok, err_msg = self.check_ipaddr_args(ipaddr, prefix, is_ipv6=is_ipv6)
         if not check_ok:
@@ -116,6 +105,11 @@ class controller(rpc.controller):
         set_ok = self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, is_ipv6)
 
         return 0, (set_ok, "")
+
+    def set_manage_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
+        """设置管理地址
+        """
+        pass
 
     def set_wan_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         """设置WAN口的IP地址
