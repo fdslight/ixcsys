@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""DNS规则写法
+"""
 
 import ixc_syslib.web.controllers.rpc_controller as rpc
 
