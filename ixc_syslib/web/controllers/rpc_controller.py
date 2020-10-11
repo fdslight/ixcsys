@@ -2,6 +2,7 @@
 import pickle
 import pywind.web.appframework.app_handler as app_handler
 import ixc_syslib.pylib.RPCClient as RPCClient
+import ixc_syslib.pylib.logging as logging
 
 
 class controller(app_handler.handler):
@@ -62,9 +63,11 @@ class controller(app_handler.handler):
             self.send_rpc_response(RPCClient.ERR_NOT_FOUND_METHOD, "not found RPC function %s" % fname)
             return
         except TypeError:
+            logging.print_error()
             self.send_rpc_response(RPCClient.ERR_ARGS, "Wrong argument or return value for function %s" % fname)
             return
         except:
+            logging.print_error()
             self.send_rpc_response(RPCClient.ERR_SYS, "system error for RPC request %s" % fname)
             return
 

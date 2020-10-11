@@ -35,10 +35,11 @@ class dhcp_service(udp_handler.udp_handler):
         if len(message) < 34: return
 
         _id, if_type, _, ipproto, flags = struct.unpack("!16sbbbb", message[0:20])
+        if flags != 1: return
         if _id != self.__id: return
         # 必须是链路层协议
         if ipproto != 0: return
-
+        
         ether_data = message[20:]
 
         if flags == self.consts["IXC_FLAG_ARP"]:

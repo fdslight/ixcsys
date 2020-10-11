@@ -83,9 +83,6 @@ class service(dispatcher.dispatcher):
     __wan_configs = None
 
     __is_linux = None
-    # 是否告知系统管理进程
-    __is_notify_sysadm_proc = None
-
     __scgi_fd = None
 
     __info_file = None
@@ -299,7 +296,7 @@ class service(dispatcher.dispatcher):
             x = "-6"
         else:
             x = "-4"
-        os.system("ip %s addr add %s/%d dev %s" % (x, ipaddr, prefix, self.__LAN_BR_NAME))
+        os.system("ip %s addr add %s/%s dev %s" % (x, ipaddr, prefix, self.__LAN_BR_NAME))
 
     def get_fwd_instance(self):
         """获取重定向类实例
@@ -322,7 +319,6 @@ class service(dispatcher.dispatcher):
 
         self.__wan_configs = {}
         self.__is_linux = sys.platform.startswith("linux")
-        self.__is_notify_sysadm_proc = False
         self.__scgi_fd = -1
         self.__pfwd_fd = -1
 
@@ -351,28 +347,7 @@ class service(dispatcher.dispatcher):
 
         self.start_scgi()
 
-    def notify_sysadm_proc(self):
-        path = "%s/../syscall/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
-        pid = proc.get_pid(path)
-
-        if pid < 0: return
-        self.__is_notify_sysadm_proc = True
-
-        o = {
-            "ip": self.__lan_manage_addr,
-            "ipv6": self.__lan_manage_addr6
-        }
-
-        s = json.dumps(o)
-        with open(self.__info_file, "w") as f: f.write(s)
-        f.close()
-
-        os.kill(pid, signal.SIGUSR1)
-
     def myloop(self):
-        if not self.__is_notify_sysadm_proc:
-            self.notify_sysadm_proc()
-
         if not self.router.iowait():
             self.set_default_io_wait_time(0)
         else:

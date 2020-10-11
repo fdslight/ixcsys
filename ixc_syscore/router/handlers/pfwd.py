@@ -85,21 +85,19 @@ class pfwd(udp_handler.udp_handler):
             fwd_info = self.__fwd_tb[i]
             if not fwd_info: continue
             new_msg = [
-                struct.pack(HEADER_FMT, fwd_info[0], if_type, 0, 0, flags),
+                struct.pack(HEADER_FMT, fwd_info[0], if_type, 0, ipproto, i),
                 msg
             ]
             self.sendto(b"".join(new_msg), ("127.0.0.1", fwd_info[1]))
         self.add_evt_write(self.fileno)
 
-    def set_fwd_port(self, flags: int, fwd_port: int):
-        if fwd_port < 1 or fwd_port > 0xfffe:
-            return (False, "wrong fwd_port value",)
+    def set_fwd_port(self, flags: int, _id: bytes, fwd_port: int):
+        if flags not in self.__fwd_tb: return False
 
-        if flags not in self.__fwd_tb:
-            return (False, "not found flags value %s" % flags,)
+        r = (_id, fwd_port,)
+        self.__fwd_tb[flags] = r
 
-        self.__fwd_tb[flags] = (os.urandom(16), fwd_port,)
-        return (True, self.__fwd_tb[flags][0],)
+        return True
 
     def unset_fwd_port(self, flags: int):
         if flags not in self.__fwd_tb: return
