@@ -81,3 +81,22 @@ def ini_parse_from_sts(sts):
     p = _Iniparser()
 
     return p.parse(sts)
+
+
+def save_to_ini(_dict: dict, fpath: str):
+    """保存特定的字典对象到ini文件
+    """
+    seq = []
+
+    for x in _dict:
+        o = _dict[x]
+        seq.append("[%s]\r\n" % x)
+        for name, value in o.items():
+            s = "%s = %s\r\n" % (name, value,)
+            seq.append(s)
+        ''''''
+
+    w = "".join(seq)
+    with open(fpath, "w") as f:
+        f.write(w)
+    f.close()
