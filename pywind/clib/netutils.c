@@ -6,6 +6,29 @@
 
 #include "netutils.h"
 
+/// 增加SSE2指令支持
+#ifdef __x86_64__
+#include<emmintrin.h>
+/// 使用SSE2指令集优化IPv6子网掩码计算
+static inline
+int subnet_calc_with_msk_for_ipv6(unsigned char *address,unsigned char *msk,unsigned char *res)
+{
+	__m128i *mem_addr=(__m128i *)res;
+	__m128i *xa=(__m128i *)address;
+	__m128i *xb=(__m128i *)msk;
+
+    __m128i a=_mm_loadu_si128(xa);
+    __m128i b=_mm_loadu_si128(xb);
+
+    a=_mm_and_si128(a,b);
+
+    _mm_storeu_si128(mem_addr,a);
+    _mm_storeu_si128(mem_addr,a);
+
+    return 0;
+}
+#endif
+
 int msk_calc(unsigned char prefix,int is_ipv6,unsigned char *res)
 {
     unsigned char a,b,constant=0xff;
