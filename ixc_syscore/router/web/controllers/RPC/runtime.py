@@ -106,10 +106,11 @@ class controller(rpc.controller):
 
         return 0, (set_ok, "")
 
-    def set_manage_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
+    def set_manage_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False, is_local=False):
         """设置管理地址
         """
-        pass
+        self.__runtime.set_manage_ipaddr(ipaddr, prefix, is_ipv6=is_ipv6, is_local=is_local)
+        return 0, None
 
     def set_wan_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         """设置WAN口的IP地址
