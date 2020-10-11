@@ -1,2 +1,7 @@
 [
+  "router",
+  "DHCP",
+  "DNS",
+  "tftp",
+  "sysadm"
 ]
