@@ -68,8 +68,13 @@ int subnet_calc_with_msk(unsigned char *address,unsigned char *msk,int is_ipv6,u
 {
     size_t size=4;
 
-    if(is_ipv6) size=16;
-
+    if(is_ipv6){
+#ifdef __x86_64__
+        return subnet_calc_with_msk_for_ipv6(address,msk,res);
+#else
+        size=16;
+#endif
+    }
     for(size_t n=0;n<size;n++){
         res[n]= address[n] & msk[n];
     }
