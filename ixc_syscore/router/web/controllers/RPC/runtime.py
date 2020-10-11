@@ -93,7 +93,8 @@ class controller(rpc.controller):
     def set_gw_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         """设置网关的IP地址
         """
-        check_ok, err_msg = self.check_ipaddr_args(ipaddr, prefix, is_ipv6=is_ipv6)
+        prefix=int(prefix)
+        check_ok, err_msg = self.check_ipaddr_args(ipaddr,prefix, is_ipv6=is_ipv6)
         if not check_ok:
             return 0, (check_ok, err_msg,)
 
@@ -109,13 +110,13 @@ class controller(rpc.controller):
     def set_manage_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False, is_local=False):
         """设置管理地址
         """
-        self.__runtime.set_manage_ipaddr(ipaddr, prefix, is_ipv6=is_ipv6, is_local=is_local)
+        self.__runtime.set_manage_ipaddr(ipaddr, int(prefix), is_ipv6=is_ipv6, is_local=is_local)
         return 0, None
 
     def set_wan_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         """设置WAN口的IP地址
         """
-        check_ok, err_msg = self.check_ipaddr_args(ipaddr, prefix, is_ipv6=is_ipv6)
+        check_ok, err_msg = self.check_ipaddr_args(ipaddr, int(prefix), is_ipv6=is_ipv6)
         if not check_ok:
             return 0, (check_ok, err_msg,)
 

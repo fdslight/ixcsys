@@ -21,18 +21,34 @@ class controller(rpc.controller):
             "get_server_recv_port": self.get_sever_recv_port
         }
 
-    def set_fwd_port(self, flags: int, fwd_port: int):
+    def set_fwd_port(self, flags: int, _id: bytes, fwd_port: int):
+        if not isinstance(_id, bytes):
+            return 0, (False, "Wrong _id data type")
+        if len(_id) != 16:
+            return 0, (False, "Wrong _id length")
+        try:
+            fwd_port = int(fwd_port)
+        except ValueError:
+            return 0, (False, "Wrong fwd_port data type")
+
+        if fwd_port > 0xfffe or fwd_port < 1:
+            return 0, (False, "Wrong fwd_port value")
+
         pfwd = self.__runtime.get_fwd_instance()
-        return (0, pfwd.set_fwd_port(flags, fwd_port),)
+        b = pfwd.set_fwd_port(flags, _id, fwd_port)
+
+        return 0, (b, "")
 
     def unset_fwd_port(self, flags: int):
         pfwd = self.__runtime.get_fwd_instance()
-        return (0, pfwd.unset_fwd_port(flags),)
+        pfwd.unset_fwd_port(flags)
+        return 0, None
 
     def get_sever_recv_port(self):
         """获取服务端接收端口
         :return:
         """
         pfwd = self.__runtime.get_fwd_instance()
+        port = pfwd.get_server_recv_port()
 
-        return (0, pfwd.get_server_recv_port(),)
+        return 0, port
