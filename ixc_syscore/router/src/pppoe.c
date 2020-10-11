@@ -13,6 +13,95 @@ static struct ixc_pppoe pppoe;
 static struct sysloop *pppoe_sysloop=NULL;
 
 static void ixc_pppoe_send_discovery(void);
+static void ixc_pppoe_send_discovery_padr(void);
+
+/// 重置会话
+static void ixc_pppoe_reset(void)
+{
+    // 这里需要更新时间,否则会导致超时不发送请求包
+    pppoe.up_time=time(NULL);
+    pppoe.is_selected_server=0;
+    pppoe.cur_discovery_stage=0;
+}
+
+/// PPPoE标签解析
+static int ixc_pppoe_parse_tags(struct ixc_mbuf *m,struct ixc_pppoe_tag **tag_first)
+{
+    struct ixc_pppoe_tag *first,*cur,*tmp;
+    struct ixc_pppoe_tag_header *tag_header;
+    int tot_size=m->tail-m->offset-6;
+    int rs=0,pos=0,t;
+    unsigned short length,type;
+
+    *tag_first=NULL;
+    first=NULL;
+    cur=NULL;
+
+    while(1){
+        if(pos==tot_size) break;
+
+        tag_header=(struct ixc_pppoe_tag_header *)(m->data+m->offset+6+pos);
+        length=ntohs(tag_header->length);
+        type=ntohs(tag_header->type);
+
+        t=pos+4+length;
+
+        // 这里的4代表tag的头部长度
+        if(t>tot_size){
+            DBG("Wrong tag length %d %d\r\n",pos+length+4,tot_size);
+            rs=-1;
+            break;
+        }
+
+        if(type==0x0000) break;
+
+        // 检查tag长度值是否合法
+        if(length>1492){
+            DBG("Wrong tag length value\r\n");
+            rs=-1;
+            break;
+        }
+
+        tmp=malloc(sizeof(struct ixc_pppoe_tag));
+
+        if(NULL==tmp){
+            rs=-1;
+            STDERR("cannot malloc struct ixc_pppoe_tag\r\n");
+            break;
+        }
+
+        tmp->next=NULL;
+        tmp->type=type;
+        tmp->length=length;
+
+        memcpy(tmp->data,m->data+m->offset+6+pos+4,length);
+
+        if(NULL==first){
+            first=tmp;
+            cur=tmp;
+        }else{
+            cur->next=tmp;
+            cur=tmp;
+        }
+        pos=t;
+    }
+
+    *tag_first=first;
+
+    return rs;
+}
+
+/// 释放标签内存
+static void ixc_pppoe_free_tags(struct ixc_pppoe_tag *tag_first)
+{
+    struct ixc_pppoe_tag *tag=tag_first,*tmp;
+
+    while(NULL!=tag){
+        tmp=tag->next;
+        free(tag);
+        tag=tmp;
+    }
+}
 
 static void ixc_pppoe_discovery_loop(void)
 {
@@ -21,8 +110,12 @@ static void ixc_pppoe_discovery_loop(void)
         ixc_pppoe_send_discovery();
         return;
     }
-
-
+    
+    // 如果当前是PADR阶段,那么发送PADR数据包
+    if(pppoe.cur_discovery_stage==IXC_PPPOE_CODE_PADR){
+        ixc_pppoe_send_discovery_padr();
+        return;
+    }
 }
 
 static void ixc_pppoe_session_loop(void)
@@ -34,13 +127,17 @@ static void ixc_pppoe_sysloop_cb(struct sysloop *lp)
 {
     time_t now=time(NULL);
     // 检查最近更新时间
-    if(now-pppoe.up_time<5) return;
+    if(now-pppoe.up_time<10) return;
+
+    // 大于60s那么重置
+    if(now-pppoe.up_time>60){
+        ixc_pppoe_reset();
+        return;
+    }
 
     if(!pppoe.discovery_ok) ixc_pppoe_discovery_loop();
     else ixc_pppoe_session_loop();
 }
-
-/// 构建PPPoE tag
 
 /// 发送PPPoE发现报文
 static void ixc_pppoe_send_discovery(void)
@@ -88,6 +185,8 @@ static void ixc_pppoe_send_discovery(void)
     m->tail=m->begin+10;
     m->end=m->tail;
 
+    pppoe.up_time=time(NULL);
+
     ixc_ether_send(m,1);
 }
 
@@ -112,7 +211,7 @@ void ixc_pppoe_uninit(void)
 }
 
 ///  设置PPPOE的用户名和密码
-int ixc_pppoe_set_user(char *username,char *passwd)
+int ixc_pppoe_set_user(const char *username,const char *passwd)
 {
     strcpy(pppoe.username,username);
     strcpy(pppoe.passwd,passwd);
@@ -136,7 +235,147 @@ void ixc_pppoe_start(void)
 /// 
 void ixc_pppoe_stop(void)
 {
+    // 如果PPPoE会话成功那么发送终止信号终止PPPoE会话
+}
 
+/// 发送PADR数据包
+static void ixc_pppoe_send_discovery_padr(void)
+{
+    struct ixc_pppoe_header *header;
+    struct ixc_pppoe_tag_header *tag_header;
+
+    unsigned short tot_size=6;
+
+    unsigned short tags[]={
+        0x0101,
+        0x0102,0x0104,0x0000
+    },tag;
+    unsigned short lengths[]={
+        0,
+        strlen(pppoe.ac_name),pppoe.ac_cookie_len,0
+    },length;
+    unsigned char *data_set[]={
+        NULL,
+        (unsigned char *)pppoe.ac_name,pppoe.ac_cookie,NULL
+    },*data;
+
+    struct ixc_mbuf *m=ixc_mbuf_get();
+
+    pppoe.up_time=time(NULL);
+
+    if(NULL==m){
+        STDERR("cannot get mbuf\r\n");
+        return;
+    }
+
+    m->netif=ixc_netif_get(IXC_NETIF_WAN);
+    m->next=NULL;
+    m->from=IXC_MBUF_FROM_WAN;
+    m->begin=IXC_MBUF_BEGIN;
+    m->offset=m->begin;
+    m->link_proto=0x8863;
+
+    header=(struct ixc_pppoe_header *)(m->data+m->offset);
+    header->ver_and_type=0x11;
+    header->code=IXC_PPPOE_CODE_PADR;
+    header->session_id=0x0000;
+    
+    for(int n=0;;n++){
+        tag_header=(struct ixc_pppoe_tag_header *)(m->data+m->offset+tot_size);
+
+        tag=tags[n];
+        length=lengths[n];
+        data=data_set[n];
+ 
+        tag_header->type=htons(tag);
+        tag_header->length=htons(length);
+
+        memcpy(m->data+m->offset+tot_size+4,data,length);
+
+        tot_size=tot_size+length+4;
+        if(tag==0x0000) break;
+    }
+
+    // 需要减去PPPoE头部的6个字节
+    header->length=htons(tot_size-6);
+
+    m->tail=m->offset+tot_size;
+    m->end=m->tail;
+
+    memcpy(m->src_hwaddr,m->netif->hwaddr,6);
+    memcpy(m->dst_hwaddr,pppoe.selected_server_hwaddr,6);
+
+    ixc_ether_send(m,1);
+}
+
+static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pppoe_header *header)
+{
+    struct ixc_pppoe_tag *first_tag=NULL,*tmp_tag;
+    int rs=ixc_pppoe_parse_tags(m,&first_tag);
+    int have_ac_name=0;
+    int error=0;
+    char err_msg[2048];
+
+    if(rs<0){
+        ixc_mbuf_put(m);
+        ixc_pppoe_free_tags(first_tag);
+
+        DBG("Wrong PPPoE tag format\r\n");
+        return;
+    }
+
+    tmp_tag=first_tag;
+    while(tmp_tag){
+        switch(tmp_tag->type){
+            case 0x0102:
+                if(header->code==IXC_PPPOE_CODE_PADO){
+                    have_ac_name=1;
+                    memcpy(pppoe.ac_name,tmp_tag->data,tmp_tag->length);
+                    pppoe.ac_name[tmp_tag->length]='\0';
+                }
+                break;
+            case 0x0104:
+                if(header->code==IXC_PPPOE_CODE_PADO){
+                    memcpy(pppoe.ac_cookie,tmp_tag->data,tmp_tag->length);
+                    pppoe.ac_cookie_len=tmp_tag->length;
+                }
+                break;
+            case 0x0201:
+            case 0x0202:
+            case 0x0203:
+                error=tmp_tag->type;
+                memcpy(err_msg,tmp_tag->data,tmp_tag->length);
+                err_msg[tmp_tag->length]='\0';
+                break;
+        }
+
+        tmp_tag=tmp_tag->next;
+    }
+
+    ixc_pppoe_free_tags(first_tag);
+    ixc_mbuf_put(m);
+
+    // 必须包含ac_name
+    if(!have_ac_name && header->code==IXC_PPPOE_CODE_PADO) return;
+
+    if(error){
+        ixc_pppoe_reset();
+        STDERR("errcode:0x%x %s\r\n",error,err_msg);
+        return;
+    }
+
+    if(header->code==IXC_PPPOE_CODE_PADO){
+        pppoe.cur_discovery_stage=IXC_PPPOE_CODE_PADR;
+        // 发送PPPoE PADR数据包
+        ixc_pppoe_send_discovery_padr();
+        return;
+    }
+
+    if(header->code==IXC_PPPOE_CODE_PADS){
+        pppoe.discovery_ok=1;
+        pppoe.session_id=header->session_id;
+        return;
+    }
 }
 
 static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
@@ -144,13 +383,34 @@ static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
     struct ixc_pppoe_header *header=(struct ixc_pppoe_header *)(m->data+m->offset);
 
     // 检查服务器的响应代码是否符合要求
-    if(header->code!=IXC_PPPOE_CODE_PADO && header->code!=IXC_PPPOE_CODE_PADS){
+    if(header->code!=IXC_PPPOE_CODE_PADO && header->code!=IXC_PPPOE_CODE_PADS && header->code!=IXC_PPPOE_CODE_PADT){
         ixc_mbuf_put(m);
         return;
     }
 
+    // 处理PADO报文
     if(header->code==IXC_PPPOE_CODE_PADO){
+        pppoe.is_selected_server=1;
 
+        memcpy(pppoe.selected_server_hwaddr,m->src_hwaddr,6);
+        ixc_pppoe_handle_discovery_response(m,header);
+        return;
+    }
+
+    // 检查是否是选择的PPPoE服务器
+    if(memcmp(pppoe.selected_server_hwaddr,m->src_hwaddr,6)){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    if(header->code==IXC_PPPOE_CODE_PADS){
+        ixc_pppoe_handle_discovery_response(m,header);
+        return;
+    }
+
+    if(header->code==IXC_PPPOE_CODE_PADT){
+        ixc_pppoe_handle_discovery_response(m,header);
+        return;
     }
 
     ixc_mbuf_put(m);
@@ -164,11 +424,29 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
 /// 把数据包发送PPPOE进行处理
 void ixc_pppoe_handle(struct ixc_mbuf *m)
 {
+    struct ixc_pppoe_header *header=(struct ixc_pppoe_header *)(m->data+m->offset);
+    unsigned short length=ntohs(header->length);
     // 未开启PPPoE直接发送数据
     if(!pppoe.enable){
         ixc_ether_send(m,1);
         return;
     }
+
+    if(header->ver_and_type!=0x11){
+        ixc_mbuf_put(m);
+        DBG("Wrong PPPoE version and type\r\n");
+        return;
+    }
+
+    // 这里不是等于号的理由是以太网会填充字段
+    if(length > m->tail-m->offset){
+        DBG("Wrong PPPoE length\r\n");
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 屏蔽以太网的填充字段
+    m->tail=m->offset+length+6;
 
     if(m->link_proto==0x8863) ixc_pppoe_handle_discovery(m);
     else ixc_pppoe_handle_session(m);
@@ -191,4 +469,15 @@ inline
 int ixc_pppoe_is_enabled(void)
 {
     return pppoe.enable;
+}
+
+void ixc_pppoe_send(struct ixc_mbuf *m)
+{
+    // PPPoE没握手完成那么丢弃数据包
+    if(!pppoe.pppoe_ok){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    ixc_mbuf_put(m);
 }

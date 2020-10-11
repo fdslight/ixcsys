@@ -224,7 +224,7 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
     // 不是同一个网段地址的处理
     // 检查WAN PPPoE是否开启,如果开启直接发送到PPPoE
     if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){
-        ixc_pppoe_handle(m);
+        ixc_pppoe_send(m);
         return;
     }
     

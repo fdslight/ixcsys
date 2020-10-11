@@ -9,7 +9,7 @@
 /// 增加SSE2指令支持
 #ifdef __x86_64__
 #include<emmintrin.h>
-/// 使用SSE2指令集优化IPv6子网掩码计算
+/// 使用SSE2指令集优化IPv6子网计算
 static inline
 int subnet_calc_with_msk_for_ipv6(unsigned char *address,unsigned char *msk,unsigned char *res)
 {
@@ -22,7 +22,6 @@ int subnet_calc_with_msk_for_ipv6(unsigned char *address,unsigned char *msk,unsi
 
     a=_mm_and_si128(a,b);
 
-    _mm_storeu_si128(mem_addr,a);
     _mm_storeu_si128(mem_addr,a);
 
     return 0;

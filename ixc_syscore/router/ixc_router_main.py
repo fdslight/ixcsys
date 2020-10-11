@@ -254,6 +254,13 @@ class service(dispatcher.dispatcher):
         else:
             pass
 
+        wan_pppoe = self.__wan_configs["pppoe"]
+        pppoe_enable = bool(int(wan_pppoe["enable"]))
+
+        if pppoe_enable:
+            self.router.pppoe_enable(True)
+            self.router.pppoe_start()
+
     def start_scgi(self):
         scgi_configs = {
             "use_unix_socket": True,
@@ -340,8 +347,9 @@ class service(dispatcher.dispatcher):
 
         # 注意这里的顺序,start_lan一定要在start_local前面先调用
         self.start_lan()
-        self.start_wan()
         self.start_local()
+        # 建议start_wan放在最后
+        self.start_wan()
 
         self.__pfwd_fd = self.create_handler(-1, pfwd.pfwd)
 
