@@ -19,8 +19,9 @@
 #include "../src/local.h"
 #include "../src/nat.h"
 #include "../src/natv6.h"
+#include "../src/pppoe.h"
+#include "../src/debug.h"
 
-#include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netif/tuntap.h"
 
@@ -153,6 +154,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_udp_src_filter_init();
     if(rs<0){
         STDERR("cannot init P2P\r\n");
+        return NULL;
+    }
+
+    rs=ixc_pppoe_init();
+    if(rs<0){
+        STDERR("cannot init pppoe\r\n");
         return NULL;
     }
 
@@ -604,6 +611,64 @@ router_nat_set(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
+static PyObject *
+router_pppoe_enable(PyObject *self,PyObject *args)
+{
+    int status;
+    if(!PyArg_ParseTuple(args,"p",&status)) return NULL;
+    ixc_pppoe_enable(status);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_pppoe_is_enabled(PyObject *self,PyObject *args)
+{
+    if(ixc_pppoe_is_enabled()){
+        Py_RETURN_TRUE;
+    }
+
+    Py_RETURN_FALSE;
+}
+
+static PyObject *
+router_pppoe_start(PyObject *self,PyObject *args)
+{
+    ixc_pppoe_start();
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_pppoe_stop(PyObject *self,PyObject *args)
+{
+    ixc_pppoe_stop();
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_pppoe_ok(PyObject *self,PyObject *args)
+{
+    if(ixc_pppoe_ok()){
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static PyObject *
+router_pppoe_set_user(PyObject *self,PyObject *args)
+{
+    const char *user,*passwd;
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"ss",&user,&passwd)) return NULL;
+
+    rs=ixc_pppoe_set_user(user,passwd);
+    if(rs){
+        Py_RETURN_FALSE;
+    }
+    Py_RETURN_TRUE;
+}
+
 
 static PyMemberDef router_members[]={
     {NULL}
@@ -611,24 +676,39 @@ static PyMemberDef router_members[]={
 
 static PyMethodDef routerMethods[]={
     {"send_netpkt",(PyCFunction)router_send_netpkt,METH_VARARGS,"send network packet to protocol statck"},
+    //
     {"iowait",(PyCFunction)router_iowait,METH_VARARGS,"tell if wait"},
+    //
     {"myloop",(PyCFunction)router_myloop,METH_VARARGS,"loop call"},
+    //
     {"tundev_create",(PyCFunction)router_tundev_create,METH_VARARGS,"create tun device"},
     {"tundev_delete",(PyCFunction)router_tundev_delete,METH_NOARGS,"delete tun device"},
     {"tundev_rx_data",(PyCFunction)router_tundev_rx_data,METH_NOARGS,"read tun device data"},
     {"tundev_tx_data",(PyCFunction)router_tundev_tx_data,METH_NOARGS,"tun device data write"},
     {"tundev_set_ip",(PyCFunction)router_tundev_set_ip,METH_VARARGS,"set local ip address"},
+    //
     {"netif_create",(PyCFunction)router_netif_create,METH_VARARGS,"create tap device"},
     {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},
     {"netif_rx_data",(PyCFunction)router_netif_rx_data,METH_VARARGS,"receive netif data"},
     {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
+    //
     {"udp_src_filter_set_ip",(PyCFunction)router_udp_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"udp_src_filter_enable",(PyCFunction)router_udp_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
+    //
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
+    //
     {"nat_set",(PyCFunction)router_nat_set,METH_VARARGS,"set IP NAT and IPv6 NAT status and type"},
+    //
+    {"pppoe_enable",(PyCFunction)router_pppoe_enable,METH_VARARGS,"enable or disable pppoe"},
+    {"pppoe_is_enabled",(PyCFunction)router_pppoe_is_enabled,METH_NOARGS,"check pppoe is enabled"},
+    {"pppoe_start",(PyCFunction)router_pppoe_start,METH_NOARGS,"start pppoe"},
+    {"pppoe_stop",(PyCFunction)router_pppoe_stop,METH_NOARGS,"stop pppoe"},
+    {"pppoe_ok",(PyCFunction)router_pppoe_ok,METH_NOARGS,"check pppoe ok"},
+    {"pppoe_set_user",(PyCFunction)router_pppoe_set_user,METH_VARARGS,"set pppoe user and password"},
+    //
     {NULL,NULL,0,NULL}
 };
 

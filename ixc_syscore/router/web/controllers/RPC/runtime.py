@@ -28,7 +28,8 @@ class controller(rpc.controller):
             "set_gw_ipaddr": self.set_gw_ipaddr,
             "set_manage_ipaddr": self.set_manage_ipaddr,
             "add_route": self.add_route,
-            "del_route": self.del_route
+            "del_route": self.del_route,
+            "pppoe_is_enabled": self.pppoe_is_enabled
         }
 
     def get_all_consts(self):
@@ -93,8 +94,8 @@ class controller(rpc.controller):
     def set_gw_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         """设置网关的IP地址
         """
-        prefix=int(prefix)
-        check_ok, err_msg = self.check_ipaddr_args(ipaddr,prefix, is_ipv6=is_ipv6)
+        prefix = int(prefix)
+        check_ok, err_msg = self.check_ipaddr_args(ipaddr, prefix, is_ipv6=is_ipv6)
         if not check_ok:
             return 0, (check_ok, err_msg,)
 
@@ -119,6 +120,9 @@ class controller(rpc.controller):
         check_ok, err_msg = self.check_ipaddr_args(ipaddr, int(prefix), is_ipv6=is_ipv6)
         if not check_ok:
             return 0, (check_ok, err_msg,)
+
+        if self.router.pppoe_is_enabled():
+            return 0, (False, "PPPoE is enabled,cannot set wan IP or IPv6 address")
 
         if is_ipv6:
             fa = socket.AF_INET6
@@ -171,3 +175,8 @@ class controller(rpc.controller):
         self.router.route_del(byte_subnet, prefix, is_ipv6)
 
         return 0, (True, "")
+
+    def pppoe_is_enabled(self):
+        is_enabled = self.router.pppoe_is_enabled()
+
+        return 0, is_enabled

@@ -15,6 +15,7 @@ struct ixc_pppoe_header{
 #define IXC_PPPOE_CODE_PADO 0x07
 #define IXC_PPPOE_CODE_PADR 0x19
 #define IXC_PPPOE_CODE_PADS 0x65
+#define IXC_PPPOE_CODE_PADT 0xa7
     unsigned char code;
 
     unsigned short session_id;
@@ -22,10 +23,71 @@ struct ixc_pppoe_header{
 };
 
 /// PPPoE tag描述
+struct ixc_pppoe_tag{
+    // 下一个PPPoE TAG标签
+    struct ixc_pppoe_tag *next;
+
+    unsigned short type;
+    unsigned short length;
+    unsigned char data[1500];
+};
+
 struct ixc_pppoe_tag_header{
     unsigned short type;
     unsigned short length;
 };
+
+/// LCP code选项
+#define IXC_LCP_CFG_REQ 1
+#define IXC_LCP_CFG_ACK 2
+#define IXC_LCP_CFG_NAK 3
+#define IXC_LCP_CFG_REJECT 4
+#define IXC_LCP_TERM_REQ 5
+#define IXC_LCP_TERM_ACK 6
+#define IXC_LCP_CODE_REJECT 7
+#define IXC_LCP_PROTO_REJECT 8
+#define IXC_LCP_ECHO_REQ 9
+#define IXC_LCP_ECHO_REPLY 10
+#define IXC_LCP_DISCARD_REQ 11
+
+/// LCP配置头部
+struct ixc_lcp_cfg_header{
+    unsigned char code;
+    unsigned char id;
+    unsigned short length;
+};
+
+/// LCP配置
+struct ixc_lcp_cfg{
+    struct ixc_lcp_cfg *next;
+    unsigned char code;
+    unsigned char id;
+    unsigned short length;
+    unsigned char data[2048];
+};
+
+/// LCP配置选项头部
+struct ixc_lcp_opt_header{
+    unsigned char type;
+    unsigned char length;
+};
+
+#define IXC_LCP_OPT_TYPE_RESERVED 0
+#define IXC_LCP_OPT_TYPE_MAX_RECV_UNIT 1
+#define IXC_LCP_OPT_TYPE_AUTH_PROTO 3
+#define IXC_LCP_OPT_TYPE_QUA_PROTO 4
+#define IXC_LCP_OPT_TYPE_MAGIC_NUM 5
+#define IXC_LCP_OPT_TYPE_PROTO_COMP 7
+#define IXC_LCP_OPT_TYPE_ADDR_CTL_COMP 8
+
+/// LCP配置选项
+struct ixc_lcp_opt{
+    struct ixc_lcp_opt *next;
+    unsigned char type;
+    unsigned char length;
+    unsigned char data[256];
+};
+
 
 #pragma pack(pop)
 
@@ -39,10 +101,18 @@ struct ixc_pppoe{
     int enable;
     // PPPoE discovery 是否成功
     int discovery_ok;
+    // 是否选择了服务器
+    int is_selected_server;
+    int ac_cookie_len;
     // PPPoE的用户名
     char username[512];
     // PPPoE的密码
     char passwd[512];
+    char ac_name[2048];
+    unsigned char ac_cookie[2048];
+    unsigned short session_id;
+    // 选择的PPPoE服务器
+    unsigned char selected_server_hwaddr[6];
     // 当前PPPoE发现阶段
     unsigned char cur_discovery_stage;
     // 当前会话阶段
@@ -53,7 +123,7 @@ int ixc_pppoe_init(void);
 void ixc_pppoe_uninit(void);
 
 ///  设置PPPOE的用户名和密码
-int ixc_pppoe_set_user(char *username,char *passwd);
+int ixc_pppoe_set_user(const char *username,const char *passwd);
 
 /// 开始进行PPPoE的会话
 void ixc_pppoe_start(void);
@@ -71,5 +141,7 @@ int ixc_pppoe_enable(int status);
 
 /// PPPoE是否启用
 int ixc_pppoe_is_enabled(void);
+/// 发送PPPoE数据包
+void ixc_pppoe_send(struct ixc_mbuf *m);
 
 #endif
