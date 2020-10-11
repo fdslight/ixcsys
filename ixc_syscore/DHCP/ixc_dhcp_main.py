@@ -9,7 +9,6 @@ import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 import pywind.web.handlers.scgi as scgi
-import pywind.lib.netutils as netutils
 
 from pywind.global_vars import global_vars
 
@@ -83,6 +82,8 @@ class service(dispatcher.dispatcher):
     __dhcp_client_configs = None
     __dhcp_server_configs = None
 
+    __server_port = None
+
     __debug = None
 
     def init_func(self, debug):
@@ -105,6 +106,15 @@ class service(dispatcher.dispatcher):
         self.start_scgi()
         self.start_dhcp()
 
+    def set_lan_address(self):
+        public = self.__dhcp_server_configs["public"]
+        manager_addr = public["manage_addr"]
+        gw_addr = public["gw_addr"]
+        prefix = public["prefix"]
+
+        RPCClient.fn_call("router", "/runtime", "set_manage_ipaddr", manager_addr, prefix, is_ipv6=False)
+        RPCClient.fn_call("router", "/runtime", "set_gw_ipaddr", gw_addr, prefix, is_ipv6=False)
+
     def load_dhcp_client_configs(self):
         self.__dhcp_client_configs = conf.ini_parse_from_file(self.__dhcp_client_conf_path)
 
@@ -117,9 +127,42 @@ class service(dispatcher.dispatcher):
     def save_dhcp_server_configs(self):
         pass
 
+    def start_dhcp_client(self, port: int):
+        consts = self.__router_consts
+
+        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"])
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"],
+                                        port)
+        if not ok:
+            raise SystemError(message)
+        self.get_handler(self.__dhcp_fd).set_message_auth(message, self.__server_port)
+        self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
+
+    def start_dhcp_server(self, port: int):
+        consts = self.__router_consts
+        public = self.__dhcp_server_configs["public"]
+
+        subnet = public["subnet"]
+        gw_addr = public["gw_addr"]
+        prefix = public["prefix"]
+        addr_begin = public["range_begin"]
+        addr_end = public["range_end"]
+
+        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", True, consts["IXC_FLAG_DHCP_SERVER"])
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_DHCP_SERVER"],
+                                        port)
+        if not ok:
+            raise SystemError(message)
+        self.get_handler(self.__dhcp_fd).set_message_auth(message, self.__server_port)
+
+        self.__dhcp_server = dhcp_server.dhcp_server(
+            self, gw_addr, self.__hostname, self.__lan_hwaddr, addr_begin, addr_end,
+            subnet, prefix
+        )
+
     def start_dhcp(self):
         self.__dhcp_fd = self.create_handler(-1, dhcp.dhcp_service)
-        port = self.get_handler(self.__dhcp_fd).get_sock_port()
+        dhcp_msg_port = self.get_handler(self.__dhcp_fd).get_sock_port()
 
         while 1:
             ok = RPCClient.RPCReadyOk("router")
@@ -128,34 +171,19 @@ class service(dispatcher.dispatcher):
             else:
                 break
 
-        consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
-        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"])
-        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"],
-                                        port)
-        """
-        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", True, consts["IXC_FLAG_DHCP_SERVER"])
-        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port",consts["IXC_FLAG_DHCP_SERVER"],
-                                        port)
-                                        """
-        port = RPCClient.fn_call("router", "/netpkt", "get_server_recv_port")
+        # 先设置LAN地址
+        self.set_lan_address()
 
-        if not ok:
-            raise SystemError(message)
-        self.get_handler(self.__dhcp_fd).set_message_auth(message, port)
-
-        lan_ipaddr_info = RPCClient.fn_call("router", "/runtime", "get_lan_ipaddr_info")
-
+        self.__server_port = RPCClient.fn_call("router", "/netpkt", "get_server_recv_port")
         _, self.__wan_hwaddr = RPCClient.fn_call("router", "/runtime", "get_wan_hwaddr")
         _, self.__lan_hwaddr = RPCClient.fn_call("router", "/runtime", "get_lan_hwaddr")
 
+        consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
+
         self.__router_consts = consts
 
-        self.__dhcp_server = dhcp_server.dhcp_server(self, lan_ipaddr_info[0], self.__hostname, self.__lan_hwaddr,
-                                                     "192.168.11.2",
-                                                     "192.168.11.18",
-                                                     netutils.calc_subnet(lan_ipaddr_info[0], lan_ipaddr_info[1]),
-                                                     24)
-        self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
+        self.start_dhcp_client(dhcp_msg_port)
+        self.start_dhcp_server(dhcp_msg_port)
 
     def send_dhcp_client_msg(self, msg: bytes):
         if not self.handler_exists(self.__dhcp_fd): return
