@@ -78,6 +78,8 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     netif->is_used=1;
     netif->fd=fd;
     netif->type=if_idx;
+    netif->mtu_v4=1500;
+    netif->mtu_v6=1280;
 
     bzero(netif->ipaddr,4);
     bzero(netif->ip6addr,16);
