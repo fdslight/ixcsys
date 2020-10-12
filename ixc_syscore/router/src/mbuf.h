@@ -9,8 +9,9 @@
 #define IXC_MBUF_LOOP_TRACE_MAX_NUM 32
 
 struct ixc_mbuf{
-    struct ixc_netif *netif;
     struct ixc_mbuf *next;
+    struct ixc_netif *netif;
+    
     int is_ipv6;
     // 流量来自于哪里
     // 流量来自于LAN设备,包括local设备和tap设备以及从其他应用接收的数据包

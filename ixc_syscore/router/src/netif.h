@@ -22,6 +22,11 @@ struct ixc_netif{
     int isset_ip;
     // 是否设置了IPv6
     int isset_ip6;
+    
+    // IPv4 MTU大小
+    int mtu_v4;
+    // IPv6 MTU大小
+    int mtu_v6;
 
     unsigned char ipaddr[4];
     unsigned char ip_mask[4];

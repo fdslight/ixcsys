@@ -5,6 +5,7 @@
 #include "ether.h"
 #include "netif.h"
 #include "debug.h"
+#include "lcp.h"
 
 #include "../../../pywind/clib/sysloop.h"
 
@@ -15,19 +16,10 @@ static struct sysloop *pppoe_sysloop=NULL;
 static void ixc_pppoe_send_discovery(void);
 static void ixc_pppoe_send_discovery_padr(void);
 
-/// 重置会话
-static void ixc_pppoe_reset(void)
-{
-    // 这里需要更新时间,否则会导致超时不发送请求包
-    pppoe.up_time=time(NULL);
-    pppoe.is_selected_server=0;
-    pppoe.cur_discovery_stage=0;
-}
-
 /// PPPoE标签解析
 static int ixc_pppoe_parse_tags(struct ixc_mbuf *m,struct ixc_pppoe_tag **tag_first)
 {
-    struct ixc_pppoe_tag *first,*cur,*tmp;
+    struct ixc_pppoe_tag *first=NULL,*cur,*tmp;
     struct ixc_pppoe_tag_header *tag_header;
     int tot_size=m->tail-m->offset-6;
     int rs=0,pos=0,t;
@@ -325,7 +317,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     }
 
     tmp_tag=first_tag;
-    while(tmp_tag){
+    while(NULL!=tmp_tag){
         switch(tmp_tag->type){
             case 0x0102:
                 if(header->code==IXC_PPPOE_CODE_PADO){
@@ -373,7 +365,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
 
     if(header->code==IXC_PPPOE_CODE_PADS){
         pppoe.discovery_ok=1;
-        pppoe.session_id=header->session_id;
+        pppoe.session_id=ntohs(header->session_id);
         return;
     }
 }
@@ -409,6 +401,11 @@ static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
     }
 
     if(header->code==IXC_PPPOE_CODE_PADT){
+        // 此处检查session是否一致
+        if(ntohs(header->session_id)!=pppoe.session_id){
+            ixc_mbuf_put(m);
+            return;
+        }
         ixc_pppoe_handle_discovery_response(m,header);
         return;
     }
@@ -418,7 +415,36 @@ static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
 
 static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
 {
-    ixc_mbuf_put(m);
+    struct ixc_pppoe_header *pppoe_header=(struct ixc_pppoe_header *)(m->data+m->offset);
+    unsigned short ppp_proto=0;
+
+    // 会话阶段code必须为0
+    if(pppoe_header->code!=0){
+        DBG("code must be zero at session\r\n");
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    if(ntohs(pppoe_header->session_id)!=pppoe.session_id){
+        DBG("wrong pppoe session ID\r\n");
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    memcpy(&ppp_proto,m->data+m->offset+6,2);
+    ppp_proto=ntohs(ppp_proto);
+    
+    // 此处增加偏移量
+    m->offset+=8;
+    
+    switch(ppp_proto){
+        case 0xc021:
+            ixc_lcp_handle(m);
+            break;
+        default:
+            ixc_mbuf_put(m);
+            break;
+    }
 }
 
 /// 把数据包发送PPPOE进行处理
@@ -432,9 +458,21 @@ void ixc_pppoe_handle(struct ixc_mbuf *m)
         return;
     }
 
+    if(m->tail-m->offset<8){
+        ixc_mbuf_put(m);
+        DBG("wrong pppoe data packet\r\n");
+        return;
+    }
+
     if(header->ver_and_type!=0x11){
         ixc_mbuf_put(m);
         DBG("Wrong PPPoE version and type\r\n");
+        return;
+    }
+
+    if(length<2){
+        DBG("wrong pppoe payload length\r\n");
+        ixc_mbuf_put(m);
         return;
     }
 
@@ -460,7 +498,12 @@ int ixc_pppoe_ok(void)
 
 int ixc_pppoe_enable(int status)
 {
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
     pppoe.enable=status;
+
+    // 设置MTU的值为1492
+    netif->mtu_v4=1492;
+    
 
     return 0;
 }
@@ -480,4 +523,59 @@ void ixc_pppoe_send(struct ixc_mbuf *m)
     }
 
     ixc_mbuf_put(m);
+}
+
+/// 发送PPPoE会话数据包
+void ixc_pppoe_send_session_packet(unsigned short ppp_protocol,unsigned short length,void *data)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+    struct ixc_mbuf *m=ixc_mbuf_get();
+    struct ixc_pppoe_header *pppoe_header=NULL;
+    unsigned short *protocol;
+
+    if(NULL==m){
+        STDERR("cannot get mbuf\r\n");
+        return;
+    }
+
+    m->next=NULL;
+    m->netif=netif;
+    m->from=IXC_MBUF_FROM_WAN;
+    m->link_proto=0x8864;
+    m->begin=IXC_MBUF_BEGIN;
+    m->offset=m->begin;
+    m->tail=m->offset+6+4+length;
+    m->end=m->tail;
+
+    memcpy(m->src_hwaddr,netif->hwaddr,6);
+    memcpy(m->dst_hwaddr,pppoe.selected_server_hwaddr,6);
+
+    pppoe_header=(struct ixc_pppoe_header *)(m->data+m->offset);
+    pppoe_header->ver_and_type=0x11;
+    pppoe_header->code=0x00;
+    pppoe_header->session_id=htons(pppoe.session_id);
+    // 这里需要加上PPP上的协议的两个字节
+    pppoe_header->length=htons(length+2);
+
+    protocol=(unsigned short *)(m->data+m->offset+6);
+    *protocol=htons(ppp_protocol);
+
+    memcpy(m->data+m->offset+8,data,length);
+
+    ixc_ether_send(m,1);
+}
+
+/// 重置会话
+void ixc_pppoe_reset()
+{
+    // 这里需要更新时间,否则会导致超时不发送请求包
+    pppoe.up_time=time(NULL);
+    pppoe.is_selected_server=0;
+    pppoe.cur_discovery_stage=0;
+}
+
+inline
+struct ixc_pppoe *ixc_pppoe(void)
+{
+    return &pppoe;
 }

@@ -37,58 +37,6 @@ struct ixc_pppoe_tag_header{
     unsigned short length;
 };
 
-/// LCP code选项
-#define IXC_LCP_CFG_REQ 1
-#define IXC_LCP_CFG_ACK 2
-#define IXC_LCP_CFG_NAK 3
-#define IXC_LCP_CFG_REJECT 4
-#define IXC_LCP_TERM_REQ 5
-#define IXC_LCP_TERM_ACK 6
-#define IXC_LCP_CODE_REJECT 7
-#define IXC_LCP_PROTO_REJECT 8
-#define IXC_LCP_ECHO_REQ 9
-#define IXC_LCP_ECHO_REPLY 10
-#define IXC_LCP_DISCARD_REQ 11
-
-/// LCP配置头部
-struct ixc_lcp_cfg_header{
-    unsigned char code;
-    unsigned char id;
-    unsigned short length;
-};
-
-/// LCP配置
-struct ixc_lcp_cfg{
-    struct ixc_lcp_cfg *next;
-    unsigned char code;
-    unsigned char id;
-    unsigned short length;
-    unsigned char data[2048];
-};
-
-/// LCP配置选项头部
-struct ixc_lcp_opt_header{
-    unsigned char type;
-    unsigned char length;
-};
-
-#define IXC_LCP_OPT_TYPE_RESERVED 0
-#define IXC_LCP_OPT_TYPE_MAX_RECV_UNIT 1
-#define IXC_LCP_OPT_TYPE_AUTH_PROTO 3
-#define IXC_LCP_OPT_TYPE_QUA_PROTO 4
-#define IXC_LCP_OPT_TYPE_MAGIC_NUM 5
-#define IXC_LCP_OPT_TYPE_PROTO_COMP 7
-#define IXC_LCP_OPT_TYPE_ADDR_CTL_COMP 8
-
-/// LCP配置选项
-struct ixc_lcp_opt{
-    struct ixc_lcp_opt *next;
-    unsigned char type;
-    unsigned char length;
-    unsigned char data[256];
-};
-
-
 #pragma pack(pop)
 
 struct ixc_pppoe{
@@ -143,5 +91,12 @@ int ixc_pppoe_enable(int status);
 int ixc_pppoe_is_enabled(void);
 /// 发送PPPoE数据包
 void ixc_pppoe_send(struct ixc_mbuf *m);
+/// 发送PPPoE session数据包
+void ixc_pppoe_send_session_packet(unsigned short ppp_protocol,unsigned short length,void *data);
+
+/// 重置PPPoE会话
+void ixc_pppoe_reset(void);
+
+struct ixc_pppoe *ixc_pppoe(void);
 
 #endif
