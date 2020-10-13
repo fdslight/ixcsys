@@ -134,6 +134,10 @@ static void ixc_lcp_handle_cfg_request(struct ixc_mbuf *m,unsigned char id,unsig
                 }
                 break;
             case IXC_LCP_OPT_TYPE_AUTH_PROTO:
+                    ack_packet[ack_len]=opt->type;
+                    ack_packet[ack_len+1]=opt->length+2;
+                    memcpy(&ack_packet[ack_len+2],opt->data,opt->length);
+                    ack_len=ack_len+opt->length+2;
                 if(opt->length<2){
                     is_error=1;
                     DBG("Wrong AUTH PROTO length field value\r\n");
@@ -147,10 +151,16 @@ static void ixc_lcp_handle_cfg_request(struct ixc_mbuf *m,unsigned char id,unsig
                         break;
                     }
 
+                    /**
                     if(auth_proto==0xc223 && opt->length!=3){
+
+                        ack_packet[ack_len]=opt->type;
+                        ack_packet[ack_len+1]=opt->length+2;
+                        memcpy(&ack_packet[ack_len+2],opt->data,opt->length);
+                        ack_len=ack_len+opt->length+2;
                         DBG("Wrong CHAP length field value\r\n");
                         break;
-                    }
+                    }**/
                 }
                 break;
             case IXC_LCP_OPT_TYPE_QUA_PROTO:
@@ -165,12 +175,14 @@ static void ixc_lcp_handle_cfg_request(struct ixc_mbuf *m,unsigned char id,unsig
                     is_error=1;
                     DBG("Wrong magic num length field value\r\n");
                 }else{
+                    
                     memcpy(&lcp_magic_number,opt->data,4);
-                    lcp_magic_number=ntohl(lcp_magic_number);
+                    lcp_magic_number+=1;
 
                     ack_packet[ack_len]=opt->type;
                     ack_packet[ack_len+1]=opt->length+2;
-                    memcpy(&ack_packet[ack_len+2],opt->data,opt->length);
+                    memcpy(&ack_packet[ack_len+2],&lcp_magic_number,4);
+
                     ack_len=ack_len+opt->length+2;
                 }
                 break;
@@ -237,4 +249,24 @@ void ixc_lcp_handle(struct ixc_mbuf *m)
             ixc_mbuf_put(m);
             break;    
     }
+}
+
+void ixc_lcp_request_send(void)
+{
+    unsigned char types[]={
+        IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,
+        IXC_LCP_OPT_TYPE_AUTH_PROTO,
+        IXC_LCP_OPT_TYPE_MAGIC_NUM
+    };
+
+    unsigned char lengths[]={
+        2,5,4
+    };
+
+
+
+
+
+
+    //ixc_lcp_send(0xc021,IXC_LCP_CFG_REQ,1)
 }

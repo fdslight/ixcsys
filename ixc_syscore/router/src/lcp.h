@@ -3,6 +3,11 @@
 
 #include "mbuf.h"
 
+struct ixc_lcp{
+    unsigned int magic_num;
+    unsigned char _id;
+};
+
 #pragma pack(push)
 #pragma pack(1)
 
@@ -51,8 +56,8 @@ struct ixc_lcp_opt{
 
 #pragma pack(pop)
 
-
 void ixc_lcp_handle(struct ixc_mbuf *m);
+void ixc_lcp_request_send(void);
 
 
 #endif
