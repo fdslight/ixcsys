@@ -87,6 +87,14 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         ixc_router_send(netif->type,0,IXC_FLAG_L2VPN,mbuf->data+mbuf->begin,mbuf->end-mbuf->begin);
         return;
     }
+    
+    if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){
+        // 如果WAN口开启PPPoE那么限制只支持PPPoE数据包
+        if(type!=0x8864 && type!=0x8863){
+            ixc_mbuf_put(mbuf);
+            return;
+        }
+    }
 
     switch (type){
         // IP

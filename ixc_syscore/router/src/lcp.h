@@ -1,9 +1,19 @@
 #ifndef IXC_LCP_H
 #define IXC_LCP_H
 
+#include<time.h>
+
 #include "mbuf.h"
 
 struct ixc_lcp{
+    time_t up_time;
+    // MRU是否协商成功
+    int mru_neg_ok;
+    // auth是否协商成功
+    int auth_neg_ok;
+    // 是否是PAP协议
+    int is_pap;
+
     unsigned int magic_num;
     unsigned char _id;
 };
@@ -60,7 +70,9 @@ int ixc_lcp_init(void);
 void ixc_lcp_uninit(void);
 
 void ixc_lcp_handle(struct ixc_mbuf *m);
-void ixc_lcp_request_send(void);
+/// 自动发送协商请求
+void ixc_lcp_neg_request_send_auto(void);
+void ixc_lcp_loop(void);
 
 
 #endif

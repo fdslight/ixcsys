@@ -112,14 +112,17 @@ static void ixc_pppoe_discovery_loop(void)
 
 static void ixc_pppoe_session_loop(void)
 {
+    time_t now=time(NULL);
+    if(now-pppoe.up_time<3) return;
 
+    ixc_lcp_loop();
 }
 
 static void ixc_pppoe_sysloop_cb(struct sysloop *lp)
 {
     time_t now=time(NULL);
     // 检查最近更新时间
-    if(now-pppoe.up_time<10) return;
+    if(now-pppoe.up_time<10 && !pppoe.discovery_ok) return;
 
     // 大于60s那么重置
     if(now-pppoe.up_time>60){
@@ -188,7 +191,7 @@ int ixc_pppoe_init(void)
 
     if(ixc_lcp_init()<0){
         STDERR("cannot init lcp\r\n");
-        return;
+        return -1;
     }
 
     bzero(&pppoe,sizeof(struct ixc_pppoe));
@@ -512,6 +515,7 @@ int ixc_pppoe_enable(int status)
 
     // 设置MTU的值为1492
     netif->mtu_v4=1492;
+    netif->mtu_v6=1492;
     
 
     return 0;
