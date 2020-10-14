@@ -56,6 +56,9 @@ struct ixc_lcp_opt{
 
 #pragma pack(pop)
 
+int ixc_lcp_init(void);
+void ixc_lcp_uninit(void);
+
 void ixc_lcp_handle(struct ixc_mbuf *m);
 void ixc_lcp_request_send(void);
 

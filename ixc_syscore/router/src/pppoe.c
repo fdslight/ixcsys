@@ -184,7 +184,15 @@ static void ixc_pppoe_send_discovery(void)
 
 int ixc_pppoe_init(void)
 {
+    int rs;
+
+    if(ixc_lcp_init()<0){
+        STDERR("cannot init lcp\r\n");
+        return;
+    }
+
     bzero(&pppoe,sizeof(struct ixc_pppoe));
+
 
     pppoe_sysloop=sysloop_add(ixc_pppoe_sysloop_cb,NULL);
     if(NULL==pppoe_sysloop){
@@ -199,6 +207,7 @@ int ixc_pppoe_init(void)
 
 void ixc_pppoe_uninit(void)
 {
+    ixc_lcp_uninit();
     pppoe_is_initialized=0;
 }
 

@@ -1,12 +1,14 @@
 #include<string.h>
 #include<arpa/inet.h>
+#include<stdlib.h>
+#include<time.h>
 
 #include "lcp.h"
 #include "debug.h"
 #include "pppoe.h"
 #include "netif.h"
 
-static unsigned int lcp_magic_number=0;
+static struct ixc_lcp lcp;
 
 /// 发送LCP数据包
 static void ixc_lcp_send(unsigned short ppp_protoco,unsigned char code,unsigned char id,unsigned short length,void *data)
@@ -218,6 +220,16 @@ static void ixc_lcp_handle_cfg_request(struct ixc_mbuf *m,unsigned char id,unsig
 
     ixc_mbuf_put(m);
 }
+int ixc_lcp_init(void)
+{
+    bzero(&lcp,sizeof(struct ixc_lcp));
+    return 0;
+}
+
+void ixc_lcp_uninit(void)
+{
+
+}
 
 void ixc_lcp_handle(struct ixc_mbuf *m)
 {
@@ -253,6 +265,12 @@ void ixc_lcp_handle(struct ixc_mbuf *m)
 
 void ixc_lcp_request_send(void)
 {
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+
+    unsigned short mru=htons(1492),size=0;
+    unsigned int rand_no=0;
+    unsigned char tmp[3],buf[2048];
+
     unsigned char types[]={
         IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,
         IXC_LCP_OPT_TYPE_AUTH_PROTO,
@@ -262,11 +280,29 @@ void ixc_lcp_request_send(void)
     unsigned char lengths[]={
         2,5,4
     };
+    unsigned char *data_set[3];
 
+    srand(time(NULL));
+    rand_no=rand();
+    lcp.magic_num=rand_no;
+    rand_no=htonl(rand_no);
 
+    tmp[0]=0xc2;
+    tmp[1]=0x23;
+    tmp[2]=0x05;
 
+    data_set[0]=&mru;
+    data_set[1]=tmp;
+    data_set[2]=&rand_no;
 
+    for(int n=0;n<3;n++){
+        buf[size]=types[n];
+        buf[size+1]=lengths[n];
 
+        memcpy(&buf[size+2],data_set[n],lengths[n]);
 
-    //ixc_lcp_send(0xc021,IXC_LCP_CFG_REQ,1)
+        size=2+lengths[n];
+    }
+
+    ixc_lcp_send(0xc021,IXC_LCP_CFG_REQ,1,size,buf);
 }
