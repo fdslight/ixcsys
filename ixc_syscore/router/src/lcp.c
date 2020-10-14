@@ -10,6 +10,8 @@
 
 static struct ixc_lcp lcp;
 
+void ixc_lcp_neg_request_send_auto(void);
+
 /// 发送LCP数据包
 static void ixc_lcp_send(unsigned short ppp_protoco,unsigned char code,unsigned char id,unsigned short length,void *data)
 {
@@ -106,7 +108,6 @@ static void ixc_lcp_handle_cfg_request(struct ixc_mbuf *m,unsigned char id,unsig
     unsigned short ack_len=0;
 
     if(rs<0){
-        ixc_mbuf_put(m);
         ixc_lcp_free_opts(first_opt);
         DBG("parse lcp option error\r\n");
         return;
@@ -177,13 +178,9 @@ static void ixc_lcp_handle_cfg_request(struct ixc_mbuf *m,unsigned char id,unsig
                     is_error=1;
                     DBG("Wrong magic num length field value\r\n");
                 }else{
-                    
-                    memcpy(&lcp_magic_number,opt->data,4);
-                    lcp_magic_number+=1;
-
                     ack_packet[ack_len]=opt->type;
                     ack_packet[ack_len+1]=opt->length+2;
-                    memcpy(&ack_packet[ack_len+2],&lcp_magic_number,4);
+                    memcpy(&ack_packet[ack_len+2],opt->data,4);
 
                     ack_len=ack_len+opt->length+2;
                 }
@@ -217,9 +214,56 @@ static void ixc_lcp_handle_cfg_request(struct ixc_mbuf *m,unsigned char id,unsig
     }else{
         ixc_lcp_send(0xc021,IXC_LCP_CFG_ACK,id,ack_len,ack_packet);
     }
-
-    ixc_mbuf_put(m);
 }
+
+static void ixc_lcp_handle_echo_req(struct ixc_mbuf *m,unsigned char id,unsigned short length)
+{
+    ixc_lcp_send(0xc021,IXC_LCP_ECHO_REPLY,id,length,m->data+m->offset);
+}
+
+static void ixc_lcp_handle_echo_reply(struct ixc_mbuf *m,unsigned char id,unsigned short length)
+{
+
+}
+
+static void ixc_lcp_handle_cfg_ack(struct ixc_mbuf *m,unsigned char id,unsigned short length)
+{
+    struct ixc_lcp_opt *first_opt=NULL,*opt;
+    int rs=ixc_lcp_parse_opts(m->data+m->offset,length,&first_opt);
+    unsigned int magic_num=0;
+    int is_err=0;
+    int mru_neg_ok;
+
+    if(rs<0){
+        ixc_lcp_free_opts(first_opt);
+        DBG("cannot parse lcp ack options\r\n");
+        return;
+    }
+
+    opt=first_opt;
+    
+
+    while (NULL!=opt){
+        switch(opt->type){
+            case IXC_LCP_OPT_TYPE_MAGIC_NUM:
+                memcpy(&magic_num,opt->data,opt->length);
+                magic_num=ntohl(magic_num);
+                if(lcp.magic_num!=magic_num) is_err=1;
+                break;
+            case IXC_LCP_OPT_TYPE_MAX_RECV_UNIT:
+                mru_neg_ok=1;
+                break;
+            default:
+                break;
+        }
+        opt=opt->next;
+    }
+    
+    ixc_lcp_free_opts(first_opt);
+    if(is_err) return;
+    if(mru_neg_ok) lcp.mru_neg_ok=1;
+}
+
 int ixc_lcp_init(void)
 {
     bzero(&lcp,sizeof(struct ixc_lcp));
@@ -255,54 +299,86 @@ void ixc_lcp_handle(struct ixc_mbuf *m)
         case IXC_LCP_CFG_REQ:
             ixc_lcp_handle_cfg_request(m,lcp_header->id,length);
             break;
+        case IXC_LCP_CFG_ACK:
+            ixc_lcp_handle_cfg_ack(m,lcp_header->id,length);
+            break;
+        case IXC_LCP_CFG_NAK:
+            break;
+        case IXC_LCP_CFG_REJECT:
+            break;
+        case IXC_LCP_TERM_REQ:
+            break;
+        case IXC_LCP_TERM_ACK:
+            break;
+        case IXC_LCP_CODE_REJECT:
+            break;
+        case IXC_LCP_PROTO_REJECT:
+            break;
+        case IXC_LCP_ECHO_REQ:
+            ixc_lcp_handle_echo_req(m,lcp_header->id,length);
+            break;
+        case IXC_LCP_ECHO_REPLY:
+            break;
+        case IXC_LCP_DISCARD_REQ:
+            break;
         default:
             // 注意这里DBG和mbuf_put不能调换顺序,否则可能造成段错误
             DBG("unkown LCP code %d",lcp_header->code);
-            ixc_mbuf_put(m);
             break;    
     }
+    ixc_mbuf_put(m);
 }
 
-void ixc_lcp_request_send(void)
+/// 协商请求发送
+static void ixc_lcp_neg_send(unsigned char type,unsigned char length,void *data)
 {
-    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
-
-    unsigned short mru=htons(1492),size=0;
     unsigned int rand_no=0;
-    unsigned char tmp[3],buf[2048];
-
+    unsigned char buf[2048];
     unsigned char types[]={
-        IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,
-        IXC_LCP_OPT_TYPE_AUTH_PROTO,
+        type,
         IXC_LCP_OPT_TYPE_MAGIC_NUM
     };
-
     unsigned char lengths[]={
-        2,5,4
+        length,4
     };
-    unsigned char *data_set[3];
+    unsigned char *data_set[2];
+    unsigned short size;
 
     srand(time(NULL));
     rand_no=rand();
     lcp.magic_num=rand_no;
     rand_no=htonl(rand_no);
 
-    tmp[0]=0xc2;
-    tmp[1]=0x23;
-    tmp[2]=0x05;
+    data_set[0]=data;
+    data_set[1]=(unsigned char *)(&rand_no);
 
-    data_set[0]=&mru;
-    data_set[1]=tmp;
-    data_set[2]=&rand_no;
-
-    for(int n=0;n<3;n++){
+    for(int n=0;n<2;n++){
         buf[size]=types[n];
-        buf[size+1]=lengths[n];
+        buf[size+1]=lengths[n]+2;
 
         memcpy(&buf[size+2],data_set[n],lengths[n]);
 
-        size=2+lengths[n];
+        size+=lengths[n]+2;
     }
 
     ixc_lcp_send(0xc021,IXC_LCP_CFG_REQ,1,size,buf);
+}
+
+static void ixc_lcp_neg_request_send_for_mru(void)
+{
+    unsigned short mru=htons(1492);
+    ixc_lcp_neg_send(IXC_LCP_CFG_REQ,2,&mru);
+}
+
+void ixc_lcp_neg_request_send_auto(void)
+{
+    if(!lcp.mru_neg_ok){
+        ixc_lcp_neg_request_send_for_mru();
+        return;
+    }
+}
+
+void ixc_lcp_loop(void)
+{
+    ixc_lcp_neg_request_send_auto();
 }
