@@ -13,6 +13,8 @@ struct ixc_lcp{
     int auth_neg_ok;
     // 是否是PAP协议
     int is_pap;
+    // 是否所有都ok
+    int ok;
 
     unsigned int magic_num;
     unsigned char _id;
@@ -56,8 +58,6 @@ struct ixc_lcp_opt_header{
 #define IXC_LCP_OPT_TYPE_PROTO_COMP 7
 #define IXC_LCP_OPT_TYPE_ADDR_CTL_COMP 8
 
-typedef void (*ixc_lcp_opt_cb)(struct ixc_mbuf *m,unsigned char code,unsigned short length);
-
 /// LCP配置选项
 struct ixc_lcp_opt{
     struct ixc_lcp_opt *next;
@@ -65,6 +65,8 @@ struct ixc_lcp_opt{
     unsigned char length;
     unsigned char data[512];
 };
+
+typedef void (*ixc_lcp_opt_cb)(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt);
 
 #pragma pack(pop)
 
