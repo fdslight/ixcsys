@@ -56,6 +56,8 @@ struct ixc_lcp_opt_header{
 #define IXC_LCP_OPT_TYPE_PROTO_COMP 7
 #define IXC_LCP_OPT_TYPE_ADDR_CTL_COMP 8
 
+typedef void (*ixc_lcp_opt_cb)(struct ixc_mbuf *m,unsigned char code,unsigned short length);
+
 /// LCP配置选项
 struct ixc_lcp_opt{
     struct ixc_lcp_opt *next;
@@ -71,7 +73,6 @@ void ixc_lcp_uninit(void);
 
 void ixc_lcp_handle(struct ixc_mbuf *m);
 /// 自动发送协商请求
-void ixc_lcp_neg_request_send_auto(void);
 void ixc_lcp_loop(void);
 
 

@@ -10,7 +10,38 @@
 
 static struct ixc_lcp lcp;
 
-void ixc_lcp_neg_request_send_auto(void);
+static void ixc_lcp_opt_reserved_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
+{
+
+}
+
+static void ixc_lcp_opt_max_recv_unit_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
+{
+
+}
+
+static void ixc_lcp_opt_auth_proto_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
+{
+
+}
+
+static void ixc_lcp_opt_qua_proto_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
+{
+
+}
+
+static void ixc_lcp_opt_proto_comp_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
+{
+
+}
+
+static void ixc_lcp_opt_addr_ctl_comp_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
+{
+
+}
+
+
+static ixc_lcp_opt_cb lcp_opt_cb_set[16];
 
 /// 发送LCP数据包
 static void ixc_lcp_send(unsigned short ppp_protoco,unsigned char code,unsigned char id,unsigned short length,void *data)
@@ -24,6 +55,29 @@ static void ixc_lcp_send(unsigned short ppp_protoco,unsigned char code,unsigned 
 
     memcpy(&tmp[4],data,length);
     ixc_pppoe_send_session_packet(ppp_protoco,length+4,tmp);
+}
+
+/// 获取magic
+static unsigned int ixc_lcp_magic_get(struct ixc_lcp_opt *first_opt)
+{
+    struct ixc_lcp_opt *opt=first_opt;
+    unsigned int magic_num=0;
+
+    while(NULL!=opt){
+        if(opt->type==IXC_LCP_OPT_TYPE_MAGIC_NUM){
+            if(opt->length!=4){
+                DBG("Wrong magic num length\r\n");
+                break;
+            }
+
+            memcpy(&magic_num,opt->data,4);
+            magic_num=ntohl(magic_num);
+            break;
+        }
+        opt=opt->next;
+    }
+
+    return magic_num;
 }
 
 /// 解析LCP的选项
@@ -241,7 +295,6 @@ static void ixc_lcp_handle_cfg_ack(struct ixc_mbuf *m,unsigned char id,unsigned 
     }
 
     opt=first_opt;
-    
 
     while (NULL!=opt){
         switch(opt->type){
@@ -264,9 +317,50 @@ static void ixc_lcp_handle_cfg_ack(struct ixc_mbuf *m,unsigned char id,unsigned 
     if(mru_neg_ok) lcp.mru_neg_ok=1;
 }
 
+static void ixc_lcp_handle_cfg_nak(struct ixc_mbuf *m,unsigned char id,unsigned short length)
+{
+    struct ixc_lcp_opt *first_opt=NULL,*opt;
+    int rs=ixc_lcp_parse_opts(m->data+m->offset,length,&first_opt);
+    unsigned int magic_num=0;
+    int is_err=0;
+
+    if(rs<0){
+        ixc_lcp_free_opts(first_opt);
+        DBG("cannot parse lcp nak options\r\n");
+        return;
+    }
+
+    while (NULL!=opt){
+        switch(opt->type){
+            case IXC_LCP_OPT_TYPE_MAGIC_NUM:
+                memcpy(&magic_num,opt->data,opt->length);
+                magic_num=ntohl(magic_num);
+                if(lcp.magic_num!=magic_num) is_err=1;
+                break;
+            case IXC_LCP_OPT_TYPE_MAX_RECV_UNIT:
+                break;
+            default:
+                break;
+        }
+        opt=opt->next;
+    }
+    
+    ixc_lcp_free_opts(first_opt);
+    if(is_err) return;
+}
+
 int ixc_lcp_init(void)
 {
     bzero(&lcp,sizeof(struct ixc_lcp));
+    bzero(lcp_opt_cb_set,sizeof(NULL)*16);
+
+    lcp_opt_cb_set[IXC_LCP_OPT_TYPE_RESERVED]=ixc_lcp_opt_reserved_cb;
+    lcp_opt_cb_set[IXC_LCP_OPT_TYPE_MAX_RECV_UNIT]=ixc_lcp_opt_max_recv_unit_cb;
+    lcp_opt_cb_set[IXC_LCP_OPT_TYPE_AUTH_PROTO]=ixc_lcp_opt_auth_proto_cb;
+    lcp_opt_cb_set[IXC_LCP_OPT_TYPE_QUA_PROTO]=ixc_lcp_opt_qua_proto_cb;
+    lcp_opt_cb_set[IXC_LCP_OPT_TYPE_PROTO_COMP]=ixc_lcp_opt_proto_comp_cb;
+    lcp_opt_cb_set[IXC_LCP_OPT_TYPE_ADDR_CTL_COMP]=ixc_lcp_opt_addr_ctl_comp_cb;
+
     return 0;
 }
 
@@ -303,6 +397,7 @@ void ixc_lcp_handle(struct ixc_mbuf *m)
             ixc_lcp_handle_cfg_ack(m,lcp_header->id,length);
             break;
         case IXC_LCP_CFG_NAK:
+            ixc_lcp_handle_cfg_nak(m,lcp_header->id,length);
             break;
         case IXC_LCP_CFG_REJECT:
             break;
@@ -342,9 +437,11 @@ static void ixc_lcp_neg_send(unsigned char type,unsigned char length,void *data)
         length,4
     };
     unsigned char *data_set[2];
-    unsigned short size;
+    unsigned short size=0;
 
-    srand(time(NULL));
+    lcp.up_time=time(NULL);
+
+    srand(lcp.up_time);
     rand_no=rand();
     lcp.magic_num=rand_no;
     rand_no=htonl(rand_no);
@@ -367,7 +464,24 @@ static void ixc_lcp_neg_send(unsigned char type,unsigned char length,void *data)
 static void ixc_lcp_neg_request_send_for_mru(void)
 {
     unsigned short mru=htons(1492);
-    ixc_lcp_neg_send(IXC_LCP_CFG_REQ,2,&mru);
+    ixc_lcp_neg_send(IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru);
+}
+
+/// 发送chap验证握手
+static void ixc_lcp_neg_request_send_for_chap(void)
+{
+    unsigned char buf[3];
+    buf[0]=0xc2;
+    buf[1]=0x23;
+    buf[2]=0x05;
+
+    ixc_lcp_neg_send(IXC_LCP_OPT_TYPE_AUTH_PROTO,3,buf);
+}
+
+/// 发送PAP验证握手
+static void ixc_lcp_neg_request_send_for_pap(void)
+{
+
 }
 
 void ixc_lcp_neg_request_send_auto(void)
@@ -376,9 +490,17 @@ void ixc_lcp_neg_request_send_auto(void)
         ixc_lcp_neg_request_send_for_mru();
         return;
     }
+
+    if(!lcp.auth_neg_ok){
+        ixc_lcp_neg_request_send_for_chap();
+        return;
+    }
 }
 
 void ixc_lcp_loop(void)
 {
+    time_t now=time(NULL);
+    if(now-lcp.up_time<3) return;
+
     ixc_lcp_neg_request_send_auto();
 }
