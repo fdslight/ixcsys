@@ -9,37 +9,109 @@
 #include "netif.h"
 
 static struct ixc_lcp lcp;
+static unsigned int server_magic_num=0;
 
-static void ixc_lcp_opt_reserved_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
+static void ixc_lcp_neg_send(unsigned char type,unsigned char length,void *data);
+
+/// reserved 选项那么什么都不处理
+static void ixc_lcp_opt_reserved_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
+{
+    return;
+}
+
+static void ixc_lcp_opt_max_recv_unit_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+    unsigned short mru;
+
+    if(code==IXC_LCP_CFG_ACK){
+        lcp.mru_neg_ok=1;
+        return;
+    }
+    
+    // 所有的PPPoE服务器应该都支持MRU
+    if(code==IXC_LCP_CFG_REJECT){
+        STDERR("bug,PPPoE Server LCP unsupport MRU\r\n");
+        ixc_pppoe_reset();
+        return;
+    }
+
+    // 处理LCP MRU 请求
+    // 检查MRU长度是否合法
+    if(opt->length!=2){
+        STDERR("bug,Wrong PPPoE Server MRU length\r\n");
+        return;
+    }
+
+    memcpy(&mru,opt->data,2);
+    mru=ntohs(mru);
+
+    // 检查是否允许的MRU范围
+    if(mru<568 || mru>1492){
+        mru=htons(1492);
+        ixc_lcp_neg_send(IXC_LCP_CFG_NAK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,&mru);
+        return;
+    }
+
+    netif->mtu_v4=mru;
+    netif->mtu_v6=mru;
+
+    mru=htons(mru);
+    ixc_lcp_neg_send(IXC_LCP_CFG_ACK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,&mru);
+}   
+
+static void ixc_lcp_opt_auth_proto_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
+{
+    int is_pap=0,is_chap=0;
+    unsigned char buf[512];
+
+    // 检查长度是否合法
+    if(opt->length<3){
+        DBG("PPPoE Server LCP auth data format error\r\n");
+        return;
+    }
+    // 验证协议握手成功的处理方式
+    if(code==IXC_LCP_CFG_ACK){
+        return;
+    }
+    // 处理配置拒绝的问题
+    if(code==IXC_LCP_CFG_REJECT){
+        STDERR("bug,PPPoE Server LCP unsupport PAP or CHAP\r\n");
+        return;
+    }
+    // 处理验证请求
+    if(opt->data[0]==0xc0 && opt->data[1]==0x23) is_pap=1;
+    if(opt->data[0]==0xc2 && opt->data[1]==0x23) is_chap=1;
+
+    // 不是PAP和CHAP认证协议发送错误
+    if(!is_pap && !is_chap){
+        DBG("unsupport pppoe Server auth method\r\n");
+        return;
+    }
+
+    if(is_chap && opt->length!=3){
+        DBG("PPPoE Server LCP auth data format error\r\n");
+        return;
+    }
+
+    memcpy(buf,opt->data,opt->length);
+    ixc_lcp_neg_send(IXC_LCP_CFG_ACK,IXC_LCP_OPT_TYPE_AUTH_PROTO,opt->length,buf);
+}
+
+static void ixc_lcp_opt_qua_proto_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
 {
 
 }
 
-static void ixc_lcp_opt_max_recv_unit_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
+static void ixc_lcp_opt_proto_comp_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
 {
 
 }
 
-static void ixc_lcp_opt_auth_proto_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
+static void ixc_lcp_opt_addr_ctl_comp_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
 {
 
 }
-
-static void ixc_lcp_opt_qua_proto_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
-{
-
-}
-
-static void ixc_lcp_opt_proto_comp_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
-{
-
-}
-
-static void ixc_lcp_opt_addr_ctl_comp_cb(struct ixc_mbuf *m,unsigned char code,unsigned short length)
-{
-
-}
-
 
 static ixc_lcp_opt_cb lcp_opt_cb_set[16];
 
@@ -57,8 +129,8 @@ static void ixc_lcp_send(unsigned short ppp_protoco,unsigned char code,unsigned 
     ixc_pppoe_send_session_packet(ppp_protoco,length+4,tmp);
 }
 
-/// 获取magic
-static unsigned int ixc_lcp_magic_get(struct ixc_lcp_opt *first_opt)
+/// 获取配置
+static unsigned int ixc_lcp_cfg_magic_get(struct ixc_lcp_opt *first_opt)
 {
     struct ixc_lcp_opt *opt=first_opt;
     unsigned int magic_num=0;
@@ -69,7 +141,6 @@ static unsigned int ixc_lcp_magic_get(struct ixc_lcp_opt *first_opt)
                 DBG("Wrong magic num length\r\n");
                 break;
             }
-
             memcpy(&magic_num,opt->data,4);
             magic_num=ntohl(magic_num);
             break;
@@ -150,126 +221,6 @@ static void ixc_lcp_free_opts(struct ixc_lcp_opt *first)
     }
 }
 
-static void ixc_lcp_handle_cfg_request(struct ixc_mbuf *m,unsigned char id,unsigned short length)
-{
-    struct ixc_lcp_opt *first_opt=NULL,*opt;
-    int rs=ixc_lcp_parse_opts(m->data+m->offset,length,&first_opt);
-    unsigned short mru,auth_proto;
-    int is_error=0;
-    unsigned char tmp[512];
-
-    unsigned char ack_packet[2048];
-    unsigned short ack_len=0;
-
-    if(rs<0){
-        ixc_lcp_free_opts(first_opt);
-        DBG("parse lcp option error\r\n");
-        return;
-    }
-
-    opt=first_opt;
-    while(NULL!=opt){
-        switch(opt->type){
-            case IXC_LCP_OPT_TYPE_MAX_RECV_UNIT:
-                if(opt->length!=2){
-                    is_error=1;
-                    DBG("Wrong MRU length field value\r\n");
-                }else{
-                    memcpy(&mru,opt->data,2);
-                    mru=ntohs(mru);
-
-                    if(mru>1492 || mru<576){
-                        mru=htons(1492);
-                        ixc_lcp_send(0xc021,IXC_LCP_CFG_NAK,id,2,&mru);
-                        break;
-                    }
-
-                    ack_packet[ack_len]=opt->type;
-                    ack_packet[ack_len+1]=opt->length+2;
-                    memcpy(&ack_packet[ack_len+2],opt->data,opt->length);
-                    ack_len=ack_len+opt->length+2;
-                }
-                break;
-            case IXC_LCP_OPT_TYPE_AUTH_PROTO:
-                    ack_packet[ack_len]=opt->type;
-                    ack_packet[ack_len+1]=opt->length+2;
-                    memcpy(&ack_packet[ack_len+2],opt->data,opt->length);
-                    ack_len=ack_len+opt->length+2;
-                if(opt->length<2){
-                    is_error=1;
-                    DBG("Wrong AUTH PROTO length field value\r\n");
-                }else{
-                    memcpy(&auth_proto,opt->data,2);
-                    auth_proto=ntohs(auth_proto);
-                    
-                    if(auth_proto!=0xc023 && auth_proto!=0xc223){
-                        auth_proto=htons(0xc223);
-                        ixc_lcp_send(0xc021,IXC_LCP_CFG_NAK,id,2,&auth_proto);
-                        break;
-                    }
-
-                    /**
-                    if(auth_proto==0xc223 && opt->length!=3){
-
-                        ack_packet[ack_len]=opt->type;
-                        ack_packet[ack_len+1]=opt->length+2;
-                        memcpy(&ack_packet[ack_len+2],opt->data,opt->length);
-                        ack_len=ack_len+opt->length+2;
-                        DBG("Wrong CHAP length field value\r\n");
-                        break;
-                    }**/
-                }
-                break;
-            case IXC_LCP_OPT_TYPE_QUA_PROTO:
-                tmp[0]=opt->type;
-                tmp[1]=opt->length+2;
-
-                memcpy(&tmp[2],opt->data,opt->length);
-                ixc_lcp_send(0xc021,IXC_LCP_CFG_REJECT,id,opt->length+2,tmp);
-                break;
-            case IXC_LCP_OPT_TYPE_MAGIC_NUM:
-                if(opt->length!=4){
-                    is_error=1;
-                    DBG("Wrong magic num length field value\r\n");
-                }else{
-                    ack_packet[ack_len]=opt->type;
-                    ack_packet[ack_len+1]=opt->length+2;
-                    memcpy(&ack_packet[ack_len+2],opt->data,4);
-
-                    ack_len=ack_len+opt->length+2;
-                }
-                break;
-            case IXC_LCP_OPT_TYPE_PROTO_COMP:
-                tmp[0]=opt->type;
-                tmp[1]=opt->length;
-
-                memcpy(&tmp[2],opt->data,opt->length);
-                ixc_lcp_send(0xc021,IXC_LCP_CFG_REJECT,id,opt->length+2,tmp);
-                break;
-            case IXC_LCP_OPT_TYPE_ADDR_CTL_COMP:
-                tmp[0]=opt->type;
-                tmp[1]=opt->length;
-
-                memcpy(&tmp[2],opt->data,opt->length);
-                ixc_lcp_send(0xc021,IXC_LCP_CFG_REJECT,id,opt->length+2,tmp);
-                break;
-            default:
-                is_error=1;
-                break;
-        }
-        opt=opt->next;
-    }
-
-    ixc_lcp_free_opts(first_opt);
-
-    if(is_error) {
-        STDERR("Server PPPOE protocol error\r\n");
-        ixc_pppoe_reset();
-    }else{
-        ixc_lcp_send(0xc021,IXC_LCP_CFG_ACK,id,ack_len,ack_packet);
-    }
-}
-
 static void ixc_lcp_handle_echo_req(struct ixc_mbuf *m,unsigned char id,unsigned short length)
 {
     ixc_lcp_send(0xc021,IXC_LCP_ECHO_REPLY,id,length,m->data+m->offset);
@@ -280,44 +231,8 @@ static void ixc_lcp_handle_echo_reply(struct ixc_mbuf *m,unsigned char id,unsign
 
 }
 
-static void ixc_lcp_handle_cfg_ack(struct ixc_mbuf *m,unsigned char id,unsigned short length)
-{
-    struct ixc_lcp_opt *first_opt=NULL,*opt;
-    int rs=ixc_lcp_parse_opts(m->data+m->offset,length,&first_opt);
-    unsigned int magic_num=0;
-    int is_err=0;
-    int mru_neg_ok;
-
-    if(rs<0){
-        ixc_lcp_free_opts(first_opt);
-        DBG("cannot parse lcp ack options\r\n");
-        return;
-    }
-
-    opt=first_opt;
-
-    while (NULL!=opt){
-        switch(opt->type){
-            case IXC_LCP_OPT_TYPE_MAGIC_NUM:
-                memcpy(&magic_num,opt->data,opt->length);
-                magic_num=ntohl(magic_num);
-                if(lcp.magic_num!=magic_num) is_err=1;
-                break;
-            case IXC_LCP_OPT_TYPE_MAX_RECV_UNIT:
-                mru_neg_ok=1;
-                break;
-            default:
-                break;
-        }
-        opt=opt->next;
-    }
-    
-    ixc_lcp_free_opts(first_opt);
-    if(is_err) return;
-    if(mru_neg_ok) lcp.mru_neg_ok=1;
-}
-
-static void ixc_lcp_handle_cfg_nak(struct ixc_mbuf *m,unsigned char id,unsigned short length)
+/// 处理配置函数,包括配置请求,配置NAK以及配置ACK
+static void ixc_Lcp_handle_cfg(struct ixc_mbuf *m,unsigned char code,unsigned char id,unsigned short length)
 {
     struct ixc_lcp_opt *first_opt=NULL,*opt;
     int rs=ixc_lcp_parse_opts(m->data+m->offset,length,&first_opt);
@@ -326,27 +241,45 @@ static void ixc_lcp_handle_cfg_nak(struct ixc_mbuf *m,unsigned char id,unsigned 
 
     if(rs<0){
         ixc_lcp_free_opts(first_opt);
-        DBG("cannot parse lcp nak options\r\n");
+        DBG("cannot parse lcp configure options\r\n");
         return;
     }
 
-    while (NULL!=opt){
+    magic_num=ixc_lcp_cfg_magic_get(first_opt);
+    // magic number不能为0
+    if(magic_num==0){
+        ixc_lcp_free_opts(first_opt);
+        return;
+    }
+
+    // 检查magic number是否合法
+    if(code==IXC_LCP_CFG_REJECT || code==IXC_LCP_CFG_ACK){
+        if(magic_num!=lcp.magic_num){
+            ixc_lcp_free_opts(first_opt);
+            return;
+        }
+    }
+
+    while(NULL!=opt){
         switch(opt->type){
-            case IXC_LCP_OPT_TYPE_MAGIC_NUM:
-                memcpy(&magic_num,opt->data,opt->length);
-                magic_num=ntohl(magic_num);
-                if(lcp.magic_num!=magic_num) is_err=1;
-                break;
+            case IXC_LCP_OPT_TYPE_RESERVED:
             case IXC_LCP_OPT_TYPE_MAX_RECV_UNIT:
+            case IXC_LCP_OPT_TYPE_AUTH_PROTO:
+            case IXC_LCP_OPT_TYPE_QUA_PROTO:
+            case IXC_LCP_OPT_TYPE_PROTO_COMP:
+            case IXC_LCP_OPT_TYPE_ADDR_CTL_COMP:
+                lcp_opt_cb_set[opt->type](m,code,opt);
+                break;
+            // 针对magic num直接跳过
+            case IXC_LCP_OPT_TYPE_MAGIC_NUM:
                 break;
             default:
                 break;
         }
         opt=opt->next;
     }
-    
+
     ixc_lcp_free_opts(first_opt);
-    if(is_err) return;
 }
 
 int ixc_lcp_init(void)
@@ -391,15 +324,10 @@ void ixc_lcp_handle(struct ixc_mbuf *m)
 
     switch(lcp_header->code){
         case IXC_LCP_CFG_REQ:
-            ixc_lcp_handle_cfg_request(m,lcp_header->id,length);
-            break;
         case IXC_LCP_CFG_ACK:
-            ixc_lcp_handle_cfg_ack(m,lcp_header->id,length);
-            break;
         case IXC_LCP_CFG_NAK:
-            ixc_lcp_handle_cfg_nak(m,lcp_header->id,length);
-            break;
         case IXC_LCP_CFG_REJECT:
+            ixc_Lcp_handle_cfg(m,lcp_header->code,lcp_header->id,length);
             break;
         case IXC_LCP_TERM_REQ:
             break;
@@ -425,7 +353,7 @@ void ixc_lcp_handle(struct ixc_mbuf *m)
 }
 
 /// 协商请求发送
-static void ixc_lcp_neg_send(unsigned char type,unsigned char length,void *data)
+static void ixc_lcp_neg_send(unsigned char cfg_code,unsigned char type,unsigned char length,void *data)
 {
     unsigned int rand_no=0;
     unsigned char buf[2048];
@@ -458,13 +386,13 @@ static void ixc_lcp_neg_send(unsigned char type,unsigned char length,void *data)
         size+=lengths[n]+2;
     }
 
-    ixc_lcp_send(0xc021,IXC_LCP_CFG_REQ,1,size,buf);
+    ixc_lcp_send(0xc021,cfg_code,1,size,buf);
 }
 
 static void ixc_lcp_neg_request_send_for_mru(void)
 {
     unsigned short mru=htons(1492);
-    ixc_lcp_neg_send(IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru);
+    ixc_lcp_neg_send(IXC_LCP_CFG_REQ,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru);
 }
 
 /// 发送chap验证握手
