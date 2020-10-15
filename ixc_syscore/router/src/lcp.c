@@ -11,7 +11,7 @@
 static struct ixc_lcp lcp;
 static unsigned int server_magic_num=0;
 
-static void ixc_lcp_neg_send(unsigned char type,unsigned char length,void *data);
+static void ixc_lcp_neg_send(unsigned char code,unsigned char type,unsigned char length,void *data);
 
 /// reserved 选项那么什么都不处理
 static void ixc_lcp_opt_reserved_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
@@ -49,7 +49,7 @@ static void ixc_lcp_opt_max_recv_unit_cb(struct ixc_mbuf *m,unsigned char code,s
     // 检查是否允许的MRU范围
     if(mru<568 || mru>1492){
         mru=htons(1492);
-        ixc_lcp_neg_send(IXC_LCP_CFG_NAK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,&mru);
+        ixc_lcp_neg_send(IXC_LCP_CFG_NAK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru);
         return;
     }
 
@@ -57,7 +57,7 @@ static void ixc_lcp_opt_max_recv_unit_cb(struct ixc_mbuf *m,unsigned char code,s
     netif->mtu_v6=mru;
 
     mru=htons(mru);
-    ixc_lcp_neg_send(IXC_LCP_CFG_ACK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,&mru);
+    ixc_lcp_neg_send(IXC_LCP_CFG_ACK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru);
 }   
 
 static void ixc_lcp_opt_auth_proto_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
@@ -72,6 +72,8 @@ static void ixc_lcp_opt_auth_proto_cb(struct ixc_mbuf *m,unsigned char code,stru
     }
     // 验证协议握手成功的处理方式
     if(code==IXC_LCP_CFG_ACK){
+        
+
         return;
     }
     // 处理配置拒绝的问题
@@ -100,17 +102,35 @@ static void ixc_lcp_opt_auth_proto_cb(struct ixc_mbuf *m,unsigned char code,stru
 
 static void ixc_lcp_opt_qua_proto_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
 {
+    unsigned char buf[512];
+    memcpy(buf,opt->data,opt->length);
 
+    if(code==IXC_LCP_CFG_REQ){
+        ixc_lcp_neg_send(IXC_LCP_CFG_REJECT,IXC_LCP_OPT_TYPE_ADDR_CTL_COMP,opt->length,buf);
+        return;
+    }
 }
 
 static void ixc_lcp_opt_proto_comp_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
 {
+    unsigned char buf[512];
+    memcpy(buf,opt->data,opt->length);
 
+    if(code==IXC_LCP_CFG_REQ){
+        ixc_lcp_neg_send(IXC_LCP_CFG_REJECT,IXC_LCP_OPT_TYPE_ADDR_CTL_COMP,opt->length,buf);
+        return;
+    }
 }
 
 static void ixc_lcp_opt_addr_ctl_comp_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
 {
+    unsigned char buf[512];
+    memcpy(buf,opt->data,opt->length);
 
+    if(code==IXC_LCP_CFG_REQ){
+        ixc_lcp_neg_send(IXC_LCP_CFG_REJECT,IXC_LCP_OPT_TYPE_ADDR_CTL_COMP,opt->length,buf);
+        return;
+    }
 }
 
 static ixc_lcp_opt_cb lcp_opt_cb_set[16];
@@ -237,7 +257,6 @@ static void ixc_Lcp_handle_cfg(struct ixc_mbuf *m,unsigned char code,unsigned ch
     struct ixc_lcp_opt *first_opt=NULL,*opt;
     int rs=ixc_lcp_parse_opts(m->data+m->offset,length,&first_opt);
     unsigned int magic_num=0;
-    int is_err=0;
 
     if(rs<0){
         ixc_lcp_free_opts(first_opt);
@@ -259,6 +278,8 @@ static void ixc_Lcp_handle_cfg(struct ixc_mbuf *m,unsigned char code,unsigned ch
             return;
         }
     }
+
+    server_magic_num=magic_num;
 
     while(NULL!=opt){
         switch(opt->type){
@@ -403,13 +424,17 @@ static void ixc_lcp_neg_request_send_for_chap(void)
     buf[1]=0x23;
     buf[2]=0x05;
 
-    ixc_lcp_neg_send(IXC_LCP_OPT_TYPE_AUTH_PROTO,3,buf);
+    ixc_lcp_neg_send(IXC_LCP_CFG_REQ,IXC_LCP_OPT_TYPE_AUTH_PROTO,3,buf);
 }
 
-/// 发送PAP验证握手
+/// 发送pap验证握手
 static void ixc_lcp_neg_request_send_for_pap(void)
 {
+    unsigned char buf[2];
+    buf[0]=0xc0;
+    buf[1]=0x23;
 
+    ixc_lcp_neg_send(IXC_LCP_CFG_REQ,IXC_LCP_OPT_TYPE_AUTH_PROTO,2,buf); 
 }
 
 void ixc_lcp_neg_request_send_auto(void)
@@ -420,10 +445,23 @@ void ixc_lcp_neg_request_send_auto(void)
     }
 
     if(!lcp.auth_neg_ok){
-        ixc_lcp_neg_request_send_for_chap();
+        if(lcp.is_pap==0){
+            ixc_lcp_neg_request_send_for_pap();
+            return;
+        }
+
+        if(lcp.is_chap==0){
+            ixc_lcp_neg_request_send_for_chap();
+            return;
+        }
+
+        /// 如果所有验证方式都不支持,那么报告错误并且重置PPPoE
+        STDERR("the PPPoE Server cannot support PAP or CHAP auth\r\n");
+        ixc_pppoe_reset();
         return;
     }
 }
+
 
 void ixc_lcp_loop(void)
 {

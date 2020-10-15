@@ -45,6 +45,8 @@ struct ixc_pppoe{
     int is_started;
     // pppoe会话是否成功
     int pppoe_ok;
+    // PPPoE是否验证成功
+    int auth_ok;
     // 是否开启PPPoE会话
     int enable;
     // PPPoE discovery 是否成功
@@ -63,8 +65,6 @@ struct ixc_pppoe{
     unsigned char selected_server_hwaddr[6];
     // 当前PPPoE发现阶段
     unsigned char cur_discovery_stage;
-    // 当前会话阶段
-    unsigned char cur_session_stage;
 };
 
 int ixc_pppoe_init(void);
@@ -98,5 +98,6 @@ void ixc_pppoe_send_session_packet(unsigned short ppp_protocol,unsigned short le
 void ixc_pppoe_reset(void);
 
 struct ixc_pppoe *ixc_pppoe(void);
+void ixc_pppoe_send_pap_user(void);
 
 #endif
