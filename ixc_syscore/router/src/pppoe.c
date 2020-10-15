@@ -422,6 +422,26 @@ static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
     ixc_mbuf_put(m);
 }
 
+static void ixc_pppoe_handle_pap_response(struct ixc_mbuf *m)
+{
+    unsigned char *data=m->data+m->offset;
+    unsigned char code=data[0];
+
+    switch(code){
+        case 2:
+            pppoe.auth_ok=1;
+            break;
+        case 3:
+            STDERR("PAP Auth fail\r\n");
+            break;
+        default:
+            STDERR("PPPoE server response pap code wrong\r\n");
+            break;
+    }
+
+    ixc_mbuf_put(m);
+}
+
 static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
 {
     struct ixc_pppoe_header *pppoe_header=(struct ixc_pppoe_header *)(m->data+m->offset);
@@ -449,6 +469,14 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
     switch(ppp_proto){
         case 0xc021:
             ixc_lcp_handle(m);
+            break;
+        // PAP协议
+        case 0xc023:
+            ixc_pppoe_handle_pap_response(m);
+            break;
+        // CHAP协议
+        case 0xc223:
+            ixc_mbuf_put(m);
             break;
         default:
             ixc_mbuf_put(m);
@@ -514,7 +542,6 @@ int ixc_pppoe_enable(int status)
     netif->mtu_v4=1492;
     netif->mtu_v6=1492;
     
-
     return 0;
 }
 
@@ -582,10 +609,42 @@ void ixc_pppoe_reset()
     pppoe.up_time=time(NULL);
     pppoe.is_selected_server=0;
     pppoe.cur_discovery_stage=0;
+    pppoe.auth_ok=0;
 }
 
 inline
 struct ixc_pppoe *ixc_pppoe(void)
 {
     return &pppoe;
+}
+
+/// 发送PAP用户
+void ixc_pppoe_send_pap_user()
+{
+    char buf[1024];
+    struct ixc_pppoe *pppoe=ixc_pppoe();
+    int size,size_id,size_pass;
+    unsigned short length;
+
+    buf[0]=1;
+    buf[1]=1;
+    
+    size=4;
+
+    size_id=strlen(pppoe->username);
+    size_pass=strlen(pppoe->passwd);
+    
+    buf[size]=size_id;
+    strcpy(&buf[1],pppoe->username);
+    size=1+size_id;
+    buf[size]=size_pass;
+    size+=1;
+    strcpy(&buf[size],pppoe->passwd);
+    size+=size_pass;
+
+    length=size;
+    length=htons(length);
+    memcpy(&buf[2],&length,2);
+
+    ixc_pppoe_send_session_packet(0xc023,size,buf);
 }

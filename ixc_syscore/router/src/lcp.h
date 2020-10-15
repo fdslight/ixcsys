@@ -11,8 +11,10 @@ struct ixc_lcp{
     int mru_neg_ok;
     // auth是否协商成功
     int auth_neg_ok;
-    // 是否是PAP协议
+    // 是否是PAP协议,如果此项值小于0表示不支持该协议
     int is_pap;
+    // 是否是CHAP协议,如果此项值小于0表示不支持该协议
+    int is_chap;
     // 是否所有都ok
     int ok;
 
