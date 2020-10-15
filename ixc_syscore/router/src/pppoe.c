@@ -112,9 +112,6 @@ static void ixc_pppoe_discovery_loop(void)
 
 static void ixc_pppoe_session_loop(void)
 {
-    time_t now=time(NULL);
-    if(now-pppoe.up_time<3) return;
-
     ixc_lcp_loop();
 }
 
