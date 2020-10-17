@@ -530,12 +530,6 @@ void ixc_pppoe_handle(struct ixc_mbuf *m)
         return;
     }
 
-    // 如果发现成功那么就不在接受发现数据包
-    if(m->link_proto==0x8863 && pppoe.discovery_ok){
-        ixc_mbuf_put(m);
-        return;
-    }
-
     if(m->link_proto==0x8863) ixc_pppoe_handle_discovery(m);
     else ixc_pppoe_handle_session(m);
 

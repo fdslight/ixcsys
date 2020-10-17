@@ -68,7 +68,7 @@ struct ixc_lcp_opt{
     unsigned char data[512];
 };
 
-typedef void (*ixc_lcp_opt_cb)(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt);
+typedef void (*ixc_lcp_opt_cb)(struct ixc_mbuf *m,unsigned char code,unsigned char id,struct ixc_lcp_opt *opt);
 
 #pragma pack(pop)
 
