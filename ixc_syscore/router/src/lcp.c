@@ -11,7 +11,20 @@
 static struct ixc_lcp lcp;
 static unsigned int server_magic_num=0;
 
-static void ixc_lcp_neg_send(unsigned char code,unsigned char type,unsigned char length,void *data);
+static void ixc_lcp_neg_send(unsigned char code,unsigned char type,unsigned char length,void *data,unsigned int magic_num);
+static void ixc_lcp_neg_send_for_pap(unsigned char code,unsigned int magic_num);
+static void ixc_lcp_neg_send_for_chap(unsigned char code,unsigned int magic_num);
+
+
+static unsigned int ixc_lcp_rand_magic_num(void)
+{
+    unsigned int rand_no;
+    srand(time(NULL));
+
+    rand_no=rand();
+
+    return rand_no;
+}
 
 /// reserved 选项那么什么都不处理
 static void ixc_lcp_opt_reserved_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
@@ -25,6 +38,7 @@ static void ixc_lcp_opt_max_recv_unit_cb(struct ixc_mbuf *m,unsigned char code,s
     unsigned short mru;
 
     if(code==IXC_LCP_CFG_ACK){
+        DBG("MRU Neg OK\r\n");
         lcp.mru_neg_ok=1;
         return;
     }
@@ -49,7 +63,7 @@ static void ixc_lcp_opt_max_recv_unit_cb(struct ixc_mbuf *m,unsigned char code,s
     // 检查是否允许的MRU范围
     if(mru<568 || mru>1492){
         mru=htons(1492);
-        ixc_lcp_neg_send(IXC_LCP_CFG_NAK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru);
+        ixc_lcp_neg_send(IXC_LCP_CFG_NAK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru,server_magic_num);
         return;
     }
 
@@ -57,7 +71,7 @@ static void ixc_lcp_opt_max_recv_unit_cb(struct ixc_mbuf *m,unsigned char code,s
     netif->mtu_v6=mru;
 
     mru=htons(mru);
-    ixc_lcp_neg_send(IXC_LCP_CFG_ACK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru);
+    ixc_lcp_neg_send(IXC_LCP_CFG_ACK,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru,server_magic_num);
 }   
 
 static void ixc_lcp_opt_auth_proto_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
@@ -66,14 +80,16 @@ static void ixc_lcp_opt_auth_proto_cb(struct ixc_mbuf *m,unsigned char code,stru
     unsigned char buf[512];
 
     // 检查长度是否合法
-    if(opt->length<3){
-        DBG("PPPoE Server LCP auth data format error\r\n");
+    if(opt->length<2){
+        DBG("PPPoE Server LCP auth data format error %d\r\n",opt->length);
         return;
     }
+
     // 验证协议握手成功的处理方式
     if(code==IXC_LCP_CFG_ACK){
-        
-
+        DBG("Auth Neg OK\r\n");
+        lcp.auth_neg_ok=1;
+        lcp.is_pap=1;
         return;
     }
     // 处理配置拒绝的问题
@@ -96,8 +112,13 @@ static void ixc_lcp_opt_auth_proto_cb(struct ixc_mbuf *m,unsigned char code,stru
         return;
     }
 
+    if(is_chap){
+        ixc_lcp_neg_send_for_chap(IXC_LCP_CFG_REJECT,server_magic_num);
+        return;
+    }
+
     memcpy(buf,opt->data,opt->length);
-    ixc_lcp_neg_send(IXC_LCP_CFG_ACK,IXC_LCP_OPT_TYPE_AUTH_PROTO,opt->length,buf);
+    ixc_lcp_neg_send(IXC_LCP_CFG_ACK,IXC_LCP_OPT_TYPE_AUTH_PROTO,opt->length,buf,server_magic_num);
 }
 
 static void ixc_lcp_opt_qua_proto_cb(struct ixc_mbuf *m,unsigned char code,struct ixc_lcp_opt *opt)
@@ -106,7 +127,7 @@ static void ixc_lcp_opt_qua_proto_cb(struct ixc_mbuf *m,unsigned char code,struc
     memcpy(buf,opt->data,opt->length);
 
     if(code==IXC_LCP_CFG_REQ){
-        ixc_lcp_neg_send(IXC_LCP_CFG_REJECT,IXC_LCP_OPT_TYPE_ADDR_CTL_COMP,opt->length,buf);
+        ixc_lcp_neg_send(IXC_LCP_CFG_REJECT,IXC_LCP_OPT_TYPE_ADDR_CTL_COMP,opt->length,buf,server_magic_num);
         return;
     }
 }
@@ -117,7 +138,7 @@ static void ixc_lcp_opt_proto_comp_cb(struct ixc_mbuf *m,unsigned char code,stru
     memcpy(buf,opt->data,opt->length);
 
     if(code==IXC_LCP_CFG_REQ){
-        ixc_lcp_neg_send(IXC_LCP_CFG_REJECT,IXC_LCP_OPT_TYPE_ADDR_CTL_COMP,opt->length,buf);
+        ixc_lcp_neg_send(IXC_LCP_CFG_REJECT,IXC_LCP_OPT_TYPE_ADDR_CTL_COMP,opt->length,buf,server_magic_num);
         return;
     }
 }
@@ -128,7 +149,7 @@ static void ixc_lcp_opt_addr_ctl_comp_cb(struct ixc_mbuf *m,unsigned char code,s
     memcpy(buf,opt->data,opt->length);
 
     if(code==IXC_LCP_CFG_REQ){
-        ixc_lcp_neg_send(IXC_LCP_CFG_REJECT,IXC_LCP_OPT_TYPE_ADDR_CTL_COMP,opt->length,buf);
+        ixc_lcp_neg_send(IXC_LCP_CFG_REJECT,IXC_LCP_OPT_TYPE_ADDR_CTL_COMP,opt->length,buf,server_magic_num);
         return;
     }
 }
@@ -265,20 +286,17 @@ static void ixc_Lcp_handle_cfg(struct ixc_mbuf *m,unsigned char code,unsigned ch
     }
 
     magic_num=ixc_lcp_cfg_magic_get(first_opt);
-    // magic number不能为0
-    if(magic_num==0){
-        ixc_lcp_free_opts(first_opt);
-        return;
-    }
 
     // 检查magic number是否合法
     if(code==IXC_LCP_CFG_REJECT || code==IXC_LCP_CFG_ACK){
         if(magic_num!=lcp.magic_num){
+            DBG("Wrong magic num for code %d\r\n",code);
             ixc_lcp_free_opts(first_opt);
             return;
         }
     }
 
+    opt=first_opt;
     server_magic_num=magic_num;
 
     while(NULL!=opt){
@@ -297,6 +315,7 @@ static void ixc_Lcp_handle_cfg(struct ixc_mbuf *m,unsigned char code,unsigned ch
             default:
                 break;
         }
+        //DBG("type:%d  length:%d\r\n",opt->type,opt->length);
         opt=opt->next;
     }
 
@@ -374,7 +393,7 @@ void ixc_lcp_handle(struct ixc_mbuf *m)
 }
 
 /// 协商请求发送
-static void ixc_lcp_neg_send(unsigned char cfg_code,unsigned char type,unsigned char length,void *data)
+static void ixc_lcp_neg_send(unsigned char cfg_code,unsigned char type,unsigned char length,void *data,unsigned int magic_num)
 {
     unsigned int rand_no=0;
     unsigned char buf[2048];
@@ -389,16 +408,13 @@ static void ixc_lcp_neg_send(unsigned char cfg_code,unsigned char type,unsigned 
     unsigned short size=0;
 
     lcp.up_time=time(NULL);
-
-    srand(lcp.up_time);
-    rand_no=rand();
-    lcp.magic_num=rand_no;
-    rand_no=htonl(rand_no);
+    rand_no=htonl(magic_num);
 
     data_set[0]=data;
     data_set[1]=(unsigned char *)(&rand_no);
 
     for(int n=0;n<2;n++){
+        if(magic_num==0 && n==1) break;
         buf[size]=types[n];
         buf[size+1]=lengths[n]+2;
 
@@ -413,45 +429,56 @@ static void ixc_lcp_neg_send(unsigned char cfg_code,unsigned char type,unsigned 
 static void ixc_lcp_neg_request_send_for_mru(void)
 {
     unsigned short mru=htons(1492);
-    ixc_lcp_neg_send(IXC_LCP_CFG_REQ,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru);
+    unsigned int magic_num=ixc_lcp_rand_magic_num();
+
+    lcp.magic_num=magic_num;
+
+    ixc_lcp_neg_send(IXC_LCP_CFG_REQ,IXC_LCP_OPT_TYPE_MAX_RECV_UNIT,2,&mru,magic_num);
 }
 
 /// 发送chap验证握手
-static void ixc_lcp_neg_request_send_for_chap(void)
+static void ixc_lcp_neg_send_for_chap(unsigned char code,unsigned int magic_num)
 {
     unsigned char buf[3];
+
     buf[0]=0xc2;
     buf[1]=0x23;
     buf[2]=0x05;
 
-    ixc_lcp_neg_send(IXC_LCP_CFG_REQ,IXC_LCP_OPT_TYPE_AUTH_PROTO,3,buf);
+    ixc_lcp_neg_send(code,IXC_LCP_OPT_TYPE_AUTH_PROTO,3,buf,magic_num);
 }
 
 /// 发送pap验证握手
-static void ixc_lcp_neg_request_send_for_pap(void)
+static void ixc_lcp_neg_send_for_pap(unsigned char code,unsigned int magic_num)
 {
     unsigned char buf[2];
+
     buf[0]=0xc0;
     buf[1]=0x23;
 
-    ixc_lcp_neg_send(IXC_LCP_CFG_REQ,IXC_LCP_OPT_TYPE_AUTH_PROTO,2,buf); 
+    ixc_lcp_neg_send(code,IXC_LCP_OPT_TYPE_AUTH_PROTO,2,buf,magic_num); 
 }
 
 void ixc_lcp_neg_request_send_auto(void)
 {
+    unsigned int magic_num=ixc_lcp_rand_magic_num();
+
     if(!lcp.mru_neg_ok){
+        lcp.magic_num=magic_num;
         ixc_lcp_neg_request_send_for_mru();
         return;
     }
 
     if(!lcp.auth_neg_ok){
         if(lcp.is_pap==0){
-            ixc_lcp_neg_request_send_for_pap();
+            lcp.magic_num=magic_num;
+            ixc_lcp_neg_send_for_pap(IXC_LCP_CFG_REQ,magic_num);
             return;
         }
 
         if(lcp.is_chap==0){
-            ixc_lcp_neg_request_send_for_chap();
+            lcp.magic_num=magic_num;
+            ixc_lcp_neg_send_for_chap(IXC_LCP_CFG_REQ,magic_num);
             return;
         }
 
@@ -460,6 +487,8 @@ void ixc_lcp_neg_request_send_auto(void)
         ixc_pppoe_reset();
         return;
     }
+
+    if(lcp.is_pap) ixc_pppoe_send_pap_user();
 }
 
 

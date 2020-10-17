@@ -256,9 +256,12 @@ class service(dispatcher.dispatcher):
 
         wan_pppoe = self.__wan_configs["pppoe"]
         pppoe_enable = bool(int(wan_pppoe["enable"]))
+        pppoe_user = wan_pppoe["user"]
+        pppoe_pass = wan_pppoe["passwd"]
 
         if pppoe_enable:
             self.router.pppoe_enable(True)
+            self.router.pppoe_set_user(pppoe_user, pppoe_pass)
             self.router.pppoe_start()
 
     def start_scgi(self):
