@@ -463,12 +463,6 @@ void ixc_lcp_neg_request_send_auto(void)
 {
     unsigned int magic_num=ixc_lcp_rand_magic_num();
 
-    if(!lcp.mru_neg_ok){
-        lcp.magic_num=magic_num;
-        ixc_lcp_neg_request_send_for_mru();
-        return;
-    }
-
     if(!lcp.auth_neg_ok){
         if(lcp.is_pap==0){
             lcp.magic_num=magic_num;
@@ -485,6 +479,12 @@ void ixc_lcp_neg_request_send_auto(void)
         /// 如果所有验证方式都不支持,那么报告错误并且重置PPPoE
         STDERR("the PPPoE Server cannot support PAP or CHAP auth\r\n");
         ixc_pppoe_reset();
+        return;
+    }
+
+    if(!lcp.mru_neg_ok){
+        lcp.magic_num=magic_num;
+        ixc_lcp_neg_request_send_for_mru();
         return;
     }
 
