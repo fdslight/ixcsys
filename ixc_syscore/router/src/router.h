@@ -24,7 +24,7 @@ int ixc_router_send(unsigned char if_type,unsigned char ipproto,unsigned char fl
 
 /// 写入事件告知
 int ixc_router_write_ev_tell(int fd,int flags);
-/// 计算字符串的MD5值
-int ixc_router_calc_md5(void *data,int length,unsigned char *res_buf);
+/// 发送PPPoE数据包到Python
+int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,void *data);
 
 #endif

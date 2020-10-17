@@ -6,6 +6,7 @@
 #include "netif.h"
 #include "debug.h"
 #include "lcp.h"
+#include "router.h"
 
 #include "../../../pywind/clib/sysloop.h"
 
@@ -425,7 +426,7 @@ static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
 static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
 {
     struct ixc_pppoe_header *pppoe_header=(struct ixc_pppoe_header *)(m->data+m->offset);
-    unsigned short ppp_proto=0;
+    unsigned short ppp_proto=0,length;
 
     // 会话阶段code必须为0
     if(pppoe_header->code!=0){
@@ -442,6 +443,7 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
 
     memcpy(&ppp_proto,m->data+m->offset+6,2);
     ppp_proto=ntohs(ppp_proto);
+    length=htons(pppoe_header->length);
     
     // 此处增加偏移量
     m->offset+=8;
@@ -457,6 +459,7 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
         case 0x8021:
         // IPv6CP
         case 0x8057:
+            ixc_router_pppoe_session_send(ppp_proto,length,m->data+m->offset);
             break;
         // IPv6协议
         case 0x0057:

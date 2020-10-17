@@ -31,7 +31,7 @@ typedef struct{
 
 static PyObject *router_sent_cb=NULL;
 static PyObject *router_write_ev_tell_cb=NULL;
-static PyObject *router_calc_md5_cb=NULL;
+static PyObject *router_pppoe_session_packet_recv_cb=NULL;
 
 int ixc_router_send(unsigned char if_type,unsigned char ipproto,unsigned char flags,void *buf,size_t size)
 {
@@ -61,29 +61,19 @@ int ixc_router_write_ev_tell(int fd,int flags)
     return 0;
 }
 
-int ixc_router_calc_md5(void *data,int length,unsigned char *res_buf)
+int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,void *data)
 {
     PyObject *arglist,*result;
     unsigned char *md5;
     Py_ssize_t size;
 
-    if(NULL==router_calc_md5_cb){
-        STDERR("no set python md5 calc function\r\n");
+    if(NULL==router_pppoe_session_packet_recv_cb){
+        STDERR("no set python pppoe session recv function\r\n");
         return -1;
     }
 
-    arglist=Py_BuildValue("(y#)",data,length);
+    arglist=Py_BuildValue("(Hy#)",protocol,data,length);
     result=PyObject_CallObject(router_sent_cb,arglist);
-
-    if(NULL==result){
-        Py_XDECREF(arglist);
-        Py_XDECREF(result);
-        return -1;
-    }
-
-    if(!PyArg_ParseTuple(result,"y#",&md5,&size)) return -1;
-
-    memcpy(res_buf,md5,size);
 
     Py_XDECREF(arglist);
     Py_XDECREF(result);
@@ -251,16 +241,16 @@ router_pppoe_data_send(PyObject *self,PyObject *args)
 
 /// 设置MD5计算函数
 static PyObject *
-router_set_md5_fn(PyObject *self,PyObject *args)
+router_set_pppoe_session_packet_recv_fn(PyObject *self,PyObject *args)
 {
-    if(!PyArg_ParseTuple(args,"O",&router_calc_md5_cb)) return NULL;
-    if(PyCallable_Check(router_calc_md5_cb)){
+    if(!PyArg_ParseTuple(args,"O",&router_pppoe_session_packet_recv_cb)) return NULL;
+    if(PyCallable_Check(router_pppoe_session_packet_recv_cb)){
         PyErr_SetString(PyExc_TypeError,"the argument must be callable");
         return NULL;
     }
 
-    Py_XDECREF(router_calc_md5_cb);
-    Py_INCREF(router_calc_md5_cb);
+    Py_XDECREF(router_pppoe_session_packet_recv_cb);
+    Py_INCREF(router_pppoe_session_packet_recv_cb);
 
     Py_RETURN_NONE;
 }
@@ -745,7 +735,7 @@ static PyMemberDef router_members[]={
 };
 
 static PyMethodDef routerMethods[]={
-    {"set_calc_md5_fn",(PyCFunction)router_set_md5_fn,METH_VARARGS,"set calc md5 function"},
+    {"set_pppoe_session_packet_recv_fn",(PyCFunction)router_set_pppoe_session_packet_recv_fn,METH_VARARGS,"set PPPoE session packet recv function"},
     {"send_netpkt",(PyCFunction)router_send_netpkt,METH_VARARGS,"send network packet to protocol statck"},
     //
     {"iowait",(PyCFunction)router_iowait,METH_VARARGS,"tell if wait"},
