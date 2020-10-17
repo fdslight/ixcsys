@@ -45,8 +45,6 @@ struct ixc_pppoe{
     int is_started;
     // pppoe会话是否成功
     int pppoe_ok;
-    // PPPoE是否验证成功
-    int auth_ok;
     // 是否开启PPPoE会话
     int enable;
     // PPPoE discovery 是否成功
@@ -81,8 +79,8 @@ void ixc_pppoe_stop(void);
 /// 把数据包发送PPPOE进行处理
 void ixc_pppoe_handle(struct ixc_mbuf *m);
 
-/// 检查PPPoE是否握手成功
-int ixc_pppoe_ok(void);
+/// 设置pppoe ok
+void ixc_pppoe_set_ok(int ok);
 
 /// 启用PPPoE
 int ixc_pppoe_enable(int status);

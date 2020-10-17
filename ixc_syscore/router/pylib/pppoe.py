@@ -48,5 +48,7 @@ class pppoe(object):
             if self.debug: print("Wrong LCP length field value")
             return
         data = data[4:]
-        self.__lcp.handle_packet(code,_id,data)
+        self.__lcp.handle_packet(code, _id, data)
 
+    def reset(self):
+        self.__runtime.router.pppoe_reset()

@@ -717,12 +717,14 @@ router_pppoe_stop(PyObject *self,PyObject *args)
 }
 
 static PyObject *
-router_pppoe_ok(PyObject *self,PyObject *args)
+router_pppoe_set_ok(PyObject *self,PyObject *args)
 {
-    if(ixc_pppoe_ok()){
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    int ok;
+    if(!PyArg_ParseTuple(args,"p",&ok)) return NULL;
+
+    ixc_pppoe_set_ok(ok);
+
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -801,7 +803,7 @@ static PyMethodDef routerMethods[]={
     {"pppoe_is_enabled",(PyCFunction)router_pppoe_is_enabled,METH_NOARGS,"check pppoe is enabled"},
     {"pppoe_start",(PyCFunction)router_pppoe_start,METH_NOARGS,"start pppoe"},
     {"pppoe_stop",(PyCFunction)router_pppoe_stop,METH_NOARGS,"stop pppoe"},
-    {"pppoe_ok",(PyCFunction)router_pppoe_ok,METH_NOARGS,"check pppoe ok"},
+    {"pppoe_set_ok",(PyCFunction)router_pppoe_set_ok,METH_VARARGS,"set pppoe ok or not ok"},
     {"pppoe_set_user",(PyCFunction)router_pppoe_set_user,METH_VARARGS,"set pppoe user and password"},
     {"pppoe_data_send",(PyCFunction)router_pppoe_data_send,METH_VARARGS,"send pppoe session data"},
     {"pppoe_reset",(PyCFunction)router_pppoe_reset,METH_VARARGS,"reset pppoe session"},
