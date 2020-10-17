@@ -510,9 +510,9 @@ void ixc_pppoe_handle(struct ixc_mbuf *m)
 
 }
 
-int ixc_pppoe_ok(void)
+void ixc_pppoe_set_ok(int ok)
 {
-    return pppoe.pppoe_ok;
+    pppoe.pppoe_ok=ok;
 }
 
 int ixc_pppoe_enable(int status)
@@ -616,7 +616,7 @@ void ixc_pppoe_reset()
     pppoe.discovery_ok=0;
     pppoe.is_selected_server=0;
     pppoe.cur_discovery_stage=0;
-    pppoe.auth_ok=0;
+    pppoe.pppoe_ok=0;
 }
 
 inline
