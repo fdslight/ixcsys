@@ -18,6 +18,7 @@ import ixc_syscore.router.pylib.router as router
 import ixc_syscore.router.handlers.tapdev as tapdev
 import ixc_syscore.router.handlers.tundev as tundev
 import ixc_syscore.router.handlers.pfwd as pfwd
+import ixc_syscore.router.pylib.pppoe as pppoe
 
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
@@ -89,6 +90,12 @@ class service(dispatcher.dispatcher):
 
     __pfwd_fd = None
 
+    __pppoe = None
+
+    def _tell(self, content: str):
+        if content == "start_lcp":
+            if self.__pppoe: self.__pppoe.start_lcp()
+
     def _write_ev_tell(self, fd: int, flags: int):
         if flags:
             self.add_evt_write(fd)
@@ -145,6 +152,10 @@ class service(dispatcher.dispatcher):
     @property
     def wan_configs(self):
         return self.__wan_configs
+
+    @property
+    def debug(self):
+        return self.__debug
 
     def release(self):
         if os.path.isfile(self.__info_file): os.remove(self.__info_file)
@@ -230,6 +241,7 @@ class service(dispatcher.dispatcher):
             os.system("ifconfig %s up" % lan_phy_ifname)
 
     def start_wan(self):
+        self.__pppoe = pppoe.pppoe(self)
         self.load_wan_configs()
 
         wan_configs = self.__wan_configs
@@ -322,6 +334,7 @@ class service(dispatcher.dispatcher):
         self.__if_wan_fd = -1
         self.__tun_fd = -1
         self.__router = router.router(self._recv_from_proto_stack, self._write_ev_tell)
+        self.__router.set_tell_fn(self._tell)
 
         self.__WAN_BR_NAME = "ixcwanbr"
         self.__LAN_BR_NAME = "ixclanbr"

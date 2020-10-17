@@ -5,7 +5,6 @@
 #include "ether.h"
 #include "netif.h"
 #include "debug.h"
-#include "lcp.h"
 #include "router.h"
 
 #include "../../../pywind/clib/sysloop.h"
@@ -111,11 +110,6 @@ static void ixc_pppoe_discovery_loop(void)
     }
 }
 
-static void ixc_pppoe_session_loop(void)
-{
-    ixc_lcp_loop();
-}
-
 static void ixc_pppoe_sysloop_cb(struct sysloop *lp)
 {
     time_t now=time(NULL);
@@ -129,7 +123,6 @@ static void ixc_pppoe_sysloop_cb(struct sysloop *lp)
     }
 
     if(!pppoe.discovery_ok) ixc_pppoe_discovery_loop();
-    else ixc_pppoe_session_loop();
 }
 
 /// 发送PPPoE发现报文
@@ -185,13 +178,6 @@ static void ixc_pppoe_send_discovery(void)
 
 int ixc_pppoe_init(void)
 {
-    int rs;
-
-    if(ixc_lcp_init()<0){
-        STDERR("cannot init lcp\r\n");
-        return -1;
-    }
-
     bzero(&pppoe,sizeof(struct ixc_pppoe));
 
 
@@ -208,7 +194,6 @@ int ixc_pppoe_init(void)
 
 void ixc_pppoe_uninit(void)
 {
-    ixc_lcp_uninit();
     pppoe_is_initialized=0;
 }
 
@@ -376,6 +361,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     if(header->code==IXC_PPPOE_CODE_PADS){
         pppoe.discovery_ok=1;
         pppoe.session_id=ntohs(header->session_id);
+        ixc_router_tell("start_lcp");
         return;
     }
 }

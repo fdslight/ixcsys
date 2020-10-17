@@ -26,5 +26,7 @@ int ixc_router_send(unsigned char if_type,unsigned char ipproto,unsigned char fl
 int ixc_router_write_ev_tell(int fd,int flags);
 /// 发送PPPoE数据包到Python
 int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,void *data);
+/// 通知函数
+int ixc_router_tell(const char *content);
 
 #endif
