@@ -479,6 +479,7 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
             ixc_mbuf_put(m);
             break;
         default:
+            DBG("unkown PPPoE protocol 0x%x\r\n",ppp_proto);
             ixc_mbuf_put(m);
             break;
     }
@@ -522,6 +523,18 @@ void ixc_pppoe_handle(struct ixc_mbuf *m)
 
     // 屏蔽以太网的填充字段
     m->tail=m->offset+length+6;
+
+    // 如果PPPoE第一阶段没成功那么丢弃session数据包
+    if(m->link_proto==0x8864 && !pppoe.discovery_ok){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 如果发现成功那么就不在接受发现数据包
+    if(m->link_proto==0x8863 && pppoe.discovery_ok){
+        ixc_mbuf_put(m);
+        return;
+    }
 
     if(m->link_proto==0x8863) ixc_pppoe_handle_discovery(m);
     else ixc_pppoe_handle_session(m);
@@ -607,6 +620,7 @@ void ixc_pppoe_reset()
 {
     // 这里需要更新时间,否则会导致超时不发送请求包
     pppoe.up_time=time(NULL);
+    pppoe.discovery_ok=0;
     pppoe.is_selected_server=0;
     pppoe.cur_discovery_stage=0;
     pppoe.auth_ok=0;
@@ -621,10 +635,15 @@ struct ixc_pppoe *ixc_pppoe(void)
 /// 发送PAP用户
 void ixc_pppoe_send_pap_user()
 {
+    time_t now=time(NULL);
+
     char buf[1024];
     struct ixc_pppoe *pppoe=ixc_pppoe();
     int size,size_id,size_pass;
     unsigned short length;
+
+    if(now-pppoe->up_time<3) return;
+    pppoe->up_time=now;
 
     buf[0]=1;
     buf[1]=1;
@@ -635,8 +654,9 @@ void ixc_pppoe_send_pap_user()
     size_pass=strlen(pppoe->passwd);
     
     buf[size]=size_id;
-    strcpy(&buf[1],pppoe->username);
-    size=1+size_id;
+    size+=1;
+    strcpy(&buf[size],pppoe->username);
+    size+=size_id;
     buf[size]=size_pass;
     size+=1;
     strcpy(&buf[size],pppoe->passwd);
@@ -645,6 +665,8 @@ void ixc_pppoe_send_pap_user()
     length=size;
     length=htons(length);
     memcpy(&buf[2],&length,2);
+
+    //DBG("PAP size:%d\r\n",size);
 
     ixc_pppoe_send_session_packet(0xc023,size,buf);
 }
