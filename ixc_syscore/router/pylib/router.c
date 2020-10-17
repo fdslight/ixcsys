@@ -32,6 +32,7 @@ typedef struct{
 static PyObject *router_sent_cb=NULL;
 static PyObject *router_write_ev_tell_cb=NULL;
 static PyObject *router_pppoe_session_packet_recv_cb=NULL;
+static PyObject *router_tell_cb=NULL;
 
 int ixc_router_send(unsigned char if_type,unsigned char ipproto,unsigned char flags,void *buf,size_t size)
 {
@@ -64,8 +65,6 @@ int ixc_router_write_ev_tell(int fd,int flags)
 int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,void *data)
 {
     PyObject *arglist,*result;
-    unsigned char *md5;
-    Py_ssize_t size;
 
     if(NULL==router_pppoe_session_packet_recv_cb){
         STDERR("no set python pppoe session recv function\r\n");
@@ -73,12 +72,30 @@ int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,
     }
 
     arglist=Py_BuildValue("(Hy#)",protocol,data,length);
-    result=PyObject_CallObject(router_sent_cb,arglist);
+    result=PyObject_CallObject(router_pppoe_session_packet_recv_cb,arglist);
 
     Py_XDECREF(arglist);
     Py_XDECREF(result);
 
     return 0;
+}
+
+int ixc_router_tell(const char *content)
+{
+    PyObject *arglist,*result;
+
+    if(NULL==router_tell_cb){
+        STDERR("no set python tell function\r\n");
+        return -1;
+    }
+
+    arglist=Py_BuildValue("(s)",content);
+    result=PyObject_CallObject(router_tell_cb,arglist);
+
+    Py_XDECREF(arglist);
+    Py_XDECREF(result);
+
+    return 0;  
 }
 
 static void ixc_segfault_handle(int signum)
@@ -216,30 +233,8 @@ router_init(routerObject *self,PyObject *args,PyObject *kwds)
     return 0;
 }
 
-/// 重置PPPoE
-static PyObject *
-router_pppoe_reset(PyObject *self,PyObject *args)
-{
-    ixc_pppoe_reset();
-    Py_RETURN_NONE;
-}
 
-/// 发送PPPoE数据
-static PyObject *
-router_pppoe_data_send(PyObject *self,PyObject *args)
-{
-    unsigned short protocol;
-    unsigned char *data;
-
-    Py_ssize_t size;
-
-    if(!PyArg_ParseTuple(args,"Hy#",&protocol,&data,&size)) return NULL;
-    ixc_pppoe_send_session_packet(protocol,size,data);
-
-    Py_RETURN_NONE;
-}
-
-/// 设置MD5计算函数
+/// 设置PPPoE包接收函数
 static PyObject *
 router_set_pppoe_session_packet_recv_fn(PyObject *self,PyObject *args)
 {
@@ -251,6 +246,22 @@ router_set_pppoe_session_packet_recv_fn(PyObject *self,PyObject *args)
 
     Py_XDECREF(router_pppoe_session_packet_recv_cb);
     Py_INCREF(router_pppoe_session_packet_recv_cb);
+
+    Py_RETURN_NONE;
+}
+
+/// 设置告知函数
+static PyObject *
+router_set_tell_fn(PyObject *self,PyObject *args)
+{
+    if(!PyArg_ParseTuple(args,"O",&router_tell_cb)) return NULL;
+    if(PyCallable_Check(router_tell_cb)){
+        PyErr_SetString(PyExc_TypeError,"the argument must be callable");
+        return NULL;
+    }
+
+    Py_XDECREF(router_tell_cb);
+    Py_INCREF(router_tell_cb);
 
     Py_RETURN_NONE;
 }
@@ -729,6 +740,28 @@ router_pppoe_set_user(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
+/// 发送PPPoE数据
+static PyObject *
+router_pppoe_data_send(PyObject *self,PyObject *args)
+{
+    unsigned short protocol;
+    unsigned char *data;
+
+    Py_ssize_t size;
+
+    if(!PyArg_ParseTuple(args,"Hy#",&protocol,&data,&size)) return NULL;
+    ixc_pppoe_send_session_packet(protocol,size,data);
+
+    Py_RETURN_NONE;
+}
+
+/// 重置PPPoE
+static PyObject *
+router_pppoe_reset(PyObject *self,PyObject *args)
+{
+    ixc_pppoe_reset();
+    Py_RETURN_NONE;
+}
 
 static PyMemberDef router_members[]={
     {NULL}
@@ -736,6 +769,7 @@ static PyMemberDef router_members[]={
 
 static PyMethodDef routerMethods[]={
     {"set_pppoe_session_packet_recv_fn",(PyCFunction)router_set_pppoe_session_packet_recv_fn,METH_VARARGS,"set PPPoE session packet recv function"},
+    {"set_tell_fn",(PyCFunction)router_set_tell_fn,METH_VARARGS,"set tell function"},
     {"send_netpkt",(PyCFunction)router_send_netpkt,METH_VARARGS,"send network packet to protocol statck"},
     //
     {"iowait",(PyCFunction)router_iowait,METH_VARARGS,"tell if wait"},
@@ -769,6 +803,8 @@ static PyMethodDef routerMethods[]={
     {"pppoe_stop",(PyCFunction)router_pppoe_stop,METH_NOARGS,"stop pppoe"},
     {"pppoe_ok",(PyCFunction)router_pppoe_ok,METH_NOARGS,"check pppoe ok"},
     {"pppoe_set_user",(PyCFunction)router_pppoe_set_user,METH_VARARGS,"set pppoe user and password"},
+    {"pppoe_data_send",(PyCFunction)router_pppoe_data_send,METH_VARARGS,"send pppoe session data"},
+    {"pppoe_reset",(PyCFunction)router_pppoe_reset,METH_VARARGS,"reset pppoe session"},
     //
     {NULL,NULL,0,NULL}
 };
