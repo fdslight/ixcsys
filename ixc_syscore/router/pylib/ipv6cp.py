@@ -2,7 +2,7 @@
 import socket
 
 
-class IPCP(object):
+class IPv6CP(object):
     __pppoe = None
 
     def __init__(self, pppoe):
