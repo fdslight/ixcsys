@@ -422,26 +422,6 @@ static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
     ixc_mbuf_put(m);
 }
 
-static void ixc_pppoe_handle_pap_response(struct ixc_mbuf *m)
-{
-    unsigned char *data=m->data+m->offset;
-    unsigned char code=data[0];
-
-    switch(code){
-        case 2:
-            pppoe.auth_ok=1;
-            break;
-        case 3:
-            STDERR("PAP Auth fail\r\n");
-            break;
-        default:
-            STDERR("PPPoE server response pap code wrong\r\n");
-            break;
-    }
-
-    ixc_mbuf_put(m);
-}
-
 static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
 {
     struct ixc_pppoe_header *pppoe_header=(struct ixc_pppoe_header *)(m->data+m->offset);
@@ -465,18 +445,24 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
     
     // 此处增加偏移量
     m->offset+=8;
-    
+
     switch(ppp_proto){
+        // LCP
         case 0xc021:
-            ixc_lcp_handle(m);
-            break;
-        // PAP协议
+        // PAP
         case 0xc023:
-            ixc_pppoe_handle_pap_response(m);
-            break;
         // CHAP协议
         case 0xc223:
-            ixc_mbuf_put(m);
+        // IPCP
+        case 0x8021:
+        // IPv6CP
+        case 0x8057:
+            break;
+        // IPv6协议
+        case 0x0057:
+            break;
+        // IP协议
+        case 0x0021:
             break;
         default:
             DBG("unkown PPPoE protocol 0x%x\r\n",ppp_proto);
@@ -573,10 +559,34 @@ void ixc_pppoe_send(struct ixc_mbuf *m)
 void ixc_pppoe_send_session_packet(unsigned short ppp_protocol,unsigned short length,void *data)
 {
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
-    struct ixc_mbuf *m=ixc_mbuf_get();
+    struct ixc_mbuf *m=NULL;
     struct ixc_pppoe_header *pppoe_header=NULL;
     unsigned short *protocol;
 
+    int is_permit=0;
+
+    // 设置允许的协议范围
+    switch(ppp_protocol){
+        //LCP
+        case 0xc021:
+        // PAP
+        case 0xc023:
+        // CHAP
+        case 0xc223:
+        // IPCP
+        case 0x8021:
+        // IPv6CP
+        case 0x8057:
+            is_permit=1;
+            break;
+        default:
+            break;
+    }
+
+    // 不允许的协议直接丢弃数据包
+    if(!is_permit) return;
+
+    m=ixc_mbuf_get();
     if(NULL==m){
         STDERR("cannot get mbuf\r\n");
         return;

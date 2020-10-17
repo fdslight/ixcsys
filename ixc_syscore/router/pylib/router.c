@@ -226,6 +226,29 @@ router_init(routerObject *self,PyObject *args,PyObject *kwds)
     return 0;
 }
 
+/// 重置PPPoE
+static PyObject *
+router_pppoe_reset(PyObject *self,PyObject *args)
+{
+    ixc_pppoe_reset();
+    Py_RETURN_NONE;
+}
+
+/// 发送PPPoE数据
+static PyObject *
+router_pppoe_data_send(PyObject *self,PyObject *args)
+{
+    unsigned short protocol;
+    unsigned char *data;
+
+    Py_ssize_t size;
+
+    if(!PyArg_ParseTuple(args,"Hy#",&protocol,&data,&size)) return NULL;
+    ixc_pppoe_send_session_packet(protocol,size,data);
+
+    Py_RETURN_NONE;
+}
+
 /// 设置MD5计算函数
 static PyObject *
 router_set_md5_fn(PyObject *self,PyObject *args)
