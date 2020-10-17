@@ -301,6 +301,8 @@ class service(dispatcher.dispatcher):
         byte_ip = socket.inet_pton(fa, ipaddr)
         self.router.tundev_set_ip(byte_ip, is_ipv6, is_local)
         # 设置本机器的默认路由指向
+        # 首先删除默认路由
+        os.system("ip route del default")
         os.system("ip route add default dev %s" % self.__TUN_NAME)
         if is_ipv6:
             x = "-6"
