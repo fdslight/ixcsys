@@ -91,6 +91,9 @@ class service(dispatcher.dispatcher):
     __pfwd_fd = None
 
     __pppoe = None
+    __pppoe_enable = None
+    __pppoe_user = None
+    __pppoe_passwd = None
 
     def _tell(self, content: str):
         if content == "start_lcp":
@@ -156,6 +159,14 @@ class service(dispatcher.dispatcher):
     @property
     def debug(self):
         return self.__debug
+
+    @property
+    def pppoe_user(self):
+        return self.__pppoe_user
+
+    @property
+    def pppoe_passwd(self):
+        return self.__pppoe_passwd
 
     def release(self):
         if os.path.isfile(self.__info_file): os.remove(self.__info_file)
@@ -268,12 +279,13 @@ class service(dispatcher.dispatcher):
 
         wan_pppoe = self.__wan_configs["pppoe"]
         pppoe_enable = bool(int(wan_pppoe["enable"]))
-        pppoe_user = wan_pppoe["user"]
-        pppoe_pass = wan_pppoe["passwd"]
+
+        self.__pppoe_enable = pppoe_enable
 
         if pppoe_enable:
+            self.__pppoe_user = wan_pppoe["user"]
+            self.__pppoe_passwd = wan_pppoe["passwd"]
             self.router.pppoe_enable(True)
-            self.router.pppoe_set_user(pppoe_user, pppoe_pass)
             self.router.pppoe_start()
 
     def start_scgi(self):
@@ -379,6 +391,7 @@ class service(dispatcher.dispatcher):
         self.start_scgi()
 
     def myloop(self):
+        if self.__pppoe_enable: self.__pppoe.loop()
         if not self.router.iowait():
             self.set_default_io_wait_time(0)
         else:

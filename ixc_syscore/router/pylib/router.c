@@ -88,7 +88,7 @@ int ixc_router_tell(const char *content)
         STDERR("no set python tell function\r\n");
         return -1;
     }
-
+    
     arglist=Py_BuildValue("(s)",content);
     result=PyObject_CallObject(router_tell_cb,arglist);
 
@@ -238,13 +238,17 @@ router_init(routerObject *self,PyObject *args,PyObject *kwds)
 static PyObject *
 router_set_pppoe_session_packet_recv_fn(PyObject *self,PyObject *args)
 {
-    if(!PyArg_ParseTuple(args,"O",&router_pppoe_session_packet_recv_cb)) return NULL;
-    if(PyCallable_Check(router_pppoe_session_packet_recv_cb)){
+    PyObject *fn;
+
+    if(!PyArg_ParseTuple(args,"O",&fn)) return NULL;
+    if(!PyCallable_Check(fn)){
         PyErr_SetString(PyExc_TypeError,"the argument must be callable");
         return NULL;
     }
 
     Py_XDECREF(router_pppoe_session_packet_recv_cb);
+
+    router_pppoe_session_packet_recv_cb=fn;
     Py_INCREF(router_pppoe_session_packet_recv_cb);
 
     Py_RETURN_NONE;
@@ -254,13 +258,17 @@ router_set_pppoe_session_packet_recv_fn(PyObject *self,PyObject *args)
 static PyObject *
 router_set_tell_fn(PyObject *self,PyObject *args)
 {
-    if(!PyArg_ParseTuple(args,"O",&router_tell_cb)) return NULL;
-    if(PyCallable_Check(router_tell_cb)){
+    PyObject *fn;
+
+    if(!PyArg_ParseTuple(args,"O",&fn)) return NULL;
+    if(!PyCallable_Check(fn)){
         PyErr_SetString(PyExc_TypeError,"the argument must be callable");
         return NULL;
     }
 
     Py_XDECREF(router_tell_cb);
+
+    router_tell_cb=fn;
     Py_INCREF(router_tell_cb);
 
     Py_RETURN_NONE;
@@ -727,21 +735,6 @@ router_pppoe_set_ok(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-router_pppoe_set_user(PyObject *self,PyObject *args)
-{
-    const char *user,*passwd;
-    int rs;
-
-    if(!PyArg_ParseTuple(args,"ss",&user,&passwd)) return NULL;
-
-    rs=ixc_pppoe_set_user(user,passwd);
-    if(rs){
-        Py_RETURN_FALSE;
-    }
-    Py_RETURN_TRUE;
-}
-
 /// 发送PPPoE数据
 static PyObject *
 router_pppoe_data_send(PyObject *self,PyObject *args)
@@ -804,7 +797,6 @@ static PyMethodDef routerMethods[]={
     {"pppoe_start",(PyCFunction)router_pppoe_start,METH_NOARGS,"start pppoe"},
     {"pppoe_stop",(PyCFunction)router_pppoe_stop,METH_NOARGS,"stop pppoe"},
     {"pppoe_set_ok",(PyCFunction)router_pppoe_set_ok,METH_VARARGS,"set pppoe ok or not ok"},
-    {"pppoe_set_user",(PyCFunction)router_pppoe_set_user,METH_VARARGS,"set pppoe user and password"},
     {"pppoe_data_send",(PyCFunction)router_pppoe_data_send,METH_VARARGS,"send pppoe session data"},
     {"pppoe_reset",(PyCFunction)router_pppoe_reset,METH_VARARGS,"reset pppoe session"},
     //

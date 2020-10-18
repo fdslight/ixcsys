@@ -21,9 +21,11 @@ class IPCP(ncp.NCP):
             2, 3,
         )
         results = []
-        if len(cfg_data) < 2: return results
+        tot_size = len(cfg_data)
+        if tot_size < 2: return results
         idx = 0
         while 1:
+            if tot_size == idx: break
             try:
                 _type = cfg_data[idx]
                 length = cfg_data[idx + 1]
@@ -31,9 +33,15 @@ class IPCP(ncp.NCP):
                 results = []
                 if self.debug: print("Wrong IPCP configure data")
                 break
+            if length < 2:
+                results = []
+                if self.debug: print("Wrong length field value for IPCP")
+                break
             idx += 2
+            length = length - 2
             e = idx + length
             opt_data = cfg_data[idx:e]
+            idx = e
             if len(opt_data) != length:
                 results = []
                 if self.debug: print("Wrong IPCP option length field value")

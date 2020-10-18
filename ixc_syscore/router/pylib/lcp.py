@@ -79,18 +79,18 @@ class LCP(object):
         self.__up_time = time.time()
 
         length = len(byte_data) + 4
-        header = struct.pack("!bbH", code, _id, length)
+        header = struct.pack("!BBH", code, _id, length)
 
         sent_data = b"".join([header, byte_data])
         self.__pppoe.send_data_to_ns(0xc021, sent_data)
 
-    def send_cfg_req(self,options: list):
+    def send_cfg_req(self, options: list):
         magic_num = random.randint(1, 0xfffffff0)
         _id = random.randint(1, 0xf0)
         seq = []
         for _type, value in options:
             seq.append(self.build_opt_value(_type, value))
-        seq.append(struct.pack("!I", magic_num))
+        seq.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
 
         self.__my_magic_num = magic_num
         self.__my_id = _id
@@ -102,7 +102,7 @@ class LCP(object):
         """构建LCP选项值
         """
         size = len(opt_data) + 2
-        a = struct.pack("!bb", _type, size)
+        a = struct.pack("!BB", _type, size)
 
         return b"".join([a, opt_data])
 
@@ -112,7 +112,7 @@ class LCP(object):
         size = len(byte_data)
         if size < 2: return False
 
-        proto = struct.unpack("!H", byte_data[0:2])
+        proto, = struct.unpack("!H", byte_data[0:2])
         if proto not in (0xc023, 0xc223,): return False
         if proto == 0xc223 and size != 3: return False
         if proto == 0xc223 and byte_data[2] != 5: return False
@@ -129,9 +129,12 @@ class LCP(object):
         """解析配置选项
         """
         results = []
-        if len(cfg_data) < 2: return results
+        tot_size = len(cfg_data)
+        if tot_size < 2: return results
         idx = 0
+
         while 1:
+            if idx == tot_size: break
             try:
                 _type = cfg_data[idx]
                 length = cfg_data[idx + 1]
@@ -139,9 +142,18 @@ class LCP(object):
                 results = []
                 if self.debug: print("Wrong LCP configure data")
                 break
+
+            if length < 2:
+                results = []
+                if self.debug: print("Wrong length field value for LCP")
+                break
+
+            length = length - 2
             idx += 2
             e = idx + length
             opt_data = cfg_data[idx:e]
+            idx = e
+
             if len(opt_data) != length:
                 results = []
                 if self.debug: print("Wrong LCP option length field value")
@@ -171,7 +183,6 @@ class LCP(object):
         return None
 
     def handle_cfg_req(self, _id: int, byte_data: bytes):
-        self.__is_first = False
         options = self.parse_cfg_option(byte_data)
         if not options: return
         magic_num = 0
@@ -206,13 +217,13 @@ class LCP(object):
             ''''''
         if is_error: return
         if acks:
-            if magic_num > 0: acks.append(struct.pack("!I", magic_num))
+            if magic_num > 0: acks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
             self.send(CFG_ACK, _id, b"".join(acks))
         if naks:
-            if magic_num > 0: acks.append(struct.pack("!I", magic_num))
+            if magic_num > 0: naks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
             self.send(CFG_NAK, _id, b"".join(naks))
         if rejects:
-            if magic_num > 0: acks.append(struct.pack("!I", magic_num))
+            if magic_num > 0: acks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
             self.send(CFG_REJECT, _id, b"".join(rejects))
 
     def handle_cfg_ack(self, _id: int, byte_data: bytes):
@@ -358,8 +369,7 @@ class LCP(object):
 
     def loop(self):
         now = time.time()
-        if now - self.__up_time < 3: return
-
+        if now - self.__up_time < 1: return
         if self.__is_first:
             self.send_neg_request_first()
             return
@@ -376,3 +386,4 @@ class LCP(object):
                 self.send_auth_neg_request()
                 break
             ''''''
+        return
