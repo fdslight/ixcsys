@@ -7,6 +7,7 @@ import pywind.lib.tpl.Template as template
 class controller(app_handler.handler):
     __LANG = None
     __user = None
+    __auto_auth = None
 
     def load_lang(self, name: str):
         lang_dir = "%s/web/languages" % os.getenv("IXC_MYAPP_DIR")
@@ -21,11 +22,25 @@ class controller(app_handler.handler):
 
         return json.loads(s)
 
+    def set_auto_auth(self, b: bool):
+        """是否开启自动认证,需要在myinit函数中设置才能生效
+        """
+        self.__auto_auth = b
+
     def initialize(self):
         self.__user = {}
         self.__LANG = self.load_lang(self.match_lang())
+        self.__auto_auth = True
 
-        return self.myinit()
+        rs = self.myinit()
+        if not rs: return False
+
+        # 开启自动认证并且未登录那么重定向到首页
+        if self.__auto_auth and not self.is_signed():
+            self.redirect("/")
+            return False
+
+        return True
 
     def myinit(self):
         """重写这个方法

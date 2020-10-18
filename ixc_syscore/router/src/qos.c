@@ -81,7 +81,9 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 
 static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 {
-    ixc_mbuf_put(m);
+    struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+
+    ixc_qos_put(m,header->dst_addr[15],header->next_header,40);
 }
 
 int ixc_qos_init(void)

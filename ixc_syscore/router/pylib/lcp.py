@@ -84,7 +84,7 @@ class LCP(object):
         sent_data = b"".join([header, byte_data])
         self.__pppoe.send_data_to_ns(0xc021, sent_data)
 
-    def send_cfg(self, code: int, options: list):
+    def send_cfg_req(self,options: list):
         magic_num = random.randint(1, 0xfffffff0)
         _id = random.randint(1, 0xf0)
         seq = []
@@ -96,7 +96,7 @@ class LCP(object):
         self.__my_id = _id
         byte_data = b"".join(seq)
 
-        self.send(code, _id, byte_data)
+        self.send(CFG_REQ, _id, byte_data)
 
     def build_opt_value(self, _type: int, opt_data: bytes):
         """构建LCP选项值
@@ -281,7 +281,7 @@ class LCP(object):
                     return
                 seq.append((_type, value))
             ''''''
-        self.send_cfg(CFG_REQ, seq)
+        self.send_cfg_req(seq)
 
     def handle_cfg_reject(self, _id: int, byte_data: bytes):
         self.__pppoe.reset()
@@ -319,7 +319,7 @@ class LCP(object):
         """发送MRU协商请求
         """
         o = self.__my_neg_status[OPT_MAX_RECV_UNIT]
-        self.send_cfg(CFG_REQ, [(OPT_MAX_RECV_UNIT, struct.pack("!H", o['value']))])
+        self.send_cfg_req([(OPT_MAX_RECV_UNIT, struct.pack("!H", o['value']))])
 
     def send_auth_neg_request(self):
         """发送验证协商请求
@@ -330,7 +330,7 @@ class LCP(object):
             opt_data = struct.pack("!Hb", 0xc223, 5)
         else:
             opt_data = struct.pack("!H", 0xc023)
-        self.send_cfg(CFG_REQ, [(OPT_AUTH_PROTO, opt_data)])
+        self.send_cfg_req([(OPT_AUTH_PROTO, opt_data)])
 
     def send_neg_request_first(self):
         """再服务器没响应的时候代表首次请求
@@ -351,7 +351,7 @@ class LCP(object):
         options.append(
             (OPT_AUTH_PROTO, opt_data)
         )
-        self.send_cfg(CFG_REQ, options)
+        self.send_cfg_req(options)
 
     def start_lcp(self):
         self.send_neg_request_first()

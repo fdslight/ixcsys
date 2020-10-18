@@ -535,13 +535,50 @@ int ixc_pppoe_is_enabled(void)
 
 void ixc_pppoe_send(struct ixc_mbuf *m)
 {
+    struct ixc_pppoe_header *header;
+    unsigned short *proto_ptr;
+
+    // 没有开启PPPoE那么丢弃数据包
+    if(!pppoe.enable){
+        ixc_mbuf_put(m);
+        return;
+    }
     // PPPoE没握手完成那么丢弃数据包
     if(!pppoe.pppoe_ok){
         ixc_mbuf_put(m);
         return;
     }
 
-    ixc_mbuf_put(m);
+    // 此处检查链路层协议是否合法
+    // 限制PPPoE协议只支持IP协议和IPv6协议
+    if(m->link_proto!=0x0800 && m->link_proto!=0x86dd){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 对IP和IPv6数据包进行PPPoE封装
+    header=(struct ixc_pppoe_header *)(m->data+m->begin-8);
+    header->ver_and_type=0x11;
+    header->code=0x00;
+    header->session_id=htons(pppoe.session_id);
+    
+    // 这里需要加上PPP上的协议的两个字节
+    header->length=htons(m->end-m->begin+2);
+
+    proto_ptr=(unsigned short *)(m->data+m->offset-6);
+
+    if(m->link_proto==0x0800) *proto_ptr=htons(0x0021);
+    else *proto_ptr=htons(0x0057);
+
+    m->begin=m->begin-8;
+    m->offset=m->begin;
+    
+    m->link_proto=0x8864;
+
+    // 修改目标MAC地址为PPPoE服务器的地址
+    memcpy(m->dst_hwaddr,pppoe.selected_server_hwaddr,6);
+
+    ixc_ether_send(m,1);
 }
 
 /// 发送PPPoE会话数据包
