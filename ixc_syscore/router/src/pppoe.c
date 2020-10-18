@@ -197,15 +197,6 @@ void ixc_pppoe_uninit(void)
     pppoe_is_initialized=0;
 }
 
-///  设置PPPOE的用户名和密码
-int ixc_pppoe_set_user(const char *username,const char *passwd)
-{
-    strcpy(pppoe.username,username);
-    strcpy(pppoe.passwd,passwd);
-
-    return 0;
-}
-
 /// 开始进行PPPoE的会话
 void ixc_pppoe_start(void)
 {
@@ -302,6 +293,8 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     int have_ac_name=0;
     int error=0;
     char err_msg[2048];
+    
+    err_msg[0]='\0';
 
     if(rs<0){
         ixc_mbuf_put(m);
@@ -345,7 +338,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     // 必须包含ac_name
     if(!have_ac_name && header->code==IXC_PPPOE_CODE_PADO) return;
 
-    if(error){
+    if(error || header->code==IXC_PPPOE_CODE_PADT){
         ixc_pppoe_reset();
         STDERR("errcode:0x%x %s\r\n",error,err_msg);
         return;
@@ -445,7 +438,7 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
         case 0x8021:
         // IPv6CP
         case 0x8057:
-            ixc_router_pppoe_session_send(ppp_proto,length,m->data+m->offset);
+            ixc_router_pppoe_session_send(ppp_proto,length-2,m->data+m->offset);
             break;
         // IPv6协议
         case 0x0057:
@@ -455,9 +448,9 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
             break;
         default:
             DBG("unkown PPPoE protocol 0x%x\r\n",ppp_proto);
-            ixc_mbuf_put(m);
             break;
     }
+    ixc_mbuf_put(m);
 }
 
 /// 把数据包发送PPPOE进行处理
@@ -642,6 +635,8 @@ void ixc_pppoe_send_session_packet(unsigned short ppp_protocol,unsigned short le
 
     memcpy(m->data+m->offset+8,data,length);
 
+    //DBG("session send\r\n");
+
     ixc_ether_send(m,1);
 }
 
@@ -660,43 +655,4 @@ inline
 struct ixc_pppoe *ixc_pppoe(void)
 {
     return &pppoe;
-}
-
-/// 发送PAP用户
-void ixc_pppoe_send_pap_user()
-{
-    time_t now=time(NULL);
-
-    char buf[1024];
-    struct ixc_pppoe *pppoe=ixc_pppoe();
-    int size,size_id,size_pass;
-    unsigned short length;
-
-    if(now-pppoe->up_time<3) return;
-    pppoe->up_time=now;
-
-    buf[0]=1;
-    buf[1]=1;
-    
-    size=4;
-
-    size_id=strlen(pppoe->username);
-    size_pass=strlen(pppoe->passwd);
-    
-    buf[size]=size_id;
-    size+=1;
-    strcpy(&buf[size],pppoe->username);
-    size+=size_id;
-    buf[size]=size_pass;
-    size+=1;
-    strcpy(&buf[size],pppoe->passwd);
-    size+=size_pass;
-
-    length=size;
-    length=htons(length);
-    memcpy(&buf[2],&length,2);
-
-    //DBG("PAP size:%d\r\n",size);
-
-    ixc_pppoe_send_session_packet(0xc023,size,buf);
 }

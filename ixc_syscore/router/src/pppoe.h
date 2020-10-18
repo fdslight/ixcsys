@@ -68,9 +68,6 @@ struct ixc_pppoe{
 int ixc_pppoe_init(void);
 void ixc_pppoe_uninit(void);
 
-///  设置PPPOE的用户名和密码
-int ixc_pppoe_set_user(const char *username,const char *passwd);
-
 /// 开始进行PPPoE的会话
 void ixc_pppoe_start(void);
 /// 停止PPPoE的会话
@@ -96,6 +93,5 @@ void ixc_pppoe_send_session_packet(unsigned short ppp_protocol,unsigned short le
 void ixc_pppoe_reset(void);
 
 struct ixc_pppoe *ixc_pppoe(void);
-void ixc_pppoe_send_pap_user(void);
 
 #endif
