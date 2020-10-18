@@ -322,6 +322,11 @@ class service(dispatcher.dispatcher):
             x = "-4"
         os.system("ip %s addr add %s/%s dev %s" % (x, ipaddr, prefix, self.__LAN_BR_NAME))
 
+    def get_manage_ipaddr(self, is_ipv6=False, is_local=False):
+        """获取管理地址
+        """
+        pass
+
     def get_fwd_instance(self):
         """获取重定向类实例
         :return:
