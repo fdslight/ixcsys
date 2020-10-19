@@ -339,6 +339,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     if(!have_ac_name && header->code==IXC_PPPOE_CODE_PADO) return;
 
     if(error || header->code==IXC_PPPOE_CODE_PADT){
+        ixc_router_tell("lcp_stop");
         ixc_pppoe_reset();
         STDERR("errcode:0x%x %s\r\n",error,err_msg);
         return;
@@ -354,7 +355,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     if(header->code==IXC_PPPOE_CODE_PADS){
         pppoe.discovery_ok=1;
         pppoe.session_id=ntohs(header->session_id);
-        ixc_router_tell("start_lcp");
+        ixc_router_tell("lcp_start");
         return;
     }
 }

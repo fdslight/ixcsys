@@ -96,8 +96,10 @@ class service(dispatcher.dispatcher):
     __pppoe_passwd = None
 
     def _tell(self, content: str):
-        if content == "start_lcp":
+        if content == "lcp_start":
             if self.__pppoe: self.__pppoe.start_lcp()
+        if content == "lcp_stop":
+            if self.__pppoe: self.__pppoe.stop_lcp()
 
     def _write_ev_tell(self, fd: int, flags: int):
         if flags:
