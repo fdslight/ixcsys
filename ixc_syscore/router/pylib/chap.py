@@ -22,8 +22,6 @@ class CHAP(object):
         value_size = byte_data[0]
         byte_data = byte_data[1:]
 
-        print(value_size)
-
         if len(byte_data) < value_size:
             if self.debug: print("PPPoE server bug,wrong value size for chap")
             return
@@ -35,7 +33,7 @@ class CHAP(object):
         byte_user = self.__pppoe.runtime.pppoe_user.encode()
         byte_pass = self.__pppoe.runtime.pppoe_passwd.encode()
 
-        md5 = hashlib.md5(value + byte_user + byte_pass).digest()
+        md5 = hashlib.md5(bytes([_id]) + byte_pass + value).digest()
         length = 4 + 1 + 16 + len(byte_user)
 
         header = struct.pack("!BBH", 2, _id, length)

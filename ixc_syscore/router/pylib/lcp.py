@@ -32,6 +32,7 @@ class LCP(object):
     __pppoe = None
     __lcp_code_map_fn_set = None
     __my_magic_num = None
+    __server_magic_num = None
     __my_id = 0
 
     __my_neg_status = None
@@ -42,21 +43,6 @@ class LCP(object):
 
     def __init__(self, o):
         self.__pppoe = o
-        self.__my_magic_num = 0
-        self.__my_id = 0
-        self.__up_time = time.time()
-        self.__is_first = True
-
-        self.__my_neg_status = {
-            OPT_MAX_RECV_UNIT: {"value": 1492, "neg_ok": False},
-            OPT_AUTH_PROTO: {"value": "chap", "neg_ok": False}
-        }
-
-        self.__server_neg_status = {
-            OPT_MAX_RECV_UNIT: {"value": 1492, "neg_ok": False},
-            OPT_AUTH_PROTO: {"value": "chap", "neg_ok": False}
-        }
-
         self.__lcp_code_map_fn_set = {
             CFG_REQ: self.handle_cfg_req,
             CFG_ACK: self.handle_cfg_ack,
@@ -70,6 +56,7 @@ class LCP(object):
             ECHO_REPLY: self.handle_echo_reply,
             DISCARD_REQ: self.handle_discard_req,
         }
+        self.reset()
 
     @property
     def debug(self):
@@ -85,14 +72,12 @@ class LCP(object):
         self.__pppoe.send_data_to_ns(0xc021, sent_data)
 
     def send_cfg_req(self, options: list):
-        magic_num = random.randint(1, 0xfffffff0)
         _id = random.randint(1, 0xf0)
         seq = []
         for _type, value in options:
             seq.append(self.build_opt_value(_type, value))
-        seq.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
+        seq.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", self.__my_magic_num)))
 
-        self.__my_magic_num = magic_num
         self.__my_id = _id
         byte_data = b"".join(seq)
 
@@ -216,14 +201,17 @@ class LCP(object):
                 acks.append(self.build_opt_value(_type, value))
             ''''''
         if is_error: return
+        if magic_num <= 0: return
+        self.__server_magic_num = magic_num
+
         if acks:
-            if magic_num > 0: acks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
+            acks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
             self.send(CFG_ACK, _id, b"".join(acks))
         if naks:
-            if magic_num > 0: naks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
+            naks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
             self.send(CFG_NAK, _id, b"".join(naks))
         if rejects:
-            if magic_num > 0: acks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
+            acks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
             self.send(CFG_REJECT, _id, b"".join(rejects))
 
     def handle_cfg_ack(self, _id: int, byte_data: bytes):
@@ -251,25 +239,18 @@ class LCP(object):
                     self.__my_neg_status[OPT_MAX_RECV_UNIT]['neg_ok'] = True
                     continue
             if _type == OPT_AUTH_PROTO:
-                if not self.check_auth_proto_fmt(value):
-                    logging.print_error("pppoe server bug,wrong auth method neg format for ack")
-                    return
-                auth_type, flags = self.get_auth_method(value)
-                if auth_type == 0xc023:
-                    self.__my_neg_status[OPT_AUTH_PROTO]["value"] = "pap"
-                else:
-                    self.__my_neg_status[OPT_AUTH_PROTO]["value"] = "chap"
-                self.__my_neg_status[OPT_AUTH_PROTO]['neg_ok'] = True
+                logging.print_error("pppoe server bug,the pppoe client LCP not send AUTH_PROTO option")
+                return
+            ''''''
+        return
 
     def handle_cfg_nak(self, _id: int, byte_data: bytes):
         self.__is_first = False
-
         options = self.parse_cfg_option(byte_data)
         if not options: return
         if _id != self.__my_id: return
-        magic_num = self.get_magic_num_from_opts(options)
-        if not magic_num: return
-        if magic_num != self.__my_magic_num: return
+        # 如果magic num没有协商成功,那么丢弃数据包
+        if self.__server_magic_num <= 0: return
 
         seq = []
 
@@ -287,10 +268,8 @@ class LCP(object):
                     seq.append((_type, struct.pack("!H", value),))
                     continue
             if _type == OPT_AUTH_PROTO:
-                if not self.check_auth_proto_fmt(value):
-                    logging.print_error("pppoe server bug,wrong auth method neg format")
-                    return
-                seq.append((_type, value))
+                logging.print_error("pppoe server bug,the pppoe client LCP not send AUTH_PROTO option")
+                return
             ''''''
         self.send_cfg_req(seq)
 
@@ -300,6 +279,8 @@ class LCP(object):
 
     def handle_term_req(self, _id: int, byte_data: bytes):
         self.send(TERM_ACK, _id, byte_data)
+        self.__pppoe.reset()
+        self.reset()
 
     def handle_term_ack(self, _id: int, byte_data: bytes):
         pass
@@ -332,17 +313,6 @@ class LCP(object):
         o = self.__my_neg_status[OPT_MAX_RECV_UNIT]
         self.send_cfg_req([(OPT_MAX_RECV_UNIT, struct.pack("!H", o['value']))])
 
-    def send_auth_neg_request(self):
-        """发送验证协商请求
-        """
-        o = self.__my_neg_status[OPT_AUTH_PROTO]
-        value = o['value']
-        if value == "chap":
-            opt_data = struct.pack("!Hb", 0xc223, 5)
-        else:
-            opt_data = struct.pack("!H", 0xc023)
-        self.send_cfg_req([(OPT_AUTH_PROTO, opt_data)])
-
     def send_neg_request_first(self):
         """再服务器没响应的时候代表首次请求
         """
@@ -351,21 +321,13 @@ class LCP(object):
         options.append(
             (OPT_MAX_RECV_UNIT, struct.pack("!H", o['value']))
         )
-
-        o = self.__my_neg_status[OPT_AUTH_PROTO]
-        value = o['value']
-        if value == "chap":
-            opt_data = struct.pack("!Hb", 0xc223, 5)
-        else:
-            opt_data = struct.pack("!H", 0xc023)
-
-        options.append(
-            (OPT_AUTH_PROTO, opt_data)
-        )
         self.send_cfg_req(options)
 
     def start_lcp(self):
         self.send_neg_request_first()
+
+    def lcp_ok(self):
+        pass
 
     def loop(self):
         now = time.time()
@@ -382,8 +344,22 @@ class LCP(object):
             if opt_type == OPT_MAX_RECV_UNIT:
                 self.send_mru_neg_request()
                 break
-            if opt_type == OPT_AUTH_PROTO:
-                self.send_auth_neg_request()
-                break
             ''''''
         return
+
+    def reset(self):
+        magic_num = random.randint(1, 0xfffffff0)
+        self.__my_magic_num = magic_num
+        self.__server_magic_num = 0
+        self.__my_id = 0
+        self.__up_time = time.time()
+        self.__is_first = True
+
+        self.__my_neg_status = {
+            OPT_MAX_RECV_UNIT: {"value": 1492, "neg_ok": False},
+        }
+
+        self.__server_neg_status = {
+            OPT_MAX_RECV_UNIT: {"value": 1492, "neg_ok": False},
+            OPT_AUTH_PROTO: {"value": "chap", "neg_ok": False}
+        }

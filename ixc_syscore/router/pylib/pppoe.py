@@ -5,6 +5,7 @@ import ixc_syscore.router.pylib.lcp as lcp
 import ixc_syscore.router.pylib.ipcp as ipcp
 import ixc_syscore.router.pylib.ipv6cp as ipv6cp
 import ixc_syscore.router.pylib.chap as chap
+import ixc_syscore.router.pylib.pap as pap
 
 
 class pppoe(object):
@@ -12,6 +13,7 @@ class pppoe(object):
     __start = None
     __lcp = None
     __chap = None
+    __pap = None
 
     __ipcp = None
     __ipv6cp = None
@@ -21,6 +23,7 @@ class pppoe(object):
         self.__start = False
         self.__lcp = lcp.LCP(self)
         self.__chap = chap.CHAP(self)
+        self.__pap = pap.PAP(self)
         self.__ipcp = ipcp.IPCP(self)
         self.__ipv6cp = ipv6cp.IPv6CP(self)
         self.__runtime.router.set_pppoe_session_packet_recv_fn(self.handle_packet_from_ns)
@@ -36,6 +39,10 @@ class pppoe(object):
     def start_lcp(self):
         self.__start = True
         self.__lcp.start_lcp()
+
+    def stop_lcp(self):
+        self.__start = False
+        self.__lcp.reset()
 
     def send_data_to_ns(self, protocol: int, byte_data: bytes):
         """发送数据到协议栈
@@ -74,7 +81,15 @@ class pppoe(object):
         self.__chap.handle_packet(code, _id, data)
 
     def handle_pap_from_ns(self, data: bytes):
-        pass
+        if len(data) < 4: return
+        size = len(data)
+        code, _id, length = struct.unpack("!BBH", data[0:4])
+
+        if length != size:
+            if self.debug: print("Wrong PAP length field value")
+            return
+        data = data[4:]
+        self.__pap.handle_packet(code, _id, data)
 
     def handle_ipcp_from_ns(self, data: bytes):
         if len(data) < 4: return
@@ -102,6 +117,7 @@ class pppoe(object):
         self.__lcp.handle_packet(code, _id, data)
 
     def reset(self):
+        # 注意这里不能条用self.__lcp.reset(),避免可能循环调用
         self.__runtime.router.pppoe_reset()
 
     def loop(self):
