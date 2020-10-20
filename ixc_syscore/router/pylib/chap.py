@@ -43,7 +43,7 @@ class CHAP(object):
         self.__pppoe.send_data_to_ns(0xc223, b"".join(seq))
 
     def handle_success(self, _id: int, byte_data: bytes):
-        pass
+        self.__pppoe.ncp_start()
 
     def handle_failure(self, _id: int, byte_data: bytes):
         if byte_data:

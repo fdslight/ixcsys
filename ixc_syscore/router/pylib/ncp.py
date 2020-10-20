@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import struct, time
+import struct, time, socket
 import ixc_syscore.router.pylib.lcp as lcp
 import ixc_syslib.pylib.logging as logging
 
@@ -26,6 +26,10 @@ class NCP(object):
             lcp.CODE_REJECT: self.handle_code_reject
         }
 
+    @property
+    def debug(self):
+        return self.__pppoe.debug
+
     def my_init(self):
         """重写这个方法
         """
@@ -35,15 +39,26 @@ class NCP(object):
         if ppp_proto not in (PPP_IPCP, PPP_IPv6CP,):
             raise ValueError("cannot permit ppp protocol value %s" % hex(ppp_proto))
         length = len(byte_data) + 4
-        header = struct.pack("!bbH", code, _id, length)
+        header = struct.pack("!BBH", code, _id, length)
         data = b"".join([header, byte_data])
         self.__up_time = time.time()
         self.__pppoe.send_data_to_ns(ppp_proto, data)
 
+    def parse(self, byte_data):
+        size = len(byte_data)
+
+        if len(byte_data) < 2: return None
+
+        _type = byte_data[0]
+        length = byte_data[1]
+
+        if length != size: return None
+        return _type, byte_data[2:]
+
     def handle_cfg_request(self, _id: int, byte_data: bytes):
         """重写这个方法
         """
-        logging.print_error("server cannot send NCP request packet")
+        pass
 
     def handle_cfg_ack(self, _id: int, byte_data: bytes):
         """重写这个方法
@@ -83,10 +98,6 @@ class NCP(object):
         self.__fn_set[code](_id, byte_data)
 
     @property
-    def debug(self):
-        return self.__pppoe.debug
-
-    @property
     def pppoe(self):
         return self.__pppoe
 
@@ -101,3 +112,8 @@ class NCP(object):
         header = struct.pack("!bb", _type, length)
 
         return b"".join([header, value])
+
+    def get_ipaddr(self):
+        """获取IP地址,重写这个方法
+        """
+        return None

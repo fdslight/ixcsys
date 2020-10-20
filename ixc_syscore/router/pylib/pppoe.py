@@ -123,3 +123,6 @@ class pppoe(object):
     def loop(self):
         if not self.__start: return
         self.__lcp.loop()
+
+    def ncp_start(self):
+        self.__ipcp.start()
