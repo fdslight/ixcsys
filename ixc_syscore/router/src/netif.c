@@ -10,8 +10,9 @@
 #include "ether.h"
 #include "addr_map.h"
 #include "route.h"
+#include "debug.h"
+#include "ip6.h"
 
-#include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netif/tuntap.h"
 #include "../../../pywind/clib/netif/hwinfo.h"
 #include "../../../pywind/clib/netutils.h"
@@ -178,8 +179,14 @@ int ixc_netif_set_hwaddr(int if_idx,unsigned char *hwaddr)
         return -1;
     }
 
-    DBG_FLAGS;
+    //DBG_FLAGS;
     memcpy(netif->hwaddr,hwaddr,6);
+
+    // 此处生成IPv6 local link相关信息
+    ixc_ip6_local_link_get(hwaddr,netif->ip6_local_link_addr);
+    bzero(netif->ip6_local_link_subnet,16);
+    memcpy(netif->ip6_local_link_subnet,netif->ip6_local_link_addr,8);
+    msk_calc(64,1,netif->ip6_local_link_mask);
 
     return 0;
 }
@@ -379,4 +386,19 @@ struct ixc_netif *ixc_netif_get_with_subnet_ip(unsigned char *ip,int is_ipv6)
     }
 
     return rs;
+}
+
+int ixc_netif_unset_ip(int if_idx,int is_ipv6)
+{
+    struct ixc_netif *netif=ixc_netif_get(if_idx);
+
+    if(NULL==netif){
+        STDERR("not found netif index %d\r\n",if_idx);
+        return -1;
+    }
+
+    if(is_ipv6) netif->isset_ip6=0;
+    else netif->isset_ip=0;
+
+    return 0;
 }

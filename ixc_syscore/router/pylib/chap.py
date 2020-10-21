@@ -51,6 +51,7 @@ class CHAP(object):
         else:
             s = ""
         logging.print_error("PPPoE chap auth failure,server msg:%s" % s)
+        self.__pppoe.reset()
 
     def handle_packet(self, code: int, _id: int, bye_data: bytes):
         if code not in (1, 3, 4,): return
@@ -61,3 +62,9 @@ class CHAP(object):
             self.handle_failure(_id, bye_data)
             return
         self.handle_success(_id, bye_data)
+
+    def loop(self):
+        pass
+
+    def reset(self):
+        pass

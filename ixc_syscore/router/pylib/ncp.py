@@ -25,6 +25,7 @@ class NCP(object):
             lcp.TERM_ACK: self.handle_term_ack,
             lcp.CODE_REJECT: self.handle_code_reject
         }
+        self.my_init()
 
     @property
     def debug(self):
@@ -109,7 +110,7 @@ class NCP(object):
         """构建选项值
         """
         length = len(value) + 2
-        header = struct.pack("!bb", _type, length)
+        header = struct.pack("!BB", _type, length)
 
         return b"".join([header, value])
 
@@ -117,3 +118,13 @@ class NCP(object):
         """获取IP地址,重写这个方法
         """
         return None
+
+    def reset(self):
+        """重写这个方法
+        """
+        pass
+
+    def loop(self):
+        """循环调用函数,重写这个方法
+        """
+        pass

@@ -69,7 +69,10 @@ int ixc_netif_is_used(int if_idx);
 /// 检查是否和当前网卡在同一个网段
 // 如果指定is_ipv6不为空,那么后面的is_ip6_local_link参数将不会被忽略
 int ixc_netif_is_subnet(struct ixc_netif *netif,unsigned char *ip,int is_ipv6,int is_ip6_local_link);
-// 获取同网段的netif
+/// 获取同网段的netif
 struct ixc_netif *ixc_netif_get_with_subnet_ip(unsigned char *ip,int is_ipv6);
+
+///不要设置IP地址
+int ixc_netif_unset_ip(int if_idx,int is_ipv6);
 
 #endif

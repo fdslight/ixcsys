@@ -1,38 +1,70 @@
 #!/usr/bin/env python3
 
+import time, random
+
 import ixc_syscore.router.pylib.ncp as ncp
 import ixc_syscore.router.pylib.lcp as lcp
 
 
 class IPv6CP(ncp.NCP):
-    def my_init(self):
-        pass
+    __try_count = None
+    __my_ipaddr_ok = None
+    __my_ipaddr_subnet = None
+    __my_id = None
 
-    def parse_options(self, cfg_data: bytes):
-        results = []
-        tot_size = len(cfg_data)
-        if tot_size < 2: return results
-        idx = 0
-        while 1:
-            if tot_size == idx: break
-            try:
-                _type = cfg_data[idx]
-                length = cfg_data[idx + 1]
-            except IndexError:
-                results = []
-                if self.debug: print("Wrong IPv6CP configure data")
-                break
-            if length < 2:
-                results = []
-                if self.debug: print("Wrong length field value for IPv6CP")
-                break
-            length = length - 2
-            idx += 2
-            e = idx + length
-            opt_data = cfg_data[idx:e]
-            if len(opt_data) != length:
-                results = []
-                if self.debug: print("Wrong IPv6CP option length field value")
-                break
-            ''''''
-        return results
+    def my_init(self):
+        self.reset()
+
+    def send_ncp_ipv6addr_request(self):
+        self.__try_count += 1
+        self.__my_id = random.randint(1, 0xf0)
+        data = self.build_opt_value(1, bytes(8))
+        self.send_ncp_packet(ncp.PPP_IPv6CP, lcp.CFG_REQ, self.__my_id, data)
+
+    def handle_cfg_request(self, _id: int, byte_data: bytes):
+        """重写这个方法
+        """
+        self.send_ncp_packet(0x8057, lcp.CFG_ACK, _id, byte_data)
+
+    def handle_cfg_ack(self, _id: int, byte_data: bytes):
+        if len(byte_data) != 10: return
+        if byte_data[1] != 10: return
+        if byte_data[0] != 1: return
+
+        if _id != self.__my_id: return
+
+        self.__my_ipaddr_subnet = byte_data[2:]
+        self.__my_ipaddr_ok = True
+        self.__try_count = 0
+
+    def handle_cfg_nak(self, _id: int, byte_data: bytes):
+        if len(byte_data) != 10: return
+        if byte_data[1] != 10: return
+        if byte_data[0] != 1: return
+
+        if _id != self.__my_id: return
+
+        self.send_ncp_packet(ncp.PPP_IPv6CP, lcp.CFG_REQ, _id, byte_data)
+
+    def handle_term_req(self, _id: int, byte_data: bytes):
+        """重写这个方法
+        """
+        self.send_ncp_packet(ncp.PPP_IPCP, lcp.TERM_ACK, _id, byte_data)
+
+    def start(self):
+        self.send_ncp_ipv6addr_request()
+
+    def loop(self):
+        x = time.time() - self.up_time
+        if x < 1: return
+        if not self.__my_ipaddr_ok and self.__try_count > 3:
+            return
+        if not self.__my_ipaddr_ok:
+            self.send_ncp_ipv6addr_request()
+            return
+
+    def reset(self):
+        self.__try_count = 0
+        self.__my_ipaddr_ok = False
+        self.__my_ipaddr_subnet = None
+        self.__my_id = 0
