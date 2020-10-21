@@ -49,7 +49,7 @@ struct netutil_tcphdr{
 };
 
 #pragma pack(push)
-#pragma pack(4)
+#pragma pack(1)
 struct netutil_icmphdr{
     unsigned char type;
     unsigned char code;
@@ -58,6 +58,18 @@ struct netutil_icmphdr{
 
 struct netutil_icmpecho{
     struct netutil_icmphdr icmphdr;
+    unsigned short id;
+    unsigned short seq_num;
+};
+
+struct netutil_icmp6hdr{
+    unsigned char type;
+    unsigned char code;
+    unsigned short checksum;
+};
+
+struct netutil_icmp6echo{
+    struct netutil_icmp6hdr icmp6hdr;
     unsigned short id;
     unsigned short seq_num;
 };

@@ -198,6 +198,14 @@ class LCP(object):
                     is_error = True
                     if self.debug: print("wrong auth protocol")
                     continue
+
+                method, flags = self.get_auth_method(value)
+                if method == 0xc023:
+                    x = "pap"
+                else:
+                    x = "chap"
+                self.__server_neg_status[OPT_AUTH_PROTO]['value'] = x
+                self.__server_neg_status[OPT_AUTH_PROTO]['neg_ok'] = True
                 acks.append(self.build_opt_value(_type, value))
             ''''''
         if is_error: return
@@ -280,7 +288,6 @@ class LCP(object):
     def handle_term_req(self, _id: int, byte_data: bytes):
         self.send(TERM_ACK, _id, byte_data)
         self.__pppoe.reset()
-        self.reset()
 
     def handle_term_ack(self, _id: int, byte_data: bytes):
         pass
@@ -327,7 +334,18 @@ class LCP(object):
         self.send_neg_request_first()
 
     def lcp_ok(self):
-        pass
+        ok = True
+        for code in self.__my_neg_status:
+            if not self.__my_neg_status[code]['neg_ok']:
+                ok = False
+                break
+            ''''''
+        for code in self.__server_neg_status:
+            if not self.__server_neg_status[code]["neg_ok"]:
+                ok = False
+                break
+            ''''''
+        return ok
 
     def loop(self):
         now = time.time()
@@ -343,7 +361,7 @@ class LCP(object):
 
             if opt_type == OPT_MAX_RECV_UNIT:
                 self.send_mru_neg_request()
-                break
+                return
             ''''''
         return
 
@@ -363,3 +381,11 @@ class LCP(object):
             OPT_MAX_RECV_UNIT: {"value": 1492, "neg_ok": False},
             OPT_AUTH_PROTO: {"value": "chap", "neg_ok": False}
         }
+
+    def term_req(self):
+        """终止请求
+        """
+        pass
+
+    def auth_method_get(self):
+        return self.__server_neg_status[OPT_AUTH_PROTO]['value']
