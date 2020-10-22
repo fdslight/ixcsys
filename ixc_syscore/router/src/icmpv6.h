@@ -60,9 +60,12 @@ struct ixc_icmpv6_mtu{
 
 #pragma pack(pop)
 
+#include "mbuf.h"
+
 int ixc_icmpv6_init(void);
 void ixc_icmpv6_uninit(void);
 
+void ixc_icmpv6_handle(struct ixc_mbuf *m);
 
 
 #endif

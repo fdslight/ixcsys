@@ -21,6 +21,7 @@
 #include "../src/natv6.h"
 #include "../src/pppoe.h"
 #include "../src/debug.h"
+#include "../src/icmpv6.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -132,6 +133,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=sysloop_init();
     if(rs<0){
         STDERR("cannot init sysloop\r\n");
+        return NULL;
+    }
+
+    rs=ixc_icmpv6_init();
+    if(rs<0){
+        STDERR("cannot init ICMPv6\r\n");
         return NULL;
     }
 
