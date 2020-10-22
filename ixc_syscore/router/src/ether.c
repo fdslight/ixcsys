@@ -163,3 +163,25 @@ int ixc_ether_send2(struct ixc_mbuf *m)
 
     return 0;
 }
+
+int ixc_ether_get_multi_hwaddr_by_ip(unsigned char *ip,unsigned char *result)
+{
+    result[0]=0x01;
+    result[1]=0x00;
+    result[2]=0x5e;
+    result[3]=ip[1] & 0x7f;
+    result[4]=ip[2];
+    result[5]=ip[3];
+
+    return 0;
+}
+
+int ixc_ether_get_multi_hwaddr_by_ipv6(unsigned char *ip6,unsigned char *result)
+{
+    result[0]=0x33;
+    result[1]=0x33;
+
+    memcpy(&result[2],ip6+12,4);
+
+    return 0;
+}

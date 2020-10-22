@@ -24,4 +24,9 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf);
 
 int ixc_ether_send2(struct ixc_mbuf *m);
 
+/// 通过IP地址获取多播硬件地址
+int ixc_ether_get_multi_hwaddr_by_ip(unsigned char *ip,unsigned char *result);
+/// 通过IPv6地址获取多播地址
+int ixc_ether_get_multi_hwaddr_by_ipv6(unsigned char *ip6,unsigned char *result);
+
 #endif
