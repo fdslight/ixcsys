@@ -5,15 +5,33 @@
 
 #include "../../../pywind/clib/netutils.h"
 
+/// 处理多播
+static void ixc_ip6_handle_multicast(struct ixc_mbuf *m)
+{
+    struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+
+    // 只支持ICMPv6数据包
+    if(header->next_header!=58){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    ixc_mbuf_put(m);
+}
 
 void ixc_ip6_handle(struct ixc_mbuf *mbuf)
 {
-    //struct netutil_ip6hdr *header;
+    struct netutil_ip6hdr *header;
     if(mbuf->tail-mbuf->offset<40) return;
 
-    //header=(struct netutil_ip6hdr *)(mbuf->data+mbuf->offset);
-    // 检查IC
+    header=(struct netutil_ip6hdr *)(mbuf->data+mbuf->offset);
     mbuf->is_ipv6=1;
+
+    if(header->dst_addr[0]==0xff){
+        ixc_ip6_handle_multicast(mbuf);
+        return;
+    }
+
     ixc_mbuf_put(mbuf);
 }
 
