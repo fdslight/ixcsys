@@ -319,7 +319,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     //struct ixc_netif *netif=m->netif;
 
     // 检查地址是否可以被转发
-    if(header->dst_addr[0]==0 || ((header->dst_addr[0]) & 0xf0)==0xf0){
+    if(header->dst_addr[0]==0 || ((header->dst_addr[0]) & 0xfe)==0xfe){
         ixc_mbuf_put(m);
         return;
     }
@@ -345,6 +345,12 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 保留地址直接丢弃
     if(iphdr->dst_addr[0]>=224){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 链路本地地址丢弃数据包
+    if(iphdr->dst_addr[0]==169 && iphdr->dst_addr[1]==254){
         ixc_mbuf_put(m);
         return;
     }
