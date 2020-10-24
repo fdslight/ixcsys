@@ -1,38 +1,100 @@
 
 #include<string.h>
+#include<time.h>
 
 #include "ip6.h"
+#include "icmpv6.h"
+#include "netif.h"
+#include "debug.h"
+#include "pppoe.h"
+#include "route.h"
 
 #include "../../../pywind/clib/netutils.h"
+#include "../../../pywind/clib/sysloop.h"
 
-/// 处理多播
-static void ixc_ip6_handle_multicast(struct ixc_mbuf *m)
+static struct sysloop *ip6_sysloop=NULL;
+static time_t ip6_up_time=0;
+static int ip6_is_initialized=0;
+
+static void ixc_ip6_sysloop_cb(struct sysloop *loop)
 {
-    struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    time_t now_time=time(NULL);
+    if(now_time-ip6_up_time<30) return;
 
-    // 只支持ICMPv6数据包
-    if(header->next_header!=58){
-        ixc_mbuf_put(m);
-        return;
+    /// 如果PPPoE没有开启那么发送ICMPv6 RS报文
+    if(!ixc_pppoe_is_enabled()){
+        ixc_icmpv6_send_rs();
     }
 
-    ixc_mbuf_put(m);
+    ip6_up_time=time(NULL);
+}
+
+static int ixc_ip6_check_ok(struct ixc_mbuf *m)
+{
+    struct netutil_ip6hdr *header;
+    int ver;
+    if(m->tail-m->offset<48) return 0;
+
+    header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    // 原地址与目标地址一致那么丢弃数据包
+    if(!memcmp(header->src_addr,header->dst_addr,16)) return 0;
+    ver=(header->ver_and_tc & 0xf0) >>4;
+    if(ver!=6) return 0;
+
+    return 1;
+}
+
+static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
+{
+    ixc_route_handle(m);
+}
+
+static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
+{
+    ixc_route_handle(m);
+}
+
+int ixc_ip6_init(void)
+{
+
+    ip6_sysloop=sysloop_add(ixc_ip6_sysloop_cb,NULL);
+
+    if(NULL==ip6_sysloop){
+        STDERR("cannot add to sysloop\r\n");
+        return -1;
+    }
+    ip6_up_time=time(NULL);
+
+    ip6_is_initialized=1;
+
+    return 0;
+}
+
+void ixc_ip6_uninit(void)
+{
+    if(!ip6_is_initialized) return;
+
+    sysloop_del(ip6_sysloop);
 }
 
 void ixc_ip6_handle(struct ixc_mbuf *mbuf)
 {
     struct netutil_ip6hdr *header;
-    if(mbuf->tail-mbuf->offset<40) return;
+    struct ixc_netif *netif=mbuf->netif;
+
+    if(!ixc_ip6_check_ok(mbuf)){
+        ixc_mbuf_put(mbuf);
+        return;
+    }
 
     header=(struct netutil_ip6hdr *)(mbuf->data+mbuf->offset);
     mbuf->is_ipv6=1;
 
-    if(header->dst_addr[0]==0xff){
-        ixc_ip6_handle_multicast(mbuf);
-        return;
+    if(IXC_NETIF_WAN==netif->type){
+        ixc_ip6_handle_from_wan(mbuf,header);
+    }else{
+        ixc_ip6_handle_from_lan(mbuf,header);
     }
-
-    ixc_mbuf_put(mbuf);
 }
 
 int ixc_ip6_send(struct ixc_mbuf *mbuf)
@@ -61,10 +123,10 @@ int ixc_ip6_eui64_get(unsigned char *hwaddr,unsigned char *result)
     result[6]=hwaddr[4];
     result[7]=hwaddr[5];
 
-    x=result[7] & 0x02;
+    x=result[0] & 0x02;
 
-    if(x) result[7]=result[7] & 0xfd;
-    else result[7]=result[7] & 0xff;
+    if(x) result[0]=result[0] & 0xfd;
+    else result[0]=result[0] & 0xff;
 
     return 0;
 }

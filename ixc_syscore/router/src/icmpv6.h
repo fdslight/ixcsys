@@ -60,12 +60,19 @@ struct ixc_icmpv6_mtu{
 
 #pragma pack(pop)
 
+/// 所有的路由器地址
+#define IXC_ICMPv6_ALL_ROUTERS_ADDR {0xff,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02}
+/// 所有的节点地址
+#define IXC_ICMPv6_ALL_NODES_ADDR {0xff,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01}
+
 #include "mbuf.h"
+#include "../../../pywind/clib/netutils.h"
 
-int ixc_icmpv6_init(void);
-void ixc_icmpv6_uninit(void);
+void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr);
 
-void ixc_icmpv6_handle(struct ixc_mbuf *m);
-
+/// 发送RA报文
+int ixc_icmpv6_send_ra(void);
+/// 发送路由器请求报文
+int ixc_icmpv6_send_rs(void);
 
 #endif
