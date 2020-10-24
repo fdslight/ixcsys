@@ -37,7 +37,7 @@ struct ixc_icmpv6_na_header{
     unsigned char type;
     unsigned char code;
     unsigned short checksum;
-    unsigned int rso[4];
+    unsigned int rso;
     unsigned char target_addr[16]; 
 };
 
@@ -56,6 +56,31 @@ struct ixc_icmpv6_mtu{
     unsigned char length;
     char reserved[2];
     unsigned int mtu;  
+};
+
+struct ixc_icmpv6_opt_link_addr{
+    unsigned char type;
+    unsigned char length;
+    unsigned char hwaddr[6];
+};
+
+/// 路由宣告可选项
+struct ixc_icmpv6_opt_ra{
+    unsigned char type_hwaddr;
+    unsigned char length_hwaddr;
+    unsigned char hwaddr[6];
+    unsigned char type_mtu;
+    unsigned char length_mtu;
+    unsigned char r1[2];
+    unsigned int mtu;
+    unsigned char type_prefix;
+    unsigned char length_prefix;
+    unsigned char prefix_length;
+    unsigned char prefix_flags;
+    unsigned int prefix_valid_lifetime;
+    unsigned int prefix_preferred_lifetime;
+    unsigned char r2[4];
+    unsigned char prefix[16];
 };
 
 #pragma pack(pop)
