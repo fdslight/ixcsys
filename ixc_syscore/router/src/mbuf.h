@@ -20,7 +20,7 @@ struct ixc_mbuf{
 #define IXC_MBUF_FROM_WAN 1
     int from;
     // 开始位置
-#define IXC_MBUF_BEGIN 256
+#define IXC_MBUF_BEGIN 512
     int begin;
     // 偏移位置
     int offset;
@@ -29,7 +29,7 @@ struct ixc_mbuf{
     // 循环跟踪,造成死循环那么给予警告
     int loop_trace;
     // 结束位置
-#define IXC_MBUF_END 0xff00
+#define IXC_MBUF_END 0xffff
     int end;
     
     union{
@@ -39,7 +39,7 @@ struct ixc_mbuf{
 
     // 指向的网关
     unsigned char gw[16];
-    unsigned char data[0xffff];
+    unsigned char data[0x103ff];
     unsigned char src_hwaddr[6];
     unsigned char dst_hwaddr[6];
 };

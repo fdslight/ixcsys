@@ -21,7 +21,6 @@
 #include "../src/natv6.h"
 #include "../src/pppoe.h"
 #include "../src/debug.h"
-#include "../src/icmpv6.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -136,12 +135,6 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    rs=ixc_icmpv6_init();
-    if(rs<0){
-        STDERR("cannot init ICMPv6\r\n");
-        return NULL;
-    }
-
     rs=ixc_mbuf_init(512);
     if(rs<0){
         STDERR("cannot init mbuf\r\n");
@@ -166,12 +159,6 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    rs=ixc_local_init();
-    if(rs<0){
-        STDERR("cannot init local\r\n");
-        return NULL;
-    }
-
     rs=ixc_addr_map_init();
     if(rs<0){
         STDERR("cannot init addr map\r\n");
@@ -190,21 +177,33 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    rs=ixc_vpn_init();
-    if(rs<0){
-        STDERR("cannot init vpn\r\n");
-        return NULL;
-    }
-
     rs=ixc_udp_src_filter_init();
     if(rs<0){
         STDERR("cannot init P2P\r\n");
         return NULL;
     }
 
+    rs=ixc_vpn_init();
+    if(rs<0){
+        STDERR("cannot init vpn\r\n");
+        return NULL;
+    }
+
     rs=ixc_pppoe_init();
     if(rs<0){
         STDERR("cannot init pppoe\r\n");
+        return NULL;
+    }
+
+    rs=ixc_local_init();
+    if(rs<0){
+        STDERR("cannot init local\r\n");
+        return NULL;
+    }
+
+    rs=ixc_ip6_init();
+    if(rs<0){
+        STDERR("cannot init ICMPv6\r\n");
         return NULL;
     }
 

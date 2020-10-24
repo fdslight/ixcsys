@@ -3,6 +3,9 @@
 
 #include "mbuf.h"
 
+int ixc_ip6_init(void);
+void ixc_ip6_uninit(void);
+
 void ixc_ip6_handle(struct ixc_mbuf *mbuf);
 int ixc_ip6_send(struct ixc_mbuf *mbuf);
 
