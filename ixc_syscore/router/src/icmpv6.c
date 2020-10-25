@@ -141,10 +141,28 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,unsigned char icmp_code)
 {
     struct ixc_netif *netif=m->netif;
+    struct ixc_icmpv6_na_header *na_header;
+    struct ixc_icmpv6_opt_link_addr *opt;
+
     if(icmp_code!=0){
         ixc_mbuf_put(m);
         return;
     }
+    if(m->tail-m->offset!=32){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 此处检查是否是发向本机器的NA
+
+    na_header=(struct ixc_icmpv6_na_header *)(m->data+m->offset);
+    opt=(struct ixc_icmpv6_opt_link_addr *)(m->data+m->offset+24);
+
+    if(opt->type!=2 || opt->length!=1){
+        ixc_mbuf_put(m);
+        return;
+    }
+
     ixc_mbuf_put(m);
 }
 

@@ -8,6 +8,9 @@
 #include "arp.h"
 #include "qos.h"
 #include "debug.h"
+#include "ip6.h"
+#include "ip.h"
+#include "icmpv6.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
@@ -311,16 +314,31 @@ struct ixc_route_info *ixc_route_get(unsigned char *subnet,unsigned char prefix,
     return r_info;
 }
 
+static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
+{
+    // 只支持ICMPv6协议
+    if(header->next_header!=58){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    ixc_icmpv6_handle(m,header);
+}
 
 static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
-    //struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
+    struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
     //struct ixc_netif *netif=m->netif;
 
     // 检查地址是否可以被转发
-    if(header->dst_addr[0]==0 || ((header->dst_addr[0]) & 0xfe)==0xfe){
-        ixc_mbuf_put(m);
+    if(header->dst_addr[0]==0xff){
+        ixc_route_handle_for_ipv6_local(m,header);
+        return;
+    }
+
+    if(header->dst_addr[0]==0xfe && (header->dst_addr[1] & 0xc0)==0x80){
+        ixc_route_handle_for_ipv6_local(m,header);
         return;
     }
     
