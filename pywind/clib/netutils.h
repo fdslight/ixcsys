@@ -108,8 +108,6 @@ int subnet_calc_with_msk(unsigned char *address,unsigned char *msk,int is_ipv6,u
 unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field,unsigned short old_csum);
 unsigned short csum_calc(unsigned short *buffer,size_t size);
 
-/// 计算广播地址
-int net_broadcast_calc(unsigned char *address,unsigned char prefix,int is_ipv6,unsigned char *res);
 
 /// 构建IPv4数据包头部
 // 如果opt_len长度为0表示选项结束

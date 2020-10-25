@@ -5,6 +5,7 @@
 #include "mbuf.h"
 #include "netif.h"
 #include "ether.h"
+#include "ip6.h"
 
 static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *src_ipaddr,unsigned char *dst_ipaddr,void *icmp_data,int length)
 {
@@ -67,21 +68,56 @@ static void ixc_icmpv6_handle_echo(struct ixc_mbuf *m,struct netutil_ip6hdr *iph
 static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,unsigned char icmp_code)
 {
     struct ixc_netif *netif=m->netif;
+    struct ixc_icmpv6_rs_header *rs_header;
+    struct ixc_icmpv6_opt_link_addr *opt;
+    unsigned char ip6addr_all_routers[]=IXC_ICMPv6_ALL_ROUTERS_ADDR;
+
     if(netif->type==IXC_NETIF_WAN || icmp_code!=0){
         ixc_mbuf_put(m);
         return;
     }
+
+    if(m->tail-m->offset!=16){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 目标地址必须是所有的路由器
+    if(memcmp(iphdr->dst_addr,ip6addr_all_routers,16)){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    rs_header=(struct ixc_icmpv6_rs_header *)(m->data+m->offset);
+    opt=(struct ixc_icmpv6_opt_link_addr *)(m->data+m->offset+8);
+
+    if(!netif->isset_ip6){
+        ixc_mbuf_put(m);
+        return;
+    }
+    
+    ixc_mbuf_put(m);
+    ixc_icmpv6_send_ra();
 }
 
 /// 处理路由宣告报文
 static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,unsigned char icmp_code)
 {
     struct ixc_netif *netif=m->netif;
+    unsigned char ip6addr_all_nodes[]=IXC_ICMPv6_ALL_NODES_ADDR;
+
     if(netif->type==IXC_NETIF_LAN || icmp_code!=0){
         ixc_mbuf_put(m);
         return;
     }
 
+    if(memcmp(ip6addr_all_nodes,iphdr->dst_addr,16)){
+        ixc_mbuf_put(m);
+        return;
+    }
+    // 首先检查ICMPv6 RA格式是否正确
+    // 检查前缀是否符合SLAAC规范
+    // 此处生成随机IPv6地址
     ixc_mbuf_put(m);
 }
 
@@ -92,6 +128,8 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     struct ixc_icmpv6_ns_header *ns_hdr=NULL;
     struct ixc_icmpv6_opt_link_addr *ns_opt,*na_opt;
     struct ixc_icmpv6_na_header *na_header;
+    unsigned char sol_addr[]=IXC_IP6ADDR_SOL_NODE_MULTI;
+    unsigned char address[16],*ptr;
 
     unsigned char buf[32];
     unsigned int rso=0;
@@ -106,10 +144,17 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
 
+    // 此处检查是否是发向本机器的NA
+    subnet_calc_with_prefix(iphdr->dst_addr,104,1,address);
+    if(memcmp(sol_addr,address,16)){
+        ixc_mbuf_put(m);
+        return;
+    }
+
     ns_hdr=(struct ixc_icmpv6_ns_header *)(m->data+m->offset);
     ns_opt=(struct ixc_icmpv6_opt_link_addr *)(m->data+m->offset+24);
-    // 不是本机器的地址那么丢弃数据包
-    if(memcmp(netif->ip6addr,ns_hdr->target_addr,16)){
+
+    if(memcmp(ns_hdr->target_addr,netif->ip6_local_link_addr,16) && memcmp(ns_hdr->target_addr,netif->ip6addr,16)){
         ixc_mbuf_put(m);
         return;
     }
@@ -152,8 +197,6 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         ixc_mbuf_put(m);
         return;
     }
-
-    // 此处检查是否是发向本机器的NA
 
     na_header=(struct ixc_icmpv6_na_header *)(m->data+m->offset);
     opt=(struct ixc_icmpv6_opt_link_addr *)(m->data+m->offset+24);
@@ -211,7 +254,7 @@ int ixc_icmpv6_send_ra(void)
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
     struct ixc_icmpv6_ra_header *ra_header;
     struct ixc_icmpv6_opt_ra *ra_opt;
-    unsigned char all_nodes[]=IXC_ICMPv6_ALL_ROUTERS_ADDR;
+    unsigned char all_nodes[]=IXC_IP6ADDR_ALL_NODES;
     unsigned char dst_hwaddr[6];
 
     unsigned char buf[64];
@@ -231,7 +274,7 @@ int ixc_icmpv6_send_ra(void)
 
     ra_opt->type_mtu=5;
     ra_opt->length_mtu=1;
-    ra_opt->mtu=htons(1280);
+    ra_opt->mtu=htonl(1280);
 
     ra_opt->type_prefix=3;
     ra_opt->length_prefix=4;
@@ -253,7 +296,7 @@ int ixc_icmpv6_send_rs(void)
     struct ixc_icmpv6_rs_header *icmp_header;
     struct ixc_icmpv6_opt_link_addr *opt;
 
-    unsigned char all_routers[]=IXC_ICMPv6_ALL_ROUTERS_ADDR;
+    unsigned char all_routers[]=IXC_IP6ADDR_ALL_ROUTERS;
     unsigned char dst_hwaddr[6];
     unsigned char buf[16];
 

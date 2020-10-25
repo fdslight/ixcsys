@@ -328,7 +328,7 @@ static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip
 static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
-    struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
+    //struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
     //struct ixc_netif *netif=m->netif;
 
     // 检查地址是否可以被转发

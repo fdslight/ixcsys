@@ -105,35 +105,6 @@ unsigned short csum_calc(unsigned short *buffer,size_t size)
     return (unsigned short)(~sum);
 }
 
-int net_broadcast_calc(unsigned char *address,unsigned char prefix,int is_ipv6,unsigned char *res)
-{
-    unsigned char subnet[16],tmp[16];
-    unsigned char msk[16],ch;
-    int size=4;
-
-    if(subnet_calc_with_prefix(address,prefix,is_ipv6,subnet)<0) return -1;
-    msk_calc(prefix,is_ipv6,msk);
-
-    if(is_ipv6) size=16;
-
-    for(int n=0;n<size;n++){
-        ch=(unsigned char )((~subnet[n]) & 0xff);
-        subnet[n]=ch;
-
-        ch=(unsigned char )((~msk[n]) & 0xff);
-        msk[n]=ch;
-    }
-
-    subnet_calc_with_msk(subnet,msk,is_ipv6,tmp);
-
-    for(int n=0;n<size;n++){
-        ch= (unsigned char)((tmp[n] | address[n]) & 0xff);
-        res[n]=ch;    
-    }
-
-    return 0;
-}
-
 
 int build_ipv4_header(struct netutil_iphdr *iphdr,const char options[][40],unsigned char every_opt_len[],void *res)
 {
