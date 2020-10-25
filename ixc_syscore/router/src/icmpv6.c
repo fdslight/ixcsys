@@ -45,7 +45,7 @@ static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,uns
     icmpv6_header->checksum=0;
     icmpv6_header->checksum=csum_calc((unsigned short *)(m->data+m->offset-40),length+40);
 
-    IPv6_HEADER_SET(ip6hdr,0,0,16,58,255,src_ipaddr,dst_ipaddr);
+    IPv6_HEADER_SET(ip6hdr,0,0,length,58,255,src_ipaddr,dst_ipaddr);
 
     m->tail=m->offset+length;
     m->end=m->tail;
@@ -193,7 +193,7 @@ int ixc_icmpv6_send_ra(void)
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
     struct ixc_icmpv6_ra_header *ra_header;
     struct ixc_icmpv6_opt_ra *ra_opt;
-    unsigned char all_routers[]=IXC_ICMPv6_ALL_ROUTERS_ADDR;
+    unsigned char all_nodes[]=IXC_ICMPv6_ALL_ROUTERS_ADDR;
     unsigned char dst_hwaddr[6];
 
     unsigned char buf[64];
@@ -223,8 +223,8 @@ int ixc_icmpv6_send_ra(void)
     ra_opt->prefix_preferred_lifetime=0xffffffff;
     memcpy(ra_opt->prefix,netif->ip6_subnet,16);
 
-    ixc_ether_get_multi_hwaddr_by_ipv6(all_routers,dst_hwaddr);
-    ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,all_routers,buf,64);
+    ixc_ether_get_multi_hwaddr_by_ipv6(all_nodes,dst_hwaddr);
+    ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,all_nodes,buf,64);
 
     return 0;
 }
