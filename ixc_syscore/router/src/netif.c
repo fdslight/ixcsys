@@ -153,10 +153,13 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
     if(is_ipv6){
         memcpy(netif->ip6addr,ipaddr,16);
         memcpy(netif->ip6_mask,mask,16);
+        
+        subnet_calc_with_prefix(ipaddr,prefix,1,netif->ip6_subnet);
         netif->isset_ip6=1;
     }else{
         memcpy(netif->ipaddr,ipaddr,4);
         memcpy(netif->ip_mask,mask,4);
+        subnet_calc_with_prefix(ipaddr,prefix,0,netif->ip_subnet);
         netif->isset_ip=1;
     }
 

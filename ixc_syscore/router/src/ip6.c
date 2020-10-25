@@ -26,6 +26,8 @@ static void ixc_ip6_sysloop_cb(struct sysloop *loop)
         ixc_icmpv6_send_rs();
     }
 
+    ixc_icmpv6_send_ra();
+
     ip6_up_time=time(NULL);
 }
 
@@ -44,7 +46,7 @@ static int ixc_ip6_check_ok(struct ixc_mbuf *m)
     ver=(header->ver_and_tc & 0xf0) >>4;
     if(ver!=6) return 0;
 
-    if(memcmp(ip6_loopback_addr,header->dst_addr,16) || memcmp(ip6_unspec_addr,header->dst_addr,16)) return 0;
+    if(!memcmp(ip6_loopback_addr,header->dst_addr,16) || !memcmp(ip6_unspec_addr,header->dst_addr,16)) return 0;
 
     return 1;
 }
@@ -86,6 +88,7 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
 {
     struct netutil_ip6hdr *header;
     struct ixc_netif *netif=mbuf->netif;
+
 
     if(!ixc_ip6_check_ok(mbuf)){
         ixc_mbuf_put(mbuf);
