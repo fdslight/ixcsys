@@ -67,6 +67,7 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     int version=(header->ver_and_ihl & 0xf0) >> 4;
     unsigned short tot_len;
     struct ixc_netif *netif=mbuf->netif;
+    unsigned char ipaddr_unspec[]=IXC_IPADDR_UNSPEC;
 
     if(4!=version){
         ixc_mbuf_put(mbuf);
@@ -79,6 +80,16 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     tot_len=ntohs(header->tot_len);
 
     if(tot_len > mbuf->tail- mbuf->offset){
+        ixc_mbuf_put(mbuf);
+        return;
+    }
+
+    if(!memcmp(header->dst_addr,ipaddr_unspec,4)){
+        ixc_mbuf_put(mbuf);
+        return;
+    }
+
+    if(header->dst_addr[0]==127){
         ixc_mbuf_put(mbuf);
         return;
     }
@@ -107,6 +118,7 @@ int ixc_ip_send(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
     int ip_ver= (header->ver_and_ihl & 0xf0) >> 4;
+    unsigned char ipaddr_unspec[]=IXC_IPADDR_UNSPEC;
 
     // 检查IP版本是否符合要求
     if(4!=ip_ver && 6!=ip_ver){
@@ -115,6 +127,16 @@ int ixc_ip_send(struct ixc_mbuf *m)
     }
 
     if(6==ip_ver) return ixc_ip6_send(m);
+
+    if(!memcmp(header->dst_addr,ipaddr_unspec,4)){
+        ixc_mbuf_put(m);
+        return -1;
+    }
+
+    if(header->dst_addr[0]==127){
+        ixc_mbuf_put(m);
+        return -1;
+    }
 
     m->is_ipv6=0;
 
