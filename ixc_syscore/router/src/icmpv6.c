@@ -210,9 +210,9 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     na_opt->length=1;
     memcpy(na_opt->hwaddr,netif->hwaddr,6);
 
-    char addr[128];
-    inet_ntop(AF_INET6,iphdr->src_addr,addr,128);
-    DBG("from:%s %x:%x:%x:%x\r\n",addr,ns_opt->hwaddr[0],ns_opt->hwaddr[1],ns_opt->hwaddr[2],ns_opt->hwaddr[3]);
+    //char addr[128];
+    //inet_ntop(AF_INET6,iphdr->src_addr,addr,128);
+    //DBG("from:%s %x:%x:%x:%x\r\n",addr,ns_opt->hwaddr[0],ns_opt->hwaddr[1],ns_opt->hwaddr[2],ns_opt->hwaddr[3]);
 
     ixc_icmpv6_send(netif,ns_opt->hwaddr,ptr,iphdr->src_addr,buf,32);
     ixc_mbuf_put(m);
@@ -255,6 +255,7 @@ void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr)
     m->offset+=40;
 
     if(icmp_header->type==128 || icmp_header->type==129){
+        //DBG_FLAGS;
         // 不是发往本级的ICMP echo数据包直接丢弃
         if(memcmp(iphdr->dst_addr,netif->ip6_local_link_addr,16) && memcmp(iphdr->dst_addr,netif->ip6addr,16)){
             ixc_mbuf_put(m);
@@ -306,6 +307,7 @@ int ixc_icmpv6_send_ra(void)
     ra_header->type=134;
     ra_header->code=0;
     ra_header->checksum=0;
+    ra_header->cur_hop_limit=0;
     ra_header->router_lifetime=htons(3600);
 
     ra_opt->type_hwaddr=1;
@@ -364,4 +366,36 @@ int ixc_icmpv6_send_rs(void)
     //DBG_FLAGS;
 
     return 0;
+}
+
+int ixc_icmpv6_send_ns(struct ixc_netif *netif,unsigned char *src_ipaddr,unsigned char *dst_ipaddr)
+{
+    struct ixc_icmpv6_opt_link_addr *opt;
+    struct ixc_icmpv6_ns_header *ns_header;
+
+    unsigned char sol_addr[]=IXC_IP6ADDR_SOL_NODE_MULTI;
+    unsigned char dst_hwaddr[16];
+
+    unsigned char buf[32];
+
+    bzero(buf,32);
+
+    ns_header=(struct ixc_icmpv6_ns_header *)buf;
+    opt=(struct ixc_icmpv6_opt_link_addr *)(&buf[24]);
+
+    ns_header->type=135;
+    ns_header->code=0;
+    ns_header->checksum=0;
+
+    memcpy(ns_header->target_addr,dst_ipaddr,16);
+
+    opt->type=1;
+    opt->length=1;
+
+    memcpy(opt->hwaddr,netif->hwaddr,6);
+    memcpy(&sol_addr[13],&dst_ipaddr[13],3);
+
+    ixc_ether_get_multi_hwaddr_by_ipv6(dst_ipaddr,dst_hwaddr);
+
+    return ixc_icmpv6_send(netif,dst_hwaddr,src_ipaddr,sol_addr,buf,32);
 }

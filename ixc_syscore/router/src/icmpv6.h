@@ -86,6 +86,8 @@ struct ixc_icmpv6_opt_ra{
 #pragma pack(pop)
 
 #include "mbuf.h"
+#include "netif.h"
+
 #include "../../../pywind/clib/netutils.h"
 
 void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr);
@@ -94,5 +96,7 @@ void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr);
 int ixc_icmpv6_send_ra(void);
 /// 发送路由器请求报文
 int ixc_icmpv6_send_rs(void);
+/// 发送邻居报文请求
+int ixc_icmpv6_send_ns(struct ixc_netif *netif,unsigned char *src_ipaddr,unsigned char *dst_ipaddr);
 
 #endif

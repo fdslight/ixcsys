@@ -7,6 +7,8 @@
 #include "pppoe.h"
 #include "ether.h"
 #include "debug.h"
+#include "pppoe.h"
+#include "icmpv6.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netutils.h"
@@ -189,6 +191,21 @@ struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6)
 
 static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
 {
+    struct ixc_netif *netif=m->netif;
+    struct ixc_addr_map_record *r=NULL;
+    struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+   
+
+    r=ixc_addr_map_get(m->next_host,1);
+
+    // 找到记录那么直接发送
+    if(r){
+        memcpy(m->dst_hwaddr,r->hwaddr,6);
+        ixc_ether_send(m,1);
+        return;
+    }
+    // 找不到记录那么就发送NDP RS报文
+    ixc_icmpv6_send_ns(netif,header->src_addr,header->dst_addr);
     ixc_mbuf_put(m);
 }
 
@@ -203,35 +220,11 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
         0xff,0xff,0xff
     };
 
-    //IXC_PRINT_IP("addr map dest ip ",iphdr->dst_addr);
-    //IXC_PRINT_IP("addr map from ip",iphdr->src_addr);
-    // 对于同一个网段的处理方式
-    if(ixc_netif_is_subnet(netif,iphdr->dst_addr,0,0)){
-        r=ixc_addr_map_get(iphdr->dst_addr,0);
-
-        // 找不到地址映射记录那么发送ARP请求数据包,并且丢弃当前数据包
-        if(NULL==r){
-            ixc_arp_send(netif,brd,iphdr->dst_addr,IXC_ARP_OP_REQ);
-            ixc_mbuf_put(m);
-            return;
-        }
-        // 找到记录那么拷贝硬件地址并发送数据包
-        memcpy(m->dst_hwaddr,r->hwaddr,6);
-        ixc_ether_send(m,1);
-        return;
-    }
-
-    // 不是同一个网段地址的处理
-    // 检查WAN PPPoE是否开启,如果开启直接发送到PPPoE
-    if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){
-        ixc_pppoe_send(m);
-        return;
-    }
-    
     // 查找网关记录是否存在,如果不存在那么就发送ARP请求
-    r=ixc_addr_map_get(m->gw,0);
+    r=ixc_addr_map_get(m->next_host,0);
+    
     if(NULL==r){
-        ixc_arp_send(netif,brd,m->gw,IXC_ARP_OP_REQ);
+        ixc_arp_send(netif,brd,m->next_host,IXC_ARP_OP_REQ);
         ixc_mbuf_put(m);
         return;
     }
@@ -242,6 +235,14 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
 
 void ixc_addr_map_handle(struct ixc_mbuf *m)
 {
+    struct ixc_netif *netif=m->netif;
+
+    // 如果目标网卡是WAN并且数据来自于LAN那么直接发送到PPPoE
+    if(ixc_pppoe_is_enabled() && netif->type==IXC_NETIF_WAN && m->from==IXC_MBUF_FROM_LAN){
+        ixc_pppoe_handle(m);
+        return;
+    }
+
     if(m->is_ipv6) ixc_addr_map_handle_for_ipv6(m);
     else ixc_addr_map_handle_for_ip(m);
 }
