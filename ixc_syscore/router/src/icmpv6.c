@@ -61,6 +61,32 @@ static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,uns
 
 static void ixc_icmpv6_handle_echo(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,struct netutil_icmpv6hdr *icmp_header)
 {
+    struct ixc_netif *netif=m->netif;
+    struct netutil_icmpv6echo *echo=(struct netutil_icmpv6echo *)icmp_header,*reply_hdr;
+    unsigned char buf[0xffff];
+
+    if(icmp_header->code!=0){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 只处理echo请求
+    if(icmp_header->type!=128){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    reply_hdr=(struct netutil_icmpv6echo *)buf;
+
+    (reply_hdr->icmpv6hdr).type=129;
+    (reply_hdr->icmpv6hdr).code=0;
+    (reply_hdr->icmpv6hdr).checksum=0;
+    reply_hdr->id=echo->id;
+    reply_hdr->seq_num=echo->seq_num;
+
+    memcpy(buf+8,m->data+m->offset+8,m->tail-m->offset-8);
+    ixc_icmpv6_send(netif,m->src_hwaddr,iphdr->dst_addr,iphdr->src_addr,buf,m->tail-m->offset);
+
     ixc_mbuf_put(m);
 }
 
@@ -70,7 +96,7 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     struct ixc_netif *netif=m->netif;
     struct ixc_icmpv6_rs_header *rs_header;
     struct ixc_icmpv6_opt_link_addr *opt;
-    unsigned char ip6addr_all_routers[]=IXC_ICMPv6_ALL_ROUTERS_ADDR;
+    unsigned char ip6addr_all_routers[]=IXC_IP6ADDR_ALL_ROUTERS;
 
     if(netif->type==IXC_NETIF_WAN || icmp_code!=0){
         ixc_mbuf_put(m);
@@ -104,7 +130,7 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,unsigned char icmp_code)
 {
     struct ixc_netif *netif=m->netif;
-    unsigned char ip6addr_all_nodes[]=IXC_ICMPv6_ALL_NODES_ADDR;
+    unsigned char ip6addr_all_nodes[]=IXC_IP6ADDR_ALL_NODES;
 
     if(netif->type==IXC_NETIF_LAN || icmp_code!=0){
         ixc_mbuf_put(m);
@@ -128,11 +154,11 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     struct ixc_icmpv6_ns_header *ns_hdr=NULL;
     struct ixc_icmpv6_opt_link_addr *ns_opt,*na_opt;
     struct ixc_icmpv6_na_header *na_header;
-    unsigned char sol_addr[]=IXC_IP6ADDR_SOL_NODE_MULTI;
-    unsigned char address[16],*ptr;
+    unsigned char *ptr;
 
     unsigned char buf[32];
     unsigned int rso=0;
+    int flags=0;
 
     if(icmp_code!=0){
         ixc_mbuf_put(m);
@@ -144,17 +170,21 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
 
-    // 此处检查是否是发向本机器的NA
-    subnet_calc_with_prefix(iphdr->dst_addr,104,1,address);
-    if(memcmp(sol_addr,address,16)){
-        ixc_mbuf_put(m);
-        return;
-    }
-
+    //DBG_FLAGS;
     ns_hdr=(struct ixc_icmpv6_ns_header *)(m->data+m->offset);
     ns_opt=(struct ixc_icmpv6_opt_link_addr *)(m->data+m->offset+24);
 
-    if(memcmp(ns_hdr->target_addr,netif->ip6_local_link_addr,16) && memcmp(ns_hdr->target_addr,netif->ip6addr,16)){
+    if(!memcmp(ns_hdr->target_addr,netif->ip6_local_link_addr,16)){
+        flags=1;
+        ptr=netif->ip6_local_link_addr;
+    }
+
+    if(!memcmp(ns_hdr->target_addr,netif->ip6addr,16)){
+        flags=1;
+        ptr=netif->ip6addr;
+    }
+
+    if(!flags){
         ixc_mbuf_put(m);
         return;
     }
@@ -168,17 +198,23 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     if(netif->type==IXC_NETIF_LAN){
         rso=rso | (0x00000001 << 31);
     }
-
+    rso=rso | (0x00000001<<30);
     rso=rso | (0x00000001<<29);
     na_header->type=136;
     na_header->code=0;
     na_header->rso=htonl(rso);
 
+    memcpy(na_header->target_addr,ptr,16);
+
     na_opt->type=2;
     na_opt->length=1;
+    memcpy(na_opt->hwaddr,netif->hwaddr,6);
 
-    ixc_icmpv6_send(netif,m->src_hwaddr,netif->ip6addr,iphdr->src_addr,buf,32);
+    char addr[128];
+    inet_ntop(AF_INET6,iphdr->src_addr,addr,128);
+    DBG("from:%s %x:%x:%x:%x\r\n",addr,ns_opt->hwaddr[0],ns_opt->hwaddr[1],ns_opt->hwaddr[2],ns_opt->hwaddr[3]);
 
+    ixc_icmpv6_send(netif,ns_opt->hwaddr,ptr,iphdr->src_addr,buf,32);
     ixc_mbuf_put(m);
 }
 
@@ -215,18 +251,22 @@ void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr)
     struct netutil_icmpv6hdr *icmp_header;
 
     icmp_header=(struct netutil_icmpv6hdr *)(m->data+m->offset+40);
-
-    // 检查格式是否正确
-    if(iphdr->hop_limit!=255){
-        ixc_mbuf_put(m);
-        return;
-    }
-
     // 指向到ICMP头部
     m->offset+=40;
 
     if(icmp_header->type==128 || icmp_header->type==129){
+        // 不是发往本级的ICMP echo数据包直接丢弃
+        if(memcmp(iphdr->dst_addr,netif->ip6_local_link_addr,16) && memcmp(iphdr->dst_addr,netif->ip6addr,16)){
+            ixc_mbuf_put(m);
+            return;
+        }
         ixc_icmpv6_handle_echo(m,iphdr,icmp_header);
+        return;
+    }
+
+    // 检查格式是否正确
+    if(iphdr->hop_limit!=255){
+        ixc_mbuf_put(m);
         return;
     }
 
@@ -321,7 +361,7 @@ int ixc_icmpv6_send_rs(void)
     ixc_ether_get_multi_hwaddr_by_ipv6(all_routers,dst_hwaddr);
     ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,all_routers,buf,16);
 
-    DBG_FLAGS;
+    //DBG_FLAGS;
 
     return 0;
 }

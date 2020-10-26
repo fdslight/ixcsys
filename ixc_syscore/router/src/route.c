@@ -287,7 +287,7 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
     char is_found;
 
     while(NULL!=p){
-        DBG_FLAGS;
+        //DBG_FLAGS;
         subnet_calc_with_msk(ip,p->mask,is_ipv6,(unsigned char *)key);
         key[idx]=p->prefix;
         r=map_find(m,key,&is_found);
@@ -377,12 +377,12 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果找不到理由,那么就丢弃数据包
     if(NULL==r){
-        IXC_PRINT_IP("route not found for dest ip",iphdr->dst_addr);
+        //IXC_PRINT_IP("route not found for dest ip",iphdr->dst_addr);
         ixc_mbuf_put(m);
         return;
     }
 
-    IXC_PRINT_IP("route found for dest ip",iphdr->dst_addr);
+    //IXC_PRINT_IP("route found for dest ip",iphdr->dst_addr);
 
     // 如果ttl为1那么发送ICMP报文告知
     if(iphdr->ttl<=1){
