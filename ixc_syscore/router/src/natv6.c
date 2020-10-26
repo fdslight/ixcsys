@@ -4,6 +4,8 @@
 #include "qos.h"
 #include "route.h"
 #include "string.h"
+#include "netif.h"
+#include "addr_map.h"
 
 #include "../../../pywind/clib/debug.h"
 
@@ -23,6 +25,20 @@ void ixc_natv6_uninit(void)
     natv6_is_initialized=0;
 }
 
+static void ixc_natv6_handle_from_lan(struct ixc_mbuf *m)
+{
+    if(!natv6.enable){
+        ixc_addr_map_handle(m);
+        return;
+    }
+    ixc_mbuf_put(m);
+}
+
+static void ixc_natv6_handle_from_wan(struct ixc_mbuf *m)
+{
+    ixc_mbuf_put(m);
+}
+
 void ixc_natv6_handle(struct ixc_mbuf *m)
 {
     if(!natv6_is_initialized){
@@ -33,8 +49,8 @@ void ixc_natv6_handle(struct ixc_mbuf *m)
 
     // 没有开启NATv6那么直接通过
     if(!natv6.enable){
-        if(IXC_MBUF_FROM_LAN==m->from) ixc_pppoe_handle(m);
-        else ixc_route_handle(m);
+        if(IXC_MBUF_FROM_LAN==m->from) ixc_natv6_handle_from_lan(m);
+        else ixc_natv6_handle_from_wan(m);
 
         return;
     }

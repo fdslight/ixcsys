@@ -459,9 +459,10 @@ void ixc_pppoe_handle(struct ixc_mbuf *m)
 {
     struct ixc_pppoe_header *header=(struct ixc_pppoe_header *)(m->data+m->offset);
     unsigned short length=ntohs(header->length);
-    // 未开启PPPoE直接发送数据
+
+    // PPPoE未开启那么直接丢弃数据
     if(!pppoe.enable){
-        ixc_ether_send(m,1);
+        ixc_mbuf_put(m);
         return;
     }
 

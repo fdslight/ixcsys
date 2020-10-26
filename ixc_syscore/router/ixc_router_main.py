@@ -16,7 +16,6 @@ import pywind.lib.netutils as netutils
 
 import ixc_syscore.router.pylib.router as router
 import ixc_syscore.router.handlers.tapdev as tapdev
-import ixc_syscore.router.handlers.tundev as tundev
 import ixc_syscore.router.handlers.pfwd as pfwd
 import ixc_syscore.router.pylib.pppoe as pppoe
 
@@ -252,7 +251,7 @@ class service(dispatcher.dispatcher):
 
             os.system("ifconfig %s promisc" % lan_phy_ifname)
             os.system("ifconfig %s up" % lan_phy_ifname)
-        self.router.netif_set_ip(router.IXC_NETIF_LAN, socket.inet_pton(socket.AF_INET6, "fd::1"), 64, True)
+        self.router.netif_set_ip(router.IXC_NETIF_LAN, socket.inet_pton(socket.AF_INET6, "2400::1"), 64, True)
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)
@@ -300,11 +299,6 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
 
-    def start_local(self):
-        rs = self.router.tundev_create("ixclocal")
-        self.__tun_fd, self.__TUN_NAME = rs
-        self.create_handler(-1, tundev.tundevice, self.__tun_fd)
-
     def set_gw_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         if is_ipv6:
             fa = socket.AF_INET6
@@ -321,16 +315,8 @@ class service(dispatcher.dispatcher):
         :param is_ipv6
         :param is_local,表示是否是本地链路IP地址,该值在is_ipv6为True时才生效
         """
-        if is_ipv6:
-            fa = socket.AF_INET6
-        else:
-            fa = socket.AF_INET
-        byte_ip = socket.inet_pton(fa, ipaddr)
-        self.router.tundev_set_ip(byte_ip, is_ipv6, is_local)
         # 设置本机器的默认路由指向
         # 首先删除默认路由
-        os.system("ip route del default")
-        os.system("ip route add default dev %s" % self.__TUN_NAME)
         if is_ipv6:
             x = "-6"
         else:
@@ -383,9 +369,7 @@ class service(dispatcher.dispatcher):
         global_vars["ixcsys.router"] = self.__router
         global_vars["ixcsys.runtime"] = self
 
-        # 注意这里的顺序,start_lan一定要在start_local前面先调用
         self.start_lan()
-        self.start_local()
         # 建议start_wan放在最后
         self.start_wan()
 

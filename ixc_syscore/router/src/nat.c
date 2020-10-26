@@ -2,7 +2,6 @@
 #include<arpa/inet.h>
 
 #include "nat.h"
-#include "pppoe.h"
 #include "netif.h"
 #include "ether.h"
 #include "addr_map.h"
@@ -270,7 +269,7 @@ static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
 {
     // 未开启NAT那么直接发送数据包
     if(!nat.enable){
-        ixc_pppoe_handle(m);
+        ixc_addr_map_handle(m);
         return;
     }
 

@@ -328,8 +328,8 @@ static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip
 static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
-    //struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
-    //struct ixc_netif *netif=m->netif;
+    struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
+    struct ixc_netif *netif=m->netif;
 
     // 检查地址是否可以被转发
     if(header->dst_addr[0]==0xff){
@@ -341,8 +341,44 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
         ixc_route_handle_for_ipv6_local(m,header);
         return;
     }
+
+    // 检查IP地址是否指向自己
+    if(!memcmp(header->dst_addr,netif->ip6addr,16)){
+        ixc_route_handle_for_ipv6_local(m,header);
+        return;
+    }
+
+    if(NULL==r){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 如果没有网卡,那么发送到其他应用
+    if(NULL==r->netif){
+        if(r->is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
+        else ixc_router_send(netif->type,header->next_header,0,m->data+m->offset,m->tail-m->offset);
+
+        // 这里丢弃数据包,避免内存泄漏
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    netif=r->netif;
+    m->netif=netif;
+    m->link_proto=0x86dd;
+
+    memcpy(m->src_hwaddr,netif->hwaddr,6);
+
+    // 如果是本地网段,把next host指向下一台主机
+    if(ixc_netif_is_subnet(netif,header->dst_addr,1,0)){
+        memcpy(m->next_host,header->dst_addr,16);
+    }
     
-    ixc_mbuf_put(m);
+    if(m->from==IXC_MBUF_FROM_LAN){
+        ixc_udp_src_filter_handle(m);
+    }else{
+        ixc_qos_add(m);
+    }
 }
 
 static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
@@ -392,12 +428,6 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果没有网卡,那么发送到其他应用
     if(NULL==r->netif){
-        // 如果找不到mbuf的网卡,那么丢弃数据包
-        if(NULL==netif){
-            ixc_mbuf_put(m);
-            return;
-        }
-
         if(r->is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
         else ixc_router_send(netif->type,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
 
@@ -410,7 +440,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     netif=m->netif;
 
     memcpy(m->src_hwaddr,netif->hwaddr,6);
-    memcpy(m->gw,r->gw,4);
+    memcpy(m->next_host,r->gw,4);
 
     ttl=iphdr->ttl;
     // 减少头部ttl的数值
@@ -420,7 +450,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     m->link_proto=0x0800;
 
     // 如果是LAN节点那么经过UDP source,否则的直接通过qos出去
-    if(IXC_MBUF_FROM_LAN){
+    if(m->from==IXC_MBUF_FROM_LAN){
         ixc_udp_src_filter_handle(m);
     }else{
         ixc_qos_add(m);

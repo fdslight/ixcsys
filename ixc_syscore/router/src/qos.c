@@ -145,7 +145,7 @@ void ixc_qos_pop(void)
             if(m->is_ipv6) ixc_natv6_handle(m);
             else ixc_nat_handle(m);
         }else{
-            ixc_addr_map_handle(m);
+            ixc_route_handle(m);
         }
         m=t;
         // 如果数据未发生完毕,那么跳转到下一个
