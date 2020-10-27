@@ -115,6 +115,17 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
 
+    offset=ntohs(iphdr->frag_info) & 0x1fff;
+
+    // 如果是LAN to WAN并且不是第一个数据包直接修改源包地址
+    if(offset!=0 && is_src){
+        rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
+        return m;
+    }
+
+    // WAN口接收的分包直接丢弃
+    if(offset!=0 && !is_src) return NULL;
+
     if(is_src) memcpy(addr,iphdr->src_addr,4);
     else memcpy(addr,iphdr->dst_addr,4);
 
@@ -125,14 +136,6 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             ixc_mbuf_put(m);
             return NULL;
         }
-    }
-
-    offset=ntohs(iphdr->frag_info) & 0x1fff;
-
-    // 如果是LAN to WAN并且不是第一个数据包直接修改源包地址
-    if(offset!=0 && is_src){
-        rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
-        return m;
     }
 
     switch(iphdr->protocol){
