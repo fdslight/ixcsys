@@ -16,7 +16,6 @@
 #include "../src/ether.h"
 #include "../src/ip.h"
 #include "../src/ip6.h"
-#include "../src/local.h"
 #include "../src/nat.h"
 #include "../src/natv6.h"
 #include "../src/pppoe.h"
@@ -195,12 +194,6 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    rs=ixc_local_init();
-    if(rs<0){
-        STDERR("cannot init local\r\n");
-        return NULL;
-    }
-
     rs=ixc_ip6_init();
     if(rs<0){
         STDERR("cannot init ICMPv6\r\n");
@@ -309,7 +302,7 @@ router_send_netpkt(PyObject *self,PyObject *args)
     }
 
     m->netif=netif;
-    m->from=IXC_MBUF_FROM_LAN;
+    m->from=IXC_MBUF_FROM_WAN;
     m->begin=IXC_MBUF_BEGIN;
     m->offset=m->begin;
     m->tail=m->begin+size;

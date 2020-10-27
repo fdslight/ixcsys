@@ -4,7 +4,6 @@
 #include "route.h"
 #include "router.h"
 #include "udp_src_filter.h"
-#include "local.h"
 #include "arp.h"
 #include "qos.h"
 #include "debug.h"
@@ -388,14 +387,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     struct ixc_netif *netif=m->netif;
     unsigned short ttl;
 
-    unsigned char *local_addr=ixc_local_get(0,0);
     unsigned short csum;
-
-    // 如果目标地址是本地地址,那么发送到本地机器
-    if(!memcmp(local_addr,iphdr->dst_addr,4)){
-        ixc_local_send(m);
-        return;
-    }
 
     // 保留地址直接丢弃
     if(iphdr->dst_addr[0]>=224){

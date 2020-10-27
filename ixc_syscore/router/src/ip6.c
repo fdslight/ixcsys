@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "pppoe.h"
 #include "route.h"
+#include "addr_map.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -19,14 +20,14 @@ static int ip6_is_initialized=0;
 static void ixc_ip6_sysloop_cb(struct sysloop *loop)
 {
     time_t now_time=time(NULL);
-    if(now_time-ip6_up_time<30) return;
+    if(now_time-ip6_up_time<60) return;
 
     /// 如果PPPoE没有开启那么发送ICMPv6 RS报文
     if(!ixc_pppoe_is_enabled()){
         ixc_icmpv6_send_rs();
     }
 
-    ixc_icmpv6_send_ra();
+    ixc_icmpv6_send_ra(NULL,NULL);
 
     ip6_up_time=time(NULL);
 }
@@ -89,6 +90,10 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
     struct netutil_ip6hdr *header;
     struct ixc_netif *netif=mbuf->netif;
 
+    if(!netif->isset_ip6){
+        ixc_mbuf_put(mbuf);
+        return;
+    }
 
     if(!ixc_ip6_check_ok(mbuf)){
         ixc_mbuf_put(mbuf);
@@ -107,13 +112,37 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
 
 int ixc_ip6_send(struct ixc_mbuf *mbuf)
 {
-    //struct netutil_ip6hdr *header;
-    if(mbuf->tail-mbuf->offset<40) return 0;
+    struct netutil_ip6hdr *header;
+    struct ixc_netif *netif=NULL;
 
+    netif=ixc_netif_get(IXC_NETIF_LAN);
+
+    if(NULL==netif){
+        ixc_mbuf_put(mbuf);
+        return -1;
+    }
+
+    if(!netif->isset_ip6){
+        ixc_mbuf_put(mbuf);
+        return -1;
+    }
+
+    if(!ixc_ip6_check_ok(mbuf)){
+        ixc_mbuf_put(mbuf);
+        return -1;
+    }
+
+    header=(struct netutil_ip6hdr *)(mbuf->data+mbuf->offset);
     mbuf->is_ipv6=1;
-    // /header=(struct netutil_ip6hdr *)(mbuf->data+mbuf->offset);
-    
-    ixc_mbuf_put(mbuf);
+
+    // 和LAN网口地址不在同一个网段那么丢弃数据包
+    if(!ixc_netif_is_subnet(netif,header->dst_addr,1,0)){
+        ixc_mbuf_put(mbuf);
+        return -1;
+    }
+
+    memcpy(mbuf->next_host,header->dst_addr,16);
+    ixc_addr_map_handle(mbuf);
 
     return 0;
 }

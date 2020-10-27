@@ -141,7 +141,7 @@ void ixc_qos_pop(void)
         t=m->next;
 
         if(IXC_MBUF_FROM_LAN==m->from){
-            DBG_FLAGS;
+            //DBG_FLAGS;
             if(m->is_ipv6) ixc_natv6_handle(m);
             else ixc_nat_handle(m);
         }else{
