@@ -98,6 +98,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     int hdr_len=0;
     char key[7],tmp[7],is_found;
     struct ixc_nat_session *session;
+    unsigned short offset;
 
     unsigned short *csum_ptr,csum;
     unsigned short *id_ptr;
@@ -124,6 +125,14 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             ixc_mbuf_put(m);
             return NULL;
         }
+    }
+
+    offset=ntohs(iphdr->frag_info) & 0x1fff;
+
+    // 如果是LAN to WAN并且不是第一个数据包直接修改源包地址
+    if(offset!=0 && is_src){
+        rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
+        return m;
     }
 
     switch(iphdr->protocol){
@@ -163,7 +172,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     // WAN口找不到的那么直接丢弃数据包
     if(NULL==session && !is_src){
         ixc_mbuf_put(m);
-        DBG_FLAGS;
+        //DBG_FLAGS;
         return NULL;
     }
 

@@ -6,6 +6,7 @@
 #include "netif.h"
 #include "ether.h"
 #include "ip6.h"
+#include "addr_map.h"
 
 static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *src_ipaddr,unsigned char *dst_ipaddr,void *icmp_data,int length)
 {
@@ -94,7 +95,6 @@ static void ixc_icmpv6_handle_echo(struct ixc_mbuf *m,struct netutil_ip6hdr *iph
 static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,unsigned char icmp_code)
 {
     struct ixc_netif *netif=m->netif;
-    struct ixc_icmpv6_rs_header *rs_header;
     struct ixc_icmpv6_opt_link_addr *opt;
     unsigned char ip6addr_all_routers[]=IXC_IP6ADDR_ALL_ROUTERS;
 
@@ -114,7 +114,6 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
 
-    rs_header=(struct ixc_icmpv6_rs_header *)(m->data+m->offset);
     opt=(struct ixc_icmpv6_opt_link_addr *)(m->data+m->offset+8);
 
     if(!netif->isset_ip6){
@@ -122,8 +121,8 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
     
+    ixc_icmpv6_send_ra(opt->hwaddr,iphdr->src_addr);
     ixc_mbuf_put(m);
-    ixc_icmpv6_send_ra();
 }
 
 /// 处理路由宣告报文
@@ -224,6 +223,9 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     struct ixc_netif *netif=m->netif;
     struct ixc_icmpv6_na_header *na_header;
     struct ixc_icmpv6_opt_link_addr *opt;
+    struct ixc_addr_map_record *r;
+
+    int rs;
 
     if(icmp_code!=0){
         ixc_mbuf_put(m);
@@ -241,7 +243,20 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         ixc_mbuf_put(m);
         return;
     }
+    r=ixc_addr_map_get(na_header->target_addr,1);
+    if(r){
+        // 如果不一致那么修改
+        if(memcmp(r->hwaddr,opt->hwaddr,6)) memcpy(r->hwaddr,opt->hwaddr,6);
+            
+        r->up_time=time(NULL);
+        return;
+    }
 
+    rs=ixc_addr_map_add(netif,na_header->target_addr,opt->hwaddr,1);
+    if(rs<0){
+        STDERR("cannot add address map for IPv6\r\n");
+        return;
+    }
     ixc_mbuf_put(m);
 }
 
@@ -290,12 +305,12 @@ void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr)
     }
 }
 
-int ixc_icmpv6_send_ra(void)
+int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
 {
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
     struct ixc_icmpv6_ra_header *ra_header;
     struct ixc_icmpv6_opt_ra *ra_opt;
-    unsigned char all_nodes[]=IXC_IP6ADDR_ALL_NODES;
+    unsigned char dst_ipaddr[]=IXC_IP6ADDR_ALL_NODES;
     unsigned char dst_hwaddr[6];
 
     unsigned char buf[64];
@@ -308,7 +323,7 @@ int ixc_icmpv6_send_ra(void)
     ra_header->code=0;
     ra_header->checksum=0;
     ra_header->cur_hop_limit=0;
-    ra_header->router_lifetime=htons(3600);
+    ra_header->router_lifetime=htons(1800);
 
     ra_opt->type_hwaddr=1;
     ra_opt->length_hwaddr=1;
@@ -321,13 +336,19 @@ int ixc_icmpv6_send_ra(void)
     ra_opt->type_prefix=3;
     ra_opt->length_prefix=4;
     ra_opt->prefix_length=64;
-    ra_opt->prefix_flags=0x40;
+    ra_opt->prefix_flags=0xc0;
     ra_opt->prefix_valid_lifetime=0xffffffff;
     ra_opt->prefix_preferred_lifetime=0xffffffff;
     memcpy(ra_opt->prefix,netif->ip6_subnet,16);
 
-    ixc_ether_get_multi_hwaddr_by_ipv6(all_nodes,dst_hwaddr);
-    ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,all_nodes,buf,64);
+    if(NULL==hwaddr){
+        ixc_ether_get_multi_hwaddr_by_ipv6(dst_ipaddr,dst_hwaddr);
+    }else{
+        memcpy(dst_hwaddr,hwaddr,6);
+        memcpy(dst_ipaddr,ipaddr,16);
+    }
+    
+    ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,dst_ipaddr,buf,64);
 
     return 0;
 }

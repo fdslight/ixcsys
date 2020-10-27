@@ -60,6 +60,7 @@ static void ixc_addr_map_timeout_cb(void *data)
 
     // 对IPv6的处理方式
     if(r->is_ipv6){
+        ixc_icmpv6_send_ns(r->netif,r->netif->ip6addr,r->address);
         return;
     }
     // 发送ARP请求,检查ARP记录
@@ -195,12 +196,11 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     struct ixc_addr_map_record *r=NULL;
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
    
-
     r=ixc_addr_map_get(m->next_host,1);
-
     // 找到记录那么直接发送
     if(r){
         memcpy(m->dst_hwaddr,r->hwaddr,6);
+        r->up_time=time(NULL);
         ixc_ether_send(m,1);
         return;
     }
@@ -211,7 +211,6 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
 
 static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
 {
-    struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct ixc_addr_map_record *r=NULL;
     struct ixc_netif *netif=m->netif;
 
@@ -230,6 +229,8 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
     }
 
     memcpy(m->dst_hwaddr,r->hwaddr,6);
+    r->up_time=time(NULL);
+
     ixc_ether_send(m,1);
 }
 

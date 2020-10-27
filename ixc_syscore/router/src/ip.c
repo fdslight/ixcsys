@@ -13,6 +13,29 @@
 
 #include "../../../pywind/clib/netutils.h"
 
+static int ixc_ip_check_ok(struct ixc_mbuf *m,struct netutil_iphdr *header)
+{
+    int version=(header->ver_and_ihl & 0xf0) >> 4;
+    unsigned short tot_len;
+    unsigned char ipaddr_unspec[]=IXC_IPADDR_UNSPEC;
+
+    if(m->tail-m->offset<20) return 0;
+    if(4!=version) return 0;
+
+    tot_len=ntohs(header->tot_len);
+
+    if(tot_len > m->tail- m->offset) return 0;
+    if(!memcmp(header->dst_addr,ipaddr_unspec,4)) return 0;
+    if(header->dst_addr[0]==127) return 0;
+    // 源地址与目的地址一样那么丢弃该数据包
+    if(!memcmp(header->dst_addr,header->src_addr,4)){
+        ixc_mbuf_put(m);
+        return 0;
+    }
+
+    return 1;
+}
+
 static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphdr)
 {
     struct netutil_udphdr *udphdr;
@@ -55,54 +78,30 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
             return;
         }
     }
-
-    // 发送数据到router
+    // 发送数据到route
     ixc_route_handle(m);
 }
-
 
 void ixc_ip_handle(struct ixc_mbuf *mbuf)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(mbuf->data+mbuf->offset);
-    int version=(header->ver_and_ihl & 0xf0) >> 4;
     unsigned short tot_len;
     struct ixc_netif *netif=mbuf->netif;
-    unsigned char ipaddr_unspec[]=IXC_IPADDR_UNSPEC;
 
-    if(4!=version){
+    if(!netif->isset_ip){
         ixc_mbuf_put(mbuf);
         return;
     }
 
-    //STDERR("%d.%d.%d.%d\r\n",header->dst_addr[0],header->dst_addr[1],header->dst_addr[2],header->dst_addr[3]);
+    if(!ixc_ip_check_ok(mbuf,header)){
+        ixc_mbuf_put(mbuf);
+        return;
+    }
 
-    // 首先检查IP长度是否合法
     tot_len=ntohs(header->tot_len);
-
-    if(tot_len > mbuf->tail- mbuf->offset){
-        ixc_mbuf_put(mbuf);
-        return;
-    }
-
-    if(!memcmp(header->dst_addr,ipaddr_unspec,4)){
-        ixc_mbuf_put(mbuf);
-        return;
-    }
-
-    if(header->dst_addr[0]==127){
-        ixc_mbuf_put(mbuf);
-        return;
-    }
-
     mbuf->is_ipv6=0;
     // 除去以太网的填充字节
     mbuf->tail=mbuf->offset+tot_len;
-
-    // 源地址与目的地址一样那么丢弃该数据包
-    if(!memcmp(header->dst_addr,header->src_addr,4)){
-        ixc_mbuf_put(mbuf);
-        return;
-    }
 
     IXC_MBUF_LOOP_TRACE(mbuf);
 
@@ -113,12 +112,21 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     }
 }
 
-
 int ixc_ip_send(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
     int ip_ver= (header->ver_and_ihl & 0xf0) >> 4;
-    unsigned char ipaddr_unspec[]=IXC_IPADDR_UNSPEC;
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
+
+    if(NULL==netif){
+        ixc_mbuf_put(m);
+        return -1;
+    }
+
+    if(!netif->isset_ip){
+        ixc_mbuf_put(m);
+        return -1;
+    }
 
     // 检查IP版本是否符合要求
     if(4!=ip_ver && 6!=ip_ver){
@@ -128,35 +136,23 @@ int ixc_ip_send(struct ixc_mbuf *m)
 
     if(6==ip_ver) return ixc_ip6_send(m);
 
-    if(!memcmp(header->dst_addr,ipaddr_unspec,4)){
-        ixc_mbuf_put(m);
-        return -1;
-    }
-
-    if(header->dst_addr[0]==127){
-        ixc_mbuf_put(m);
-        return -1;
-    }
-
-    m->is_ipv6=0;
-
-    // 丢弃组播或者广播的数据包
+    // 丢弃多拨地址和保留地址
     if(header->dst_addr[0]>=224){
         ixc_mbuf_put(m);
         return -1;
     }
+    m->is_ipv6=0;
+    m->netif=netif;
 
-    // 如果源地址和目的地址一样那么丢弃该数据包
-    if(!memcmp(header->dst_addr,header->src_addr,4)){
+    // 不是内网网段直接丢弃数据包
+    if(!ixc_netif_is_subnet(m->netif,header->dst_addr,0,0)){
         ixc_mbuf_put(m);
         return -1;
     }
 
-    //IXC_PRINT_IP("source IP",header->src_addr);
-    //IXC_PRINT_IP("dest IP",header->dst_addr);
-
-    m->netif=NULL;
-    ixc_route_handle(m);
+    // 直接发送
+    memcpy(m->next_host,header->dst_addr,4);
+    ixc_addr_map_handle(m);
 
     return 0;
 }
