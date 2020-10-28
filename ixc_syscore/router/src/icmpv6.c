@@ -156,13 +156,14 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     struct ixc_icmpv6_ns_header *ns_hdr=NULL;
     struct ixc_icmpv6_opt_link_addr *ns_opt,*na_opt;
     struct ixc_icmpv6_na_header *na_header;
-    struct ixc_addr_map_record *r;
 
     unsigned char *ptr,unspec_addr[]=IXC_IP6ADDR_UNSPEC;
 
     unsigned char buf[32];
     unsigned int rso=0;
     int flags=0,is_unspec_addr=0,size=32;
+    unsigned char dst_hwaddr[6];
+    unsigned char dst_ipaddr[]=IXC_IP6ADDR_ALL_NODES;
 
     if(icmp_code!=0){
         ixc_mbuf_put(m);
@@ -215,6 +216,12 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     na_header=(struct ixc_icmpv6_na_header *)buf;
     na_opt=(struct ixc_icmpv6_opt_link_addr *)(&buf[24]);
 
+    if(!is_unspec_addr) {
+        memcpy(dst_ipaddr,iphdr->src_addr,16);
+        memcpy(dst_hwaddr,ns_opt->hwaddr,6);
+    }else{
+        ixc_ether_get_multi_hwaddr_by_ipv6(dst_ipaddr,dst_hwaddr);
+    }
 
     if(netif->type==IXC_NETIF_LAN){
         rso=rso | (0x00000001 << 31);
@@ -227,15 +234,18 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 
     memcpy(na_header->target_addr,ptr,16);
 
-    na_opt->type=2;
-    na_opt->length=1;
-    memcpy(na_opt->hwaddr,netif->hwaddr,6);
+    // 非冲突检测的处理方式
+    if(!is_unspec_addr){
+        na_opt->type=2;
+        na_opt->length=1;
+        memcpy(na_opt->hwaddr,netif->hwaddr,6);
+    }
 
     //char addr[128];
     //inet_ntop(AF_INET6,iphdr->src_addr,addr,128);
     //DBG("from:%s %x:%x:%x:%x\r\n",addr,ns_opt->hwaddr[0],ns_opt->hwaddr[1],ns_opt->hwaddr[2],ns_opt->hwaddr[3]);
 
-    ixc_icmpv6_send(netif,ns_opt->hwaddr,ptr,iphdr->src_addr,buf,size);
+    ixc_icmpv6_send(netif,dst_hwaddr,ptr,dst_ipaddr,buf,size);
     ixc_mbuf_put(m);
 }
 
@@ -246,6 +256,7 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     struct ixc_icmpv6_na_header *na_header;
     struct ixc_icmpv6_opt_link_addr *opt;
     struct ixc_addr_map_record *r;
+    unsigned char all_nodes[]=IXC_IP6ADDR_ALL_NODES;
 
     int rs;
 
@@ -279,6 +290,15 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         STDERR("cannot add address map for IPv6\r\n");
         return;
     }
+
+    // 如果是WAN口的数据并且开启NDP代理以及目标是all_nodes地址,那么转发一份该报文到LAN口
+    if(netif->type==IXC_NETIF_WAN && ndp_proxy_enable && !memcmp(all_nodes,iphdr->dst_addr,16)){
+        m->netif=ixc_netif_get(IXC_NETIF_LAN);
+        m->offset-=40;
+        ixc_ether_send(m,1);
+        return;
+    }
+
     ixc_mbuf_put(m);
 }
 
