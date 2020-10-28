@@ -17,7 +17,6 @@
 #include "../src/ip.h"
 #include "../src/ip6.h"
 #include "../src/nat.h"
-#include "../src/natv6.h"
 #include "../src/pppoe.h"
 #include "../src/debug.h"
 
@@ -143,12 +142,6 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_nat_init();
     if(rs<0){
         STDERR("cannot init nat\r\n");
-        return NULL;
-    }
-
-    rs=ixc_natv6_init();
-    if(rs<0){
-        STDERR("cannot init natv6\r\n");
         return NULL;
     }
 
@@ -599,13 +592,11 @@ router_route_del(PyObject *self,PyObject *args)
 static PyObject *
 router_nat_set(PyObject *self,PyObject *args)
 {
-    int status,type,is_ipv6;
+    int status;
     int rs;
 
-    if(!PyArg_ParseTuple(args,"pip",&status,&type,&is_ipv6)) return NULL;
-
-    if(is_ipv6) rs=ixc_natv6_enable(status,type);
-    else rs=ixc_nat_enable(status,type);
+    if(!PyArg_ParseTuple(args,"p",&status)) return NULL;
+    rs=ixc_nat_enable(status);
 
     if(rs){
         Py_RETURN_FALSE;
