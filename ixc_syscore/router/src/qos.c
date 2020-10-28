@@ -3,7 +3,6 @@
 
 #include "qos.h"
 #include "nat.h"
-#include "natv6.h"
 #include "route.h"
 #include "addr_map.h"
 #include "debug.h"
@@ -142,7 +141,7 @@ void ixc_qos_pop(void)
 
         if(IXC_MBUF_FROM_LAN==m->from){
             //DBG_FLAGS;
-            if(m->is_ipv6) ixc_natv6_handle(m);
+            if(m->is_ipv6) ixc_addr_map_handle(m);
             else ixc_nat_handle(m);
         }else{
             ixc_route_handle(m);

@@ -8,6 +8,9 @@
 #include "ip6.h"
 #include "addr_map.h"
 
+/// 是否开启NDP代理
+static int ndp_proxy_enable=0;
+
 static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *src_ipaddr,unsigned char *dst_ipaddr,void *icmp_data,int length)
 {
     struct ixc_mbuf *m=ixc_mbuf_get();
@@ -153,22 +156,30 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     struct ixc_icmpv6_ns_header *ns_hdr=NULL;
     struct ixc_icmpv6_opt_link_addr *ns_opt,*na_opt;
     struct ixc_icmpv6_na_header *na_header;
-    unsigned char *ptr;
+    struct ixc_addr_map_record *r;
+
+    unsigned char *ptr,unspec_addr[]=IXC_IP6ADDR_UNSPEC;
 
     unsigned char buf[32];
     unsigned int rso=0;
-    int flags=0;
+    int flags=0,is_unspec_addr=0,size=32;
 
     if(icmp_code!=0){
         ixc_mbuf_put(m);
         return;
     }
 
-    if(m->tail-m->offset!=32){
+    // 如果是邻居冲突检测那么ICMPv6应该是24字节
+    if(!memcmp(unspec_addr,iphdr->src_addr,16)) {
+        is_unspec_addr=1;
+        size=24;
+    }
+
+    if(m->tail-m->offset!=size){
         ixc_mbuf_put(m);
         return;
     }
-
+    
     //DBG_FLAGS;
     ns_hdr=(struct ixc_icmpv6_ns_header *)(m->data+m->offset);
     ns_opt=(struct ixc_icmpv6_opt_link_addr *)(m->data+m->offset+24);
@@ -181,6 +192,17 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     if(!memcmp(ns_hdr->target_addr,netif->ip6addr,16)){
         flags=1;
         ptr=netif->ip6addr;
+    }
+
+    // 处理开启NDP代理并且目标主机不是本机器的情况
+    if(ndp_proxy_enable && !flags){
+        ptr=iphdr->src_addr;
+    }
+
+    // 如果开启了NDP代理并且是WAN口的处理方式
+    if(ndp_proxy_enable && netif->type==IXC_NETIF_WAN){
+        netif=ixc_netif_get(IXC_NETIF_LAN);
+        ptr=iphdr->src_addr;
     }
 
     if(!flags){
@@ -213,7 +235,7 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     //inet_ntop(AF_INET6,iphdr->src_addr,addr,128);
     //DBG("from:%s %x:%x:%x:%x\r\n",addr,ns_opt->hwaddr[0],ns_opt->hwaddr[1],ns_opt->hwaddr[2],ns_opt->hwaddr[3]);
 
-    ixc_icmpv6_send(netif,ns_opt->hwaddr,ptr,iphdr->src_addr,buf,32);
+    ixc_icmpv6_send(netif,ns_opt->hwaddr,ptr,iphdr->src_addr,buf,size);
     ixc_mbuf_put(m);
 }
 
@@ -258,6 +280,17 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
     ixc_mbuf_put(m);
+}
+
+int ixc_icmpv6_init(void)
+{
+    ndp_proxy_enable=0;
+    return 0;
+}
+
+void ixc_icmpv6_uninit(void)
+{
+
 }
 
 void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr)
@@ -419,4 +452,17 @@ int ixc_icmpv6_send_ns(struct ixc_netif *netif,unsigned char *src_ipaddr,unsigne
     ixc_ether_get_multi_hwaddr_by_ipv6(dst_ipaddr,dst_hwaddr);
 
     return ixc_icmpv6_send(netif,dst_hwaddr,src_ipaddr,sol_addr,buf,32);
+}
+
+int ixc_icmpv6_ndp_proxy_enable(int status)
+{
+    ndp_proxy_enable=status;
+    
+    return 0;
+}
+
+inline
+int ixc_icmpv6_is_enabled(void)
+{
+    return ndp_proxy_enable;
 }

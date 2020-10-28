@@ -26,7 +26,7 @@ static void ixc_ip6_sysloop_cb(struct sysloop *loop)
     if(!ixc_pppoe_is_enabled()){
         ixc_icmpv6_send_rs();
     }
-
+    
     ixc_icmpv6_send_ra(NULL,NULL);
 
     ip6_up_time=time(NULL);

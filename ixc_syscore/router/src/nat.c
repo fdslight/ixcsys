@@ -402,7 +402,7 @@ void ixc_nat_handle(struct ixc_mbuf *m)
     else ixc_nat_handle_from_wan(m);
 }
 
-int ixc_nat_enable(int status,int type)
+int ixc_nat_enable(int status)
 {
     nat.enable=status;
     
