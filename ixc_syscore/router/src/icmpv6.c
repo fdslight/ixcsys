@@ -194,15 +194,15 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         ptr=netif->ip6addr;
     }
 
-    // 处理开启NDP代理并且目标主机不是本机器的情况
-    if(ndp_proxy_enable && !flags){
+    // 处理开启NDP代理并且目标主机不是本机器和邻居冲突检测的情况
+    if(ndp_proxy_enable && !flags && is_unspec_addr){
         ptr=iphdr->src_addr;
-    }
+        netif=netif->type==IXC_NETIF_WAN?ixc_netif_get(IXC_NETIF_LAN):ixc_netif_get(IXC_NETIF_WAN);
+        
+        if(!is_unspec_addr) memcpy(ns_opt->hwaddr,netif->hwaddr,6);
 
-    // 如果开启了NDP代理并且是WAN口的处理方式
-    if(ndp_proxy_enable && netif->type==IXC_NETIF_WAN){
-        netif=ixc_netif_get(IXC_NETIF_LAN);
-        ptr=iphdr->src_addr;
+        ixc_mbuf_put(m);
+        return;
     }
 
     if(!flags){
