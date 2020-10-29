@@ -195,6 +195,13 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     struct ixc_netif *netif=m->netif;
     struct ixc_addr_map_record *r=NULL;
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+
+    // 如果是WAN口并且不是同网段地址那么直接使用默认网关
+    if(netif->type==IXC_NETIF_WAN && !ixc_netif_is_subnet(netif,header->dst_addr,1,0)){
+        memcpy(m->dst_hwaddr,netif->ip6_default_router_hwaddr,6);
+        ixc_ether_send(m,1);
+        return;
+    }
    
     r=ixc_addr_map_get(m->next_host,1);
     // 找到记录那么直接发送

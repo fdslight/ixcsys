@@ -41,7 +41,7 @@ struct ixc_icmpv6_na_header{
     unsigned char target_addr[16]; 
 };
 
-struct ixc_icmpv6_prefix_info{
+struct ixc_icmpv6_opt_prefix_info{
     unsigned char type;
     unsigned char length;
     unsigned char prefix_len;
@@ -49,6 +49,7 @@ struct ixc_icmpv6_prefix_info{
     unsigned int valid_lifetime;
     unsigned int preferred_lifetime;
     unsigned char reserved2[4];
+    unsigned char prefix[16];
 };
 
 struct ixc_icmpv6_mtu{

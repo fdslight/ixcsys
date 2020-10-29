@@ -7,6 +7,7 @@
 #include "ether.h"
 #include "ip6.h"
 #include "addr_map.h"
+#include "route.h"
 
 /// 是否开启NDP代理
 static int ndp_proxy_enable=0;
@@ -131,21 +132,115 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 /// 处理路由宣告报文
 static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,unsigned char icmp_code)
 {
-    struct ixc_netif *netif=m->netif;
-    unsigned char ip6addr_all_nodes[]=IXC_IP6ADDR_ALL_NODES;
+    struct ixc_netif *netif=m->netif,*if_lan;
+    //struct ixc_icmpv6_ra_header *ra_header;
+    struct ixc_icmpv6_opt_prefix_info *opt_prefix;
+
+    unsigned char *ptr;
+    unsigned char type,length;
+    int is_err=0,A=0;
+    unsigned char gw_hwaddr[6],byte,slaac_addr[16];
+    unsigned char unspec_addr[]=IXC_IP6ADDR_UNSPEC;
+    unsigned int mtu;
+
+    if(m->tail-m->offset!=64){
+        ixc_mbuf_put(m);
+        return;
+    }
 
     if(netif->type==IXC_NETIF_LAN || icmp_code!=0){
         ixc_mbuf_put(m);
         return;
     }
 
-    if(memcmp(ip6addr_all_nodes,iphdr->dst_addr,16)){
+    //ra_header=(struct ixc_icmpv6_ra_header *)(m->data+m->offset);
+    ptr=m->data+m->offset+16;
+
+    while(1){
+        type=ptr[0];
+        length=ptr[1];
+
+        if(type!=1 && type!=3 && type!=5){
+            is_err=1;
+            break;
+        }
+        
+        if(length==1 && (type!=1 || type!=5)){
+            is_err=1;
+            break;
+        }
+
+        if(type==3 && length!=4){
+            is_err=1;
+            break;
+        }
+
+        switch(type){
+            case 1:
+                memcpy(gw_hwaddr,ptr+2,6);
+                break;
+            case 3:
+                opt_prefix=(struct ixc_icmpv6_opt_prefix_info *)ptr;
+                break;
+            case 5:
+                mtu=ntohl(*((unsigned int *)(ptr+2)));
+                break;
+        }
+
+        ptr+=length * 8;
+    }
+
+    if(is_err){
         ixc_mbuf_put(m);
         return;
     }
-    // 首先检查ICMPv6 RA格式是否正确
-    // 检查前缀是否符合SLAAC规范
-    // 此处生成随机IPv6地址
+
+    byte=opt_prefix->prefix[0];
+
+    // 首先检查地址是否合法
+    if(byte==0x00 || byte==0xff || byte==0xfe){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 检查前缀是否符合无状态地址配置要求
+    if(opt_prefix->prefix_len>64){
+        STDERR("cannot apply to stateless address set because of RA prefix is %d\r\n",opt_prefix->prefix_len);
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 检查上级路由器是否允许无状态地址配置
+    A=opt_prefix->la & 0x40;
+    if(!A){
+        STDERR("cannot apply to stateless address set because of RA not permit %d\r\n",opt_prefix->prefix_len);
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    if(mtu>1500){
+        STDERR("Wrong MTU value from RA%u\r\n",mtu);
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    memcpy(slaac_addr,opt_prefix->prefix,opt_prefix->length);
+    
+    ixc_ip6_eui64_get(netif->hwaddr,slaac_addr);
+    // 为LAN和WAN各分配一个IP地址
+    // 为WAN分配地址
+    ixc_netif_set_ip(IXC_NETIF_WAN,slaac_addr,64,1);
+    // 此处发送邻居请求,检查地址是否冲突
+    ixc_icmpv6_send_ns(netif,unspec_addr,slaac_addr);
+
+    // 为LAN分配一个地址
+    if_lan=ixc_netif_get(IXC_NETIF_LAN);
+    ixc_ip6_eui64_get(if_lan->hwaddr,slaac_addr);
+    ixc_netif_set_ip(IXC_NETIF_LAN,slaac_addr,64,1);
+
+    netif->mtu_v6=mtu;
+    memcpy(netif->ip6_default_router_hwaddr,gw_hwaddr,6);
+
     ixc_mbuf_put(m);
 }
 
