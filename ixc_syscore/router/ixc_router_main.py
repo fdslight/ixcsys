@@ -251,7 +251,7 @@ class service(dispatcher.dispatcher):
 
             os.system("ifconfig %s promisc" % lan_phy_ifname)
             os.system("ifconfig %s up" % lan_phy_ifname)
-        self.router.netif_set_ip(router.IXC_NETIF_LAN, socket.inet_pton(socket.AF_INET6, "2400::1"), 64, True)
+        #self.router.netif_set_ip(router.IXC_NETIF_LAN, socket.inet_pton(socket.AF_INET6, "2400::1"), 64, True)
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)

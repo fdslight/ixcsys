@@ -9,8 +9,8 @@
 #define IXC_FLAG_DHCP_SERVER 2
 /// 表示一个L2VPN的数据包
 #define IXC_FLAG_L2VPN 3
-/// 表示一个Source UDP filter数据包
-#define IXC_FLAG_SRC_UDP_FILTER 4
+/// 表示一个Source filter数据包
+#define IXC_FLAG_SRC_FILTER 4
 /// 表示是一个带链路层头部的路由转发包
 #define IXC_FLAG_ROUTE_FWD 5
 

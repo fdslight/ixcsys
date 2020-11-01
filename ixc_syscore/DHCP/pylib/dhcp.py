@@ -119,7 +119,11 @@ class dhcp_parser(dhcp):
 
     def parse_from_link_data(self, link_data):
         dst_hwaddr, src_hwaddr, proto_type, ippkt = netpkt.parse_ether_data(link_data)
+        if proto_type != 0x0800:
+            raise DHCPErr("It is not IP protocol packet:%s" % hex(proto_type))
         src_addr, dst_addr, protocol, udpdata = netpkt.parse_ippkt(ippkt)
+        if protocol != 17:
+            raise DHCPErr("It is not UDP packet:%d" % protocol)
         src_port, dst_port, dhcpdata = netpkt.parse_udppkt(udpdata)
         self.parse_public_header(dhcpdata[0:HDR_LENGTH])
         options = self.parse_options(dhcpdata[HDR_LENGTH:])

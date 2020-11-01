@@ -4,9 +4,9 @@ import socket, struct
 import pywind.lib.netutils as netutils
 
 import ixc_syscore.DHCP.pylib.dhcp as dhcp
-import ixc_syscore.DHCP.pylib.netpkt as netpkt
-
 import ixc_syscore.DHCP.pylib.ipalloc as ipalloc
+
+import ixc_syslib.pylib.logging as logging
 
 
 class dhcp_server(object):
@@ -94,11 +94,8 @@ class dhcp_server(object):
         except:
             return
 
-        if self.__dhcp_parser.ciaddr != src_hwaddr: return
-
         self.__client_hwaddr = src_hwaddr
-
-        if is_server: return
+        if not is_server: return
         x = self.get_dhcp_opt_value(options, 53)
         msg_type = x[0]
         if not msg_type: return
