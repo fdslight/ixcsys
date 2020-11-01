@@ -22,7 +22,7 @@ class pfwd(udp_handler.udp_handler):
             router.IXC_FLAG_DHCP_SERVER: None,
             router.IXC_FLAG_ARP: None,
             router.IXC_FLAG_L2VPN: None,
-            router.IXC_FLAG_SRC_UDP_FILTER: None,
+            router.IXC_FLAG_SRC_FILTER: None,
             router.IXC_FLAG_ROUTE_FWD: None,
         }
 
@@ -85,7 +85,7 @@ class pfwd(udp_handler.udp_handler):
             fwd_info = self.__fwd_tb[i]
             if not fwd_info: continue
             new_msg = [
-                struct.pack(HEADER_FMT, fwd_info[0], if_type, 0, ipproto, i),
+                struct.pack(HEADER_FMT, fwd_info[0], if_type, 0, ipproto, flags),
                 msg
             ]
             self.sendto(b"".join(new_msg), ("127.0.0.1", fwd_info[1]))

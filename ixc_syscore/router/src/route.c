@@ -3,7 +3,7 @@
 
 #include "route.h"
 #include "router.h"
-#include "udp_src_filter.h"
+#include "src_filter.h"
 #include "arp.h"
 #include "qos.h"
 #include "debug.h"
@@ -374,7 +374,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     }
     
     if(m->from==IXC_MBUF_FROM_LAN){
-        ixc_udp_src_filter_handle(m);
+        ixc_src_filter_handle(m);
     }else{
         ixc_qos_add(m);
     }
@@ -443,7 +443,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果是LAN节点那么经过UDP source,否则的直接通过qos出去
     if(m->from==IXC_MBUF_FROM_LAN){
-        ixc_udp_src_filter_handle(m);
+        ixc_src_filter_handle(m);
     }else{
         ixc_qos_add(m);
     }

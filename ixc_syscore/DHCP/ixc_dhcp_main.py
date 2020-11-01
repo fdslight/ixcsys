@@ -158,8 +158,7 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_DHCP_SERVER"])
         ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_DHCP_SERVER"],
                                         self.__rand_key, port)
-        if not ok:
-            raise SystemError(message)
+        if not ok: raise SystemError(message)
 
     def start_dhcp(self):
         self.__dhcp_fd = self.create_handler(-1, dhcp.dhcp_service)
@@ -172,6 +171,7 @@ class service(dispatcher.dispatcher):
             else:
                 break
 
+        if self.debug: print("start DHCP")
         # 先设置LAN地址
         self.set_lan_address()
 

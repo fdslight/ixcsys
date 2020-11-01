@@ -11,7 +11,7 @@
 #include "../src/addr_map.h"
 #include "../src/qos.h"
 #include "../src/route.h"
-#include "../src/udp_src_filter.h"
+#include "../src/src_filter.h"
 #include "../src/vpn.h"
 #include "../src/ether.h"
 #include "../src/ip.h"
@@ -169,7 +169,7 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    rs=ixc_udp_src_filter_init();
+    rs=ixc_src_filter_init();
     if(rs<0){
         STDERR("cannot init P2P\r\n");
         return NULL;
@@ -474,7 +474,7 @@ router_netif_set_hwaddr(PyObject *self,PyObject *args)
 }
 
 static PyObject *
-router_udp_src_filter_set_ip(PyObject *self,PyObject *args)
+router_src_filter_set_ip(PyObject *self,PyObject *args)
 {
     unsigned char *subnet;
     Py_ssize_t size;
@@ -493,7 +493,7 @@ router_udp_src_filter_set_ip(PyObject *self,PyObject *args)
         return NULL;  
     }
 
-    rs=ixc_udp_src_filter_set_ip(subnet,prefix,is_ipv6);
+    rs=ixc_src_filter_set_ip(subnet,prefix,is_ipv6);
 
     if(!rs){
         Py_RETURN_TRUE;
@@ -503,13 +503,13 @@ router_udp_src_filter_set_ip(PyObject *self,PyObject *args)
 }
 
 static PyObject *
-router_udp_src_filter_enable(PyObject *self,PyObject *args)
+router_src_filter_enable(PyObject *self,PyObject *args)
 {
     int enable,is_linked;
 
     if(!PyArg_ParseTuple(args,"pp",&enable,&is_linked)) return NULL;
     
-    ixc_udp_src_filter_enable(enable,is_linked);
+    ixc_src_filter_enable(enable,is_linked);
 
     Py_RETURN_NONE;
 }
@@ -693,8 +693,8 @@ static PyMethodDef routerMethods[]={
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
     //
-    {"udp_src_filter_set_ip",(PyCFunction)router_udp_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
-    {"udp_src_filter_enable",(PyCFunction)router_udp_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
+    {"src_filter_set_ip",(PyCFunction)router_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
+    {"src_filter_enable",(PyCFunction)router_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
     //
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
@@ -754,7 +754,7 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_CLIENT);
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_SERVER);
     PyModule_AddIntMacro(m,IXC_FLAG_L2VPN);
-    PyModule_AddIntMacro(m,IXC_FLAG_SRC_UDP_FILTER);
+    PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
