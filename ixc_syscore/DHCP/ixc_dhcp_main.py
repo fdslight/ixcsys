@@ -87,6 +87,8 @@ class service(dispatcher.dispatcher):
 
     __debug = None
 
+    __manage_addr = None
+
     def init_func(self, debug):
         self.__debug = debug
         self.__scgi_fd = -1
@@ -113,6 +115,8 @@ class service(dispatcher.dispatcher):
         manager_addr = public["manage_addr"]
         gw_addr = public["gw_addr"]
         prefix = public["prefix"]
+
+        self.__manage_addr = manager_addr
 
         RPCClient.fn_call("router", "/runtime", "set_manage_ipaddr", manager_addr, prefix, is_ipv6=False,
                           is_local=False)
@@ -152,7 +156,7 @@ class service(dispatcher.dispatcher):
 
         self.__dhcp_server = dhcp_server.dhcp_server(
             self, gw_addr, self.__hostname, self.__lan_hwaddr, addr_begin, addr_end,
-            subnet, prefix
+            subnet, int(prefix)
         )
 
         RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_DHCP_SERVER"])
@@ -229,6 +233,10 @@ class service(dispatcher.dispatcher):
     @property
     def server(self):
         return self.__dhcp_server
+
+    @property
+    def manage_addr(self):
+        return self.__manage_addr
 
     def handle_arp_data(self, link_data: bytes):
         """处理ARP数据包
