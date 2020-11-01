@@ -138,10 +138,10 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
         return -1;
     }
 
+    subnet_calc_with_prefix(ipaddr,prefix,is_ipv6,subnet);
+    msk_calc(prefix,is_ipv6,mask);
+    
     if(!is_ipv6){
-        subnet_calc_with_prefix(ipaddr,prefix,is_ipv6,subnet);
-        msk_calc(prefix,is_ipv6,mask);
-
         // 首先对原来的路由进行删除
         ixc_route_del(subnet,prefix,is_ipv6);
         rs=ixc_route_add(subnet,prefix,ipaddr,is_ipv6,0);
