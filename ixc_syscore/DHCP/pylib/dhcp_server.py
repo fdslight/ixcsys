@@ -25,13 +25,21 @@ class dhcp_server(object):
 
     __TIMEOUT = 1800
 
+    __mask_bytes = None
+    __route_bytes = None
+    __dns_bytes = None
+
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
-        self.__alloc = ipalloc.alloc(addr_begin, addr_finish, subnet, prefix)
+        self.__runtime = runtime
+        self.__mask_bytes = socket.inet_pton(socket.AF_INET, netutils.ip_prefix_convert(prefix))
+        self.__route_bytes = socket.inet_pton(socket.AF_INET, my_ipaddr)
+        self.__dns_bytes = socket.inet_pton(socket.AF_INET, self.__runtime.manage_addr)
+
+        self.__alloc = ipalloc.alloc(addr_begin, addr_finish, subnet, int(prefix))
         self.__my_ipaddr = socket.inet_pton(socket.AF_INET, my_ipaddr)
         self.__hostname = hostname.encode()
         self.__hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
-        self.__runtime = runtime
 
         self.__dhcp_parser = dhcp.dhcp_parser()
         self.__dhcp_builder = dhcp.dhcp_builder()
@@ -78,8 +86,49 @@ class dhcp_server(object):
     def handle_dhcp_discover_req(self, opts: list):
         self.__dhcp_builder.reset()
 
+        request_list = self.get_dhcp_opt_value(opts, 55)
+        if not request_list: return
+        resp_opts = []
+        ipaddr = self.__alloc.get_ipaddr(self.__client_hwaddr)
+
+        if not ipaddr: return
+
+        your_byte_ipaddr = socket.inet_pton(socket.AF_INET, ipaddr)
+
+        resp_opts.append((53, bytes([2])))
+
+        for code in request_list:
+            if code == 1:
+                resp_opts.append((code, self.__mask_bytes,))
+            if code == 6 and self.__dns_bytes:
+                resp_opts.append((code, self.__dns_bytes))
+            if code == 54:
+                resp_opts.append((code, self.__my_ipaddr))
+
+        flags = self.__dhcp_parser.flags & 0x8000
+        if flags > 0:
+            dst_hwaddr = self.__client_hwaddr
+        else:
+            dst_hwaddr = bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+
+        self.__dhcp_builder.xid = self.__dhcp_parser.xid
+        self.__dhcp_builder.op = 2
+        self.__dhcp_builder.yiaddr = your_byte_ipaddr
+        self.__dhcp_builder.siaddr = self.__my_ipaddr
+        self.__dhcp_builder.chaddr = self.__client_hwaddr
+
+        resp_data = self.__dhcp_builder.build_to_link_data(
+            dst_hwaddr, self.__hwaddr, bytes([0xff, 0xff, 0xff, 0xff]), self.__my_ipaddr, resp_opts, is_server=True
+        )
+        self.__runtime.send_dhcp_server_msg(resp_data)
+
     def handle_dhcp_request(self, opts: list):
-        pass
+        client_id = self.get_dhcp_opt_value(opts, 61)
+        request_ip = self.get_dhcp_opt_value(opts, 50)
+        server_id = self.get_dhcp_opt_value(opts, 54)
+        request_list = self.get_dhcp_opt_value(opts, 55)
+
+        if not request_ip: return
 
     def handle_dhcp_decline(self, opts: list):
         pass
