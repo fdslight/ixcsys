@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-import socket, struct
+import socket, struct, time
 
 import pywind.lib.netutils as netutils
 
 import ixc_syscore.DHCP.pylib.dhcp as dhcp
 import ixc_syscore.DHCP.pylib.ipalloc as ipalloc
-
-import ixc_syslib.pylib.logging as logging
 
 
 class dhcp_server(object):
@@ -29,9 +27,16 @@ class dhcp_server(object):
     __route_bytes = None
     __dns_bytes = None
 
+    __dhcp_options = None
+
+    __tmp_alloc_addrs = None
+
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
         self.__runtime = runtime
+        self.__dhcp_options = {}
+        self.__tmp_alloc_addrs = {}
+
         self.__mask_bytes = socket.inet_pton(socket.AF_INET, netutils.ip_prefix_convert(prefix))
         self.__route_bytes = socket.inet_pton(socket.AF_INET, my_ipaddr)
         self.__dns_bytes = socket.inet_pton(socket.AF_INET, self.__runtime.manage_addr)
@@ -96,16 +101,30 @@ class dhcp_server(object):
                 resp_opts.append((code, self.__my_ipaddr))
             if code == 3:
                 resp_opts.append((code, self.__my_ipaddr))
+            if code in self.__dhcp_options:
+                resp_opts.append((code, self.__dhcp_options[code]))
             ''''''
+        resp_opts.append((51, struct.pack("!I", self.__TIMEOUT)))
         return resp_opts
 
     def handle_dhcp_discover_req(self, opts: list):
         request_list = self.get_dhcp_opt_value(opts, 55)
         if not request_list: return
         resp_opts = []
-        ipaddr = self.__alloc.get_ipaddr(self.__client_hwaddr)
+        s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
+
+        # 如果已经分配过的地址那么直接分配
+        if s_client_hwaddr in self.__tmp_alloc_addrs:
+            o = self.__tmp_alloc_addrs[s_client_hwaddr]
+            o["time"] = time.time()
+            ipaddr = o["ip"]
+        else:
+            ipaddr = self.__alloc.get_ipaddr(s_client_hwaddr)
 
         if not ipaddr: return
+        if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
+
+        self.__alloc.bind_ipaddr(s_client_hwaddr, ipaddr)
 
         your_byte_ipaddr = socket.inet_pton(socket.AF_INET, ipaddr)
         self.__dhcp_builder.yiaddr = your_byte_ipaddr
@@ -113,6 +132,8 @@ class dhcp_server(object):
         resp_opts.append((53, bytes([2])))
         resp_opts += self.get_resp_opts_from_request_list(request_list)
 
+        # neg_ok 如果为True的时候那么表示DHCP协商成功
+        self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
         self.dhcp_msg_send(resp_opts)
 
     def dhcp_msg_send(self, resp_opts: list):
@@ -133,6 +154,10 @@ class dhcp_server(object):
         self.__runtime.send_dhcp_server_msg(resp_data)
 
     def handle_dhcp_request(self, opts: list):
+        s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
+        # 如果不存在那么直接DHCP请求
+        if s_client_hwaddr not in self.__tmp_alloc_addrs: return
+
         client_id = self.get_dhcp_opt_value(opts, 61)
         request_ip = self.get_dhcp_opt_value(opts, 50)
         server_id = self.get_dhcp_opt_value(opts, 54)
@@ -142,18 +167,46 @@ class dhcp_server(object):
         resp_opts = []
 
         if not request_ip or not client_id or not server_id: return
+        # 检查是否是本机器的DHCP请求
+        if server_id != self.__my_ipaddr: return
 
         resp_opts.append((53, bytes([5])))
         resp_opts += self.get_resp_opts_from_request_list(request_list)
 
         self.__dhcp_builder.yiaddr = request_ip
+
+        # 设置DHCP协商成功
+        o = self.__tmp_alloc_addrs[s_client_hwaddr]
+        o["neg_ok"] = True
+        # 更新时间
+        o["time"] = time.time()
+
         self.dhcp_msg_send(resp_opts)
 
     def handle_dhcp_decline(self, opts: list):
-        pass
+        s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
+        # 如果不存在那么直接DHCP请求
+        request_ip = self.get_dhcp_opt_value(opts, 50)
+        if not request_ip: return
+
+        if s_client_hwaddr in self.__tmp_alloc_addrs:
+            del self.__tmp_alloc_addrs[s_client_hwaddr]
+        self.__alloc.unbind_ipaddr(s_client_hwaddr)
+        self.__alloc.set_ip_status(s_client_hwaddr, False)
 
     def handle_dhcp_release(self, opts: list):
-        pass
+        s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
+        # 如果不存在那么直接DHCP请求
+        if s_client_hwaddr not in self.__tmp_alloc_addrs: return
+
+        client_id = self.get_dhcp_opt_value(opts, 61)
+        request_ip = self.get_dhcp_opt_value(opts, 50)
+        server_id = self.get_dhcp_opt_value(opts, 54)
+
+        if not request_ip or not client_id or not server_id: return
+
+        self.__alloc.unbind_ipaddr(s_client_hwaddr)
+        del self.__tmp_alloc_addrs[s_client_hwaddr]
 
     def handle_dhcp_msg(self, msg: bytes):
         try:
@@ -198,5 +251,26 @@ class dhcp_server(object):
         """
         self.__TIMEOUT = timeout
 
+    @property
+    def debug(self):
+        return self.__runtime.debug
+
     def loop(self):
-        self.__alloc.recycle()
+        t = time.time()
+        dels = []
+
+        for hwaddr in self.__tmp_alloc_addrs:
+            o = self.__tmp_alloc_addrs[hwaddr]
+            old_t = o["time"]
+            neg_ok = o["neg_ok"]
+            # 大于1s那么就回收地址
+            deleted = False
+            if t - old_t > 10 and not neg_ok:
+                deleted = True
+                self.__alloc.unbind_ipaddr(hwaddr)
+            if neg_ok and t - old_t >= self.__TIMEOUT:
+                deleted = True
+                self.__alloc.unbind_ipaddr(hwaddr)
+            if deleted: dels.append(hwaddr)
+            if deleted and self.debug: print("DHCP Free:%s for %s" % (o["ip"], hwaddr))
+        for hwaddr in dels: del self.__tmp_alloc_addrs[hwaddr]

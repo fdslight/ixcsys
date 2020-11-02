@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket, time
+import socket
 import pywind.lib.netutils as netutils
 
 
@@ -72,21 +72,18 @@ class alloc(object):
         self.__is_ipv6 = is_ipv6
         self.__subnet = subnet
 
-    def bind_ipaddr(self, hwaddr: str, ipaddr: str, timeout: int):
+    def bind_ipaddr(self, hwaddr: str, ipaddr: str):
         """绑定IP地址
         :param hwaddr,硬件地址
         :param ipaddr,IP地址
-        :param timeout,如果超时小于等于0,那么该IP地址那么永久不失效
         """
-        self.__bind[hwaddr] = {
-            "time": 0,
-            "ip": ipaddr,
-        }
-        if timeout > 0: self.__bind[hwaddr]["time"] = time.time() + timeout
+        self.__bind[hwaddr] = ipaddr
         self.__unable_addr_map[ipaddr] = None
 
     def unbind_ipaddr(self, hwaddr: str):
-        if hwaddr in self.__bind: del self.__bind[hwaddr]
+        if hwaddr not in self.__bind: return
+        ipaddr = self.__bind[hwaddr]
+        self.__empty_ipaddrs.append(ipaddr)
 
     def set_ip_status(self, hwaddr: str, avaliable: bool):
         """设置IP地址状态
@@ -105,8 +102,8 @@ class alloc(object):
             fa = socket.AF_INET
 
         if self.__empty_ipaddrs:
-            byte_addr = self.__empty_ipaddrs.pop(0)
-            return byte_addr
+            ipaddr = self.__empty_ipaddrs.pop(0)
+            return ipaddr
 
         rs_addr = None
         while 1:
@@ -123,23 +120,11 @@ class alloc(object):
 
         addr = socket.inet_ntop(fa, rs_addr)
         rs = netutils.is_subnet(addr, self.__prefix, self.__subnet)
+
         if not rs:
             self.__cur_byte_addr = self.__end_addr
             return None
         return addr
-
-    def recycle(self):
-        """回收IP地址
-        """
-        now = time.time()
-        dels = []
-        for hwaddr in self.__bind:
-            o = self.__bind[hwaddr]
-            if o["time"] - now <= 0: dels.append(hwaddr)
-        for hwaddr in dels:
-            ipaddr = self.__bind[hwaddr]
-            del self.__unable_addr_map[ipaddr]
-            del self.__bind[hwaddr]
 
 
 """

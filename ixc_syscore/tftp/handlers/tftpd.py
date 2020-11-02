@@ -63,7 +63,7 @@ class tftpd(udp_handler.udp_handler):
         pass
 
     def udp_writable(self):
-        pass
+        self.remove_evt_write(self.fileno)
 
     def udp_error(self):
         pass
@@ -71,3 +71,6 @@ class tftpd(udp_handler.udp_handler):
     def udp_delete(self):
         self.unregister(self.fileno)
         self.close()
+
+    def udp_timeout(self):
+        pass
