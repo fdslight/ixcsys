@@ -83,9 +83,23 @@ class dhcp_server(object):
         )
         self.__runtime.send_dhcp_server_msg(link_data)
 
-    def handle_dhcp_discover_req(self, opts: list):
-        self.__dhcp_builder.reset()
+    def get_resp_opts_from_request_list(self, request_list: bytes):
+        """通过请求列表获取响应的options
+        """
+        resp_opts = []
+        for code in request_list:
+            if code == 1:
+                resp_opts.append((code, self.__mask_bytes,))
+            if code == 6 and self.__dns_bytes:
+                resp_opts.append((code, self.__dns_bytes))
+            if code == 54:
+                resp_opts.append((code, self.__my_ipaddr))
+            if code == 3:
+                resp_opts.append((code, self.__my_ipaddr))
+            ''''''
+        return resp_opts
 
+    def handle_dhcp_discover_req(self, opts: list):
         request_list = self.get_dhcp_opt_value(opts, 55)
         if not request_list: return
         resp_opts = []
@@ -94,17 +108,14 @@ class dhcp_server(object):
         if not ipaddr: return
 
         your_byte_ipaddr = socket.inet_pton(socket.AF_INET, ipaddr)
+        self.__dhcp_builder.yiaddr = your_byte_ipaddr
 
         resp_opts.append((53, bytes([2])))
+        resp_opts += self.get_resp_opts_from_request_list(request_list)
 
-        for code in request_list:
-            if code == 1:
-                resp_opts.append((code, self.__mask_bytes,))
-            if code == 6 and self.__dns_bytes:
-                resp_opts.append((code, self.__dns_bytes))
-            if code == 54:
-                resp_opts.append((code, self.__my_ipaddr))
+        self.dhcp_msg_send(resp_opts)
 
+    def dhcp_msg_send(self, resp_opts: list):
         flags = self.__dhcp_parser.flags & 0x8000
         if flags > 0:
             dst_hwaddr = self.__client_hwaddr
@@ -113,7 +124,6 @@ class dhcp_server(object):
 
         self.__dhcp_builder.xid = self.__dhcp_parser.xid
         self.__dhcp_builder.op = 2
-        self.__dhcp_builder.yiaddr = your_byte_ipaddr
         self.__dhcp_builder.siaddr = self.__my_ipaddr
         self.__dhcp_builder.chaddr = self.__client_hwaddr
 
@@ -128,7 +138,16 @@ class dhcp_server(object):
         server_id = self.get_dhcp_opt_value(opts, 54)
         request_list = self.get_dhcp_opt_value(opts, 55)
 
-        if not request_ip: return
+        if not request_list: request_list = b""
+        resp_opts = []
+
+        if not request_ip or not client_id or not server_id: return
+
+        resp_opts.append((53, bytes([5])))
+        resp_opts += self.get_resp_opts_from_request_list(request_list)
+
+        self.__dhcp_builder.yiaddr = request_ip
+        self.dhcp_msg_send(resp_opts)
 
     def handle_dhcp_decline(self, opts: list):
         pass
@@ -142,6 +161,7 @@ class dhcp_server(object):
                 msg)
         except:
             return
+        self.__dhcp_builder.reset()
 
         self.__client_hwaddr = src_hwaddr
         if not is_server: return

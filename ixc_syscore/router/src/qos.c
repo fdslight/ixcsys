@@ -30,27 +30,9 @@ inline static int ixc_qos_calc_slot(unsigned char a, unsigned char b, unsigned s
 
 static void ixc_qos_put(struct ixc_mbuf *m,unsigned c,unsigned char ipproto,int hdr_len)
 {
-    unsigned short id;
+    unsigned short id=0;
     int slot_no;
-    struct netutil_tcphdr *tcphdr;
-    struct netutil_udphdr *udphdr;
     struct ixc_qos_slot *slot_obj;
-
-    // 根据协议选择
-    switch(ipproto){
-        case 7:
-            tcphdr=(struct netutil_tcphdr *)(m->data+m->offset+hdr_len);
-            id=ntohs(tcphdr->src_port);
-            break;
-        case 17:
-        case 136:
-            udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
-            id=ntohs(udphdr->src_port);
-            break;
-        default:
-            id=0;
-            break;
-    }
 
     m->next=NULL;
     slot_no=ixc_qos_calc_slot(c,ipproto,id);
