@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """实现DNS服务器代理,用于实现高级DNS过滤功能
 """
-import socket, struct
+import socket, struct, dns.message
 import pywind.evtframework.handlers.udp_handler as udp_handler
 
 
@@ -79,8 +79,11 @@ class proxyd(udp_handler.udp_handler):
 
     def udp_readable(self, message, address):
         if len(message) < 8: return
-
         dns_id = struct.unpack("!H", message[0:2])
+        try:
+            msg_obj = dns.message.from_wire(message)
+        except:
+            return
 
     def udp_writable(self):
         pass
