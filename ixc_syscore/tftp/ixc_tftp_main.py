@@ -55,7 +55,7 @@ def __start_service(debug):
 
 class service(dispatcher.dispatcher):
     def init_func(self, *args, **kwargs):
-        pass
+        self.create_poll()
 
     def release(self):
         pass
