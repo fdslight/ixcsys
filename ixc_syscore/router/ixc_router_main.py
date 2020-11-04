@@ -251,7 +251,18 @@ class service(dispatcher.dispatcher):
 
             os.system("ifconfig %s promisc" % lan_phy_ifname)
             os.system("ifconfig %s up" % lan_phy_ifname)
-        #self.router.netif_set_ip(router.IXC_NETIF_LAN, socket.inet_pton(socket.AF_INET6, "2400::1"), 64, True)
+
+        lan_addr = lan_ifconfig["ip_addr"]
+        manage_addr = lan_ifconfig["manage_addr"]
+        mask = lan_ifconfig["mask"]
+
+        byte_ipaddr = socket.inet_pton(socket.AF_INET, lan_addr)
+        prefix = netutils.mask_to_prefix(mask, False)
+
+        self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ipaddr, prefix, False)
+        os.system("ip -4 addr add %s/%s dev %s" % (manage_addr, prefix, self.__LAN_BR_NAME))
+
+        # self.router.netif_set_ip(router.IXC_NETIF_LAN, socket.inet_pton(socket.AF_INET6, "2400::1"), 64, True)
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)
@@ -265,9 +276,10 @@ class service(dispatcher.dispatcher):
         wan_ifhwaddr = wan_public["hwaddr"]
         nat_enable = bool(int(ip_cfg["nat_enable"]))
 
+        ipv4 = self.__wan_configs["ipv4"]
+
         self.__if_wan_fd, self.__WAN_NAME = self.__router.netif_create(self.__WAN_NAME, router.IXC_NETIF_WAN)
         self.router.netif_set_hwaddr(router.IXC_NETIF_WAN, netutils.str_hwaddr_to_bytes(wan_ifhwaddr))
-
         if nat_enable: self.router.nat_set(True)
 
         self.create_handler(-1, tapdev.tapdevice, self.__if_wan_fd, router.IXC_NETIF_WAN)
@@ -289,6 +301,25 @@ class service(dispatcher.dispatcher):
             self.__pppoe_passwd = wan_pppoe["passwd"]
             self.router.pppoe_enable(True)
             self.router.pppoe_start()
+            return
+
+        if ipv4["alloc_method"].lower() != "static": return
+        # WAN口静态地址配置
+
+        ip_addr = ipv4["address"]
+        mask = ipv4["mask"]
+        default_gw = ipv4.get("default_gw", None)
+
+        byte_ipaddr = socket.inet_pton(socket.AF_INET, ip_addr)
+        prefix = netutils.mask_to_prefix(mask, 0)
+
+        self.router.netif_set_ip(router.IXC_NETIF_WAN, byte_ipaddr, prefix, False)
+        if not default_gw: return
+
+        byte_gw = socket.inet_pton(socket.AF_INET, default_gw)
+        byte_subnet = socket.inet_pton(socket.AF_INET, "0.0.0.0")
+
+        self.router.route_add(byte_subnet, 0, byte_gw, False, False)
 
     def start_scgi(self):
         scgi_configs = {
@@ -308,31 +339,14 @@ class service(dispatcher.dispatcher):
 
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
 
-    def set_manage_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False, is_local=False):
-        """设置管理地址
-        :param ipaddr
-        :param prefix
-        :param is_ipv6
-        :param is_local,表示是否是本地链路IP地址,该值在is_ipv6为True时才生效
-        """
-        # 设置本机器的默认路由指向
-        # 首先删除默认路由
-        if is_ipv6:
-            x = "-6"
-        else:
-            x = "-4"
-        os.system("ip %s addr add %s/%s dev %s" % (x, ipaddr, prefix, self.__LAN_BR_NAME))
-
-    def get_manage_ipaddr(self, is_ipv6=False, is_local=False):
-        """获取管理地址
-        """
-        pass
-
     def get_fwd_instance(self):
         """获取重定向类实例
         :return:
         """
         return self.get_handler(self.__pfwd_fd)
+
+    def get_manage_addr(self):
+        return self.lan_configs["if_config"]["manage_addr"]
 
     def init_func(self, debug):
         self.__debug = debug

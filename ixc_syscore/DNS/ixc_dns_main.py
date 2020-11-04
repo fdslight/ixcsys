@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal
+import sys, os, signal, time
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -11,6 +11,9 @@ import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 
 import ixc_syslib.pylib.logging as logging
+import ixc_syslib.pylib.RPCClient as RPCClient
+
+import ixc_syscore.DNS.handlers.dns_proxyd as dns_proxyd
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -54,11 +57,55 @@ def __start_service(debug):
 
 
 class service(dispatcher.dispatcher):
+    __dns_server = None
+    __dns_client = None
+
+    __dns_configs = None
+    __dns_conf_path = None
+
     def init_func(self, *args, **kwargs):
-        pass
+        self.__dns_server = -1
+        self.__dns_client = -1
+
+        self.__dns_conf_path = "%s/dns.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+
+        self.create_poll()
+        self.wait_router_proc()
+
+    def load_configs(self):
+        self.__dns_configs = conf.ini_parse_from_file(self.__dns_conf_path)
+
+    def wait_router_proc(self):
+        """等待路由进程
+        """
+        while 1:
+            ok = RPCClient.RPCReadyOk("router")
+            if not ok:
+                time.sleep(5)
+            else:
+                break
+            ''''''
+        return
+
+    def start_dns(self):
+        self.load_configs()
+        manage_addr = self.get_manage_addr()
+        ipv4 = self.__dns_configs["ipv4"]
+
+        self.__dns_client = self.create_handler(-1, dns_proxyd.proxy_client, ipv4["main_dns"], ipv4["second_dns"],
+                                                is_ipv6=False)
+        self.__dns_server = self.create_handler(-1, dns_proxyd.proxyd, (manage_addr, 53), is_ipv6=False)
+
+    def get_manage_addr(self):
+        """获取管理地址
+        """
+        ipaddr = RPCClient.fn_call("router", "/runtime", "runtime")
+
+        return ipaddr
 
     def release(self):
-        pass
+        if self.__dns_server < 0: self.delete_handler(self.__dns_server)
+        if self.__dns_client < 0: self.delete_handler(self.__dns_client)
 
 
 def main():

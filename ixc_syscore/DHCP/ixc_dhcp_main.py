@@ -9,6 +9,7 @@ import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 import pywind.web.handlers.scgi as scgi
+import pywind.lib.netutils as netutils
 
 from pywind.global_vars import global_vars
 
@@ -88,6 +89,8 @@ class service(dispatcher.dispatcher):
     __debug = None
 
     __manage_addr = None
+    __router_lan_configs = None
+    __router_wan_configs = None
 
     def init_func(self, debug):
         self.__debug = debug
@@ -109,18 +112,6 @@ class service(dispatcher.dispatcher):
 
         self.start_scgi()
         self.start_dhcp()
-
-    def set_lan_address(self):
-        public = self.__dhcp_server_configs["public"]
-        manager_addr = public["manage_addr"]
-        gw_addr = public["gw_addr"]
-        prefix = public["prefix"]
-
-        self.__manage_addr = manager_addr
-
-        RPCClient.fn_call("router", "/runtime", "set_manage_ipaddr", manager_addr, prefix, is_ipv6=False,
-                          is_local=False)
-        RPCClient.fn_call("router", "/runtime", "set_gw_ipaddr", gw_addr, prefix, is_ipv6=False)
 
     def load_dhcp_client_configs(self):
         self.__dhcp_client_configs = conf.ini_parse_from_file(self.__dhcp_client_conf_path)
@@ -148,11 +139,16 @@ class service(dispatcher.dispatcher):
         consts = self.__router_consts
         public = self.__dhcp_server_configs["public"]
 
-        subnet = public["subnet"]
-        gw_addr = public["gw_addr"]
-        prefix = public["prefix"]
         addr_begin = public["range_begin"]
         addr_end = public["range_end"]
+
+        if_config = self.__router_lan_configs["if_config"]
+        gw_addr = if_config["ip_addr"]
+        mask = if_config["mask"]
+        prefix = netutils.mask_to_prefix(mask, is_ipv6=False)
+        subnet = netutils.calc_subnet(gw_addr, prefix, is_ipv6=False)
+
+        self.__manage_addr = if_config["manage_addr"]
 
         self.__dhcp_server = dhcp_server.dhcp_server(
             self, gw_addr, self.__hostname, self.__lan_hwaddr, addr_begin, addr_end,
@@ -176,18 +172,20 @@ class service(dispatcher.dispatcher):
                 break
 
         if self.debug: print("start DHCP")
-        # 先设置LAN地址
-        self.set_lan_address()
 
         self.__server_port = RPCClient.fn_call("router", "/netpkt", "get_server_recv_port")
         self.get_handler(self.__dhcp_fd).set_message_auth(self.__rand_key, self.__server_port)
-
-        _, self.__wan_hwaddr = RPCClient.fn_call("router", "/runtime", "get_wan_hwaddr")
-        _, self.__lan_hwaddr = RPCClient.fn_call("router", "/runtime", "get_gw_hwaddr")
-
         consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
-
         self.__router_consts = consts
+
+        lan_configs = RPCClient.fn_call("router", "/runtime", "get_lan_configs")
+        self.__router_lan_configs = lan_configs
+
+        wan_configs = RPCClient.fn_call("router", "/runtime", "get_wan_configs")
+        self.__router_wan_configs = wan_configs
+
+        self.__lan_hwaddr = lan_configs["if_config"]["hwaddr"]
+        self.__wan_hwaddr = wan_configs["public"]["hwaddr"]
 
         self.start_dhcp_client(dhcp_msg_port)
         self.start_dhcp_server(dhcp_msg_port)
