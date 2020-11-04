@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal
+import sys, os, signal, time
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -11,6 +11,7 @@ import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 
 import ixc_syslib.pylib.logging as logging
+import ixc_syslib.pylib.RPCClient as RPCClient
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -54,8 +55,23 @@ def __start_service(debug):
 
 
 class service(dispatcher.dispatcher):
+    __conf_path = None
+
     def init_func(self, *args, **kwargs):
+        self.__conf_path = "%s/tftpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.create_poll()
+
+    def wait_router_proc(self):
+        """等待路由进程
+        """
+        while 1:
+            ok = RPCClient.RPCReadyOk("router")
+            if not ok:
+                time.sleep(5)
+            else:
+                break
+            ''''''
+        return
 
     def release(self):
         pass

@@ -26,7 +26,8 @@ class controller(rpc.controller):
             "get_wan_ipaddr_info": self.get_wan_ipaddr_info,
             "set_wan_ipaddr": self.set_wan_ipaddr,
             "set_gw_ipaddr": self.set_gw_ipaddr,
-            "set_manage_ipaddr": self.set_manage_ipaddr,
+            "get_lan_configs": self.get_lan_configs,
+            "get_wan_configs": self.get_wan_configs,
             "add_route": self.add_route,
             "del_route": self.del_route,
             "pppoe_is_enabled": self.pppoe_is_enabled
@@ -108,18 +109,24 @@ class controller(rpc.controller):
 
         return 0, (set_ok, "")
 
-    def set_manage_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False, is_local=False):
+    def set_manage_ipaddr(self, ipaddr: str, is_ipv6=False, is_local=False):
         """设置管理地址
         """
-        self.__runtime.set_manage_ipaddr(ipaddr, int(prefix), is_ipv6=is_ipv6, is_local=is_local)
+        self.__runtime.set_manage_ipaddr(ipaddr, is_ipv6=is_ipv6, is_local=is_local)
         return 0, None
 
-    def get_manage_ipaddr(self, is_ipv6=False, is_local=False):
+    def get_manage_ipaddr(self):
         """获取管理地址
         """
-        ipaddr = self.__runtime.get_manage_ipaddr(is_ipv6=False, is_local=False)
+        ipaddr = self.__runtime.get_manage_ipaddr()
 
         return 0, ipaddr
+
+    def get_lan_configs(self):
+        return 0, self.__runtime.lan_configs
+
+    def get_wan_configs(self):
+        return 0, self.__runtime.wan_configs
 
     def set_wan_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         """设置WAN口的IP地址
