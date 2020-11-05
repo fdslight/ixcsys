@@ -104,9 +104,6 @@ def parse_rrq_or_wrq_packet(byte_data: bytes):
     mode = tmp_data[0:p]
     s_mode = mode.decode("iso-8859-1")
 
-    if s_mode != "octet":
-        raise TftpErr("only support octet mode")
-
     return opcode, (filename, s_mode,)
 
 
