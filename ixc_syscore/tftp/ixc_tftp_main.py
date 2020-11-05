@@ -13,6 +13,8 @@ import pywind.lib.configfile as conf
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 
+import ixc_syscore.tftp.handlers.tftpd as tftpd
+
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
 
@@ -56,10 +58,40 @@ def __start_service(debug):
 
 class service(dispatcher.dispatcher):
     __conf_path = None
+    __tftpd_fd = None
+    __tftpd_fd6 = None
 
-    def init_func(self, *args, **kwargs):
+    __debug = None
+    __configs = None
+
+    def init_func(self, debug):
+        self.__debug = debug
         self.__conf_path = "%s/tftpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__tftpd_fd = -1
+        self.__tftpd_fd6 = -1
+
         self.create_poll()
+        self.wait_router_proc()
+        self.load_configs()
+        self.start_tftp()
+
+    @property
+    def configs(self):
+        return self.__configs
+
+    def load_configs(self):
+        self.__configs = conf.ini_parse_from_file(self.__conf_path)
+
+    def save_configs(self):
+        pass
+
+    def get_manage_addr(self):
+        ipaddr = RPCClient.fn_call("router", "/runtime", "get_manage_ipaddr")
+
+        return ipaddr
+
+    def start_tftp(self):
+        self.__tftpd_fd = self.create_handler(-1, tftpd.tftpd, self.get_manage_addr(), is_ipv6=False)
 
     def wait_router_proc(self):
         """等待路由进程
@@ -74,7 +106,8 @@ class service(dispatcher.dispatcher):
         return
 
     def release(self):
-        pass
+        if self.__tftpd_fd > 0: self.delete_handler(self.__tftpd_fd)
+        if self.__tftpd_fd6 > 0: self.delete_handler(self.__tftpd_fd6)
 
 
 def main():

@@ -28,6 +28,7 @@ class controller(rpc.controller):
             "set_gw_ipaddr": self.set_gw_ipaddr,
             "get_lan_configs": self.get_lan_configs,
             "get_wan_configs": self.get_wan_configs,
+            "get_manage_ipaddr": self.get_manage_ipaddr,
             "add_route": self.add_route,
             "del_route": self.del_route,
             "pppoe_is_enabled": self.pppoe_is_enabled
@@ -118,7 +119,7 @@ class controller(rpc.controller):
     def get_manage_ipaddr(self):
         """获取管理地址
         """
-        ipaddr = self.__runtime.get_manage_ipaddr()
+        ipaddr = self.__runtime.get_manage_addr()
 
         return 0, ipaddr
 

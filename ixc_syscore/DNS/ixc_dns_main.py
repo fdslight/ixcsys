@@ -99,13 +99,13 @@ class service(dispatcher.dispatcher):
     def get_manage_addr(self):
         """获取管理地址
         """
-        ipaddr = RPCClient.fn_call("router", "/runtime", "runtime")
+        ipaddr = RPCClient.fn_call("router", "/runtime", "get_manage_ipaddr")
 
         return ipaddr
 
     def release(self):
-        if self.__dns_server < 0: self.delete_handler(self.__dns_server)
-        if self.__dns_client < 0: self.delete_handler(self.__dns_client)
+        if self.__dns_server > 0: self.delete_handler(self.__dns_server)
+        if self.__dns_client > 0: self.delete_handler(self.__dns_client)
 
 
 def main():
