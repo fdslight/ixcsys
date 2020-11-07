@@ -64,16 +64,31 @@ class service(dispatcher.dispatcher):
     __debug = None
     __configs = None
 
+    __sessions = None
+
     def init_func(self, debug):
         self.__debug = debug
         self.__conf_path = "%s/tftpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__tftpd_fd = -1
         self.__tftpd_fd6 = -1
+        self.__sessions = {}
 
         self.create_poll()
         self.wait_router_proc()
         self.load_configs()
         self.start_tftp()
+
+    def myloop(self):
+        if self.__tftpd_fd > 0: self.get_handler(self.__tftpd_fd).loop()
+        if self.__tftpd_fd6 > 0: self.get_handler(self.__tftpd_fd6).loop()
+        if self.__sessions:
+            self.set_default_io_wait_time(2)
+        else:
+            self.set_default_io_wait_time(10)
+
+    @property
+    def sessions(self):
+        return self.__sessions
 
     @property
     def configs(self):
