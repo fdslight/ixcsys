@@ -10,6 +10,8 @@ import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 
+from pywind.global_vars import global_vars
+
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 
@@ -60,12 +62,20 @@ class service(dispatcher.dispatcher):
     __dns_server = None
     __dns_client = None
 
+    __dns_server6 = None
+    __dns_client6 = None
+
     __dns_configs = None
     __dns_conf_path = None
 
     def init_func(self, *args, **kwargs):
+        global_vars["ixcsys.runtime"] = self
+
         self.__dns_server = -1
         self.__dns_client = -1
+
+        self.__dns_server6 = -1
+        self.__dns_client6 = -1
 
         self.__dns_conf_path = "%s/dns.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
@@ -106,6 +116,8 @@ class service(dispatcher.dispatcher):
     def release(self):
         if self.__dns_server > 0: self.delete_handler(self.__dns_server)
         if self.__dns_client > 0: self.delete_handler(self.__dns_client)
+        if self.__dns_server6 > 0: self.delete_handler(self.__dns_server6)
+        if self.__dns_client6 > 0: self.delete_handler(self.__dns_client6)
 
 
 def main():

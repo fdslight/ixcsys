@@ -4,8 +4,8 @@
 
 1.匹配所有的子域名
 *.example1.com
-
 """
+
 
 class matcher(object):
     __rules = None
