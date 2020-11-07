@@ -106,7 +106,11 @@ class service(dispatcher.dispatcher):
         return ipaddr
 
     def start_tftp(self):
+        conf = self.__configs["conf"]
+        enable_ipv6 = bool(int(conf["enable_ipv6"]))
+
         self.__tftpd_fd = self.create_handler(-1, tftpd.tftpd, self.get_manage_addr(), is_ipv6=False)
+        if enable_ipv6: self.__tftpd_fd6 = self.create_handler(-1, tftpd.tftpd, "::", is_ipv6=True)
 
     def wait_router_proc(self):
         """等待路由进程
