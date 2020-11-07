@@ -19,8 +19,6 @@ class context(object):
     __rq_type = None
     __mode = None
 
-    __writable = None
-
     __client_addr = None
     __up_time = None
     __tftp_obj = None
@@ -132,14 +130,12 @@ class context(object):
 
 class tftp(object):
     __file_dir = None
-    __writable = None
     __runtime = None
     __is_wrq = None
 
     def __init__(self, runtime):
         configs = runtime.configs["conf"]
 
-        self.__writable = bool(int(configs["enable_wrq"]))
         self.__runtime = runtime
         self.__file_dir = configs["file_dir"]
         self.__readable = True
