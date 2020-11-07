@@ -25,6 +25,8 @@ class context(object):
     __up_time = None
     __tftp_obj = None
 
+    __is_finished = None
+
     def __init__(self, tftp_obj, fpath: str, rq_type: int, mode: str, client_addr: tuple):
         self.__tftp_obj = tftp_obj
         self.__block_no = 1
@@ -39,6 +41,7 @@ class context(object):
             self.__fd = open(fpath, "wb")
         self.__client_addr = client_addr
         self.__up_time = time.time()
+        self.__is_finished = False
 
     @property
     def rq_type(self):
@@ -47,6 +50,10 @@ class context(object):
     @property
     def fsize(self):
         return
+
+    @property
+    def client_addr(self):
+        return self.__client_addr
 
     def block_no_plus(self):
         """块号加1
@@ -69,8 +76,9 @@ class context(object):
 
         self.__last_byte_data = fdata
         self.__is_ack = False
+        self.__is_finished = size != tftplib.BLK_SIZE
 
-        return size == tftplib.BLK_SIZE, self.__block_no, fdata
+        return not self.__is_finished, self.__block_no, fdata
 
     def write(self, block_no: int, byte_data: bytes):
         """写入数据
@@ -92,10 +100,16 @@ class context(object):
         """设置ACK
         :return Boolean,True表示成功,False表示序列号错误
         """
-        if ack_no != self.__block_no: return False
-        self.__block_no += 1
+        if ack_no != self.__block_no: return
+        self.__up_time = time.time()
         self.__is_ack = True
-        return True
+        self.block_no_plus()
+
+    def is_finished(self):
+        t = time.time() - self.__up_time
+        # 超时5s那么默认认为结束
+        if t > 5: return True
+        return self.__is_finished and self.__is_ack
 
     def is_ack(self):
         """是否已经确认
@@ -103,19 +117,14 @@ class context(object):
         return self.__is_ack
 
     def do_read(self):
-        if not self.__is_ack:
-            have_content, block_no, byte_data = self.get_block()
-            self.__tftp_obj.send_data_msg(block_no, byte_data, self.__client_addr)
+        have_content, block_no, byte_data = self.get_block()
+        self.__tftp_obj.send_data_msg(block_no, byte_data, self.__client_addr)
 
-    def do_write(self):
-        pass
+        return self.is_finished()
 
     def do(self):
-        if self.__rq_type == tftplib.OP_RRQ:
-            self.do_read()
-        else:
-            self.do_write()
-        return False
+        rs = self.do_read()
+        return rs
 
     def release(self):
         self.__fd.close()
@@ -172,30 +181,13 @@ class tftp(object):
         self.sessions[session_id] = _context
         self.send_ack(0, client_addr)
 
-    def handle_wrq(self, request: tuple, client_addr: tuple):
-        if not self.__writable:
-            self.send_error_msg(tftplib.ERR_ACS_VL, "server forbidden write operation", client_addr)
-            return
-        filename, mode = request
-        fpath = "%s/%s" % (self.__file_dir, filename,)
-        if os.path.isfile(fpath):
-            self.send_error_msg(tftplib.ERR_FILE_EXISTS, "write error:the file %s exists" % filename, client_addr)
-            return
-        session_id = "%s-%s" % client_addr
-        if session_id in self.sessions:
-            self.send_error_msg(tftplib.ERR_NOT_DEF, "the session exists", client_addr)
-            _context = self.sessions[session_id]
-            _context.release()
-            return
-
-        _context = context(self, fpath, tftplib.OP_RRQ, mode, client_addr)
-
     def handle_data(self, block_no: int, byte_data: bytes, _context):
         pass
 
     def handle_ack(self, block_no: int, _context):
-        print(block_no)
-        rs = _context.set_ack(block_no)
+        _context.set_ack(block_no)
+        _context.do()
+        return _context.is_finished()
 
     def handle_error(self, errcode: int, errmsg: str, _context):
         pass
@@ -215,19 +207,20 @@ class tftp(object):
         rs = tftplib.parse(byte_data)
         opcode, obj = rs
 
-        if (session_id not in self.sessions) and (opcode not in (tftplib.OP_RRQ, tftplib.OP_WRQ,)):
-            self.send_error_msg(tftplib.ERR_NOT_DEF, "not send WRQ or RRQ", client_addr)
+        if opcode == tftplib.OP_WRQ:
+            self.send_error_msg(tftplib.ERR_OP, "server cannot support WRQ", client_addr)
+            return
+
+        if (session_id not in self.sessions) and opcode == tftplib.OP_RRQ:
+            self.send_error_msg(tftplib.ERR_NOT_DEF, "not send RRQ", client_addr)
             return
 
         if opcode == tftplib.OP_RRQ:
             self.handle_rrq(obj, client_addr)
             return
-        if opcode == tftplib.OP_WRQ:
-            self.handle_wrq(obj, client_addr)
-            return
 
         if session_id not in self.sessions:
-            self.send_error_msg(tftplib.ERR_OP, "not send RRQ or WRQ request", client_addr)
+            self.send_error_msg(tftplib.ERR_ID, "not send RRQ or WRQ request", client_addr)
             return
 
         _context = self.sessions[session_id]
@@ -237,7 +230,10 @@ class tftp(object):
             return
 
         if opcode == tftplib.OP_ACK:
-            self.handle_ack(obj, _context)
+            is_finished = self.handle_ack(obj, _context)
+            if is_finished:
+                _context.release()
+                del self.sessions[session_id]
             return
 
         if opcode == tftplib.OP_ERR:
