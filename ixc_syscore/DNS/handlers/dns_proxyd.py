@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """实现DNS服务器代理,用于实现高级DNS过滤功能
 """
-import socket, struct, dns.message
+import socket
 import pywind.evtframework.handlers.udp_handler as udp_handler
 
 
@@ -10,11 +10,13 @@ class proxy_client(udp_handler.udp_handler):
     __ns2 = None
 
     __is_ipv6 = None
+    __forward_port = None
 
     def init_func(self, creator_fd, ns1: str, ns2: str, is_ipv6=False):
         self.__is_ipv6 = is_ipv6
         self.__ns1 = ns1
         self.__ns2 = ns2
+        self.__forward_port = -1
 
         if is_ipv6:
             fa = socket.AF_INET6
@@ -35,7 +37,13 @@ class proxy_client(udp_handler.udp_handler):
         return self.fileno
 
     def udp_readable(self, message, address):
-        if len(message): return
+        if len(message) < 8: return
+        # 检查地址是否是DNS服务器的地址
+        if address[0] != self.__ns1 and address[0] != self.__ns2 and address[0] != "127.0.0.1": return
+        # 核对是否是允许的对端端口
+        if address[1] not in (53, self.__forward_port,): return
+
+        self.dispatcher.handle_msg_from_dnsserver(message, is_ipv6=self.__is_ipv6)
 
     def udp_writable(self):
         self.remove_evt_write(self.fileno)
@@ -55,6 +63,12 @@ class proxy_client(udp_handler.udp_handler):
         if self.__ns2: self.sendto(message, (self.__ns2, 53))
 
         self.add_evt_write(self.fileno)
+
+    def set_forward_port(self, port: int):
+        self.__forward_port = port
+
+    def get_port(self):
+        return self.socket.getsockname()[1]
 
 
 class proxyd(udp_handler.udp_handler):
@@ -78,15 +92,11 @@ class proxyd(udp_handler.udp_handler):
         return self.fileno
 
     def udp_readable(self, message, address):
-        if len(message) < 8: return
-        dns_id = struct.unpack("!H", message[0:2])
-        try:
-            msg_obj = dns.message.from_wire(message)
-        except:
-            return
+        if len(message) < 16: return
+        self.dispatcher.handle_msg_from_dnsclient(message, address, is_ipv6=self.__is_ipv6)
 
     def udp_writable(self):
-        pass
+        self.remove_evt_write(self.fileno)
 
     def udp_error(self):
         pass
@@ -94,3 +104,7 @@ class proxyd(udp_handler.udp_handler):
     def udp_delete(self):
         self.unregister(self.fileno)
         self.close()
+
+    def send_msg(self, message: bytes, client_addr: tuple):
+        self.sendto(message, client_addr)
+        self.add_evt_write(self.fileno)

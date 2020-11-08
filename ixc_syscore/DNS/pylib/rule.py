@@ -4,7 +4,23 @@
 
 1.匹配所有的子域名
 *.example1.com
+2.匹配单个子域名
+www.example.com
+
+action规则是一个Python字典对象,规则如下
+1.重定向
+{"action":"forward"}
+2.重定向以及自动设置路由到指定程序端口
+{"action":"forward_and_auto_route"}
+3.丢弃该DNS请求
+{"action":"drop"}
+4.重写DNS记录,该动作目前未实现,保留
+{"action":"rewrite","DNS":{"MX":"","A":""}}
 """
+
+action_names = [
+    "forward", "forward_and_auto_route", "drop", "rewrite"
+]
 
 
 class matcher(object):
@@ -12,16 +28,32 @@ class matcher(object):
     __rules = None
 
     def __init__(self):
+        self.__cb_flags = False
         self.__rule_tree = {}
         self.__rules = {}
 
-    def match(self, host: str):
+    def match(self, host: str, cb_flags=False):
         """匹配主机
         """
         _list = host.split(".")
         _list.reverse()
 
-    def add_rule(self, rule: str, action):
+        o = self.__rule_tree
+        is_found = True
+        for x in _list:
+            if x not in o:
+                is_found = False
+                break
+            o = o[x]
+        if is_found: return o["action"]
+        if not cb_flags:
+            # 找不到那么替换子域名重新匹配一次
+            _list = host.split(".")
+            _list[0] = "*"
+            return self.match(".".join(_list), cb_flags=True)
+        return None
+
+    def add_rule(self, rule: str, action: dict):
         """加入规则
         :param rule,规则
         :param action
@@ -89,9 +121,11 @@ class matcher(object):
         return rule in self.__rules
 
 
+"""
 cls = matcher()
-cls.add_rule("x|y|z.google.com", "xxx")
-cls.add_rule("chrome.google.com", "this is action")
+cls.add_rule("www.google.com", "xxx")
+cls.add_rule("*.google.com", "this is action")
 # print(cls.rules)
 # print(cls.rule_tree)
-print(cls.match("chrome.google.com"))
+print(cls.match("www.google.com"))
+"""
