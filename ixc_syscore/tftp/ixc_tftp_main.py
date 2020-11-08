@@ -9,9 +9,13 @@ if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MY
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
+import pywind.web.handlers.scgi as scgi
+
+from pywind.global_vars import global_vars
 
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
+import ixc_syslib.web.route as webroute
 
 import ixc_syscore.tftp.handlers.tftpd as tftpd
 
@@ -67,6 +71,8 @@ class service(dispatcher.dispatcher):
     __sessions = None
 
     def init_func(self, debug):
+        global_vars["ixcsys.tftp"] = self
+
         self.__debug = debug
         self.__conf_path = "%s/tftpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__tftpd_fd = -1
@@ -111,6 +117,9 @@ class service(dispatcher.dispatcher):
 
         self.__tftpd_fd = self.create_handler(-1, tftpd.tftpd, self.get_manage_addr(), is_ipv6=False)
         if enable_ipv6: self.__tftpd_fd6 = self.create_handler(-1, tftpd.tftpd, "::", is_ipv6=True)
+
+    def start_scgi(self):
+        pass
 
     def wait_router_proc(self):
         """等待路由进程

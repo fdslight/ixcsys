@@ -21,6 +21,7 @@ import ixc_syscore.DHCP.pylib.netpkt as netpkt
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
+import ixc_syslib.web.route as webroute
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -101,7 +102,7 @@ class service(dispatcher.dispatcher):
         self.__dhcp_client_conf_path = "%s/dhcp_client.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__dhcp_server_conf_path = "%s/dhcp_server.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
-        global_vars["ixcsys.dhcp"] = self
+        global_vars["ixcsys.DHCP"] = self
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
@@ -189,6 +190,9 @@ class service(dispatcher.dispatcher):
 
         self.start_dhcp_client(dhcp_msg_port)
         self.start_dhcp_server(dhcp_msg_port)
+
+    def start_scgi(self):
+        pass
 
     def send_dhcp_client_msg(self, msg: bytes):
         if not self.handler_exists(self.__dhcp_fd): return

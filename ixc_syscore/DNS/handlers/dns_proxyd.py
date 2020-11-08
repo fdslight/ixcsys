@@ -64,6 +64,12 @@ class proxy_client(udp_handler.udp_handler):
 
         self.add_evt_write(self.fileno)
 
+    def send_forward_msg(self, message: bytes):
+        if self.__forward_port < 1: return
+
+        self.sendto(message, ("127.0.0.1", self.__forward_port))
+        self.add_evt_write(self.fileno)
+
     def set_forward_port(self, port: int):
         self.__forward_port = port
 
