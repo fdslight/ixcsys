@@ -10,11 +10,13 @@ if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MY
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
+import pywind.web.handlers.scgi as scgi
 
 from pywind.global_vars import global_vars
 
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
+import ixc_syslib.web.route as webroute
 
 import ixc_syscore.DNS.handlers.dns_proxyd as dns_proxyd
 import ixc_syscore.DNS.pylib.rule as rule
@@ -80,6 +82,8 @@ class service(dispatcher.dispatcher):
     __empty_dns_ids = None
     __up_time = None
 
+    __scgi_fd = None
+
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.runtime"] = self
 
@@ -97,6 +101,7 @@ class service(dispatcher.dispatcher):
         self.__matcher = rule.matcher()
         self.__empty_dns_ids = []
         self.__up_time = time.time()
+        self.__scgi_fd = -1
 
         self.create_poll()
         self.wait_router_proc()
@@ -124,6 +129,15 @@ class service(dispatcher.dispatcher):
         self.__dns_client = self.create_handler(-1, dns_proxyd.proxy_client, ipv4["main_dns"], ipv4["second_dns"],
                                                 is_ipv6=False)
         self.__dns_server = self.create_handler(-1, dns_proxyd.proxyd, (manage_addr, 53), is_ipv6=False)
+
+    def start_scgi(self):
+        scgi_configs = {
+            "use_unix_socket": True,
+            "listen": os.getenv("IXC_MYAPP_SCGI_PATH"),
+            "application": webroute.app_route()
+        }
+        self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
+        self.get_handler(self.__scgi_fd).after()
 
     def get_manage_addr(self):
         """获取管理地址
@@ -224,7 +238,13 @@ class service(dispatcher.dispatcher):
             del self.__id_wan2lan[new_dns_id]
             return
         self.__id_wan2lan[new_dns_id]["action"] = match_rs
-        # 发送DNS数据到其他应用程序
+        # 发送DNS数据到其他应用程序,如果找不到文件号那么丢弃数据包
+        if self.__dns_client < 0: return
+        self.get_handler(self.__dns_client).send_forward_msg(message)
+
+    @property
+    def matcher(self):
+        return self.__matcher
 
     def release(self):
         if self.__dns_server > 0: self.delete_handler(self.__dns_server)
