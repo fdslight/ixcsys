@@ -142,6 +142,7 @@ class service(dispatcher.dispatcher):
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+
         if self.__tftpd_fd > 0: self.delete_handler(self.__tftpd_fd)
         if self.__tftpd_fd6 > 0: self.delete_handler(self.__tftpd_fd6)
 
