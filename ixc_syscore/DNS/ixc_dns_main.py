@@ -11,6 +11,7 @@ import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 import pywind.web.handlers.scgi as scgi
+import pywind.lib.netutils as netutils
 
 from pywind.global_vars import global_vars
 
@@ -85,7 +86,7 @@ class service(dispatcher.dispatcher):
     __scgi_fd = None
 
     def init_func(self, *args, **kwargs):
-        global_vars["ixcsys.runtime"] = self
+        global_vars["ixcsys.DNS"] = self
 
         self.__dns_server = -1
         self.__dns_client = -1
@@ -105,6 +106,8 @@ class service(dispatcher.dispatcher):
 
         self.create_poll()
         self.wait_router_proc()
+        self.start_dns()
+        self.start_scgi()
 
     def load_configs(self):
         self.__dns_configs = conf.ini_parse_from_file(self.__dns_conf_path)
@@ -185,19 +188,40 @@ class service(dispatcher.dispatcher):
         else:
             fd = self.__dns_server
 
-        o = self.__id_wan2lan[fd]
+        o = self.__id_wan2lan[dns_id]
+        x_dns_id = o["id"]
         action = o["action"]
+
+        new_msg = b"".join([struct.pack("!H", x_dns_id), message[2:]])
+
         # 未设置动作那么直接发送
         if not action:
-            self.get_handler(fd).send_msg(message, o["address"])
+            self.get_handler(fd).send_msg(new_msg, o["address"])
             return
 
         act_name = action["action"]
         # 重定向以及自动设置路由
-        if act_name == "forward_and_auto_route":
-            pass
+        if act_name != "forward_and_auto_route":
+            self.get_handler(fd).send_msg(new_msg, o["address"])
+            return
 
-        self.get_handler(fd).send_msg(message, o["address"])
+        try:
+            msg_obj = dns.message.from_wire(new_msg)
+        except:
+            return
+
+        for rrset in msg_obj.answer:
+            for cname in rrset:
+                ip = cname.__str__()
+                if netutils.is_ipv4_address(ip):
+                    self.set_route(ip, 32, is_ipv6=False)
+                    continue
+                if netutils.is_ipv6_address(ip):
+                    self.set_route(ip, 128, is_ipv6=True)
+                    continue
+                ''''''
+            ''''''
+        self.get_handler(fd).send_msg(new_msg, o["address"])
 
     def handle_msg_from_dnsclient(self, message: bytes, address: tuple, is_ipv6=False):
         """处理来自于DNS客户端的消息
@@ -247,6 +271,7 @@ class service(dispatcher.dispatcher):
         return self.__matcher
 
     def release(self):
+        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
         if self.__dns_server > 0: self.delete_handler(self.__dns_server)
         if self.__dns_client > 0: self.delete_handler(self.__dns_client)
         if self.__dns_server6 > 0: self.delete_handler(self.__dns_server6)
@@ -268,6 +293,7 @@ class service(dispatcher.dispatcher):
         for _id in dels:
             o = self.__id_lan2wan[_id]
             _id2 = o["id"]
+            self.put_dns_id(_id)
             del self.__id_lan2wan[_id]
             del self.__id_wan2lan[_id2]
 
