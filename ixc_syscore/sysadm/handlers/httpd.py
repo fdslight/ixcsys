@@ -345,10 +345,10 @@ class httpd_handler(ssl_handler.ssl_handler):
             env[k] = v
 
         if "CONTENT_LENGTH" not in env:
-            env["CONTENT_LENGTH"] = 0
+            env["CONTENT_LENGTH"] = "0"
 
         # 设置RPC不可用
-        env["HTTP_X_IXCSYS_RPC"] = 0
+        env["HTTP_X_IXCSYS_RPC"] = "0"
 
         return env
 

@@ -36,7 +36,7 @@ class controller(app_handler.handler):
         if not rs: return False
 
         # 开启自动认证并且未登录那么重定向到首页
-        if self.__auto_auth and not self.is_signed():
+        if self.__auto_auth and not self.is_signed() and self.request.environ["PATH_INFO"] != "/":
             self.redirect("/")
             return False
 

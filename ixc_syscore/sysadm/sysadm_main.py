@@ -12,6 +12,8 @@ import pywind.web.handlers.scgi as scgi
 
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.web.route as webroute
+import ixc_syslib.pylib.RPCClient as RPCClient
+
 import ixc_syscore.sysadm.handlers.httpd as httpd
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -67,9 +69,6 @@ class service(dispatcher.dispatcher):
     __httpd_cfg_path = None
     __httpd_configs = None
 
-    __httpd_listen_addr = None
-    __httpd_listen_addr6 = None
-
     __scgi_fd = None
 
     def load_configs(self):
@@ -78,8 +77,29 @@ class service(dispatcher.dispatcher):
     def write_to_configs(self):
         pass
 
-    def service_start(self):
-        self.__httpd_fd = self.create_handler(-1, httpd.httpd_listener, (self.__httpd_listen_addr, 8080,))
+    def http_start(self):
+        manage_addr = self.get_manage_addr()
+
+        listen = self.__httpd_configs["listen"]
+        ssl_cfg = self.__httpd_configs["ssl"]
+
+        enable_ipv6 = bool(int(listen["enable_ipv6"]))
+        enable_ssl = bool(int(listen["enable_ssl"]))
+
+        port = int(listen["port"])
+
+        ssl_key = ssl_cfg["key"]
+        ssl_cert = ssl_cfg["cert"]
+
+        self.__httpd_fd = self.create_handler(-1, httpd.httpd_listener, (manage_addr, port,), is_ipv6=False)
+        if enable_ipv6:
+            self.__httpd_fd6 = self.create_handler(-1, httpd.httpd_listener, ("::", port,), is_ipv6=True)
+        if not enable_ssl: return
+
+        self.__httpd_ssl_fd = self.create_handler(-1, httpd.httpd_listener, (manage_addr, port,), is_ipv6=False,
+                                                  ssl_on=True, ssl_key=ssl_key, ssl_cert=ssl_cert)
+        self.__httpd_ssl_fd6 = self.create_handler(-1, httpd.httpd_listener, ("::", port,), is_ipv6=False,
+                                                   ssl_on=True, ssl_key=ssl_key, ssl_cert=ssl_cert)
 
     def init_func(self, debug):
         self.__httpd_fd = -1
@@ -96,6 +116,11 @@ class service(dispatcher.dispatcher):
         self.load_configs()
         self.create_poll()
 
+        self.wait_router_proc()
+        self.start_scgi()
+        self.http_start()
+
+    def start_scgi(self):
         scgi_configs = {
             "use_unix_socket": True,
             "listen": os.getenv("IXC_MYAPP_SCGI_PATH"),
@@ -104,18 +129,33 @@ class service(dispatcher.dispatcher):
 
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
-        self.reset_service()
-        signal.signal(signal.SIGUSR1, self.__sig_load_service)
+
+    def get_manage_addr(self):
+        ipaddr = RPCClient.fn_call("router", "/runtime", "get_manage_ipaddr")
+
+        return ipaddr
 
     def myloop(self):
         pass
+
+    def wait_router_proc(self):
+        """等待路由进程
+        """
+        while 1:
+            ok = RPCClient.RPCReadyOk("router")
+            if not ok:
+                time.sleep(5)
+            else:
+                break
+            ''''''
+        return
 
     @property
     def debug(self):
         return self.__debug
 
-    def release(self, only_http=False):
-        if self.__scgi_fd > 0 and not only_http:
+    def release(self):
+        if self.__scgi_fd:
             self.delete_handler(self.__scgi_fd)
             self.__scgi_fd = -1
         if self.__httpd_fd > 0:
@@ -130,26 +170,8 @@ class service(dispatcher.dispatcher):
         if self.__httpd_ssl_fd6 > 0:
             self.delete_handler(self.__httpd_ssl_fd6)
             self.__httpd_ssl_fd6 = -1
-        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")) and not only_http:
-            os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-    def reset_service(self):
-        info_file = "%s/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
-        if not os.path.isfile(info_file): return
-        self.release(only_http=True)
-
-        with open(info_file, "r") as f: s = f.read()
-        f.close()
-
-        o = json.loads(s)
-
-        self.__httpd_listen_addr = o["ip"]
-        self.__httpd_listen_addr6 = o["ipv6"]
-
-        self.service_start()
-
-    def __sig_load_service(self, signum, frame):
-        self.reset_service()
+        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
 
 def main():

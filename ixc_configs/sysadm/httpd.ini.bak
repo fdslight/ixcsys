@@ -1,10 +1,8 @@
 [listen]
 ;是否开启IPv6监听
-enable_ipv6 = 0
+enable_v6 = 0
 ;是否开启SSL
 enable_ssl = 0
-;监听端口
-port = 80
 
 ;SSL的相关配置
 [ssl]
