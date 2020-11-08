@@ -104,15 +104,15 @@ class service(dispatcher.dispatcher):
 
         global_vars["ixcsys.DHCP"] = self
 
-        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+        # if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
         self.load_dhcp_client_configs()
         self.load_dhcp_server_configs()
 
         self.create_poll()
 
-        self.start_scgi()
         self.start_dhcp()
+        self.start_scgi()
 
     def load_dhcp_client_configs(self):
         self.__dhcp_client_configs = conf.ini_parse_from_file(self.__dhcp_client_conf_path)
@@ -192,7 +192,13 @@ class service(dispatcher.dispatcher):
         self.start_dhcp_server(dhcp_msg_port)
 
     def start_scgi(self):
-        pass
+        scgi_configs = {
+            "use_unix_socket": True,
+            "listen": os.getenv("IXC_MYAPP_SCGI_PATH"),
+            "application": webroute.app_route()
+        }
+        self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
+        self.get_handler(self.__scgi_fd).after()
 
     def send_dhcp_client_msg(self, msg: bytes):
         if not self.handler_exists(self.__dhcp_fd): return
@@ -303,15 +309,6 @@ class service(dispatcher.dispatcher):
     def debug(self):
         return self.__debug
 
-    def start_scgi(self):
-        scgi_configs = {
-            "use_unix_socket": True,
-            "listen": os.getenv("IXC_MYAPP_SCGI_PATH"),
-            "application": webroute.app_route()
-        }
-        self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
-        self.get_handler(self.__scgi_fd).after()
-
     def myloop(self):
         if self.dhcp_client_enable: self.client.loop()
         if self.dhcp_server_enable: self.server.loop()
@@ -319,9 +316,7 @@ class service(dispatcher.dispatcher):
     def release(self):
         if self.__scgi_fd > 0:
             self.delete_handler(self.__scgi_fd)
-
         self.__scgi_fd = -1
-
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
 
