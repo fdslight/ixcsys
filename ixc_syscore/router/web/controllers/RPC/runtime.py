@@ -148,7 +148,7 @@ class controller(rpc.controller):
 
         return 0, (set_ok, "")
 
-    def add_route(self, subnet: str, prefix: int, gw: str, is_ipv6=False, is_linked=False):
+    def add_route(self, subnet: str, prefix: int, gw: str, is_ipv6=False):
         if is_ipv6 and (not netutils.is_ipv6_address(subnet) or not netutils.is_ipv6_address(gw)):
             return 0, (False, "Wrong subnet or gateway address format for IPv6")
 
@@ -172,7 +172,7 @@ class controller(rpc.controller):
         byte_subnet = socket.inet_pton(fa, subnet)
         byte_gw = socket.inet_pton(fa, gw)
 
-        rs = self.router.route_add(byte_subnet, prefix, byte_gw, is_ipv6, is_linked)
+        rs = self.router.route_add(byte_subnet, prefix, byte_gw, is_ipv6)
 
         return 0, (rs, "")
 

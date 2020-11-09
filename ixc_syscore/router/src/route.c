@@ -175,7 +175,7 @@ void ixc_route_uninit(void)
     route_is_initialized=0;
 }
 
-int ixc_route_add(unsigned char *subnet,unsigned char prefix,unsigned char *gw,int is_ipv6,int is_linked)
+int ixc_route_add(unsigned char *subnet,unsigned char prefix,unsigned char *gw,int is_ipv6)
 {
     struct ixc_route_info *r;
     char key[17],is_found;
@@ -244,7 +244,6 @@ int ixc_route_add(unsigned char *subnet,unsigned char prefix,unsigned char *gw,i
     else memcpy(r->subnet,subnet,4);
     
     r->prefix=prefix;
-    r->is_linked=is_linked;
     r->is_ipv6=is_ipv6;
     r->netif=netif;
 
@@ -354,7 +353,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 
     // 如果没有网卡,那么发送到其他应用
     if(NULL==r->netif){
-        if(r->is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
+        if(route.is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
         else ixc_router_send(netif->type,header->next_header,0,m->data+m->offset,m->tail-m->offset);
 
         // 这里丢弃数据包,避免内存泄漏
@@ -420,7 +419,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果没有网卡,那么发送到其他应用
     if(NULL==r->netif){
-        if(r->is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
+        if(route.is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
         else ixc_router_send(netif->type,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
 
         // 这里丢弃数据包,避免内存泄漏
@@ -455,4 +454,10 @@ void ixc_route_handle(struct ixc_mbuf *m)
     
     if(m->is_ipv6) ixc_route_handle_for_ipv6(m);
     else ixc_route_handle_for_ip(m);
+}
+
+int ixc_route_set_is_linkpkt_for_app(int is_linked)
+{
+    route.is_linked=is_linked;
+    return 0;
 }
