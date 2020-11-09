@@ -514,16 +514,28 @@ router_src_filter_enable(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 路由作为链路包转发给应用
+static PyObject *
+router_route_set_is_linkpkt_for_app(PyObject *self,PyObject *args)
+{
+    int is_linked;
+    if(!PyArg_ParseTuple(args,"p",&is_linked)) return NULL;
+
+    ixc_route_set_is_linkpkt_for_app(is_linked);
+    
+    Py_RETURN_NONE;
+}
+
 /// 添加路由
 static PyObject *
 router_route_add(PyObject *self,PyObject *args)
 {
     unsigned char *subnet,*gw;
     Py_ssize_t size_a,size_b;
-    int is_ipv6,rs,is_linked;
+    int is_ipv6,rs;
     unsigned char prefix;
 
-    if(!PyArg_ParseTuple(args,"y#by#pp",&subnet,&size_a,&prefix,&gw,&size_b,&is_ipv6,&is_linked)) return NULL;
+    if(!PyArg_ParseTuple(args,"y#by#pp",&subnet,&size_a,&prefix,&gw,&size_b,&is_ipv6)) return NULL;
 
     if(is_ipv6 && prefix>128){
         PyErr_SetString(PyExc_ValueError,"wrong IPv6 prefix value");
@@ -545,7 +557,7 @@ router_route_add(PyObject *self,PyObject *args)
         return NULL;  
     }
 
-    rs=ixc_route_add(subnet,prefix,gw,is_ipv6,is_linked);
+    rs=ixc_route_add(subnet,prefix,gw,is_ipv6);
 
     if(rs<0){
         Py_RETURN_FALSE;
@@ -696,6 +708,7 @@ static PyMethodDef routerMethods[]={
     {"src_filter_set_ip",(PyCFunction)router_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"src_filter_enable",(PyCFunction)router_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
     //
+    {"route_set_is_linkpkt_for_app",(PyCFunction)router_route_set_is_linkpkt_for_app,METH_VARARGS,"forward to application as link packet"},
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
     //

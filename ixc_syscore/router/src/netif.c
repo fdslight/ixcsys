@@ -144,7 +144,7 @@ int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int i
     if(!is_ipv6){
         // 首先对原来的路由进行删除
         ixc_route_del(subnet,prefix,is_ipv6);
-        rs=ixc_route_add(subnet,prefix,ipaddr,is_ipv6,0);
+        rs=ixc_route_add(subnet,prefix,ipaddr,is_ipv6);
 
         if(rs<0){
             STDERR("cannot add route to system\r\n");
