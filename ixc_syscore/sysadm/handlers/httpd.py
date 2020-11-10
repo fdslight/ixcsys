@@ -31,13 +31,6 @@ class SCGIClient(tcp_handler.tcp_handler):
     __up_time = None
     __conn_timeout = None
 
-    def get_static_scgi_path(self, path_info: str):
-        s = path_info.replace("/staticfiles", '')
-        if s == "/":
-            return (None, "",)
-
-        return self.get_app_path_info(s)
-
     def get_app_path_info(self, path_info: str):
         if path_info == "/": return (os.getenv("IXC_MYAPP_NAME"), path_info,)
 
@@ -45,14 +38,9 @@ class SCGIClient(tcp_handler.tcp_handler):
         if p < 0: return (os.getenv("IXC_MYAPP_NAME"), path_info)
         p += 1
 
-        return (path_info[1:p], path_info[p:],)
+        return path_info[1:p], path_info[p:]
 
     def get_scgi_path(self, path_info: str):
-        p = path_info.find("/staticfiles")
-
-        if p == 0:
-            return self.get_static_scgi_path(path_info)
-
         rs = self.get_app_path_info(path_info)
         app_name, url = rs
 
@@ -68,8 +56,11 @@ class SCGIClient(tcp_handler.tcp_handler):
         self.__conn_timeout = 120
 
         address = self.get_scgi_path(cgi_env["PATH_INFO"])
-
         if not os.path.exists(address): return -1
+
+        # 重写PATH INFO
+        _, path_info = self.get_app_path_info(cgi_env["PATH_INFO"])
+        self.__env["PATH_INFO"] = path_info
 
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.set_socket(s)
@@ -97,17 +88,17 @@ class SCGIClient(tcp_handler.tcp_handler):
 
     def tcp_timeout(self):
         if not self.is_conn_ok():
-            self.get_handler(self.__creator_fd).handle_scgi_resp_error(self.__xid)
+            self.get_handler(self.__creator_fd).handle_scgi_error(self.__xid)
             return
         t = time.time()
         if t - self.__up_time > self.__conn_timeout:
-            self.get_handler(self.__creator_fd).handle_scgi_resp_error(self.__xid)
+            self.get_handler(self.__creator_fd).handle_scgi_error(self.__xid)
             return
         self.set_timeout(self.fileno, 10)
 
     def tcp_error(self):
         if not self.__is_resp_header:
-            self.get_handler(self.__creator_fd).handle_scgi_resp_error(self.__xid)
+            self.get_handler(self.__creator_fd).handle_scgi_error(self.__xid)
             return
         self.handle_resp_body()
         self.get_handler(self.__creator_fd).handle_scgi_resp_finish(self.__xid)
@@ -124,7 +115,7 @@ class SCGIClient(tcp_handler.tcp_handler):
         p = rdata.find(b"\r\n\r\n")
 
         if p < 0 and size > 8192:
-            self.get_handler(self.__creator_fd).handle_scgi_resp_error(self.__xid)
+            self.get_handler(self.__creator_fd).handle_scgi_error(self.__xid)
             return
 
         p += 4
@@ -319,7 +310,6 @@ class httpd_handler(ssl_handler.ssl_handler):
     def convert_to_cgi_env(self, request: tuple, kv_pairs: list):
         """转换成CGI环境变量
         """
-
         env = {
             "REQUEST_METHOD": request[0].upper(),
             "REQUEST_URI": request[1],
@@ -344,8 +334,7 @@ class httpd_handler(ssl_handler.ssl_handler):
                 k = "HTTP_%s" % k.upper()
             env[k] = v
 
-        if "CONTENT_LENGTH" not in env:
-            env["CONTENT_LENGTH"] = "0"
+        if "CONTENT_LENGTH" not in env: env["CONTENT_LENGTH"] = "0"
 
         # 设置RPC不可用
         env["HTTP_X_IXCSYS_RPC"] = "0"
