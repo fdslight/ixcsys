@@ -104,7 +104,7 @@ class controller(app_handler.handler):
 
     @property
     def staticfile_prefix(self):
-        return "/staticfiles/%s" % os.getenv("IXC_MYAPP_NAME")
+        return "/%s/staticfiles" % os.getenv("IXC_MYAPP_NAME")
 
     @property
     def my_app_name(self):

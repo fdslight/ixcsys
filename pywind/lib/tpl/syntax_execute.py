@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """核心语法执行器"""
-
+import sys
 import pywind.lib.tpl.syntax_parser as syntax_parser
 
 
@@ -71,8 +71,11 @@ class execute(object):
 
     def __exe_pysyntax(self, code_text):
         self.__check_sec(code_text)
-
-        return eval(code_text, locals())
+        try:
+            return eval(code_text, locals())
+        except:
+            sys.stderr.write("wrong template code:%s\r\n" % code_text)
+            return ""
 
     def __exe_from_syntax_tree(self, syntax_tree):
         for flags, v in syntax_tree:
