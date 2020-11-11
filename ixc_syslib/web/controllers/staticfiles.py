@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import pywind.web.appframework.handler_ext.staticfile as staticfile
+import os
 
 
 class controller(staticfile.staticfile):
@@ -9,4 +10,7 @@ class controller(staticfile.staticfile):
         pass
 
     def get_file_path(self):
-        pass
+        path_info = self.request.environ["PATH_INFO"]
+        file_path = "%s/web%s" % (os.getenv("IXC_MYAPP_RELATIVE_DIR"), path_info)
+
+        return file_path

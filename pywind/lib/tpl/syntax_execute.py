@@ -86,7 +86,7 @@ class execute(object):
                 self.__buff.append(self.__exe_pysyntax(v))
                 continue
             if flags == syntax_parser.TYPE_BLOCK:
-                self.__exe_from_syntax_tree(self.block_map[v])
+                if v in self.block_map: self.__exe_from_syntax_tree(self.block_map[v])
                 continue
             self.__exe_pycode(v)
 
