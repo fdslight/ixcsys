@@ -5,9 +5,11 @@
     <link rel="stylesheet" href="${self.staticfile_prefix}/bootstrap/css/bootstrap.css"/>
     <script type="text/javascript" src="${self.staticfile_prefix}/js/jquery.min.js"></script>
     <script type="text/javascript" src="${self.staticfile_prefix}/bootstrap/js/bootstrap.js"></script>
-    <title>${self.LA("title")}</title>
+    <title>${self.LA('signin')}</title>
+    <%block name="header" />
 </head>
 <body>
-阿达
+    <%block name="content"/>
+<%block name="footer" />
 </body>
 </html>

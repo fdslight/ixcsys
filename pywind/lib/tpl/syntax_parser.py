@@ -227,4 +227,4 @@ class parser(object):
             t, _ = self.parse(block_map[k])
             block_map[k] = t
 
-        return (tmp_seq_c, block_map,)
+        return tmp_seq_c, block_map

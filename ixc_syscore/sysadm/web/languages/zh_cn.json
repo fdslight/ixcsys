@@ -1,3 +1,6 @@
 {
-  "test": "这是一个测试翻译文件"
+  "signin": "登录",
+  "username": "用户名",
+  "passwd": "密码",
+  "passwd-sure": "密码确认"
 }

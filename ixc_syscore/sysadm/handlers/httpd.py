@@ -9,7 +9,7 @@ import pywind.web.lib.httputils as httputils
 HTTP1_xID = 0
 
 
-def slice_bytes(byte_data: bytes, slice_size=2048):
+def slice_bytes(byte_data: bytes, slice_size=3072):
     results = []
     a, b = (0, slice_size,)
     while 1:
@@ -65,14 +65,15 @@ class SCGIClient(tcp_handler.tcp_handler):
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.set_socket(s)
         self.connect(address)
+        self.__send_scgi_header()
 
         return self.fileno
 
     def connect_ok(self):
         self.register(self.fileno)
         self.add_evt_read(self.fileno)
+        self.add_evt_write(self.fileno)
         self.set_timeout(self.fileno, 10)
-        self.__send_scgi_header()
 
     def tcp_readable(self):
         if not self.__is_resp_header:
@@ -108,7 +109,7 @@ class SCGIClient(tcp_handler.tcp_handler):
         self.close()
 
     def handle_resp_header(self):
-        self.__conn_timeout = time.time()
+        self.__up_time = time.time()
 
         size = self.reader.size()
         rdata = self.reader.read()
@@ -156,13 +157,14 @@ class SCGIClient(tcp_handler.tcp_handler):
         self.__is_resp_header = True
 
     def handle_resp_body(self):
-        self.__conn_timeout = time.time()
+        self.__up_time = time.time()
         rdata = self.reader.read()
         self.get_handler(self.__creator_fd).handle_scgi_resp_body(self.__xid, rdata)
 
     def send_data(self, byte_data: bytes):
+        if not byte_data: return
         self.__sent += slice_bytes(byte_data)
-        self.add_evt_write(self.fileno)
+        if self.is_conn_ok(): self.add_evt_write(self.fileno)
 
     def __send_scgi_header(self):
         content_length = int(self.__env["CONTENT_LENGTH"])
@@ -179,7 +181,7 @@ class SCGIClient(tcp_handler.tcp_handler):
             tp.append(value)
 
         s = "\0".join(tp)
-        byte_s = s.encode("iso-8859-1")
+        byte_s = s.encode()
         tot_len = len(byte_s) + content_length
 
         x = "%d:" % tot_len
@@ -187,8 +189,7 @@ class SCGIClient(tcp_handler.tcp_handler):
         self.send_data(sent_data)
 
     def send_scgi_body(self, byte_data: bytes):
-        self.writer.write(byte_data)
-        self.add_evt_write(self.fileno)
+        self.send_data(byte_data)
 
 
 class httpd_listener(tcp_handler.tcp_handler):
@@ -332,7 +333,7 @@ class httpd_handler(ssl_handler.ssl_handler):
             k = k.replace("-", "_")
             if k.lower() not in excepts:
                 k = "HTTP_%s" % k.upper()
-            env[k] = v
+            env[k.upper()] = v
 
         if "CONTENT_LENGTH" not in env: env["CONTENT_LENGTH"] = "0"
 

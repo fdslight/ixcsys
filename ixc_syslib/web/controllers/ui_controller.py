@@ -117,6 +117,12 @@ class controller(app_handler.handler):
         """
         return "/%s" % self.my_app_name
 
+    @property
+    def my_config_dir(self):
+        """获取配置目录
+        """
+        return "%s/%s" % (os.getenv("IXC_CONF_DIR"), self.my_app_name,)
+
     def set_lang(self, lang: str):
         """设置语言
         :param lang:

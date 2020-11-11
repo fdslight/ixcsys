@@ -1,1 +1,37 @@
 ${self.inherit("base.html")}
+<%block name="header">
+    <link rel="stylesheet" href="${self.staticfile_prefix}/css/signin.css"/>
+</%block>
+
+<%block name="title">${self.LA('signin')}</%block>
+
+<%block name="content">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-offset-3 col-md-6" style="margin: auto;">
+                <form class="form-horizontal" action="/" method="post" enctype="application/x-www-form-urlencoded">
+                    <span class="heading">ixcsys <br/>${self.LA('signin')}</span>
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="username" id="username"
+                               placeholder="${self.LA('username')}">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <div class="form-group help">
+                        <input type="password" class="form-control" name="passwd" id="passwd"
+                               placeholder="${self.LA('passwd')}">
+                        <i class="fa fa-lock"></i>
+                        <a href="#" class="fa fa-question-circle"></a>
+                    </div>
+                    <div class="form-group">
+                        <div class="main-checkbox">
+                            <input type="checkbox" value="None" id="checkbox1" name="check"/>
+                            <label for="checkbox1"></label>
+                        </div>
+                        <span class="text">Remember me</span>
+                        <button type="submit" class="btn btn-default">${self.LA('signin')}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</%block>
