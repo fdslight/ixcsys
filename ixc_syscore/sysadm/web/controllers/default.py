@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import hashlib
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
 
 
@@ -8,7 +9,7 @@ class controller(base_controller.BaseController):
         self.request.set_allow_methods(["GET", "POST"])
         return True
 
-    def signin(self, user_name: str):
+    def signin(self, user, expires=3600):
         pass
 
     def handle_get(self):
@@ -19,8 +20,21 @@ class controller(base_controller.BaseController):
         passwd = self.request.get_argument("passwd", is_qs=False, is_seq=False)
 
         if not username or not passwd:
-            self.finish_with_json({"is_ok": False, "error_name": "username_or_passwd_emptys"})
+            self.finish_with_json({"is_ok": False, "error_name": "username_or_passwd_empty"})
             return
+
+        user_info = self.user_configs
+        if user_info["user"] != username:
+            self.finish_with_json({"is_ok": False, "error_name": "wrong_username_or_passwd"})
+            return
+
+        hash_pass = hashlib.md5(passwd.encode()).hexdigest()
+
+        if hash_pass != user_info["password"]:
+            self.finish_with_json({"is_ok": False, "error_name": "wrong_username_or_passwd"})
+            return
+
+        self.signin()
         self.finish_with_json({"is_ok": True})
 
     def handle(self):
