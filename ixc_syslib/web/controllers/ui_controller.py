@@ -1,4 +1,22 @@
 #!/usr/bin/env python3
+"""session文件格式,文件名为session.json
+[
+    # 登录信息
+    {
+        "user_name":{
+            "ip_addr":"",
+            "last_time":"",
+            "timeout":360
+        }
+    }
+
+    # 会话信息
+    {
+        "random_id":username
+    }
+]
+"""
+
 import os, json, hashlib
 import pywind.web.appframework.app_handler as app_handler
 import pywind.lib.tpl.Template as template
