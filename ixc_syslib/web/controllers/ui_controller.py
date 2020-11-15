@@ -173,7 +173,7 @@ class controller(app_handler.handler):
 
         users_session = self.__get_users_session_info()
         users_session[username] = {
-            "last_ip": ""
+            "last_ip": self.request.environ["REMOTE_ADDR"]
         }
         self.__update_users_session_info(users_session)
         with open(fpath, "w") as f:

@@ -339,6 +339,7 @@ class httpd_handler(ssl_handler.ssl_handler):
 
         # 设置RPC不可用
         env["HTTP_X_IXCSYS_RPC"] = "0"
+        env["REMOTE_ADDR"] = self.socket.getsockname()[0]
 
         return env
 
