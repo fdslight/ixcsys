@@ -32,10 +32,10 @@ class SCGIClient(tcp_handler.tcp_handler):
     __conn_timeout = None
 
     def get_app_path_info(self, path_info: str):
-        if path_info == "/": return (os.getenv("IXC_MYAPP_NAME"), path_info,)
+        if path_info == "/": return os.getenv("IXC_MYAPP_NAME"), path_info
 
         p = path_info[1:].find("/")
-        if p < 0: return (os.getenv("IXC_MYAPP_NAME"), path_info)
+        if p < 0: return os.getenv("IXC_MYAPP_NAME"), path_info
         p += 1
 
         return path_info[1:p], path_info[p:]
