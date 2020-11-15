@@ -11,6 +11,7 @@ ${self.inherit("base.html")}
             <div class="col-md-offset-3 col-md-6" style="margin: auto;">
                 <form class="form-horizontal" action="/" method="post" enctype="application/x-www-form-urlencoded">
                     <span class="heading">ixcsys <br/>${self.LA('signin')}</span>
+                    <p class="ixc-alert"></p>
                     <div class="form-group">
                         <input type="text" class="form-control" name="username" id="username"
                                placeholder="${self.LA('username')}">
@@ -23,11 +24,6 @@ ${self.inherit("base.html")}
                         <a href="#" class="fa fa-question-circle"></a>
                     </div>
                     <div class="form-group">
-                        <div class="main-checkbox">
-                            <input type="checkbox" value="None" id="checkbox1" name="check"/>
-                            <label for="checkbox1"></label>
-                        </div>
-                        <span class="text">Remember me</span>
                         <button type="submit" class="btn btn-default">${self.LA('signin')}</button>
                     </div>
                 </form>

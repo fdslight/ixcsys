@@ -1,23 +1,8 @@
 #!/usr/bin/env python3
 """session文件格式,文件名为session.json
-[
-    # 登录信息
-    {
-        "user_name":{
-            "ip_addr":"",
-            "last_time":"",
-            "timeout":360
-        }
-    }
-
-    # 会话信息
-    {
-        "random_id":username
-    }
-]
 """
 
-import os, json, hashlib
+import os, json, hashlib, time, random
 import pywind.web.appframework.app_handler as app_handler
 import pywind.lib.tpl.Template as template
 
@@ -26,6 +11,10 @@ class controller(app_handler.handler):
     __LANG = None
     __user = None
     __auto_auth = None
+    __session_dir = None
+    # 保存用户会话信息
+    __users_session_info_file = None
+    __session_timeout = None
 
     def load_lang(self, name: str):
         lang_dir = "%s/web/languages" % os.getenv("IXC_MYAPP_DIR")
@@ -45,10 +34,73 @@ class controller(app_handler.handler):
         """
         self.__auto_auth = b
 
+    def __update_users_session_info(self, users_session: dict):
+        with open(self.__users_session_info_file, "w") as f:
+            f.write(json.dumps(users_session))
+        f.close()
+
+    def __get_users_session_info(self):
+        if not os.path.isfile(self.__users_session_info_file): return {}
+        with open(self.__users_session_info_file, "r") as f: s = f.read()
+        f.close()
+
+        return json.loads(s)
+
+    def __drop_expire_sessions(self):
+        """丢弃过期的会话
+        """
+        files = os.listdir(self.__session_dir)
+        now_t = time.time()
+
+        del_files = []
+
+        for file in files:
+            fpath = "%s/%s" % (self.__session_dir, file,)
+            if fpath == self.__users_session_info_file: continue
+            with open(fpath, "r") as f:
+                s = f.read()
+            f.close()
+
+            o = json.loads(s)
+            last_time = float(o["last_time"])
+            if now_t - last_time > self.__session_timeout: del_files.append(fpath)
+
+        users_session = self.__get_users_session_info()
+
+        for fpath in del_files:
+            with open(fpath, "r") as f:
+                s = f.read()
+            f.close()
+            o = json.loads(s)
+            username = o["username"]
+            if username in users_session: del users_session[username]
+            os.remove(fpath)
+
+    def __init_session(self):
+        self.__session_timeout = 900
+        self.__session_dir = "/tmp/ixcsys_sessions"
+        self.__users_session_info_file = "%s/users_session_info.json" % self.__session_dir
+
+        if not os.path.isdir(self.__session_dir): os.mkdir(self.__session_dir)
+        self.__drop_expire_sessions()
+
+    def __get_session_id(self):
+        sset = "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM"
+        size = len(sset)
+        i_max = size - 1
+        seq = []
+
+        for i in range(16):
+            n = random.randint(0, i_max)
+            seq.append(sset[n])
+
+        return "".join(seq)
+
     def initialize(self):
         self.__user = {}
         self.__LANG = self.load_lang(self.match_lang())
         self.__auto_auth = True
+        self.__init_session()
 
         rs = self.myinit()
         if not rs: return False
@@ -93,22 +145,41 @@ class controller(app_handler.handler):
         return first_lang
 
     def is_signed(self):
-        file_path = "/tmp/ixcsys/session.json"
-        if not os.path.isfile(file_path): return False
+        """检查用户是否已经登录
+        """
         user_id = self.request.cookie.get("USER_ID", None)
-
         if not user_id: return False
 
-        with open(file_path, "r") as f:
+        fpath = "%s/%s" % (self.__session_dir, user_id,)
+        if not os.path.isfile(fpath): return False
+
+        with open(fpath, "r") as f:
             s = f.read()
         f.close()
 
+        users_session = self.__get_users_session_info()
         o = json.loads(s)
-        session_id = o["session_id"]
-        if session_id != user_id: return False
+        username = o["username"]
+        self.__user = users_session[username]
 
-        self.__user = o
         return True
+
+    def signin(self, username: str):
+        while 1:
+            session_id = self.__get_session_id()
+            fpath = "%s/%s" % (self.__session_dir, session_id,)
+            if os.path.isfile(fpath): continue
+            break
+
+        users_session = self.__get_users_session_info()
+        users_session[username] = {
+            "last_ip": ""
+        }
+        self.__update_users_session_info(users_session)
+        with open(fpath, "w") as f:
+            f.write(json.dumps({"last_time": time.time(), "username": username}))
+        f.close()
+        self.set_cookie("USER_ID", session_id, expires=self.__session_timeout)
 
     @property
     def user(self):

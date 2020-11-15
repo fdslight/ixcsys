@@ -9,9 +9,6 @@ class controller(base_controller.BaseController):
         self.request.set_allow_methods(["GET", "POST"])
         return True
 
-    def signin(self, user, expires=3600):
-        pass
-
     def handle_get(self):
         self.render("signin.html")
 
@@ -33,8 +30,7 @@ class controller(base_controller.BaseController):
         if hash_pass != user_info["password"]:
             self.finish_with_json({"is_ok": False, "error_name": "wrong_username_or_passwd"})
             return
-
-        self.signin()
+        self.signin(username)
         self.finish_with_json({"is_ok": True})
 
     def handle(self):
