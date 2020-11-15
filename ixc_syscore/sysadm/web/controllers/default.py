@@ -10,7 +10,10 @@ class controller(base_controller.BaseController):
         return True
 
     def handle_get(self):
-        self.render("signin.html")
+        if self.is_signed():
+            self.render("homepage.html")
+        else:
+            self.render("signin.html")
 
     def handle_post(self):
         username = self.request.get_argument("username", is_qs=False, is_seq=False)

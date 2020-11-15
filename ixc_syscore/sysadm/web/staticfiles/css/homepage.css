@@ -1,0 +1,17 @@
+.active{
+}
+
+.list-group-item:hover{
+    cursor: pointer !important;
+}
+
+.ixc-left-nav-title{
+    text-align: center;
+    color: #ffffff;
+    font-weight: bold;
+    background-color: #80bdff;
+}
+
+.ixc-empty{
+    height: 0.5em;
+}

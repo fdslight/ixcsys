@@ -5,7 +5,9 @@
     <link rel="stylesheet" href="${self.staticfile_prefix}/bootstrap/css/bootstrap.css"/>
     <script type="text/javascript" src="${self.staticfile_prefix}/js/jquery.min.js"></script>
     <script type="text/javascript" src="${self.staticfile_prefix}/bootstrap/js/bootstrap.js"></script>
-    <title>${self.LA('signin')}</title>
+    <title>
+            <%block name="title" />
+    </title>
     <%block name="header" />
 </head>
 <body>

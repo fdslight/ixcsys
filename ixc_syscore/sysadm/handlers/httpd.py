@@ -181,6 +181,7 @@ class SCGIClient(tcp_handler.tcp_handler):
             tp.append(value)
 
         s = "\0".join(tp)
+        s += "\0"
         byte_s = s.encode()
         tot_len = len(byte_s) + content_length
 
