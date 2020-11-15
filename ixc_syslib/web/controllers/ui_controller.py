@@ -200,7 +200,7 @@ class controller(app_handler.handler):
         return os.getenv("IXC_MYAPP_NAME")
 
     @property
-    def prefix(self):
+    def url_prefix(self):
         """URL前缀
         :return:
         """
@@ -225,7 +225,7 @@ class controller(app_handler.handler):
             "user": self.user,
             "staticfile_prefix": self.staticfile_prefix,
             "app_name": self.my_app_name,
-            "prefix": self.prefix
+            "url_prefix": self.url_prefix
         })
         tpl.set_find_directories([
             "%s/web/templates" % os.getenv("IXC_MYAPP_DIR")

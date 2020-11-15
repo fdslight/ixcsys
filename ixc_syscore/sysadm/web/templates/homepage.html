@@ -15,8 +15,9 @@ ${self.inherit("base.html")}
                 </div>
             </div>
             <form class="form-inline">
-                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                <button class="btn btn-outline-success my-2 my-sm-0" type="button">重启系统</button>
+                &nbsp;
+                <button class="btn btn-outline-success my-2 my-sm-0" type="button">注销</button>
             </form>
         </nav>
         <div class="row">
@@ -38,16 +39,16 @@ ${self.inherit("base.html")}
                         <a href="#">快速设置向导</a>
                     </li>
                     <li class="list-group-item">
-                        <a href="#">WAN 上网设置</a>
+                        <a href="${self.url_prefix}/wan">WAN 上网设置</a>
                     </li>
                     <li class="list-group-item">
-                        <a href="#">WAN 端口映射</a>
+                        <a href="${self.url_prefix}/port_map">WAN 端口映射</a>
                     </li>
                     <li class="list-group-item">
-                        <a href="#">LAN DHCP服务器</a>
+                        <a href="${self.url_prefix}/dhcp">LAN DHCP服务器</a>
                     </li>
                     <li class="list-group-item">
-                        <a href="#">LAN TFTP服务器</a>
+                        <a href="${self.url_prefix}/tftp">LAN TFTP服务器</a>
                     </li>
                 </ul>
                 <div class="ixc-empty"></div>
@@ -65,7 +66,7 @@ ${self.inherit("base.html")}
                         <div class="ixc-left-nav-title">系统管理</div>
                     </li>
                     <li class="list-group-item">
-                        <a href="#">系统信息</a>
+                        <a href="${self.url_prefix}/system_info">系统信息</a>
                     </li>
                     <li class="list-group-item">
                         <a href="#">系统更新</a>
