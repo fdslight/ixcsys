@@ -1,0 +1,84 @@
+${self.inherit("base.html")}
+<%block name="header">
+    <link rel="stylesheet" href="${self.staticfile_prefix}/css/homepage.css"/>
+</%block>
+
+<%block name="title">${self.LA('homepage')}</%block>
+
+<%block name="content">
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Navbar</a>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav">
+                    <a class="nav-item nav-link" href="#">Pricing</a>
+                </div>
+            </div>
+            <form class="form-inline">
+                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </nav>
+        <div class="row">
+            <div class="col-2">
+                <ul class="list-group">
+                    <li class="list-group-item ixc-left-nav-title">
+                        <div class="ixc-left-nav-title">文件管理器</div>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#">文件管理器</a>
+                    </li>
+                </ul>
+                <div class="ixc-empty"></div>
+                <ul class="list-group">
+                    <li class="list-group-item ixc-left-nav-title">
+                        <div class="ixc-left-nav-title">网络设置</div>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#">快速设置向导</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#">WAN 上网设置</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#">WAN 端口映射</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#">LAN DHCP服务器</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#">LAN TFTP服务器</a>
+                    </li>
+                </ul>
+                <div class="ixc-empty"></div>
+                <ul class="list-group">
+                    <li class="list-group-item ixc-left-nav-title">
+                        <div class="ixc-left-nav-title">高级管理</div>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#">网络栈参数调整</a>
+                    </li>
+                </ul>
+                <div class="ixc-empty"></div>
+                <ul class="list-group">
+                    <li class="list-group-item ixc-left-nav-title">
+                        <div class="ixc-left-nav-title">系统管理</div>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#">系统信息</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#">系统更新</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-8">
+                adsads
+            </div>
+        </div>
+    </div>
+    <div class="ixc-empty"></div>
+</%block>
+<%block name="footer">
+## footer.html
+</%block>

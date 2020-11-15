@@ -2,5 +2,8 @@
   "signin": "登录",
   "username": "用户名",
   "passwd": "密码",
-  "passwd-sure": "密码确认"
+  "passwd-sure": "密码确认",
+  "homepage": "ixcsys管理主页",
+  "application": "应用",
+  "fast_start": "网络设置向导"
 }

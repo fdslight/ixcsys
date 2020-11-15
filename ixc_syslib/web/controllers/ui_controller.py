@@ -2,7 +2,7 @@
 """session文件格式,文件名为session.json
 """
 
-import os, json, hashlib, time, random
+import os, json, time, random
 import pywind.web.appframework.app_handler as app_handler
 import pywind.lib.tpl.Template as template
 
