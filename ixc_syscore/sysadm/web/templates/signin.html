@@ -30,4 +30,37 @@ ${self.inherit("base.html")}
             </div>
         </div>
     </div>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("form").submit(function (e) {
+                let x = $(this).serialize();
+                $(".ixc-alert").html("");
+
+                $.ajax({
+                    cache: false,
+                    url: $(this).attr("action"),
+                    data: x,
+                    type: "POST",
+                    success: function (rs) {
+                        if (rs.is_ok) {
+                            window.location.replace("/");
+                            return;
+                        }
+                        let err_text = "${self.LA('unkown_wrong')}";
+                        switch (rs.error_name) {
+                            case "username_or_passwd_empty":
+                                err_text = "${self.LA('username_or_passwd_empty')}"
+                                break;
+                            case "wrong_username_or_passwd":
+                                err_text = "${self.LA('wrong_username_or_passwd')}";
+                                break;
+                        }
+                        $(".ixc-alert").html(err_text);
+                    }
+                });
+
+                return false;
+            });
+        });
+    </script>
 </%block>

@@ -5,5 +5,8 @@
   "passwd-sure": "密码确认",
   "homepage": "ixcsys管理主页",
   "application": "应用",
-  "fast_start": "网络设置向导"
+  "fast_start": "网络设置向导",
+  "unkown_wrong": "未知错误",
+  "username_or_passwd_empty": "空的用户名或者密码",
+  "wrong_username_or_passwd": "错误的用户名或者密码"
 }
