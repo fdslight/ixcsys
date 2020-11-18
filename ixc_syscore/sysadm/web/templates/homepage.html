@@ -6,30 +6,23 @@ ${self.inherit("base.html")}
 <%block name="title">${self.LA('homepage')}</%block>
 
 <%block name="content">
-    <div class="container-fluid">
+    <div class="container-fluid" style="min-width: 1280px;padding: 0;">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <a class="navbar-brand" href="#">Navbar</a>
             <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-                <div class="navbar-nav">
-                    <a class="nav-item nav-link" href="#">我的应用</a>
-                </div>
-                <div class="navbar-nav">
-                    <a class="nav-item nav-link" href="#">应用商店</a>
-                </div>
             </div>
             <form class="form-inline">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="button">重启系统</button>
-                &nbsp;
                 <button class="btn btn-outline-success my-2 my-sm-0" type="button">注销</button>
             </form>
         </nav>
-        <div class="row">
+        <div class="row" style="width: 90%;margin: auto;">
             <div class="col-2">
                 <ul class="list-group">
                     <li class="list-group-item ixc-left-nav-title">
-                        <div class="ixc-left-nav-title">文件管理器</div>
+                        <div class="ixc-left-nav-title">我的应用</div>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item ixc-left-menu" id="ixc-file-manager">
                         <a href="#">文件管理器</a>
                     </li>
                 </ul>
@@ -38,7 +31,7 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-nav-title">
                         <div class="ixc-left-nav-title">网络设置</div>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item ixc-left-menu" id="ixc-fast-start">
                         <a href="#">快速设置向导</a>
                     </li>
                     <li class="list-group-item">
@@ -68,20 +61,33 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-nav-title">
                         <div class="ixc-left-nav-title">系统管理</div>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item ixc-left-menu" id="ixc-app-store">
+                        <a href="${self.url_prefix}/system_info">应用商店</a>
+                    </li>
+                    <li class="list-group-item ixc-left-menu" id="ixc-system-info">
                         <a href="${self.url_prefix}/system_info">系统信息</a>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item ixc-left-menu" id="ixc-system-update">
                         <a href="#">系统更新</a>
                     </li>
                 </ul>
             </div>
-            <div class="col-8">
-                adsads
+            <div class="col-10" class="ixc-app-page ixc-page-content" style="padding: 0;">
+                <!--
+                <iframe style="width: 100%;height: 100%;padding: 0;border: 0;"></iframe>
+                -->
             </div>
         </div>
     </div>
     <div class="ixc-empty"></div>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            $(".ixc-left-menu").click(function () {
+                alert($(this).attr("id"));
+                return false;
+            });
+        });
+    </script>
 </%block>
 <%block name="footer">
 ## footer.html
