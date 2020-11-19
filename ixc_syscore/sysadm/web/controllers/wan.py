@@ -10,4 +10,4 @@ class controller(base_controller.BaseController):
         return True
 
     def handle(self):
-        self.finish_with_text("hello")
+        self.finish_with_json({"hello": "world"})

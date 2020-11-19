@@ -22,7 +22,10 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-nav-title">
                         <div class="ixc-left-nav-title">我的应用</div>
                     </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-file-manager">
+                    <li class="list-group-item ixc-left-menu" id="ixc-app-store">
+                        <a href="${self.url_prefix}/system_info">应用商店</a>
+                    </li>
+                    <li class="list-group-item ixc-left-menu" id="ixc-app-file-manager">
                         <a href="#">文件管理器</a>
                     </li>
                 </ul>
@@ -34,16 +37,19 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-menu" id="ixc-fast-start">
                         <a href="#">快速设置向导</a>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item ixc-left-menu" id="ixc-wan-internet">
                         <a href="${self.url_prefix}/wan">WAN 上网设置</a>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item ixc-left-menu" id="ixc-wan-port-map">
                         <a href="${self.url_prefix}/port_map">WAN 端口映射</a>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item ixc-left-menu" id="ixc-dhcp-server">
                         <a href="${self.url_prefix}/dhcp">LAN DHCP服务器</a>
                     </li>
-                    <li class="list-group-item">
+                    <li class="list-group-item ixc-left-menu" id="ixc-dns-server">
+                        <a href="${self.url_prefix}/tftp">LAN DNS服务器</a>
+                    </li>
+                    <li class="list-group-item ixc-left-menu" id="ixc-tftp-server">
                         <a href="${self.url_prefix}/tftp">LAN TFTP服务器</a>
                     </li>
                 </ul>
@@ -61,29 +67,62 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-nav-title">
                         <div class="ixc-left-nav-title">系统管理</div>
                     </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-app-store">
-                        <a href="${self.url_prefix}/system_info">应用商店</a>
+                    <li class="list-group-item ixc-left-menu" id="ixc-system-console">
+                        <a href="#">控制台</a>
+                    </li>
+                    <li class="list-group-item ixc-left-menu" id="ixc-system-network">
+                        <a href="#">网络接口</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-info">
                         <a href="${self.url_prefix}/system_info">系统信息</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-update">
-                        <a href="#">系统更新</a>
+                        <a href="#">软件更新</a>
                     </li>
                 </ul>
             </div>
-            <div class="col-10" class="ixc-app-page ixc-page-content" style="padding: 0;">
-                <!--
-                <iframe style="width: 100%;height: 100%;padding: 0;border: 0;"></iframe>
-                -->
+            <div class="col-10" style="padding: 0;">
+                ## fast-start.html
+                ## wan.html
+                ## port-map.html
+                ## dhcp-server.html
+                ## dns-server.html
+                ## tftp-server.html
+                ## system-info.html
+
+                <div class="ixc-page-content"></div>
             </div>
         </div>
     </div>
     <div class="ixc-empty"></div>
     <script type="text/javascript">
         $(document).ready(function (e) {
+            /** 根据左边不同的菜单显示不同的内容 **/
             $(".ixc-left-menu").click(function () {
-                alert($(this).attr("id"));
+
+                let id = $(this).attr("id");
+                let href = $(this).children("a").attr("href");
+                let text = '<iframe style="width: 100%;height: 100%;padding: 0;border: 0;"></iframe>';
+                let page = $(".ixc-page-content");
+
+                page.css("display", "none");
+                $(".ixc-menu-content").css("display", "none");
+
+                if (id.indexOf("ixc-app") === 0) {
+                    page.html(text);
+                    page.css("display", "block");
+                    return false;
+                }
+
+                $.get(href, function (data) {
+                    let render_id = "#" + id + "-view";
+                    let app = new Vue({
+                        el: render_id,
+                        data: data
+                    });
+                    $(render_id).css("display", "block");
+                });
+
                 return false;
             });
         });
