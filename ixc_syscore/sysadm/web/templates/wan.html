@@ -1,0 +1,75 @@
+<div id="ixc-wan-internet-view" class="ixc-menu-content" style="display: none;">
+    <nav class="nav nav-pills flex-column flex-sm-row">
+        <a class="flex-sm-fill text-sm-center nav-link active ixc-internet-dial-type"
+           id="ixc-internet-pppoe" href="#">PPPoE拨号</a>
+        <a class="flex-sm-fill text-sm-center nav-link ixc-internet-dial-type"
+           href="#">动态IP地址</a>
+        <a class="flex-sm-fill text-sm-center nav-link ixc-internet-dial-type"
+           href="#">静态IP地址</a>
+    </nav>
+    <div class="ixc-empty"></div>
+    <div class="ixc-empty"></div>
+    <div class="ixc-empty"></div>
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-internet-type"
+          id="ixc-pppoe-dial">
+        <input value="pppoe" type="hidden" name="dial_method"/>
+        <div class="form-group row">
+            <label for="inputEmail3" class="col-sm-2 col-form-label">用户名</label>
+            <div class="col-sm-10">
+                <input type="email" class="form-control" id="inputEmail3"
+                       placeholder="PPPoE用户名">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="inputPassword3" class="col-sm-2 col-form-label">密码</label>
+            <div class="col-sm-10">
+                <input type="password" class="form-control" id="inputPassword3"
+                       placeholder="PPPoE密码">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">心跳探测</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="gridCheck1">
+                    <label class="form-check-label" for="gridCheck1">
+                        &nbsp;&nbsp;开启
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            </div>
+        </div>
+    </form>
+    <form style="width: 50%;margin: auto;min-width: 400px;display: none;"
+          class="ixc-internet-type"
+          id="ixc-dhcp-dial">
+        <input value="pppoe" type="hidden" name="dial_method"/>
+        <div class="form-group row">
+            <div class="col-sm-2">心跳探测</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox">
+                    <label class="form-check-label">
+                        &nbsp;&nbsp;开启
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(".ixc-internet-dial-type").click(function () {
+            alert("zzz");
+        });
+    });
+</script>

@@ -13,5 +13,20 @@
 }
 
 .ixc-empty{
-    height: 0.5em;
+    height: 1em;
+}
+
+.ixc-menu-content{
+    padding: 1em;
+}
+
+#ixc-system-info-view{
+    font-size: 1.2em;
+    width: 70%;
+    max-width: 800px;
+    min-width: 400px;
+    margin: 4em auto;
+}
+#ixc-system-info-view td:first-child{
+    border-right: 1px silver !important;
 }
