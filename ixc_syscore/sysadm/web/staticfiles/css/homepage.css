@@ -16,6 +16,14 @@
     height: 1em;
 }
 
+.ixc-left li.active a{
+    color: #ffffff !important;
+}
+
+.ixc-left-menu a{
+    color: #818287;
+}
+
 .ixc-menu-content{
     padding: 1em;
 }
