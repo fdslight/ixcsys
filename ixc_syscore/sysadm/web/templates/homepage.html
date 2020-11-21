@@ -38,19 +38,20 @@ ${self.inherit("base.html")}
                         <a href="#">快速设置向导</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wan-internet">
-                        <a href="${self.url_prefix}/wan">WAN 上网设置</a>
+                        <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-pppoe-dial&path=${self.url_prefix}/wan">WAN
+                            上网设置</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wan-port-map">
-                        <a href="${self.url_prefix}/port_map">WAN 端口映射</a>
+                        <a href="${self.url_prefix}/?show=ixc-wan-port-map&path=${self.url_prefix}/port_map">WAN 端口映射</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-dhcp-server">
-                        <a href="${self.url_prefix}/dhcp">LAN DHCP服务器</a>
+                        <a href="${self.url_prefix}/dhcp?r=ixc-dhcp-server">LAN DHCP服务器</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-dns-server">
                         <a href="${self.url_prefix}/dns">LAN DNS服务器</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-tftp-server">
-                        <a href="${self.url_prefix}/tftp">LAN TFTP服务器</a>
+                        <a href="${self.url_prefix}/?show=ixc-tftp-server&path=${self.url_prefix}/tftp">LAN TFTP服务器</a>
                     </li>
                 </ul>
                 <div class="ixc-empty"></div>
@@ -74,7 +75,7 @@ ${self.inherit("base.html")}
                         <a href="#">网络接口</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-info">
-                        <a href="${self.url_prefix}/system_info">系统信息</a>
+                        <a href="${self.url_prefix}/?show=ixc-system-info&path=${self.url_prefix}/system_info">系统信息</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-update">
                         <a href="#">软件更新</a>
@@ -97,6 +98,37 @@ ${self.inherit("base.html")}
     <div class="ixc-empty"></div>
     <script type="text/javascript">
         $(document).ready(function (e) {
+            /** 显示菜单内容 **/
+            function load_page() {
+                /// 加载页面,实现加载选定的内容并激活对应的菜单颜色
+                let url_params = new URLSearchParams(window.location.search);
+                let show = url_params.get("show");
+                let path = url_params.get("path");
+
+                if (null === show || show === "") return;
+
+                let array = show.split(".");
+                if (null == path) return;
+                path = path.replaceAll(" ", "");
+                if (path === "") return;
+
+                $.get(path, function (data) {
+                    // 左边菜单ID+"-view"表示渲染的名称
+                    for (let i = 0; i < array.length; i++) {
+                        let selector = $("#" + array[i] + "-view");
+                        if (i === array.length - 1) {
+                            if (data["is_error"]) {
+                                selector.html(data["message"]);
+                            } else {
+                                selector.view_render("V-", data["message"]);
+                            }
+                        }
+                        $("#" + array[i]).addClass("active");
+                        selector.css("display", "block");
+                    }
+                });
+            }
+
             /** 根据左边不同的菜单显示不同的内容 **/
             $(".ixc-left-menu").click(function () {
 
@@ -111,23 +143,24 @@ ${self.inherit("base.html")}
                 page.css("display", "none");
                 $(".ixc-menu-content").css("display", "none");
 
-                if (id.indexOf("ixc-app") === 0) {
-                    page.html(text);
-                    page.css("display", "block");
-                    return false;
+                if (id.indexOf("ixc-app") !== 0) {
+                    window.location.href = href;
+                    return true;
                 }
-                $.get(href, function (data) {
-                    let render_id = "#" + id + "-view";
-                    if (!data["is_error"]) {
-                        console.log(data["message"]);
-                        $(render_id).view_render("V-", data["message"]);
-                        $(render_id).css("display", "block");
-                    }else{
-                        alert(data["message"]);
-                    }
-                });
+                ;
+                page.html(text);
+                page.css("display", "block");
+                return false;
+
+            });
+
+            /** 配置表单提交 **/
+            $(".ixc-conf-form").submit(function (){
+                let sub_content=$(this).serialize();
                 return false;
             });
+
+            load_page();
         });
     </script>
 </%block>

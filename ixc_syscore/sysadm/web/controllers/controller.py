@@ -14,3 +14,7 @@ class BaseController(base.controller):
 
         return json.loads(s)
 
+    def json_resp(self, is_error: bool, message):
+        """响应ajax
+        """
+        self.finish_with_json({"is_error": is_error, "message": message})

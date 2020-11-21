@@ -1,29 +1,29 @@
 <div id="ixc-wan-internet-view" class="ixc-menu-content" style="display: none;">
     <nav class="nav nav-pills flex-column flex-sm-row" style="background-color: rgba(8,64,92,0.07);">
-        <a class="flex-sm-fill text-sm-center nav-link active ixc-internet-dial-type"
-           id="ixc-internet-pppoe" name="pppoe" href="#">PPPoE拨号</a>
-        <a class="flex-sm-fill text-sm-center nav-link ixc-internet-dial-type" name="dhcp"
-           href="#">动态IP地址</a>
         <a class="flex-sm-fill text-sm-center nav-link ixc-internet-dial-type"
+           id="ixc-pppoe-dial" name="pppoe" href="#">PPPoE拨号</a>
+        <a class="flex-sm-fill text-sm-center nav-link ixc-internet-dial-type" name="dhcp"
+           href="#" id="ixc-dhcp-dial">动态IP地址</a>
+        <a class="flex-sm-fill text-sm-center nav-link ixc-internet-dial-type" id="ixc-static-ip-dial"
            href="#" name="static-ip">静态IP地址</a>
     </nav>
     <div class="ixc-empty"></div>
     <div class="ixc-empty"></div>
     <div class="ixc-empty"></div>
-    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-internet-type"
-          id="ixc-pppoe-dial">
-        <input value="pppoe" type="hidden" name="dial_method"/>
+    <form style="width: 50%;margin: auto;min-width: 400px;display: none;" class="ixc-internet-type ixc-conf-form"
+          id="ixc-pppoe-dial-view">
+        <input value="pppoe" type="hidden" name="dial_method" value="pppoe"/>
         <div class="form-group row">
-            <label for="inputEmail3" class="col-sm-2 col-form-label">用户名</label>
+            <label for="pppoe-user" class="col-sm-2 col-form-label">用户名</label>
             <div class="col-sm-10">
-                <input type="email" class="form-control" id="inputEmail3"
+                <input type="text" class="form-control" name="username"
                        placeholder="PPPoE用户名">
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputPassword3" class="col-sm-2 col-form-label">密码</label>
+            <label for="passwd" class="col-sm-2 col-form-label">密码</label>
             <div class="col-sm-10">
-                <input type="password" class="form-control" id="inputPassword3"
+                <input type="password" class="form-control" name="passwd"
                        placeholder="PPPoE密码">
             </div>
         </div>
@@ -31,8 +31,8 @@
             <div class="col-sm-2">心跳探测</div>
             <div class="col-sm-10">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1">
-                    <label class="form-check-label" for="gridCheck1">
+                    <input class="form-check-input" type="checkbox" value="1" name="heartbeat">
+                    <label class="form-check-label">
                         &nbsp;&nbsp;开启
                     </label>
                 </div>
@@ -45,9 +45,9 @@
         </div>
     </form>
     <form style="width: 50%;margin: auto;min-width: 400px;display: none;"
-          class="ixc-internet-type"
-          id="ixc-dhcp-dial">
-        <input value="pppoe" type="hidden" name="dial_method"/>
+          class="ixc-internet-type ixc-conf-form"
+          id="ixc-dhcp-dial-view">
+        <input value="pppoe" type="hidden" name="dial_method" value="dhcp"/>
         <div class="form-group row">
             <div class="col-sm-2">心跳探测</div>
             <div class="col-sm-10">
@@ -65,27 +65,27 @@
             </div>
         </div>
     </form>
-    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-internet-type"
-          id="ixc-static-ip-dial">
-        <input value="pppoe" type="hidden" name="dial_method"/>
+    <form style="width: 50%;margin: auto;min-width: 400px;display: none;" class="ixc-internet-type ixc-conf-form"
+          id="ixc-static-ip-dial-view">
+        <input value="pppoe" type="hidden" name="dial_method" value="static-ip"/>
         <div class="form-group row">
             <label for="inputEmail3" class="col-sm-2 col-form-label">IP地址</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control"
+                <input type="text" class="form-control" name="ip"
                        placeholder="IP地址">
             </div>
         </div>
         <div class="form-group row">
             <label for="inputPassword3" class="col-sm-2 col-form-label">子网掩码</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control"
+                <input type="text" class="form-control" name="mask"
                        placeholder="子网掩码">
             </div>
         </div>
         <div class="form-group row">
             <label for="inputPassword3" class="col-sm-2 col-form-label">默认网关</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control"
+                <input type="text" class="form-control" name="gateway"
                        placeholder="默认网关">
             </div>
         </div>
@@ -103,7 +103,7 @@
                 $(this).addClass("active");
 
                 $(".ixc-internet-type").css("display", "none");
-                $("#ixc-" + attr_name + "-dial").css("display", "block");
+                $("#ixc-" + attr_name + "-dial-view").css("display", "block");
             });
         });
     </script>

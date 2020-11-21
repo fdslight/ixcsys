@@ -9,5 +9,15 @@ class controller(base_controller.BaseController):
         self.request.set_allow_methods(["GET", "POST"])
         return True
 
+    def handle_get(self):
+        self.json_resp(False, {})
+
+    def handle_post(self):
+        self.finish_with_json({})
+
     def handle(self):
-        self.finish_with_text("hello")
+        method = self.request.environ["REQUEST_METHOD"]
+        if method == "GET":
+            self.handle_get()
+        else:
+            self.handle_post()
