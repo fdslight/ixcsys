@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import sys, platform, os, psutil
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
+
+import ixc_syslib.pylib.RPCClient as RPC
 
 
 class controller(base_controller.BaseController):
@@ -9,5 +10,19 @@ class controller(base_controller.BaseController):
         self.request.set_allow_methods(["GET", "POST"])
         return True
 
+    def handle_get(self):
+        if not RPC.RPCReadyOk("tftp"):
+            self.finish_with_json({"is_error": True, "message": "cannot found tftp process"})
+            return
+        result = RPC.fn_call("tftp", "/config", "config_get")
+        self.finish_with_json({"is_error": False, "message": result})
+
+    def handle_post(self):
+        self.finish_with_json({})
+
     def handle(self):
-        self.finish_with_text("hello")
+        method = self.request.environ["REQUEST_METHOD"]
+        if method == "GET":
+            self.handle_get()
+        else:
+            self.handle_post()

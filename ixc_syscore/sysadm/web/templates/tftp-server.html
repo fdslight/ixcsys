@@ -1,7 +1,18 @@
 <div id="ixc-tftp-server-view" class="ixc-menu-content" style="display: none;">
     <form style="width: 50%;margin: auto;min-width: 400px;">
         <div class="form-group row">
-            <div class="col-sm-2">TFTP启用</div>
+            <div class="col-sm-2">TFTPv4启用</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox">
+                    <label class="form-check-label" for="gridCheck1">
+                        开启
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">TFTPv6启用</div>
             <div class="col-sm-10">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox">
@@ -14,7 +25,7 @@
         <div class="form-group row">
             <label for="inputEmail3" class="col-sm-2 col-form-label">文件目录</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" placeholder="文件目录" value="/data/tftp"/>
+                <input type="text" class="form-control" placeholder="文件目录" value="{{V-file_dir}}"/>
             </div>
         </div>
         <div class="form-group row">

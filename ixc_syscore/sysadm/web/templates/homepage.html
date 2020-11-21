@@ -47,7 +47,7 @@ ${self.inherit("base.html")}
                         <a href="${self.url_prefix}/dhcp">LAN DHCP服务器</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-dns-server">
-                        <a href="${self.url_prefix}/tftp">LAN DNS服务器</a>
+                        <a href="${self.url_prefix}/dns">LAN DNS服务器</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-tftp-server">
                         <a href="${self.url_prefix}/tftp">LAN TFTP服务器</a>
@@ -118,8 +118,13 @@ ${self.inherit("base.html")}
                 }
                 $.get(href, function (data) {
                     let render_id = "#" + id + "-view";
-                    $(render_id).view_render("V-",data);
-                    $(render_id).css("display", "block");
+                    if (!data["is_error"]) {
+                        console.log(data["message"]);
+                        $(render_id).view_render("V-", data["message"]);
+                        $(render_id).css("display", "block");
+                    }else{
+                        alert(data["message"]);
+                    }
                 });
                 return false;
             });

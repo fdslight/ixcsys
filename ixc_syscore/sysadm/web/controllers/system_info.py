@@ -18,4 +18,4 @@ class controller(base_controller.BaseController):
             "mem_free_size": psutil.virtual_memory().free,
             "ixcsys_version": "1.0.0-b1"
         }
-        self.finish_with_json(sys_info)
+        self.finish_with_json({"is_error": False, "message": sys_info})

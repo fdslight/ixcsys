@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
+
 import ixc_syslib.pylib.RPCClient as RPC
 
 
@@ -10,7 +11,7 @@ class controller(base_controller.BaseController):
         return True
 
     def handle_get(self):
-        self.finish_with_json({"is_error": True, "message": "cannot found dncp process"})
+        self.finish_with_json({"is_error": True, "message": "cannot found dns process"})
 
     def handle_post(self):
         self.finish_with_json({})
