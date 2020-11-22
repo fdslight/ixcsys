@@ -49,6 +49,7 @@
         let selector = $(this);
         for (let name in json_data) {
             let v = json_data[name];
+
             render_atrribute(selector, cls_prefix, name, v);
             render_text(selector, cls_prefix, name, v);
         }
