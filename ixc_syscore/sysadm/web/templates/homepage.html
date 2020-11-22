@@ -42,7 +42,8 @@ ${self.inherit("base.html")}
                             上网设置</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wan-port-map">
-                        <a href="${self.url_prefix}/?show=ixc-wan-port-map&path=${self.url_prefix}/port_map">WAN 端口映射</a>
+                        <a href="${self.url_prefix}/?show=ixc-wan-port-map&path=${self.url_prefix}/port_map">WAN
+                            端口映射</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-dhcp-server">
                         <a href="${self.url_prefix}/dhcp?r=ixc-dhcp-server">LAN DHCP服务器</a>
@@ -72,7 +73,7 @@ ${self.inherit("base.html")}
                         <a href="#">控制台</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-network">
-                        <a href="#">网络接口</a>
+                        <a href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&path=${self.url_prefix}/system_network">系统网络</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-info">
                         <a href="${self.url_prefix}/?show=ixc-system-info&path=${self.url_prefix}/system_info">系统信息</a>
@@ -89,6 +90,7 @@ ${self.inherit("base.html")}
                 ## dhcp-server.html
                 ## dns-server.html
                 ## tftp-server.html
+                ## system-network.html
                 ## system-info.html
 
                 <div class="ixc-page-content"></div>
@@ -155,8 +157,8 @@ ${self.inherit("base.html")}
             });
 
             /** 配置表单提交 **/
-            $(".ixc-conf-form").submit(function (){
-                let sub_content=$(this).serialize();
+            $(".ixc-conf-form").submit(function () {
+                let sub_content = $(this).serialize();
                 return false;
             });
 
