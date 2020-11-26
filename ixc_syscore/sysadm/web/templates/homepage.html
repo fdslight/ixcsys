@@ -28,6 +28,7 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-menu" id="ixc-app-file-manager">
                         <a href="#">文件管理器</a>
                     </li>
+                    ${self.widget("applist")}
                 </ul>
                 <div class="ixc-empty"></div>
                 <ul class="list-group">
@@ -38,11 +39,11 @@ ${self.inherit("base.html")}
                         <a href="#">快速设置向导</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wan-internet">
-                        <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-pppoe-dial&path=${self.url_prefix}/wan">WAN
+                        <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-pppoe-dial&page=wan-pppoe">WAN
                             上网设置</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wan-port-map">
-                        <a href="${self.url_prefix}/?show=ixc-wan-port-map&path=${self.url_prefix}/port_map">WAN
+                        <a href="${self.url_prefix}/?show=ixc-wan-port-map&page=wan-port-map">WAN
                             端口映射</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-dhcp-server">
@@ -73,10 +74,10 @@ ${self.inherit("base.html")}
                         <a href="#">控制台</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-network">
-                        <a href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&path=${self.url_prefix}/system_network">系统网络</a>
+                        <a href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&page=system-network-wan">系统网络</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-info">
-                        <a href="${self.url_prefix}/?show=ixc-system-info&path=${self.url_prefix}/system_info">系统信息</a>
+                        <a href="${self.url_prefix}/?show=ixc-system-info&page=system-info">系统信息</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-update">
                         <a href="#">软件更新</a>
@@ -84,16 +85,7 @@ ${self.inherit("base.html")}
                 </ul>
             </div>
             <div class="col-10" style="padding: 0;">
-                ## fast-start.html
-                ## wan.html
-                ## port-map.html
-                ## dhcp-server.html
-                ## dns-server.html
-                ## tftp-server.html
-                ## system-network.html
-                ## system-info.html
-
-                <div class="ixc-page-content"></div>
+                <div class="ixc-page-content">${self.widget("page-content")}</div>
             </div>
         </div>
     </div>
@@ -105,35 +97,18 @@ ${self.inherit("base.html")}
                 /// 加载页面,实现加载选定的内容并激活对应的菜单颜色
                 let url_params = new URLSearchParams(window.location.search);
                 let show = url_params.get("show");
-                let path = url_params.get("path");
-
                 if (null === show || show === "") return;
 
                 let array = show.split(".");
-                if (null == path) return;
-                path = path.replaceAll(" ", "");
-                if (path === "") return;
-
-                $.get(path, function (data) {
-                    // 左边菜单ID+"-view"表示渲染的名称
-                    for (let i = 0; i < array.length; i++) {
-                        let selector = $("#" + array[i] + "-view");
-                        if (i === array.length - 1) {
-                            if (data["is_error"]) {
-                                selector.html(data["message"]);
-                            } else {
-                                selector.view_render("V-", data["message"]);
-                            }
-                        }
-                        $("#" + array[i]).addClass("active");
-                        selector.css("display", "block");
-                    }
-                });
+                // 左边菜单ID+"-view"表示渲染的名称
+                for (let i = 0; i < array.length; i++) {
+                    $("#" + array[i]).addClass("active");
+                    if (array.length - 1 === i) $("#" + array[i] + "-view").css("display", "block");
+                }
             }
 
             /** 根据左边不同的菜单显示不同的内容 **/
             $(".ixc-left-menu").click(function () {
-
                 let id = $(this).attr("id");
                 let href = $(this).children("a").attr("href");
                 let text = '<iframe style="width: 100%;height: 100%;padding: 0;border: 0;"></iframe>';
@@ -149,7 +124,6 @@ ${self.inherit("base.html")}
                     window.location.href = href;
                     return true;
                 }
-                ;
                 page.html(text);
                 page.css("display", "block");
                 return false;

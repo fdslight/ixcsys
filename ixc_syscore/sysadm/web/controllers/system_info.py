@@ -6,16 +6,8 @@ import ixc_syscore.sysadm.web.controllers.controller as base_controller
 
 class controller(base_controller.BaseController):
     def myinit(self):
-        self.request.set_allow_methods(["GET"])
+        self.request.set_allow_methods(["POST"])
         return True
 
     def handle(self):
-        sys_info = {
-            "os_type": sys.platform,
-            "arch": platform.machine(),
-            "cpu_count": os.cpu_count(),
-            "mem_tot_size": psutil.virtual_memory().total,
-            "mem_free_size": psutil.virtual_memory().free,
-            "ixcsys_version": "1.0.0-b1"
-        }
-        self.finish_with_json({"is_error": False, "message": sys_info})
+        self.finish_with_text("")

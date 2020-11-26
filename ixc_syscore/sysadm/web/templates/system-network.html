@@ -1,9 +1,11 @@
-<div id="ixc-system-network-view" class="ixc-menu-content" style="display: none;">
+<div id="ixc-system-network-view" class="ixc-menu-content">
     <nav class="nav nav-pills flex-column flex-sm-row" style="background-color: rgba(8,64,92,0.07);">
         <a class="flex-sm-fill text-sm-center nav-link ixc-network-iftype"
-           id="ixc-system-network-wan" name="wan" href="#">WAN网口</a>
+           id="ixc-system-network-wan" name="wan"
+           href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&page=system-network-wan">WAN网口</a>
         <a class="flex-sm-fill text-sm-center nav-link ixc-network-iftype" name="dhcp"
-           href="#" id="ixc-system-network-lan">LAN网口</a>
+           href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-lan&page=system-network-lan"
+           id="ixc-system-network-lan">LAN网口</a>
     </nav>
     <div class="ixc-empty"></div>
     <div class="ixc-empty"></div>
@@ -21,7 +23,7 @@
         <div class="form-group row">
             <label for="inputPassword3" class="col-sm-2 col-form-label">硬件地址</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" name="mask" value="{{V-hwaddr}}"
+                <input type="text" class="form-control" name="mask" value=""
                        placeholder="硬件地址">
             </div>
         </div>
@@ -70,14 +72,6 @@
     </form>
     <script type="text/javascript">
         $(document).ready(function () {
-            $(".ixc-network-iftype").click(function () {
-                let attr_name = $(this).attr("id");
-                $(".ixc-network-iftype").removeClass("active");
-                $(this).addClass("active");
-
-                $(".ixc-system-network").css("display", "none");
-                $("#" + attr_name + "-view").css("display", "block");
-            });
         });
     </script>
 </div>

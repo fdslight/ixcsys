@@ -16,6 +16,8 @@ class controller(app_handler.handler):
     __users_session_info_file = None
     __session_timeout = None
 
+    __widgets = None
+
     def load_lang(self, name: str):
         lang_dir = "%s/web/languages" % os.getenv("IXC_MYAPP_DIR")
         path = "%s/%s.json" % (lang_dir, name,)
@@ -101,9 +103,12 @@ class controller(app_handler.handler):
         self.__LANG = self.load_lang(self.match_lang())
         self.__auto_auth = True
         self.__init_session()
+        self.__widgets = {}
 
         rs = self.myinit()
         if not rs: return False
+
+        self.widget_init()
 
         # 开启自动认证并且未登录那么重定向到首页
         if self.__auto_auth and not self.is_signed() and self.request.environ["PATH_INFO"] != "/":
@@ -225,7 +230,8 @@ class controller(app_handler.handler):
             "user": self.user,
             "staticfile_prefix": self.staticfile_prefix,
             "app_name": self.my_app_name,
-            "url_prefix": self.url_prefix
+            "url_prefix": self.url_prefix,
+            "widget": self.widget
         })
         tpl.set_find_directories([
             "%s/web/templates" % os.getenv("IXC_MYAPP_DIR")
@@ -233,11 +239,47 @@ class controller(app_handler.handler):
         return tpl
 
     def render(self, uri, content_type="text/html;charset=utf-8", **kwargs):
-        tpl = self.__get_tpl()
-        s = tpl.render(uri, **kwargs)
+        s = self.get_tpl_render_result(uri, **kwargs)
         self.finish_with_bytes(content_type, s.encode("iso-8859-1"))
 
-    def render_string(self, s: str, content_type="text/html;charset=utf-8", **kwargs):
+    def get_tpl_render_result(self, uri: str, **kwargs):
+        """获取模板渲染结果
+        """
+        tpl = self.__get_tpl()
+        s = tpl.render(uri, **kwargs)
+        return s
+
+    def get_str_render_result(self, s: str, **kwargs):
+        """获取字符串渲染结果
+        """
         tpl = self.__get_tpl()
         s = tpl.render_string(s, **kwargs)
+        return s
+
+    def render_string(self, s: str, content_type="text/html;charset=utf-8", **kwargs):
+        s = self.get_str_render_result(s, **kwargs)
         self.finish_with_bytes(content_type, s.encode("iso-8859-1"))
+
+    def widget_init(self):
+        """重写这个方法,视图组件初始化
+        """
+        pass
+
+    def widget_add(self, name: str, fn):
+        """添加widget
+        """
+        self.__widgets[name] = fn
+
+    def widget_del(self, name: str):
+        """删除widget
+        """
+        if name not in self.__widgets: return
+        del self.__widgets[name]
+
+    def widget(self, name: str, *args, **kwargs):
+        """
+        """
+        if name not in self.__widgets: return ""
+        fn = self.__widgets[name]
+
+        return fn(*args, **kwargs)

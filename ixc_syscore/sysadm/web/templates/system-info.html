@@ -1,28 +1,28 @@
-<div id="ixc-system-info-view" class="ixc-menu-content" style="display: none;">
+<div id="ixc-system-info-view" class="ixc-menu-content">
     <table class="table table-striped">
         <tr>
             <td>系统类型</td>
-            <td class="V-os_type"></td>
+            <td class="">${self.V["os_type"]}</td>
         </tr>
         <tr>
             <td>架构</td>
-            <td class="V-arch"></td>
+            <td class="">${self.V["arch"]}</td>
         </tr>
         <tr>
             <td>CPU核心数</td>
-            <td class="V-cpu_count"></td>
+            <td class="">${self.V["cpu_count"]}</td>
         </tr>
         <tr>
             <td>总体内存</td>
-            <td class="V-mem_tot_size"></td>
+            <td class="">${self.V["mem_tot_size"]}</td>
         </tr>
         <tr>
             <td>可用内存</td>
-            <td class="V-mem_free_size"></td>
+            <td class="V-mem_free_size">${self.V["mem_free_size"]}</td>
         </tr>
         <tr>
             <td>ixcsys 版本</td>
-            <td class="V-ixcsys_version"></td>
+            <td class="V-ixcsys_version">${self.V["ixcsys_version"]}</td>
         </tr>
     </table>
 </div>
