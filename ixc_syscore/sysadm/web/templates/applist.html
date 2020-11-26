@@ -1,0 +1,5 @@
+<%
+    for info in self.V["apps"]:
+        s="""<li class="list-group-item ixc-left-menu" id="ixc-app-file-manager"><a href="#">%s</a></li>""" % info
+        self.show(s)
+%>
