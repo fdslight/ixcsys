@@ -2,7 +2,7 @@
 """session文件格式,文件名为session.json
 """
 
-import os, json, time, random
+import os, json, time, random, sys, importlib
 import pywind.web.appframework.app_handler as app_handler
 import pywind.lib.tpl.Template as template
 
@@ -15,8 +15,6 @@ class controller(app_handler.handler):
     # 保存用户会话信息
     __users_session_info_file = None
     __session_timeout = None
-
-    __widgets = None
 
     def load_lang(self, name: str):
         lang_dir = "%s/web/languages" % os.getenv("IXC_MYAPP_DIR")
@@ -103,12 +101,9 @@ class controller(app_handler.handler):
         self.__LANG = self.load_lang(self.match_lang())
         self.__auto_auth = True
         self.__init_session()
-        self.__widgets = {}
 
         rs = self.myinit()
         if not rs: return False
-
-        self.widget_init()
 
         # 开启自动认证并且未登录那么重定向到首页
         if self.__auto_auth and not self.is_signed() and self.request.environ["PATH_INFO"] != "/":
@@ -205,6 +200,10 @@ class controller(app_handler.handler):
         return os.getenv("IXC_MYAPP_NAME")
 
     @property
+    def my_app_dir(self):
+        return os.getenv("IXC_MYAPP_DIR")
+
+    @property
     def url_prefix(self):
         """URL前缀
         :return:
@@ -216,6 +215,12 @@ class controller(app_handler.handler):
         """获取配置目录
         """
         return "%s/%s" % (os.getenv("IXC_CONF_DIR"), self.my_app_name,)
+
+    @property
+    def my_app_relative_dir(self):
+        """相对应用目录
+        """
+        return os.getenv("IXC_MYAPP_RELATIVE_DIR")
 
     def set_lang(self, lang: str):
         """设置语言
@@ -260,26 +265,29 @@ class controller(app_handler.handler):
         s = self.get_str_render_result(s, **kwargs)
         self.finish_with_bytes(content_type, s.encode("iso-8859-1"))
 
-    def widget_init(self):
-        """重写这个方法,视图组件初始化
-        """
-        pass
-
-    def widget_add(self, name: str, fn):
-        """添加widget
-        """
-        self.__widgets[name] = fn
-
-    def widget_del(self, name: str):
-        """删除widget
-        """
-        if name not in self.__widgets: return
-        del self.__widgets[name]
-
     def widget(self, name: str, *args, **kwargs):
         """
         """
-        if name not in self.__widgets: return ""
-        fn = self.__widgets[name]
+        if self.my_app_relative_dir == "/":
+            s = self.my_app_relative_dir[0:-1]
+        else:
+            s = self.my_app_relative_dir
+        s = "%s/web/ui_widgets/%s" % (s, name,)
+        module_path = s.replace("/", ".")
 
-        return fn(*args, **kwargs)
+        if module_path in sys.modules:
+            module = sys.modules[module_path]
+            importlib.reload(module)
+        else:
+            try:
+                importlib.import_module(module_path)
+            except ImportError:
+                return ""
+            module = sys.modules[module_path]
+        cls = module.widget(self.request, self)
+        is_tpl, tpl, results = cls.handle(*args, **kwargs)
+        if is_tpl:
+            render_result = self.get_tpl_render_result(tpl, **results)
+        else:
+            render_result = self.get_str_render_result(tpl, **results)
+        return render_result
