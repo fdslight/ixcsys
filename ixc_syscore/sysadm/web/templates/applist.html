@@ -1,5 +1,6 @@
 <%
     for info in self.V["apps"]:
-        s="""<li class="list-group-item ixc-left-menu" id="ixc-app-file-manager"><a href="#">%s</a></li>""" % info
+        s="""<li class="list-group-item ixc-left-menu" id="ixc-app-%s"><a href="#">%s</a></li>""" \
+        % (info["name"],info["t_name"])
         self.show(s)
 %>
