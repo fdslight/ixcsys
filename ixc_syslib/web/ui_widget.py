@@ -16,6 +16,10 @@ class widget(object):
         return self.__request.environ
 
     @property
+    def request_handler(self):
+        return self.__request_handler
+
+    @property
     def app_name(self):
         return self.__request_handler.my_app_name
 
@@ -32,6 +36,12 @@ class widget(object):
         """应用相对目录
         """
         return self.__request_handler.my_app_relative_dir
+
+    @property
+    def app_dir(self):
+        """应用目录
+        """
+        return self.__request_handler.app_dir
 
     def LA(self, s: str):
         """语言翻译
