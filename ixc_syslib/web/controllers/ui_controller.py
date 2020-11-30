@@ -15,6 +15,7 @@ class controller(app_handler.handler):
     # 保存用户会话信息
     __users_session_info_file = None
     __session_timeout = None
+    __tpl_kwargs = None
 
     def load_lang(self, name: str):
         lang_dir = "%s/web/languages" % os.getenv("IXC_MYAPP_DIR")
@@ -100,6 +101,7 @@ class controller(app_handler.handler):
         self.__user = {}
         self.__LANG = self.load_lang(self.match_lang())
         self.__auto_auth = True
+        self.__tpl_kwargs = {}
         self.__init_session()
 
         rs = self.myinit()
@@ -240,7 +242,9 @@ class controller(app_handler.handler):
             "staticfile_prefix": self.staticfile_prefix,
             "app_name": self.my_app_name,
             "url_prefix": self.url_prefix,
-            "widget": self.widget
+            "widget": self.widget,
+            "include": self.include,
+            "qs": self.qs
         })
         tpl.set_find_directories([
             "%s/web/templates" % os.getenv("IXC_MYAPP_DIR")
@@ -254,6 +258,7 @@ class controller(app_handler.handler):
     def get_tpl_render_result(self, uri: str, **kwargs):
         """获取模板渲染结果
         """
+        self.__tpl_kwargs = kwargs
         tpl = self.__get_tpl()
         s = tpl.render(uri, **kwargs)
         return s
@@ -261,6 +266,7 @@ class controller(app_handler.handler):
     def get_str_render_result(self, s: str, **kwargs):
         """获取字符串渲染结果
         """
+        self.__tpl_kwargs = kwargs
         tpl = self.__get_tpl()
         s = tpl.render_string(s, **kwargs)
         return s
@@ -295,3 +301,18 @@ class controller(app_handler.handler):
         else:
             render_result = self.get_str_render_result(tpl, **results)
         return render_result
+
+    def include(self, tpl: str, **kwargs):
+        """包含另外一个文件
+        :param tpl,模板URI
+        :param kwargs,提供的额外参数
+        """
+        for name, value in self.__tpl_kwargs.items(): kwargs[name] = value
+        render_result = self.get_tpl_render_result(tpl, **kwargs)
+
+        return render_result
+
+    def qs(self, name: str, is_seq=False):
+        """获取执行字符串
+        """
+        return self.request.get_argument(name, is_qs=True, is_seq=is_seq)

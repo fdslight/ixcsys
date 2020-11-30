@@ -39,11 +39,11 @@ ${self.inherit("base.html")}
                         <a href="#">快速设置向导</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wan-internet">
-                        <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-pppoe-dial&page=wan-pppoe">WAN
+                        <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-pppoe-dial&page=wan&type=pppoe">WAN
                             上网设置</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wan-port-map">
-                        <a href="${self.url_prefix}/?show=ixc-wan-port-map&page=wan-port-map">WAN
+                        <a href="${self.url_prefix}/?show=ixc-wan-port-map&page=port-map">WAN
                             端口映射</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-dhcp-server">
@@ -53,7 +53,7 @@ ${self.inherit("base.html")}
                         <a href="${self.url_prefix}/dns">LAN DNS服务器</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-tftp-server">
-                        <a href="${self.url_prefix}/?show=ixc-tftp-server&path=${self.url_prefix}/tftp">LAN TFTP服务器</a>
+                        <a href="${self.url_prefix}/?show=ixc-tftp-server&page=tftp">LAN TFTP服务器</a>
                     </li>
                 </ul>
                 <div class="ixc-empty"></div>
@@ -74,7 +74,7 @@ ${self.inherit("base.html")}
                         <a href="#">控制台</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-network">
-                        <a href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&page=system-network-wan">系统网络</a>
+                        <a href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&page=system-network&type=wan">系统网络</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-info">
                         <a href="${self.url_prefix}/?show=ixc-system-info&page=system-info">系统信息</a>
