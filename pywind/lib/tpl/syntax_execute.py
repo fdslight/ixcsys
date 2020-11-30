@@ -140,7 +140,7 @@ class execute(object):
                 if is_ok: continue
             results.append(s)
 
-        return (is_ok, "\n".join(results))
+        return is_ok, "\n".join(results)
 
     def _exe(self):
         self.__exe_from_syntax_tree(self.__syntax_tree)
@@ -162,5 +162,5 @@ class execute(object):
 
         return "".join(t)
 
-    def __show(self, sts):
-        self.__buff.append(sts)
+    def __show(self, s: str):
+        self.__buff.append(s)
