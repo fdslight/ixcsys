@@ -5,10 +5,9 @@ import ixc_syslib.pylib.RPCClient as RPC
 
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
-        if RPC.RPCReadyOk("tftp"):
-            configs = RPC.fn_call("tftp", "/config", "config_get")
-
+        if RPC.RPCReadyOk("DHCP"):
+            configs = RPC.fn_call("DHCP", "/dhcp_server", "get_configs")
         else:
             configs = {}
 
-        return True, "tftp.html", configs
+        return True, "dhcp-server.html", configs

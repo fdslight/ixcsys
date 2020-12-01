@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-fd = open("test.bin", "wb")
-fd.write(b"hello")
+import pywind.lib.configfile as conf
 
-fd.seek(0)
-fd.write(b"world")
-fd.close()
+print(conf.ini_parse_from_file("ixc_configs/DHCP/dhcp_server.ini"))

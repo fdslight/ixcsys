@@ -126,6 +126,14 @@ class service(dispatcher.dispatcher):
     def save_dhcp_server_configs(self):
         pass
 
+    @property
+    def server_configs(self):
+        return self.__dhcp_server_configs
+
+    @property
+    def client_configs(self):
+        return self.__dhcp_client_configs
+
     def start_dhcp_client(self, port: int):
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
         consts = self.__router_consts

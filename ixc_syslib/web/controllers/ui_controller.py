@@ -6,6 +6,8 @@ import os, json, time, random, sys, importlib
 import pywind.web.appframework.app_handler as app_handler
 import pywind.lib.tpl.Template as template
 
+import ixc_syslib.pylib.RPCClient as RPC
+
 
 class controller(app_handler.handler):
     __LANG = None
@@ -175,13 +177,23 @@ class controller(app_handler.handler):
 
         users_session = self.__get_users_session_info()
         users_session[username] = {
-            "last_ip": self.request.environ["REMOTE_ADDR"]
+            "last_ip": self.request.environ["REMOTE_ADDR"],
         }
         self.__update_users_session_info(users_session)
         with open(fpath, "w") as f:
             f.write(json.dumps({"last_time": time.time(), "username": username}))
         f.close()
         self.set_cookie("USER_ID", session_id, expires=self.__session_timeout)
+
+    def signout(self):
+        # 发送删除cookie响应
+        self.set_cookie("USER_ID", "", expires=-1)
+        # 删除对应的session文件
+        user_id = self.request.cookie.get("USER_ID", None)
+        if not user_id: return False
+        fpath = "%s/%s" % (self.__session_dir, user_id,)
+        if not os.path.isfile(fpath): return False
+        os.remove(fpath)
 
     @property
     def user(self):
@@ -244,7 +256,8 @@ class controller(app_handler.handler):
             "url_prefix": self.url_prefix,
             "widget": self.widget,
             "include": self.include,
-            "qs": self.qs
+            "qs": self.qs,
+            "proc_ready_ok": self.proc_ready_ok
         })
         tpl.set_find_directories([
             "%s/web/templates" % os.getenv("IXC_MYAPP_DIR")
@@ -316,3 +329,8 @@ class controller(app_handler.handler):
         """获取执行字符串
         """
         return self.request.get_argument(name, is_qs=True, is_seq=is_seq)
+
+    def proc_ready_ok(self, proc_name: str):
+        """进程是否已经存在
+        """
+        return RPC.RPCReadyOk(proc_name)
