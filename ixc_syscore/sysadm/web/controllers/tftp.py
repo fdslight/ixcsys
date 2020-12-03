@@ -7,22 +7,18 @@ import ixc_syslib.pylib.RPCClient as RPC
 
 class controller(base_controller.BaseController):
     def myinit(self):
-        self.request.set_allow_methods(["GET", "POST"])
+        self.request.set_allow_methods(["POST"])
         return True
-
-    def handle_get(self):
-        if not RPC.RPCReadyOk("tftp"):
-            self.json_resp(True, "cannot found tftp process")
-            return
-        result = RPC.fn_call("tftp", "/config", "config_get")
-        self.json_resp(False, result)
 
     def handle_post(self):
         self.finish_with_json({})
 
     def handle(self):
-        method = self.request.environ["REQUEST_METHOD"]
-        if method == "GET":
-            self.handle_get()
-        else:
-            self.handle_post()
+        file_dir = self.request.get_argument("file_dir", is_seq=False, is_qs=False)
+        enable_v6 = self.request.get_argument("enable_ipv6", is_seq=False, is_qs=False)
+
+        js = {"enable_ipv6": enable_v6, "file_dir": file_dir}
+
+        RPC.fn_call("tftp", "/config", "config_write", js)
+
+        self.json_resp(False, js)
