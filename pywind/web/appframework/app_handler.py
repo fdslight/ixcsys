@@ -321,6 +321,13 @@ class _request(object):
         return self.__get_argument(self.__stream_params, name, default, is_seq)
 
     @property
+    def post_argument(self):
+        """获取原始的POST内容参数
+        """
+        if None == self.__stream_params: return {}
+        return self.__stream_params
+
+    @property
     def files(self):
         return self.__files
 
