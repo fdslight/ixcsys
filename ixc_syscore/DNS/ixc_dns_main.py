@@ -270,6 +270,10 @@ class service(dispatcher.dispatcher):
     def matcher(self):
         return self.__matcher
 
+    @property
+    def configs(self):
+        return self.__dns_configs
+
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
         if self.__dns_server > 0: self.delete_handler(self.__dns_server)

@@ -8,7 +8,11 @@ class widget(ui_widget.widget):
         if RPC.RPCReadyOk("tftp"):
             configs = RPC.fn_call("tftp", "/config", "config_get")
             configs["enable_ipv6"] = bool(int(configs["enable_ipv6"]))
+            uri = "tftp.html"
+            rs = configs
         else:
             configs = {}
+            uri = "no-proc.html"
+            rs = {"proc_name": "tftp"}
 
-        return True, "tftp.html", configs
+        return True, uri, rs

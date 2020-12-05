@@ -1,7 +1,4 @@
 <div id="ixc-tftp-server-view" class="ixc-menu-content" style="display: none;">
-    <%
-        if not self.proc_ready_ok("tftp"):self.show(self.LA("process not running"))
-    %>
     <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
           enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/tftp">
         <div class="form-group row">

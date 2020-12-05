@@ -11,7 +11,8 @@ class controller(base_controller.BaseController):
 
     def handle_get(self):
         if self.is_signed():
-            page = self.request.get_argument("page", default="not found page", is_qs=True, is_seq=False)
+            page = self.request.get_argument("page", default=None, is_qs=True, is_seq=False)
+            if not page: page = "default"
             self.render("homepage.html", page=page)
         else:
             self.render("signin.html")
