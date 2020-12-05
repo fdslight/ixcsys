@@ -12,7 +12,11 @@ class controller(rpc.controller):
         self.__runtime = global_vars["ixcsys.DNS"]
 
         self.fobjs = {
+            "config_get": self.config_get
         }
+
+    def config_get(self):
+        return 0, self.__runtime.configs
 
     def set_parent_server(self, server_ip, is_ipv6=False):
         """设置上游服务器IP地址

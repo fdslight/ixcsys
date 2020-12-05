@@ -1,29 +1,33 @@
 <div id="ixc-dns-server-view" class="ixc-menu-content" style="display: none;">
-    <form style="width: 50%;margin: auto;min-width: 400px;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/dns">
+        <h4>DNS设置</h4>
+        <div class="ixc-empty"></div>
         <div class="form-group row">
-            <label for="inputEmail3" class="col-sm-2 col-form-label">主DNS</label>
+            <label for="主DNS" class="col-sm-2 col-form-label">主DNSv4</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" placeholder="主DNS" value="223.5.5.5"/>
+                <input type="text" class="form-control" name="main_dns" value="${self.V['ipv4']['main_dns']}"/>
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputEmail3" class="col-sm-2 col-form-label">备DNS</label>
+            <label for="主DNS" class="col-sm-2 col-form-label">备DNSv4</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" placeholder="备DNS" value="223.6.6.6"/>
+                <input type="text" class="form-control" name="second_dns" value="${self.V['ipv4']['second_dns']}"/>
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputEmail3" class="col-sm-2 col-form-label">主DNSv6</label>
+            <label for="主DNS" class="col-sm-2 col-form-label">主DNSv6</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" placeholder="主DNSv6" value=""/>
+                <input type="text" class="form-control" name="main_dns" value="${self.V['ipv6']['main_dns']}"/>
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputEmail3" class="col-sm-2 col-form-label">备DNSv6</label>
+            <label for="主DNS" class="col-sm-2 col-form-label">备DNSv6</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" placeholder="备DNSv6" value=""/>
+                <input type="text" class="form-control" name="second_dns" value="${self.V['ipv6']['second_dns']}"/>
             </div>
         </div>
+
         <div class="form-group row">
             <div class="col-sm-12">
                 <button type="submit" class="btn btn-primary float-lg-right">确定</button>

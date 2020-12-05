@@ -7,7 +7,12 @@ class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
         if RPC.RPCReadyOk("DHCP"):
             configs = RPC.fn_call("DHCP", "/dhcp_server", "get_configs")
+            b = configs["public"]["enable"]
+            configs["public"]["enable"] = bool(int(b))
+            uri = "dhcp-server.html"
+            rs = configs
         else:
-            configs = {}
+            uri = "no-proc.html"
+            rs = {"proc_name": "DHCP"}
 
-        return True, "dhcp-server.html", configs
+        return True, uri, rs
