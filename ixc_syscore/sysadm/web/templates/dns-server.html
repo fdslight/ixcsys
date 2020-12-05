@@ -4,27 +4,43 @@
         <h4>DNS设置</h4>
         <div class="ixc-empty"></div>
         <div class="form-group row">
+            <div class="col-sm-2">自动获取</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <%
+                        s="""<input class="form-check-input" name="enable_auto" value="1" type="checkbox" {} />"""
+                        if self.V["public"]["enable_auto"]:x=s.format("checked")
+                        else:x=s.format("")
+                        self.show(x)
+                    %>
+                    <label class="form-check-label" for="gridCheck1">
+                        开启
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
             <label for="主DNS" class="col-sm-2 col-form-label">主DNSv4</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" name="main_dns" value="${self.V['ipv4']['main_dns']}"/>
+                <input type="text" class="form-control" name="ipv4.main_dns" value="${self.V['ipv4']['main_dns']}"/>
             </div>
         </div>
         <div class="form-group row">
             <label for="主DNS" class="col-sm-2 col-form-label">备DNSv4</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" name="second_dns" value="${self.V['ipv4']['second_dns']}"/>
+                <input type="text" class="form-control" name="ipv4.second_dns" value="${self.V['ipv4']['second_dns']}"/>
             </div>
         </div>
         <div class="form-group row">
             <label for="主DNS" class="col-sm-2 col-form-label">主DNSv6</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" name="main_dns" value="${self.V['ipv6']['main_dns']}"/>
+                <input type="text" class="form-control" name="ipv6.main_dns" value="${self.V['ipv6']['main_dns']}"/>
             </div>
         </div>
         <div class="form-group row">
             <label for="主DNS" class="col-sm-2 col-form-label">备DNSv6</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" name="second_dns" value="${self.V['ipv6']['second_dns']}"/>
+                <input type="text" class="form-control" name="ipv6.second_dns" value="${self.V['ipv6']['second_dns']}"/>
             </div>
         </div>
 
@@ -35,3 +51,21 @@
         </div>
     </form>
 </div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        function change(ele) {
+            let selector = $("#ixc-dns-server-view form input[type='text']");
+            if (ele.is(":checked")) {
+                selector.attr("disabled", "disabled");
+            } else {
+                selector.removeAttr("disabled");
+            }
+        }
+
+        let ele = $("input[name='enable_auto']");
+        ele.change(function () {
+            change(ele);
+        });
+        change(ele);
+    });
+</script>
