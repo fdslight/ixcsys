@@ -8,7 +8,7 @@ ${self.inherit("base.html")}
 <%block name="content">
     <div class="container-fluid" style="min-width: 1280px;padding: 0;">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="#">Navbar</a>
+            <a class="navbar-brand" href="/">Navbar</a>
             <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             </div>
             <form class="form-inline">
@@ -23,11 +23,11 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-nav-title">
                         <div class="ixc-left-nav-title">我的应用</div>
                     </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-app-store">
-                        <a href="${self.url_prefix}/system_info">应用商店</a>
+                    <li class="list-group-item ixc-left-menu" id="ixc-appstore">
+                        <a href="${self.url_prefix}/?show=ixc-appstore&page=appstore">应用商店</a>
                     </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-app-file-manager">
-                        <a href="#">文件管理器</a>
+                    <li class="list-group-item ixc-left-menu" id="ixc-file-manager">
+                        <a href="${self.url_prefix}/?show=ixc-file-manager&page=file-manager">文件管理器</a>
                     </li>
                     ${self.widget("applist")}
                 </ul>
@@ -40,7 +40,7 @@ ${self.inherit("base.html")}
                         <a href="#">快速设置向导</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wan-internet">
-                        <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-pppoe-dial&page=wan&type=pppoe">WAN
+                        <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-${self.V['cur_internet_type']}-dial&page=wan&type=${self.V['cur_internet_type']}">WAN
                             上网设置</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wan-port-map">
@@ -58,21 +58,13 @@ ${self.inherit("base.html")}
                     </li>
                 </ul>
                 <div class="ixc-empty"></div>
-                <ul class="list-group">
-                    <li class="list-group-item ixc-left-nav-title">
-                        <div class="ixc-left-nav-title">高级管理</div>
-                    </li>
-                    <li class="list-group-item ixc-left-menu">
-                        <a href="#">网络栈参数调整</a>
-                    </li>
-                </ul>
                 <div class="ixc-empty"></div>
                 <ul class="list-group">
                     <li class="list-group-item ixc-left-nav-title">
                         <div class="ixc-left-nav-title">系统管理</div>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-console">
-                        <a href="#">控制台</a>
+                        <a href="${self.url_prefix}/?show=ixc-system-console&page=system-console">控制台</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-network">
                         <a href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&page=system-network&type=wan">系统网络</a>
@@ -80,12 +72,12 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-menu" id="ixc-system-info">
                         <a href="${self.url_prefix}/?show=ixc-system-info&page=system-info">系统信息</a>
                     </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-system-update">
-                        <a href="#">软件更新</a>
-                    </li>
                 </ul>
             </div>
             <div class="col-10" style="padding: 0;">
+                <div>
+                    <p id="ixc-error"></p>
+                </div>
                 <div class="ixc-page-content">${self.widget(self.V['page'])}</div>
             </div>
         </div>
@@ -121,7 +113,7 @@ ${self.inherit("base.html")}
                 page.css("display", "none");
                 $(".ixc-menu-content").css("display", "none");
 
-                if (id.indexOf("ixc-app") !== 0) {
+                if (id.indexOf("ixc-app-") !== 0) {
                     window.location.href = href;
                     return true;
                 }
@@ -131,11 +123,31 @@ ${self.inherit("base.html")}
 
             });
 
-            /** 配置表单提交 **/
-            /**$(".ixc-conf-form").submit(function () {
+            $(".ixc-conf-form").submit(function () {
                 let sub_content = $(this).serialize();
+                let err_ele = $("#ixc-error");
+                err_ele.html("");
+                $.ajax({
+                    type: "POST",
+                    url: $(this).attr("action"),
+                    dataType: "json",
+                    data: sub_content,
+                    success: function (result) {
+                        let is_error = result.is_error;
+                        let message = result.message;
+                        if (is_error) {
+                            err_ele.html(message)
+                        } else {
+                            alert("${self.LA('update ok')}");
+                        }
+                    },
+                    error: function () {
+                        err_ele.html("${self.LA('unkown error')}");
+                    }
+                });
+
                 return false;
-            });**/
+            });
 
             load_page();
         });

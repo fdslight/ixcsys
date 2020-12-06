@@ -15,7 +15,10 @@ class controller(rpc.controller):
         self.__runtime = global_vars["ixcsys.DNS"]
 
         self.fobjs = {
-            "config_get": self.config_get
+            "config_get": self.config_get,
+            "set_parent_server": self.set_parent_server,
+            "enable": self.enable,
+            "save": self.save
         }
 
     def config_get(self):
@@ -42,4 +45,18 @@ class controller(rpc.controller):
             else:
                 configs["ipv4"]["second_dns"] = server_ip
             ''''''
+        return 0, None
+
+    def enable(self, enabled: bool):
+        """是否启用自动获取DNS或者关闭自动获取DNS
+        """
+        configs = self.__runtime.configs
+        if enabled:
+            configs["public"]["enable_auto"] = 1
+        else:
+            configs["public"]["enable_auto"] = 0
+        return 0, None
+
+    def save(self):
+        self.__runtime.save_configs()
         return 0, None

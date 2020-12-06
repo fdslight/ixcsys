@@ -108,7 +108,7 @@ class service(dispatcher.dispatcher):
         conf.save_to_ini(self.__configs, self.__conf_path)
 
     def get_manage_addr(self):
-        ipaddr = RPCClient.fn_call("router", "/runtime", "get_manage_ipaddr")
+        ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
 
         return ipaddr
 

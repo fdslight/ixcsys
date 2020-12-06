@@ -2,7 +2,6 @@
 """UI部分组件类
 """
 
-
 class widget(object):
     __request = None
     __request_handler = None

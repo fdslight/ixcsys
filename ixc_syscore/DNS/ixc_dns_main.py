@@ -145,7 +145,7 @@ class service(dispatcher.dispatcher):
     def get_manage_addr(self):
         """获取管理地址
         """
-        ipaddr = RPCClient.fn_call("router", "/runtime", "get_manage_ipaddr")
+        ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
 
         return ipaddr
 
@@ -273,6 +273,9 @@ class service(dispatcher.dispatcher):
     @property
     def configs(self):
         return self.__dns_configs
+
+    def save_configs(self):
+        conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))

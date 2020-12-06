@@ -10,11 +10,11 @@ class widget(ui_widget.widget):
 
         if _type not in ("pppoe", "dhcp", "static-ip",): _type = "pppoe"
         kwargs = {}
-        configs = RPC.fn_call("router", "/runtime", "get_wan_configs")
+        configs = RPC.fn_call("router", "/config", "wan_config_get")
 
         if _type == "pppoe":
             kwargs = configs["pppoe"]
-            kwargs["enable"] = bool(int(kwargs["enable"]))
+            kwargs["heartbeat"] = bool(int(kwargs["heartbeat"]))
         if _type == "static-ip":
             kwargs = configs["ipv4"]
 

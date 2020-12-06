@@ -124,14 +124,15 @@ class service(dispatcher.dispatcher):
         scgi_configs = {
             "use_unix_socket": True,
             "listen": os.getenv("IXC_MYAPP_SCGI_PATH"),
-            "application": webroute.app_route()
+            "application": webroute.app_route(),
+            "debug": self.__debug
         }
 
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
 
     def get_manage_addr(self):
-        ipaddr = RPCClient.fn_call("router", "/runtime", "get_manage_ipaddr")
+        ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
 
         return ipaddr
 

@@ -38,3 +38,8 @@
 #ixc-system-info-view td:first-child{
     border-right: 1px silver !important;
 }
+
+#ixc-error{
+    text-align: center;
+    color: red;
+}
