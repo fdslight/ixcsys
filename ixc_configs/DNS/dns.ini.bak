@@ -1,0 +1,15 @@
+[public]
+;是否自动获取DNS地址
+enable_auto = 1
+
+[ipv4]
+;主DNS服务器
+main_dns = 8.8.8.8
+;第二个DNS服务器
+second_dns = 8.8.4.4
+
+[ipv6]
+;主DNS服务器
+main_dns = 2001:4860:4860::8888
+;副DNS服务器
+second_dns = 2001:4860:4860::8844

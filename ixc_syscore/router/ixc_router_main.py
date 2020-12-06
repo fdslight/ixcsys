@@ -133,6 +133,7 @@ class service(dispatcher.dispatcher):
 
     def save_lan_configs(self):
         path = "%s/lan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        conf.save_to_ini(self.__lan_configs, path)
 
     def load_wan_configs(self):
         path = "%s/wan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
@@ -140,6 +141,7 @@ class service(dispatcher.dispatcher):
 
     def save_wan_configs(self):
         path = "%s/wan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        conf.save_to_ini(self.__wan_configs, path)
 
     @property
     def router(self):
@@ -292,18 +294,21 @@ class service(dispatcher.dispatcher):
             pass
 
         wan_pppoe = self.__wan_configs["pppoe"]
-        pppoe_enable = bool(int(wan_pppoe["enable"]))
+        internet_type = self.__wan_configs["public"]["internet_type"]
 
-        self.__pppoe_enable = pppoe_enable
+        if internet_type == "pppoe":
+            self.__pppoe_enable = True
+        else:
+            self.__pppoe_enable = False
 
-        if pppoe_enable:
+        if self.__pppoe_enable:
             self.__pppoe_user = wan_pppoe["user"]
             self.__pppoe_passwd = wan_pppoe["passwd"]
             self.router.pppoe_enable(True)
             self.router.pppoe_start()
             return
 
-        if ipv4["alloc_method"].lower() != "static": return
+        if internet_type.lower() != "static-ip": return
         # WAN口静态地址配置
 
         ip_addr = ipv4["address"]

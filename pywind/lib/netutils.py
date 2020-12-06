@@ -28,6 +28,26 @@ def str_hwaddr_to_bytes(s: str):
     return bytes(new_seq)
 
 
+def is_hwaddr(s: str):
+    """检查是否是硬件地址
+    """
+    _list = s.split(":")
+    if len(_list) != 6: return False
+    result = True
+    for x in _list:
+        t = "0x%s" % x
+        try:
+            v = int(t, 16)
+        except ValueError:
+            result = False
+            break
+        if v < 0:
+            result = False
+            break
+        ''''''
+    return result
+
+
 def ip_prefix_convert(n, is_ipv6=False):
     """转换IP地址前缀
     :param n:
@@ -129,6 +149,52 @@ def calc_subnet(ip, prefix, is_ipv6=False):
 
 def is_subnet(ip, prefix, subnet, is_ipv6=False):
     return calc_subnet(ip, prefix, is_ipv6=is_ipv6) == subnet
+
+
+def is_same_network(ip_a: str, ip_b: str, prefix: int, is_ipv6=False):
+    """判断连个ip地址是否处在相同的网络
+    """
+    subnet_a = calc_subnet(ip_a, prefix, is_ipv6=is_ipv6)
+    subnet_b = calc_subnet(ip_b, prefix, is_ipv6=is_ipv6)
+
+    return subnet_a == subnet_b
+
+
+def is_mask(s: str):
+    """检查是否是掩码格式
+    """
+    _list = s.split(".")
+    if len(_list) != 4: return False
+    result = True
+    masks = [
+        0b1111_1111,
+        0b1111_1110,
+        0b1111_1100,
+        0b1111_1000,
+        0b1111_0000,
+
+        0b1110_0000,
+        0b1100_0000,
+        0b1000_0000,
+        0b0000_0000
+    ]
+
+    last_value = 0xff
+
+    for x in _list:
+        try:
+            v = int(x)
+        except ValueError:
+            result = False
+            break
+        if v not in masks:
+            result = False
+            break
+        if last_value != 0xff and v != 0:
+            result = False
+            break
+
+    return result
 
 
 def is_port_number(n):

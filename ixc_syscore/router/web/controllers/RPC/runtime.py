@@ -21,17 +21,9 @@ class controller(rpc.controller):
 
         self.fobjs = {
             "get_all_consts": self.get_all_consts,
-            "get_wan_hwaddr": self.get_wan_hwaddr,
-            "get_gw_hwaddr": self.get_gw_hwaddr,
             "get_wan_ipaddr_info": self.get_wan_ipaddr_info,
-            "set_wan_ipaddr": self.set_wan_ipaddr,
-            "set_gw_ipaddr": self.set_gw_ipaddr,
-            "get_lan_configs": self.get_lan_configs,
-            "get_wan_configs": self.get_wan_configs,
-            "get_manage_ipaddr": self.get_manage_ipaddr,
             "add_route": self.add_route,
-            "del_route": self.del_route,
-            "pppoe_is_enabled": self.pppoe_is_enabled
+            "del_route": self.del_route
         }
 
     def get_all_consts(self):

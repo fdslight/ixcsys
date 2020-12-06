@@ -57,6 +57,7 @@ class wsgi(object):
             self.__app = application(wsgi_env, self.__start_response)
         except:
             self.__handle_error("500 Internal Server Error", [], traceback.format_exc())
+            sys.stderr.write(traceback.format_exc())
         return
 
     def __convert2wsgi_env(self, cgi_env):
@@ -136,6 +137,7 @@ class wsgi(object):
             if hasattr(self.__app, "close"):
                 self.__app.close()
         except:
+            sys.stderr.write(traceback.format_exc())
             self.__handle_error("500 Internal Server Error", [], traceback.format_exc())
 
     def input(self, byte_data):
@@ -164,6 +166,7 @@ class wsgi(object):
                     self.__is_resp_hdr = True
                 self.__response_body(resp_data)
         except:
+            sys.stderr.write(traceback.format_exc())
             self.__handle_error("500 Internal Server Error", [], traceback.format_exc())
             return
         if self.__is_finish:

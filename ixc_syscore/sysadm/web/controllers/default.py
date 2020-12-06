@@ -2,6 +2,7 @@
 
 import hashlib
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
+import ixc_syslib.pylib.RPCClient as RPC
 
 
 class controller(base_controller.BaseController):
@@ -10,12 +11,13 @@ class controller(base_controller.BaseController):
         return True
 
     def handle_get(self):
-        if self.is_signed():
-            page = self.request.get_argument("page", default=None, is_qs=True, is_seq=False)
-            if not page: page = "default"
-            self.render("homepage.html", page=page)
-        else:
+        if not self.is_signed():
             self.render("signin.html")
+            return
+        page = self.request.get_argument("page", default=None, is_qs=True, is_seq=False)
+        if not page: page = "default"
+        cur_internet_type = RPC.fn_call("router", "/config", "cur_internet_type_get")
+        self.render("homepage.html", page=page, cur_internet_type=cur_internet_type)
 
     def handle_post(self):
         username = self.request.get_argument("username", is_qs=False, is_seq=False)

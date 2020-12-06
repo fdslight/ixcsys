@@ -1,4 +1,5 @@
 <form style="width: 50%;margin: auto;min-width: 400px;display: none;" class="ixc-internet-type ixc-conf-form"
+      action="${self.url_prefix}/wan?type=pppoe" method="post" enctype="application/x-www-form-urlencoded"
       id="ixc-pppoe-dial-view">
     <input value="pppoe" type="hidden" name="dial_method" value="pppoe"/>
     <div class="form-group row">
@@ -19,7 +20,12 @@
         <div class="col-sm-2">心跳探测</div>
         <div class="col-sm-10">
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="1" name="heartbeat">
+                <%
+                    s="""<input class="form-check-input" type="checkbox" value="1" name="heartbeat" {} />"""
+                    if self.V['heartbeat']:x=s.format("checked")
+                    else:x=s.format("")
+                    self.show(x)
+                %>
                 <label class="form-check-label">
                     &nbsp;&nbsp;开启
                 </label>
