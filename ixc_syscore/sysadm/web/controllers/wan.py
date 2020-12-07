@@ -76,7 +76,15 @@ class controller(base_controller.BaseController):
         self.json_resp(False, {})
 
     def handle_dhcp(self):
+        s = self.request.get_argument("positive_heartbeat", is_qs=False, is_seq=False)
+
+        if not s:
+            b = False
+        else:
+            b = True
+
         RPC.fn_call("router", "/config", "internet_type_set", "dhcp")
+        RPC.fn_call("router", "/config", "dhcp_positive_heartbeat_set", positive_heartbeat=b)
         RPC.fn_call("router", "/config", "save")
 
         self.json_resp(False, {})

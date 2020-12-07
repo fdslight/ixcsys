@@ -78,7 +78,6 @@ class service(dispatcher.dispatcher):
 
     __router_consts = None
 
-    __dhcp_client_conf_path = None
     __dhcp_server_conf_path = None
 
     __dhcp_client_configs = None
@@ -99,26 +98,18 @@ class service(dispatcher.dispatcher):
         self.__dhcp_fd = -1
         self.__rand_key = os.urandom(16)
 
-        self.__dhcp_client_conf_path = "%s/dhcp_client.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__dhcp_server_conf_path = "%s/dhcp_server.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         global_vars["ixcsys.DHCP"] = self
 
         # if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-        self.load_dhcp_client_configs()
         self.load_dhcp_server_configs()
 
         self.create_poll()
 
         self.start_dhcp()
         self.start_scgi()
-
-    def load_dhcp_client_configs(self):
-        self.__dhcp_client_configs = conf.ini_parse_from_file(self.__dhcp_client_conf_path)
-
-    def save_dhcp_client_configs(self):
-        pass
 
     def load_dhcp_server_configs(self):
         self.__dhcp_server_configs = conf.ini_parse_from_file(self.__dhcp_server_conf_path)
@@ -130,10 +121,6 @@ class service(dispatcher.dispatcher):
     def server_configs(self):
         return self.__dhcp_server_configs
 
-    @property
-    def client_configs(self):
-        return self.__dhcp_client_configs
-
     def start_dhcp_client(self, port: int):
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
         consts = self.__router_consts
@@ -141,8 +128,7 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"])
         ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"],
                                         self.__rand_key, port)
-        if not ok:
-            raise SystemError(message)
+        if not ok: raise SystemError(message)
 
     def start_dhcp_server(self, port: int):
         consts = self.__router_consts
@@ -182,15 +168,14 @@ class service(dispatcher.dispatcher):
 
         if self.debug: print("start DHCP")
 
-        self.__server_port = RPCClient.fn_call("router", "/netpkt", "get_server_recv_port")
-        self.get_handler(self.__dhcp_fd).set_message_auth(self.__rand_key, self.__server_port)
+        self.get_handler(self.__dhcp_fd).set_message_auth(self.__rand_key)
         consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
         self.__router_consts = consts
 
-        lan_configs = RPCClient.fn_call("router", "/runtime", "get_lan_configs")
+        lan_configs = RPCClient.fn_call("router", "/config", "lan_config_get")
         self.__router_lan_configs = lan_configs
 
-        wan_configs = RPCClient.fn_call("router", "/runtime", "get_wan_configs")
+        wan_configs = RPCClient.fn_call("router", "/config", "wan_config_get")
         self.__router_wan_configs = wan_configs
 
         self.__lan_hwaddr = lan_configs["if_config"]["hwaddr"]
@@ -236,9 +221,9 @@ class service(dispatcher.dispatcher):
 
     @property
     def dhcp_client_enable(self):
-        conf_pub = self.__dhcp_client_configs["public"]
-        enable = bool(int(conf_pub["enable"]))
-        return enable
+        wan_pub = self.__router_wan_configs["public"]
+        if wan_pub["internet_type"] != "dhcp": return False
+        return True
 
     @property
     def dhcp_server_enable(self):
