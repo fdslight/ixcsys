@@ -113,6 +113,7 @@ static void ixc_pppoe_discovery_loop(void)
 static void ixc_pppoe_sysloop_cb(struct sysloop *lp)
 {
     time_t now=time(NULL);
+    if(!pppoe.enable) return;
     // 检查最近更新时间
     if(now-pppoe.up_time<10 && !pppoe.discovery_ok) return;
 

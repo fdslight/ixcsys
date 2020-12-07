@@ -66,14 +66,13 @@ class dhcp_service(udp_handler.udp_handler):
     def get_sock_port(self):
         return self.__sock_info[1]
 
-    def set_message_auth(self, _id: bytes, server_port: int):
+    def set_message_auth(self, _id: bytes):
         """设置消息认证
         :param _id:
-        :param server_port:
         :return:
         """
         self.__id = _id
-        self.__server_port = server_port
+        self.__server_port = 8964
 
     def send_dhcp_msg(self, if_type: int, flags: int, message: bytes):
         header = struct.pack("!16sbbbb", self.__id, if_type, 0, 0, flags)

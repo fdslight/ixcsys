@@ -17,8 +17,7 @@ class controller(rpc.controller):
 
         self.fobjs = {
             "set_fwd_port": self.set_fwd_port,
-            "unset_fwd_port": self.unset_fwd_port,
-            "get_server_recv_port": self.get_sever_recv_port
+            "unset_fwd_port": self.unset_fwd_port
         }
 
     def set_fwd_port(self, flags: int, _id: bytes, fwd_port: int):
@@ -43,12 +42,3 @@ class controller(rpc.controller):
         pfwd = self.__runtime.get_fwd_instance()
         pfwd.unset_fwd_port(flags)
         return 0, None
-
-    def get_sever_recv_port(self):
-        """获取服务端接收端口
-        :return:
-        """
-        pfwd = self.__runtime.get_fwd_instance()
-        port = pfwd.get_server_recv_port()
-
-        return 0, port

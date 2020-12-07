@@ -23,6 +23,7 @@ class controller(rpc.controller):
             "wan_addr_set": self.wan_addr_set,
             "cur_internet_type_get": self.cur_internet_type_get,
             "internet_type_set": self.internet_type_set,
+            "dhcp_positive_heartbeat_set": self.dhcp_positive_heartbeat_set,
             "pppoe_set": self.pppoe_set,
             "save": self.save
         }
@@ -95,6 +96,15 @@ class controller(rpc.controller):
         ipv4["address"] = ip
         ipv4["mask"] = mask
         ipv4["default_gw"] = gw
+
+        return 0, None
+
+    def dhcp_positive_heartbeat_set(self, positive_heartbeat=False):
+        dhcp = self.__runtime.wan_configs["dhcp"]
+        if positive_heartbeat:
+            dhcp["positive_heartbeat"] = 1
+        else:
+            dhcp["positive_heartbeat"] = 0
 
         return 0, None
 

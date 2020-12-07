@@ -28,7 +28,7 @@ class pfwd(udp_handler.udp_handler):
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.set_socket(s)
-        self.bind(("127.0.0.1", 0))
+        self.bind(("127.0.0.1", 8964))
         self.__sock_info = s.getsockname()
 
         self.register(self.fileno)
@@ -71,6 +71,7 @@ class pfwd(udp_handler.udp_handler):
         :param msg:
         :return:
         """
+        print(if_type,flags)
         if flags == router.IXC_FLAG_ARP:
             _list = [
                 router.IXC_FLAG_ARP,
@@ -102,6 +103,3 @@ class pfwd(udp_handler.udp_handler):
     def unset_fwd_port(self, flags: int):
         if flags not in self.__fwd_tb: return
         self.__fwd_tb[flags] = None
-
-    def get_server_recv_port(self):
-        return self.__sock_info[1]

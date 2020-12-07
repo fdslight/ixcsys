@@ -18,4 +18,8 @@ class widget(ui_widget.widget):
         if _type == "static-ip":
             kwargs = configs["ipv4"]
 
+        if _type == "dhcp":
+            kwargs = configs["dhcp"]
+            kwargs["positive_heartbeat"] = bool(int(kwargs["positive_heartbeat"]))
+
         return True, "wan.html", kwargs

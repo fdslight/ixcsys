@@ -4,10 +4,15 @@
       id="ixc-dhcp-dial-view">
     <input value="pppoe" type="hidden" name="dial_method" value="dhcp"/>
     <div class="form-group row">
-        <div class="col-sm-2">心跳探测</div>
+        <div class="col-sm-2">积极心跳</div>
         <div class="col-sm-10">
             <div class="form-check">
-                <input class="form-check-input" type="checkbox">
+                <%
+                    s="""<input class="form-check-input" type="checkbox" value="1" name="positive_heartbeat" {} />"""
+                    if self.V["positive_heartbeat"]:x=s.format("checked")
+                    else:x=s.format("{}")
+                    self.show(x)
+                %>
                 <label class="form-check-label">
                     &nbsp;&nbsp;开启
                 </label>
