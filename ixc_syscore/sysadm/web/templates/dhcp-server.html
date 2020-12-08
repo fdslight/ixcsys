@@ -7,7 +7,7 @@
                     <%
                         s="""<input class="form-check-input" type="checkbox" value="{}" {} />"""
                         if self.V["public"]["enable"]:x=s.format("1","checked")
-                        else:self.V["public"]["enable"]:x=s.format("0","")
+                        else:x=s.format("","")
                         self.show(x)
                     %>
                     <label class="form-check-label" for="gridCheck1">

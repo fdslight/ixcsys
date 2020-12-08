@@ -12,6 +12,7 @@ class dhcp_client(object):
 
     __hostname = None
     __hwaddr = None
+    __dhcp_server_hwaddr = None
 
     __dhcp_parser = None
     __dhcp_builder = None
@@ -39,20 +40,27 @@ class dhcp_client(object):
     __is_first = None
 
     __cur_step = None
+    # 是否发送了续约报文
+    __is_sent_renew = None
 
     def __init__(self, runtime, hostname: str, hwaddr: str):
         self.__runtime = runtime
         self.__hostname = hostname
         self.__hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
-        self.__dhcp_step = 0
-
         self.__dhcp_parser = dhcp.dhcp_parser()
         self.__dhcp_builder = dhcp.dhcp_builder()
+        self.reset()
+
+    def reset(self):
+        self.__dhcp_step = 0
+        self.__dhcp_parser.reset()
+        self.__dhcp_builder.reset()
         self.__up_time = time.time()
         self.__dhcp_ok = False
         self.__is_first = True
         self.__dhcp_ip_conflict_check_ok = False
         self.__cur_step = 1
+        self.__is_sent_renew = False
 
     def handle_dhcp_response(self, response_data: bytes):
         try:
@@ -66,6 +74,8 @@ class dhcp_client(object):
         x = self.get_dhcp_opt_value(options, 53)
         msg_type = x[0]
         if not msg_type: return
+
+        self.__dhcp_server_hwaddr = src_hwaddr
 
         if 2 == msg_type:
             self.handle_dhcp_offer(options)
@@ -106,6 +116,7 @@ class dhcp_client(object):
         self.__lease_time, = struct.unpack("!I", ipaddr_lease_time)
         self.__subnet_mask = subnet_mask
         self.__broadcast_addr = broadcast_addr
+        self.__is_sent_renew = False
 
     def handle_dhcp_nak(self, options: list):
         t = time.time()
@@ -180,7 +191,7 @@ class dhcp_client(object):
             ''''''
         return rs
 
-    def send_dhcp_request(self):
+    def send_dhcp_request(self, dst_hwaddr=bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])):
         """发送DHCP请求报文
         :return:
         """
@@ -200,7 +211,7 @@ class dhcp_client(object):
         ]
 
         link_data = self.__dhcp_builder.build_to_link_data(
-            bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+            dst_hwaddr,
             self.__hwaddr,
             bytes([0xff, 0xff, 0xff, 0xff]),
             bytes(4),
@@ -326,5 +337,19 @@ class dhcp_client(object):
         t = time.time()
         v = t - self.__up_time
 
+        # 如果发送了renew并且未回复那么重置
+        if self.__is_sent_renew and v > 30:
+            self.reset()
+            return
+
+            # 如果开启积极心跳,那么就30s续约一次
+        if self.__runtime.positive_dhcp_client_request:
+            timeout = 30
+        else:
+            timeout = int(self.__lease_time / 2)
+
         # 此处执行续约操作
-        if v > int(self.__lease_time / 2): self.send_dhcp_request()
+        if v > timeout:
+            self.__is_sent_renew = True
+            if self.__runtime.debug: print("renew request send")
+            self.send_dhcp_request(dst_hwaddr=bytes(self.__dhcp_server_hwaddr))

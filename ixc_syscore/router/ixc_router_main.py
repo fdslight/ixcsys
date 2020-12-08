@@ -70,14 +70,11 @@ class service(dispatcher.dispatcher):
     __LAN_NAME = None
     __WAN_NAME = None
 
-    __TUN_NAME = None
-
     __router = None
     __debug = None
 
     __if_lan_fd = None
     __if_wan_fd = None
-    __tun_fd = None
 
     __lan_configs = None
     __wan_configs = None
@@ -108,8 +105,8 @@ class service(dispatcher.dispatcher):
 
     def _recv_from_proto_stack(self, if_type: int, ipproto: int, flags: int, byte_data: bytes):
         """从协议栈接收链路层数据或者IP数据包
-        :param if_type:链路层协议,0表示IP数据包,该数值是一个主机序
-        :param ipproto:IP协议号
+        :param if_type:链路层协议,
+        :param ipproto:IP协议号,0表示链路层数据包
         :param flags:额外附带的标记
         :param byte_data:
         :return:
@@ -185,8 +182,6 @@ class service(dispatcher.dispatcher):
             os.system("ifconfig %s destroy" % self.__LAN_BR_NAME)
             os.system("ifconfig %s destroy" % self.__WAN_BR_NAME)
 
-        if self.__tun_fd > 0:
-            self.router.tundev_delete()
         if self.__if_lan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_LAN)
         if self.__if_wan_fd > 0:
@@ -200,7 +195,6 @@ class service(dispatcher.dispatcher):
 
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
-        self.__tun_fd = -1
         self.__scgi_fd = -1
         self.__pfwd_fd = -1
 
@@ -246,12 +240,14 @@ class service(dispatcher.dispatcher):
             self.linux_br_create(self.__LAN_BR_NAME, [lan_phy_ifname, self.__LAN_NAME, ])
 
             os.system("ip link set %s promisc on" % lan_phy_ifname)
+            os.system("ip link set %s promisc on" % self.__LAN_NAME)
             os.system("ip link set %s up" % lan_phy_ifname)
 
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
 
             os.system("ifconfig %s promisc" % lan_phy_ifname)
+            os.system("ifconfig %s promisc" % self.__WAN_NAME)
             os.system("ifconfig %s up" % lan_phy_ifname)
 
         lan_addr = lan_ifconfig["ip_addr"]
@@ -289,6 +285,7 @@ class service(dispatcher.dispatcher):
         if self.is_linux:
             self.linux_br_create(self.__WAN_BR_NAME, [wan_phy_ifname, self.__WAN_NAME, ])
             os.system("ip link set %s promisc on" % wan_phy_ifname)
+            os.system("ip link set %s promisc on" % self.__WAN_NAME)
             os.system("ip link set %s up" % wan_phy_ifname)
         else:
             pass
@@ -357,7 +354,6 @@ class service(dispatcher.dispatcher):
         self.__debug = debug
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
-        self.__tun_fd = -1
         self.__router = router.router(self._recv_from_proto_stack, self._write_ev_tell)
         self.__router.set_tell_fn(self._tell)
 

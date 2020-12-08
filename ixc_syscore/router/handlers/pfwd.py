@@ -71,7 +71,6 @@ class pfwd(udp_handler.udp_handler):
         :param msg:
         :return:
         """
-        print(if_type,flags)
         if flags == router.IXC_FLAG_ARP:
             _list = [
                 router.IXC_FLAG_ARP,

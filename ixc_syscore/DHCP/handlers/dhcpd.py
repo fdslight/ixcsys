@@ -38,7 +38,6 @@ class dhcp_service(udp_handler.udp_handler):
         if _id != self.__id: return
         # 必须是链路层协议
         if ipproto != 0: return
-
         ether_data = message[20:]
 
         if flags == self.consts["IXC_FLAG_ARP"]:
