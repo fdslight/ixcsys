@@ -92,6 +92,8 @@ class service(dispatcher.dispatcher):
     __router_lan_configs = None
     __router_wan_configs = None
 
+    __positive_dhcp_client_req = None
+
     def init_func(self, debug):
         self.__debug = debug
         self.__scgi_fd = -1
@@ -121,6 +123,10 @@ class service(dispatcher.dispatcher):
     def server_configs(self):
         return self.__dhcp_server_configs
 
+    @property
+    def positive_dhcp_client_request(self):
+        return self.__positive_dhcp_client_req
+
     def start_dhcp_client(self, port: int):
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
         consts = self.__router_consts
@@ -128,6 +134,10 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"])
         ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"],
                                         self.__rand_key, port)
+
+        wan_config = RPCClient.fn_call("router", "/config", "wan_config_get")
+        self.__positive_dhcp_client_req = bool(int(wan_config["dhcp"]["positive_heartbeat"]))
+
         if not ok: raise SystemError(message)
 
     def start_dhcp_server(self, port: int):
@@ -276,11 +286,11 @@ class service(dispatcher.dispatcher):
         if is_ipv6:
             # 首先删除默认路由
             RPCClient.fn_call("router", "/runtime", "del_route", "::", 0, is_ipv6=True)
-            rs = RPCClient.fn_call("router", "/runtime", "add_route", "::", 0, gw, is_ipv6=True, is_linked=False)
+            rs = RPCClient.fn_call("router", "/runtime", "add_route", "::", 0, gw, is_ipv6=True)
         else:
             # 首先删除默认路由
             RPCClient.fn_call("router", "/runtime", "del_route", "0.0.0.0", 0, is_ipv6=False)
-            rs = RPCClient.fn_call("router", "/runtime", "add_route", "0.0.0.0", 0, gw, is_ipv6=False, is_linked=False)
+            rs = RPCClient.fn_call("router", "/runtime", "add_route", "0.0.0.0", 0, gw, is_ipv6=False)
 
         ok, msg = rs
         if not ok: logging.print_error(msg)

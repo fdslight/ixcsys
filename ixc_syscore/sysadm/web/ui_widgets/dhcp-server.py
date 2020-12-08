@@ -11,6 +11,7 @@ class widget(ui_widget.widget):
             configs["public"]["enable"] = bool(int(b))
             uri = "dhcp-server.html"
             rs = configs
+            print(rs)
         else:
             uri = "no-proc.html"
             rs = {"proc_name": "DHCP"}

@@ -23,7 +23,8 @@ class controller(rpc.controller):
             "get_all_consts": self.get_all_consts,
             "get_wan_ipaddr_info": self.get_wan_ipaddr_info,
             "add_route": self.add_route,
-            "del_route": self.del_route
+            "del_route": self.del_route,
+            "set_wan_ipaddr": self.set_wan_ipaddr
         }
 
     def get_all_consts(self):

@@ -535,7 +535,7 @@ router_route_add(PyObject *self,PyObject *args)
     int is_ipv6,rs;
     unsigned char prefix;
 
-    if(!PyArg_ParseTuple(args,"y#by#pp",&subnet,&size_a,&prefix,&gw,&size_b,&is_ipv6)) return NULL;
+    if(!PyArg_ParseTuple(args,"y#by#p",&subnet,&size_a,&prefix,&gw,&size_b,&is_ipv6)) return NULL;
 
     if(is_ipv6 && prefix>128){
         PyErr_SetString(PyExc_ValueError,"wrong IPv6 prefix value");

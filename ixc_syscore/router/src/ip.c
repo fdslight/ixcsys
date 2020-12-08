@@ -67,6 +67,12 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
 {
     struct netutil_udphdr *udphdr;
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
+    struct ixc_netif *netif=m->netif;
+
+    if(!netif->isset_ip){
+        ixc_mbuf_put(m);
+        return;
+    }
 
     // 检查是否是DHCP Server报文
     if(17==iphdr->protocol){
@@ -87,12 +93,7 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     struct netutil_iphdr *header=(struct netutil_iphdr *)(mbuf->data+mbuf->offset);
     unsigned short tot_len;
     struct ixc_netif *netif=mbuf->netif;
-
-    if(!netif->isset_ip){
-        ixc_mbuf_put(mbuf);
-        return;
-    }
-
+    
     if(!ixc_ip_check_ok(mbuf,header)){
         ixc_mbuf_put(mbuf);
         return;
@@ -102,8 +103,6 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     mbuf->is_ipv6=0;
     // 除去以太网的填充字节
     mbuf->tail=mbuf->offset+tot_len;
-
-    IXC_MBUF_LOOP_TRACE(mbuf);
 
     if(IXC_NETIF_WAN==netif->type){
         ixc_ip_handle_from_wan(mbuf,header);
