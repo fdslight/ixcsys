@@ -28,7 +28,7 @@ inline static int ixc_qos_calc_slot(unsigned char a, unsigned char b, unsigned s
     return slot_num;
 }
 
-static void ixc_qos_put(struct ixc_mbuf *m,unsigned c,unsigned char ipproto,int hdr_len)
+static void ixc_qos_put(struct ixc_mbuf *m,unsigned c,unsigned char ipproto)
 {
     unsigned short id=0;
     int slot_no;
@@ -55,16 +55,15 @@ static void ixc_qos_put(struct ixc_mbuf *m,unsigned c,unsigned char ipproto,int 
 static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr = (struct netutil_iphdr *)(m->data + m->offset);
-    int hdr_len=(iphdr->ver_and_ihl & 0x0f) * 4;
 
-    ixc_qos_put(m,iphdr->dst_addr[3],iphdr->protocol,hdr_len);
+    ixc_qos_put(m,iphdr->dst_addr[3],iphdr->protocol);
 }
 
 static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
 
-    ixc_qos_put(m,header->dst_addr[15],header->next_header,40);
+    ixc_qos_put(m,header->dst_addr[15],header->next_header);
 }
 
 int ixc_qos_init(void)
@@ -102,10 +101,11 @@ void ixc_qos_uninit(void)
 
 void ixc_qos_add(struct ixc_mbuf *m)
 {
-    if (m->is_ipv6)
+    if (m->is_ipv6){
         ixc_qos_add_for_ipv6(m);
-    else
+    }else{
         ixc_qos_add_for_ip(m);
+    }
 }
 
 void ixc_qos_pop(void)
@@ -122,7 +122,7 @@ void ixc_qos_pop(void)
         t=m->next;
 
         if(IXC_MBUF_FROM_LAN==m->from){
-            //DBG_FLAGS;
+            DBG_FLAGS;
             if(m->is_ipv6) ixc_addr_map_handle(m);
             else ixc_nat_handle(m);
         }else{

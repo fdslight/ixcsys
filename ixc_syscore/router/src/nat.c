@@ -389,7 +389,6 @@ void ixc_nat_uninit(void)
 
 void ixc_nat_handle(struct ixc_mbuf *m)
 {
-    
     if(!nat_is_initialized){
         ixc_mbuf_put(m);
         STDERR("please init nat\r\n");

@@ -247,7 +247,7 @@ class service(dispatcher.dispatcher):
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
 
             os.system("ifconfig %s promisc" % lan_phy_ifname)
-            os.system("ifconfig %s promisc" % self.__WAN_NAME)
+            #os.system("ifconfig %s promisc" % self.__WAN_NAME)
             os.system("ifconfig %s up" % lan_phy_ifname)
 
         lan_addr = lan_ifconfig["ip_addr"]
@@ -258,7 +258,10 @@ class service(dispatcher.dispatcher):
         prefix = netutils.mask_to_prefix(mask, False)
 
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ipaddr, prefix, False)
-        os.system("ip -4 addr add %s/%s dev %s" % (manage_addr, prefix, self.__LAN_BR_NAME))
+
+        if self.is_linux:
+            os.system("ip -4 addr add %s/%s dev %s" % (manage_addr, prefix, self.__LAN_BR_NAME))
+            os.system("ip -4 route add default via %s" % lan_addr)
 
         # self.router.netif_set_ip(router.IXC_NETIF_LAN, socket.inet_pton(socket.AF_INET6, "2400::1"), 64, True)
 

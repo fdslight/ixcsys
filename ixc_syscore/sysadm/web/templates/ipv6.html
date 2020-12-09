@@ -1,0 +1,70 @@
+<div id="ixc-ipv6-view" class="ixc-menu-content" style="display: none;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/ipv6">
+        <h4>IPv6设置</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-group row">
+            <div class="col-sm-3">静态地址下发</div>
+            <div class="col-sm-9">
+                <div class="form-check">
+                    <%
+                        s="""<input class="form-check-input" name="enable_static_ipv6" value="1" type="checkbox" {} />"""
+                        if self.V["enable_static_ipv6"]:x=s.format("checked")
+                        else:x=s.format("")
+                        self.show(x)
+                    %>
+                    <label class="form-check-label" for="gridCheck1">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-3">静态地址穿透局域网</div>
+            <div class="col-sm-9">
+                <div class="form-check">
+                    <%
+                        s="""<input class="form-check-input" name="enable_static_ipv6_pass" value="1" type="checkbox" {} />"""
+                        if self.V['enable_static_ipv6_passthrough']:x=s.format("checked")
+                        else:x=s.format("")
+                        self.show(x)
+                    %>
+                    <label class="form-check-label" for="gridCheck1">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="inputEmail3" class="col-sm-3 col-form-label">IPv6静态地址</label>
+            <div class="col-sm-9">
+                <input type="text" class="form-control" name="static_ipv6"
+                       value="${self.V['ip6_addr']}"/>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        function change(ele) {
+            let selector = $("#ixc-ipv6-view form input[type='text']");
+            if (ele.is(":checked")) {
+                selector.removeAttr("disabled");
+            } else {
+                selector.attr("disabled", "disabled");
+            }
+        }
+
+        let ele = $("input[name='enable_static_ipv6']");
+        ele.change(function () {
+            change(ele);
+        });
+        change(ele);
+    });
+</script>
