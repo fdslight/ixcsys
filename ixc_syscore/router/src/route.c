@@ -10,6 +10,7 @@
 #include "ip6.h"
 #include "ip.h"
 #include "icmpv6.h"
+#include  "icmp.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
@@ -404,7 +405,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果找不到理由,那么就丢弃数据包
     if(NULL==r){
-        //IXC_PRINT_IP("route not found for dest ip",iphdr->dst_addr);
+        IXC_PRINT_IP("route not found for dest ip",iphdr->dst_addr);
         ixc_mbuf_put(m);
         return;
     }
@@ -414,6 +415,17 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     // 如果ttl为1那么发送ICMP报文告知
     if(iphdr->ttl<=1){
         ixc_mbuf_put(m);
+        return;
+    }
+
+    // 如果是本机地址的处理
+    if(!memcmp(iphdr->dst_addr,netif->ipaddr,4)){
+        // 本机只处理ICMP协议
+        if(iphdr->protocol!=1){
+            ixc_mbuf_put(m);
+            return;
+        }
+        ixc_icmp_handle_self(m);
         return;
     }
 

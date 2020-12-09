@@ -43,10 +43,10 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
     }
 
     // 填充以太网以便满足60字节
-    if(size<60){
+    /**if(size<60){
         bzero(mbuf->data+mbuf->end,60-size);
         mbuf->end+=(60-size);
-    }
+    }**/
  
     ixc_netif_send(mbuf);
 
@@ -60,12 +60,12 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     unsigned short type;
     
     // 检查长度是否合法,不合法直接丢包
-    if(mbuf->end-mbuf->begin<60){
+    if(mbuf->end-mbuf->begin<14){
         ixc_mbuf_put(mbuf);
         return;
     }
 
-    IXC_MBUF_LOOP_TRACE(mbuf);
+    //IXC_MBUF_LOOP_TRACE(mbuf);
 
     header=(struct ixc_ether_header *)(mbuf->data+mbuf->begin);
     type=ntohs(header->type);
@@ -103,6 +103,7 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
             break;
         // ARP
         case 0x0806:
+            DBG_FLAGS;
             ixc_arp_handle(mbuf);
             break;
         // IPv6

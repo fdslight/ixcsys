@@ -84,6 +84,7 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
             return;
         }
     }
+  
     // 发送数据到route
     ixc_route_handle(m);
 }
