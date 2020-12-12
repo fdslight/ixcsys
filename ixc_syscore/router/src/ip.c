@@ -9,6 +9,8 @@
 #include "ether.h"
 #include "router.h"
 #include "nat.h"
+#include "ipunfrag.h"
+#include "ipfrag.h"
 #include "debug.h"
 
 #include "../../../pywind/clib/netutils.h"
@@ -32,6 +34,8 @@ static int ixc_ip_check_ok(struct ixc_mbuf *m,struct netutil_iphdr *header)
         ixc_mbuf_put(m);
         return 0;
     }
+    // 限制IP数据包最小长度
+    if(tot_len<28) return 0;
 
     return 1;
 }
@@ -42,6 +46,8 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     struct ixc_netif *netif=m->netif;
 
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
+    unsigned short frag_info,frag_off;
+    int mf;
     
     // 检查是否是DHCP Client报文
     if(17==iphdr->protocol){
@@ -58,6 +64,15 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     if(!netif->isset_ip){
         ixc_mbuf_put(m);
         return;
+    }
+
+    frag_info=ntohs(iphdr->frag_info);
+    frag_off=frag_info & 0x1fff;
+    mf=frag_info & 0x2000;
+
+    // 如果IP数据包有分包那么首先合并数据包
+    if(mf!=0 || frag_off!=0){
+        ixc_ipunfrag_add(m);
     }
 
     ixc_nat_handle(m);
