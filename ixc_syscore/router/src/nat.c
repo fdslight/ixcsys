@@ -265,26 +265,13 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
 static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
 {   
-    // 没有开启NAT那么直接发送数据包
-    if(!nat.enable){
-        ixc_qos_add(m);
-        DBG_FLAGS;
-        return;
-    }
-
     m=ixc_nat_do(m,0);
     if(NULL==m) return;
-    ixc_route_handle(m);
+    ixc_qos_add(m);
 }
 
 static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
 {
-    // 未开启NAT那么直接发送数据包
-    if(!nat.enable){
-        ixc_addr_map_handle(m);
-        return;
-    }
-
     m=ixc_nat_do(m,1);
     if(NULL==m) return;
     ixc_addr_map_handle(m);
@@ -325,8 +312,6 @@ static void ixc_nat_timeout_cb(void *data)
 
 static void ixc_nat_sysloop_cb(struct sysloop *lp)
 {
-    //  如果NAT没有被开启那么直接跳过
-    if(!nat.enable) return;
     // 执行时间函数,定期检查NAT会话是否过期
     time_wheel_handle(&nat_time_wheel);
 }
@@ -399,11 +384,4 @@ void ixc_nat_handle(struct ixc_mbuf *m)
 
     if(IXC_MBUF_FROM_LAN==m->from) ixc_nat_handle_from_lan(m);
     else ixc_nat_handle_from_wan(m);
-}
-
-int ixc_nat_enable(int status)
-{
-    nat.enable=status;
-    
-    return 0;
 }

@@ -10,7 +10,8 @@
 #include "ip6.h"
 #include "ip.h"
 #include "icmpv6.h"
-#include  "icmp.h"
+#include "icmp.h"
+#include "addr_map.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
@@ -371,6 +372,8 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     // 如果是本地网段,把next host指向下一台主机
     if(ixc_netif_is_subnet(netif,header->dst_addr,1,0)){
         memcpy(m->next_host,header->dst_addr,16);
+    }else{
+        memcpy(m->next_host,r->gw,16);
     }
     
     if(m->from==IXC_MBUF_FROM_LAN){
@@ -452,11 +455,17 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     iphdr->ttl-=1;
     m->link_proto=0x0800;
 
+    if(ixc_netif_is_subnet(netif,iphdr->dst_addr,0,0)){
+        memcpy(m->next_host,iphdr->dst_addr,4);
+    }else{
+        memcpy(m->next_host,r->gw,4);
+    }
+
     // 如果是LAN节点那么经过UDP source,否则的直接通过qos出去
     if(m->from==IXC_MBUF_FROM_LAN){
         ixc_src_filter_handle(m);
     }else{
-        ixc_qos_add(m);
+        ixc_addr_map_handle(m);
     }
 }
 
