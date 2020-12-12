@@ -43,8 +43,10 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     struct ixc_netif *netif=mbuf->netif;
     struct ixc_addr_map_record *r;
 
+    DBG_FLAGS;
     // 响应非本网卡丢弃数据包
     if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
+        DBG_FLAGS;
         ixc_router_send(netif->type,0,IXC_FLAG_ARP,mbuf->data+mbuf->begin,mbuf->end-mbuf->begin);
         ixc_mbuf_put(mbuf);
         return;
@@ -57,7 +59,7 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     }
 
     r=ixc_addr_map_get(arp->src_ipaddr,0);
-
+    
     // 如果不存在那么添加到映射表
     if(NULL==r){
         ixc_addr_map_add(netif,arp->src_ipaddr,arp->src_hwaddr,0);

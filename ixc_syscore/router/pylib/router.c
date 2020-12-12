@@ -602,22 +602,6 @@ router_route_del(PyObject *self,PyObject *args)
 }
 
 static PyObject *
-router_nat_set(PyObject *self,PyObject *args)
-{
-    int status;
-    int rs;
-
-    if(!PyArg_ParseTuple(args,"p",&status)) return NULL;
-    rs=ixc_nat_enable(status);
-
-    if(rs){
-        Py_RETURN_FALSE;
-    }
-
-    Py_RETURN_TRUE;
-}
-
-static PyObject *
 router_pppoe_enable(PyObject *self,PyObject *args)
 {
     int status;
@@ -711,8 +695,6 @@ static PyMethodDef routerMethods[]={
     {"route_set_is_linkpkt_for_app",(PyCFunction)router_route_set_is_linkpkt_for_app,METH_VARARGS,"forward to application as link packet"},
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
-    //
-    {"nat_set",(PyCFunction)router_nat_set,METH_VARARGS,"set IP NAT and IPv6 NAT status and type"},
     //
     {"pppoe_enable",(PyCFunction)router_pppoe_enable,METH_VARARGS,"enable or disable pppoe"},
     {"pppoe_is_enabled",(PyCFunction)router_pppoe_is_enabled,METH_NOARGS,"check pppoe is enabled"},
