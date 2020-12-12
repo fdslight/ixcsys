@@ -6,6 +6,8 @@
 #include "netif.h"
 #include "debug.h"
 #include "router.h"
+#include "ip.h"
+#include "ip6.h"
 
 #include "../../../pywind/clib/sysloop.h"
 
@@ -444,9 +446,11 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
             break;
         // IPv6协议
         case 0x0057:
+            ixc_ip6_handle(m);
             break;
         // IP协议
         case 0x0021:
+            ixc_ip_handle(m);
             break;
         default:
             DBG("unkown PPPoE protocol 0x%x\r\n",ppp_proto);
