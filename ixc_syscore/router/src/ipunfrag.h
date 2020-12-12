@@ -3,8 +3,10 @@
 
 #include "mbuf.h"
 
-struct ixc_ipungrag{
+#include "../../../pywind/clib/map.h"
 
+struct ixc_ipunfrag{
+    struct map *m;
 };
 
 int ixc_ipunfrag_init(void);

@@ -39,7 +39,8 @@ struct ixc_mbuf{
 
     // 指向的下一条主机
     unsigned char next_host[16];
-    unsigned char data[0x103ff];
+#define IXC_MBUF_DATA_MAX_SIZE 0x101ff
+    unsigned char data[0x10fff];
     unsigned char src_hwaddr[6];
     unsigned char dst_hwaddr[6];
 };
