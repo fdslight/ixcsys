@@ -13,7 +13,11 @@ import pywind.lib.sys_build as sys_build
 __builds = [
     "ixc_syscore",
     "ixc_syscore/router",
-    "ixc_syscore/syscall",
+    "ixc_syscore/sysadm",
+    "ixc_syscore/DHCP",
+    "ixc_syscore/DNS",
+    "ixc_syscore/tftp",
+    "ixc_syscore/proxy_helper"
 ]
 
 __helper = """

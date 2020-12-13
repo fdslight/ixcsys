@@ -11,7 +11,10 @@
 struct ixc_mbuf{
     struct ixc_mbuf *next;
     struct ixc_netif *netif;
-    
+    // 私有数据,用于处理IP包的一些功能,比如IP组包等等
+    void *priv_data;
+    // 私有标记,用于处理IP包的一些功能,比如IP组包等等
+    int priv_flags;
     int is_ipv6;
     // 流量来自于哪里
     // 流量来自于LAN设备,包括local设备和tap设备以及从其他应用接收的数据包
@@ -40,7 +43,7 @@ struct ixc_mbuf{
     // 指向的下一条主机
     unsigned char next_host[16];
 #define IXC_MBUF_DATA_MAX_SIZE 0x101ff
-    unsigned char data[0x10fff];
+    unsigned char data[IXC_MBUF_DATA_MAX_SIZE];
     unsigned char src_hwaddr[6];
     unsigned char dst_hwaddr[6];
 };

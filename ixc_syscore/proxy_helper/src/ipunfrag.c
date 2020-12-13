@@ -31,5 +31,5 @@ int ipunfrag_add(struct mbuf *m)
 
 void *ipunfrag_get(void)
 {
-
+    return NULL;
 }

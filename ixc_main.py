@@ -64,6 +64,10 @@ def stop(uri: str):
     os.system(stop_file)
 
 
+def loop():
+    pass
+
+
 def main():
     __helper = """
     start [app_uri] | stop [app_uri]  | debug app_uri
