@@ -18,6 +18,7 @@
 #include "../src/ip6.h"
 #include "../src/nat.h"
 #include "../src/pppoe.h"
+#include "../src/ipunfrag.h"
 #include "../src/debug.h"
 
 #include "../../../pywind/clib/sysloop.h"
@@ -190,6 +191,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_ip6_init();
     if(rs<0){
         STDERR("cannot init ICMPv6\r\n");
+        return NULL;
+    }
+
+    rs=ixc_ipunfrag_init();
+    if(rs<0){
+        STDERR("cannot init ipunfrag\r\n");
         return NULL;
     }
 

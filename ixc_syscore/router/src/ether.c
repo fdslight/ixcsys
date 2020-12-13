@@ -103,7 +103,6 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
             break;
         // ARP
         case 0x0806:
-            DBG_FLAGS;
             ixc_arp_handle(mbuf);
             break;
         // IPv6

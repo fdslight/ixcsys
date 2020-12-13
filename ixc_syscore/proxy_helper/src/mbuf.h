@@ -13,12 +13,15 @@ struct mbuf_pool{
 
 struct mbuf{
     struct mbuf *next;
+    void *priv_data;
+    int priv_flags;
 #define MBUF_BEGIN 256
     int begin;
     int offset;
     int tail;
     int end; 
-    unsigned char data[0xffff];
+#define IXC_MBUF_DATA_MAX_SIZE 0x101ff
+    unsigned char data[IXC_MBUF_DATA_MAX_SIZE];
 };
 
 int mbuf_init(size_t pre_alloc_size);
