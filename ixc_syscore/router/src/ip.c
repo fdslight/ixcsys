@@ -71,10 +71,9 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     mf=frag_info & 0x2000;
 
     // 如果IP数据包有分包那么首先合并数据包
-    if(mf!=0 || frag_off!=0){
-        ixc_ipunfrag_add(m);
-    }
-
+    if(mf!=0 || frag_off!=0) m=ixc_ipunfrag_add(m);
+    if(NULL==m) return;
+    
     ixc_nat_handle(m);
 }
 
