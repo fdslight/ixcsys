@@ -6,7 +6,7 @@
 #include "../../../pywind/clib/map.h"
 
 #define IPUNFRAG_KEYSIZE 10
-struct ipunfrag_set{
+struct ipunfrag{
     struct map *m;
 };
 
@@ -20,9 +20,6 @@ struct ipunfrag_pktinfo{
 int ipunfrag_init(void);
 void ipunfrag_uninit(void);
 
-int ipunfrag_add(struct mbuf *m);
-/// 获取未分片后的数据
-// 如果为NULL表示没有数据
-void *ipunfrag_get(void);
+struct mbuf *ipunfrag_add(struct mbuf *m);
 
 #endif
