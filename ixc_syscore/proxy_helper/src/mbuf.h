@@ -20,8 +20,8 @@ struct mbuf{
     int offset;
     int tail;
     int end; 
-#define IXC_MBUF_DATA_MAX_SIZE 0x101ff
-    unsigned char data[IXC_MBUF_DATA_MAX_SIZE];
+#define MBUF_DATA_MAX_SIZE 0x101ff
+    unsigned char data[MBUF_DATA_MAX_SIZE];
 };
 
 int mbuf_init(size_t pre_alloc_size);
