@@ -9,7 +9,7 @@
 /// 获取TCP标志
 #define TCP_FLAGS(v,flags) (v & flags)
 
-/// TCP缓冲区s
+/// TCP缓冲区
 struct tcp_buffer{
     // 当前块索引
     int cur_blk_idx;
@@ -24,6 +24,12 @@ struct tcp_buffer{
 
 /// TCP会话信息
 struct tcp_session{
+    // 是否是IPv6地址
+    int is_ipv6;
+    // 源地址
+    unsigned char src_addr[16];
+    // 目标地址
+    unsigned char dst_addr[16];
     // 定时器
     // tcp会话状态
     int tcp_st;
