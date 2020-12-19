@@ -16,6 +16,14 @@ struct netutil_iphdr{
     unsigned char dst_addr[4];
 };
 
+struct netutil_ip_ps_header{
+    unsigned char src_addr[4];
+    unsigned char dst_addr[4];
+    unsigned char pad[1];
+    unsigned char protocol;
+    unsigned short length;
+};
+
 struct netutil_ip6hdr{
     unsigned char ver_and_tc;
     unsigned char flow_label[3];

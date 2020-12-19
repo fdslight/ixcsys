@@ -5,4 +5,6 @@
 
 void ip_handle(struct mbuf *m);
 
+int ip_send(unsigned char *src_addr,)
+
 #endif
