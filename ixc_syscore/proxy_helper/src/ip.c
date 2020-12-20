@@ -1,9 +1,12 @@
 #include<arpa/inet.h>
 #include<string.h>
+#include<time.h>
+#include<stdlib.h>
 
 #include "ip.h"
 #include "ipv6.h"
 #include "ipunfrag.h"
+#include "proxy_helper.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
@@ -49,25 +52,69 @@ void ip_handle(struct mbuf *m)
 
 }
 
-int ip_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char protocol,struct mbuf *m)
+int ip_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char protocol,void *data,unsigned short length)
 {
     struct netutil_iphdr *header;
-    int length=m->end-m->begin;
+    unsigned short id=0,slice=ip_mtu-20,cur_slice_size=0,csum=0;
+    unsigned char *ptr=data;
+    struct mbuf *m=NULL;
+    int tot_size=0,rs=0;
+    unsigned short df=0x4000,mf=0x0000,frag_off=0;
 
-    // 此处对IP数据包进行分片
-    while(1){
-        m->begin=m->offset=m->offset-20;
+    srand(time(NULL));
+
+    id=htons(rand() & 0xffff);
+
+    while(tot_size<length){
+        m=mbuf_get();
+        if(NULL==m){
+            rs=-1;
+            STDERR("cannot get mbuf\r\n");
+            break;
+        }
+
+        if(length-tot_size <= slice){
+            cur_slice_size=length-tot_size;
+            mf=0x0000;
+        }else{
+            // 此处需要为8的倍数
+            cur_slice_size=(slice/8*8);
+            mf=0x2000;
+        }
+        
+        m->begin=m->offset=MBUF_BEGIN-20;
+        m->end=m->tail=m->begin+length;
+
         header=(struct netutil_iphdr *)(m->data+m->offset);
-
         bzero(header,20);
 
         header->ver_and_ihl=0x45;
+        header->tos=0x01;
+        header->ttl=0x40;
+        header->id=id;
+        header->frag_info=htons(df | mf | frag_off);
+        header->tot_len=htons(20+cur_slice_size);
+        header->protocol=protocol;
 
         memcpy(header->src_addr,src_addr,4);
         memcpy(header->dst_addr,dst_addr,4);
 
-        header->protocol=protocol;
-    }
+        csum=csum_calc((unsigned short *)header,20);
+        header->checksum=htons(csum);
 
+        memcpy(m->data+m->offset,ptr+tot_size,cur_slice_size);
+
+        tot_size+=cur_slice_size;
+        frag_off+=cur_slice_size;
+
+        netpkt_send(m,0);
+    }
+    
+    return rs;
+}
+
+int ip_mtu_set(unsigned short mtu)
+{
+    ip_mtu=mtu;
     return 0;
 }

@@ -11,7 +11,7 @@
 
 #include "../../../pywind/clib/netutils.h"
 
-int udp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsigned short dport,int is_ipv6,int is_udplite,unsigned short csum_coverage,void *data,size_t length)
+int udp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsigned short dport,int is_udplite,int is_ipv6,unsigned short csum_coverage,void *data,size_t length)
 {
     struct netutil_udphdr *udphdr;
     struct netutil_ip6_ps_header *ps6_header;
@@ -80,6 +80,10 @@ int udp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsi
     udphdr->checksum=htons(csum);
     m->begin=m->offset=offset;
 
-    if(is_ipv6) return ipv6_send(saddr,daddr,p,m);
-    else return ip_send(saddr,daddr,p,m);
+    if(is_ipv6) ipv6_send(saddr,daddr,p,m->data+m->begin,m->end-m->begin);
+    else ip_send(saddr,daddr,p,m->data+m->begin,m->end-m->begin);
+
+    mbuf_put(m);
+
+    return 0;
 }

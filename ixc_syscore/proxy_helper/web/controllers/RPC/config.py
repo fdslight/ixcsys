@@ -16,3 +16,13 @@ class controller(rpc.controller):
         self.fobjs = {
         }
 
+    def route_add(self, subnet: str, prefix: int, is_ipv6=False, timeout=0):
+        pass
+
+    def route_del(self, subnet: str, prefix: int, is_ipv6=False):
+        pass
+
+    def proxy_helper_enable(self, enable: bool):
+        """是否开启代理助手
+        """
+        pass

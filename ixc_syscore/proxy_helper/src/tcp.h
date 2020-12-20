@@ -3,6 +3,7 @@
 
 #include "mbuf.h"
 
+#include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
 
 
@@ -30,6 +31,8 @@ struct tcp_buffer{
 struct tcp_session{
     // 是否是IPv6地址
     int is_ipv6;
+    // 会话ID
+    unsigned char id[36];
     // 源地址
     unsigned char src_addr[16];
     // 目标地址
@@ -46,10 +49,30 @@ struct tcp_session{
     // 确认序列号
     unsigned int ack_seq;
     // 窗口大小
-    unsigned short window_size;
+#define TCP_DEFAULT_WIN_SIZE 512
+    unsigned short my_window_size;
+    // 对端窗口大小
+    unsigned short peer_window_size;
+    
 };
 
+struct tcp_sessions{
+    // IPv4 TCP会话
+    struct map *sessions;
+    // IPv6 TCP会话
+    struct map *sessions6;
+};
+
+int tcp_init(void);
+void tcp_uninit(void);
+
 /// 发送TCP数据包
-int tcp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsigned short dport,int is_ipv6,struct netutil_tcphdr *tcphdr,void *data,unsigned short length);
+int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6);
+/// 关闭TCP连接
+int tcp_close(unsigned char *session_id,int is_ipv6);
+/// 窗口大小设置
+int tcp_window_set(unsigned char *session_id,int is_ipv6,unsigned short win_size);
+/// 发送TCP RST报文
+int tcp_send_reset(unsigned char *session_id,int is_ipv6);
 
 #endif
