@@ -14,8 +14,14 @@ typedef struct{
     PyObject_HEAD
 }proxy_helper_object;
 
-static PyObject *tcp_cb=NULL;
-static PyObject *udp_cb=NULL;
+/// TCP发送回调函数
+static PyObject *tcp_sent_cb=NULL;
+/// UDP发送回调函数
+static PyObject *udp_sent_cb=NULL;
+/// TCP接收回调函数
+static PyObject *tcp_recv_cb=NULL;
+/// UDP接收回调函数
+static PyObject *udp_recv_cb=NULL;
 
 static void ixc_segfault_handle(int signum)
 {
@@ -68,26 +74,44 @@ proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 proxy_helper_init(proxy_helper_object *self,PyObject *args,PyObject *kwds)
 {
-    PyObject *fn_tcp_cb,*fn_udp_cb;
+    PyObject *fn_tcp_sent_cb,*fn_udp_sent_cb;
+    PyObject *fn_tcp_recv_cb,*fn_udp_recv_cb;
 
-    if(!PyArg_ParseTuple(args,"OO",&fn_tcp_cb,&fn_udp_cb)) return -1;
-    if(!PyCallable_Check(fn_tcp_cb)){
-        PyErr_SetString(PyExc_TypeError,"tcp callback function  must be callable");
+    if(!PyArg_ParseTuple(args,"OOOO",&fn_tcp_sent_cb,&fn_udp_sent_cb,&fn_tcp_recv_cb,&fn_udp_recv_cb)) return -1;
+    if(!PyCallable_Check(fn_tcp_sent_cb)){
+        PyErr_SetString(PyExc_TypeError,"tcp sent callback function  must be callable");
         return -1;
     }
-    if(!PyCallable_Check(fn_udp_cb)){
-        PyErr_SetString(PyExc_TypeError,"ucp callback function  must be callable");
+    if(!PyCallable_Check(fn_udp_sent_cb)){
+        PyErr_SetString(PyExc_TypeError,"udp sent callback function  must be callable");
+        return -1;
+    }
+    if(!PyCallable_Check(fn_tcp_recv_cb)){
+        PyErr_SetString(PyExc_TypeError,"tcp recv callback function  must be callable");
+        return -1;
+    }
+    if(!PyCallable_Check(fn_udp_recv_cb)){
+        PyErr_SetString(PyExc_TypeError,"udp recv callback function  must be callable");
         return -1;
     }
 
-    Py_XDECREF(tcp_cb);
-    Py_XDECREF(udp_cb);
+    Py_XDECREF(tcp_sent_cb);
+    Py_XDECREF(udp_sent_cb);
 
-    tcp_cb=fn_tcp_cb;
-    udp_cb=fn_udp_cb;
+    Py_XDECREF(tcp_recv_cb);
+    Py_XDECREF(udp_recv_cb);
 
-    Py_INCREF(tcp_cb);
-    Py_INCREF(udp_cb);
+    tcp_sent_cb=fn_tcp_sent_cb;
+    udp_sent_cb=fn_udp_sent_cb;
+
+    tcp_recv_cb=fn_tcp_recv_cb;
+    udp_recv_cb=fn_udp_recv_cb;
+
+    Py_INCREF(tcp_sent_cb);
+    Py_INCREF(udp_sent_cb);
+
+    Py_INCREF(tcp_recv_cb);
+    Py_INCREF(udp_recv_cb);   
 
     return 0;
 }
@@ -99,12 +123,28 @@ proxy_helper_myloop(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+proxy_helper_mtu_set(PyObject *self,PyObject *args)
+{
+    int mtu,is_ipv6;
+    if(!PyArg_ParseTuple(args,"ip",&mtu,&is_ipv6)) return NULL;
+
+    if(mtu<576 || mtu > 9000){
+        PyErr_SetString(PyExc_ValueError,"mtu must be 576 to 9000");
+        return NULL;
+    }
+
+
+    Py_RETURN_NONE;
+}
+
 static PyMemberDef proxy_helper_members[]={
     {NULL}
 };
 
 static PyMethodDef proxy_helper_methods[]={
     {"myloop",(PyCFunction)proxy_helper_myloop,METH_VARARGS,"loop call"},
+    {"mtu_set",(PyCFunction)proxy_helper_mtu_set,METH_VARARGS,"set mtu for IP and IPv6"},
     {NULL,NULL,0,NULL}
 };
 
