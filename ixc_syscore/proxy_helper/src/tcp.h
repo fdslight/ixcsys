@@ -1,6 +1,10 @@
 #ifndef IP2SOCKS_TCP_H
 #define IP2SOCKS_TCP_H
 
+#include "mbuf.h"
+
+#include "../../../pywind/clib/netutils.h"
+
 
 #define TCP_ACK 0x0010
 #define TCP_RST 0x0040
@@ -44,5 +48,8 @@ struct tcp_session{
     // 窗口大小
     unsigned short window_size;
 };
+
+/// 发送TCP数据包
+int tcp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsigned short dport,int is_ipv6,struct netutil_tcphdr *tcphdr,void *data,unsigned short length);
 
 #endif
