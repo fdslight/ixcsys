@@ -63,23 +63,42 @@ class service(dispatcher.dispatcher):
     __debug = None
     __proxy_helper = None
 
+    __tcp_sessions = None
+
     def init_func(self, debug):
         global_vars["ixcsys.proxy_helper"] = self
 
         self.__debug = debug
+        self.__tcp_sessions = {}
+
         self.create_poll()
         self.wait_router_proc()
         self.start_scgi()
         self.start()
 
+    def netpkt_sent_cb(self, byte_data: bytes):
+        pass
+
+    def tcp_conn_ev_cb(self, session_id: bytes, src_addr: str, dst_addr: str, sport: int, dport: int, is_ipv6: bool):
+        pass
+
+    def tcp_recv_cb(self, session_id: bytes, window_size: int, is_ipv6: bool, data: bytes):
+        pass
+
+    def tcp_close_ev_cb(self, session_id: bytes, is_ipv6: bool):
+        pass
+
+    def udp_recv_cb(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool, data: bytes):
+        pass
+
     def start(self):
-        self.__proxy_helper = proxy_helper.proxy_helper(self.tcp_cb, self.udp_cb)
-
-    def tcp_cb(self, ev: int, dst_addr: str, src_addr: str, dst_port: int, src_port: int, **kwargs):
-        pass
-
-    def udp_cb(self, dst_addr: str, src_addr: str, dst_port: int, src_port: int, data: bytes, is_udplite: bool):
-        pass
+        self.__proxy_helper = proxy_helper.proxy_helper(
+            self.netpkt_sent_cb,
+            self.tcp_conn_ev_cb,
+            self.tcp_recv_cb,
+            self.tcp_recv_cb,
+            self.udp_recv_cb
+        )
 
     def myloop(self):
         self.__proxy_helper.myloop()
@@ -88,6 +107,9 @@ class service(dispatcher.dispatcher):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
 
         return ipaddr
+
+    def http_proxy_url(self):
+        return "/"
 
     def start_scgi(self):
         scgi_configs = {
