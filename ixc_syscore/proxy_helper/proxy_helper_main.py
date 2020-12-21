@@ -16,6 +16,8 @@ import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
 
+import ixc_syscore.proxy_helper.handlers.netpkt as netpkt
+
 import ixc_syscore.proxy_helper.pylib.proxy_helper as proxy_helper
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -64,12 +66,18 @@ class service(dispatcher.dispatcher):
     __proxy_helper = None
 
     __tcp_sessions = None
+    __rand_key = None
+
+    __fd = None
+    __consts = None
 
     def init_func(self, debug):
         global_vars["ixcsys.proxy_helper"] = self
 
         self.__debug = debug
         self.__tcp_sessions = {}
+        self.__rand_key = os.urandom(16)
+        self.__fd = -1
 
         self.create_poll()
         self.wait_router_proc()
@@ -99,6 +107,32 @@ class service(dispatcher.dispatcher):
             self.tcp_recv_cb,
             self.udp_recv_cb
         )
+        consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
+        self.__fd = self.create_handler(-1, netpkt.nspkt_handler)
+        port = self.get_handler(self.__fd).get_sock_port()
+
+        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_ROUTE_FWD"])
+        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_SRC_FILTER"])
+
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_SRC_FILTER"],
+                                        self.__rand_key, port)
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_ROUTE_FWD"],
+                                        self.__rand_key, port)
+
+        self.__consts = consts
+
+    @property
+    def proxy_helper(self):
+        return self.__proxy_helper
+
+    @property
+    def consts(self):
+        return self.__consts
+
+    def stop(self):
+        if self.handler_exists(self.__fd):
+            self.delete_handler(self.__fd)
+            self.__fd = -1
 
     def myloop(self):
         self.__proxy_helper.myloop()
@@ -134,6 +168,7 @@ class service(dispatcher.dispatcher):
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+        self.stop()
 
 
 def main():
