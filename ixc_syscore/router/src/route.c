@@ -249,6 +249,10 @@ int ixc_route_add(unsigned char *subnet,unsigned char prefix,unsigned char *gw,i
     r->is_ipv6=is_ipv6;
     r->netif=netif;
 
+    if(NULL==netif){
+        DBG("route forward to application\r\n");
+    }
+
     if(NULL!=gw){
         if(is_ipv6) memcpy(r->gw,gw,16);
         else memcpy(r->gw,gw,4);
@@ -434,8 +438,9 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果没有网卡,那么发送到其他应用
     if(NULL==r->netif){
-        if(route.is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
-        else ixc_router_send(netif->type,iphdr->protocol,0,m->data+m->offset,m->tail-m->offset);
+        DBG("forward data to application\r\n");
+        if(route.is_linked) ixc_router_send(netif->type,0,IXC_FLAG_ROUTE_FWD,m->data+m->begin,m->end-m->begin);
+        else ixc_router_send(netif->type,iphdr->protocol,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
 
         // 这里丢弃数据包,避免内存泄漏
         ixc_mbuf_put(m);

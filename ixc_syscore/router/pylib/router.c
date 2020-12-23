@@ -541,6 +541,7 @@ router_route_add(PyObject *self,PyObject *args)
     Py_ssize_t size_a,size_b;
     int is_ipv6,rs;
     unsigned char prefix;
+    unsigned char zeros[16];
 
     if(!PyArg_ParseTuple(args,"y#by#p",&subnet,&size_a,&prefix,&gw,&size_b,&is_ipv6)) return NULL;
 
@@ -562,6 +563,13 @@ router_route_add(PyObject *self,PyObject *args)
     if(!is_ipv6 && (size_a!=4 || size_b!=4)){
         PyErr_SetString(PyExc_ValueError,"wrong IP address or gateway length");
         return NULL;  
+    }
+
+    bzero(zeros,16);
+    if(is_ipv6){
+        if(!memcmp(zeros,gw,16)) gw=NULL;
+    }else{
+        if(!memcmp(zeros,gw,4)) gw=NULL;
     }
 
     rs=ixc_route_add(subnet,prefix,gw,is_ipv6);

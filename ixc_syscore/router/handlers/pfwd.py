@@ -80,7 +80,6 @@ class pfwd(udp_handler.udp_handler):
             ]
         else:
             _list = [flags]
-
         for i in _list:
             fwd_info = self.__fwd_tb[i]
             if not fwd_info: continue

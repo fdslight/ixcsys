@@ -9,7 +9,70 @@
 #include "ip.h"
 #include "ipv6.h"
 
+#include "proxy_helper.h"
+
 #include "../../../pywind/clib/netutils.h"
+
+static void __udp_handle_v4(struct mbuf *m)
+{
+    struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
+    struct netutil_udphdr *udphdr=NULL;
+    struct netutil_ip_ps_header *ps_header;
+
+    unsigned char protocol=header->protocol;
+    int hdr_len=(header->ver_and_ihl & 0x0f) * 4,offset=0,is_udplite;
+    unsigned char saddr[4],daddr[4];
+    unsigned short sport,dport,csum;
+
+    memcpy(saddr,header->src_addr,4);
+    memcpy(daddr,header->dst_addr,4);
+
+    m->offset+=hdr_len;
+    offset=m->offset-12;
+
+    udphdr=(struct netutil_udphdr *)(m->data+m->offset);
+
+    // 检查UDP协议的检验和
+    if(protocol==17){
+        is_udplite=0;
+
+        ps_header=(struct netutil_ip_ps_header *)(m->data+offset);
+        
+        memcpy(ps_header->src_addr,saddr,4);
+        memcpy(ps_header->dst_addr,daddr,4);
+
+        ps_header->pad[0]=0;
+        ps_header->protocol=protocol;
+        ps_header->length=udphdr->length;
+
+        csum=csum_calc((unsigned short *)(m->data+offset),m->tail-offset);
+        if(csum!=0xffff){
+            DBG("wrong UDP data packet checksum\r\n");
+            mbuf_put(m);
+            return;
+        }
+    }else{
+        // 检查UDPLite的检验和
+        is_udplite=1;
+    }
+
+    sport=ntohs(udphdr->src_port);
+    dport=ntohs(udphdr->dst_port);
+
+    netpkt_udp_recv(saddr,daddr,sport,dport,is_udplite,0,m->data+m->offset+8,m->tail-m->offset-8);
+    mbuf_put(m);
+}
+
+static void __udp_handle_v6(struct mbuf *m)
+{
+
+}
+
+void udp_handle(struct mbuf *m,int is_ipv6)
+{
+    if(is_ipv6) __udp_handle_v4(m);
+    else __udp_handle_v6(m);
+}
 
 int udp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsigned short dport,int is_udplite,int is_ipv6,unsigned short csum_coverage,void *data,size_t length)
 {

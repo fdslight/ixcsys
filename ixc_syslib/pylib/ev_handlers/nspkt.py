@@ -26,11 +26,8 @@ class nspkt_handler(udp_handler.udp_handler):
         if address[1] != self.__server_port: return
 
         if len(message) < 34: return
-
         _id, if_type, _, ipproto, flags = struct.unpack("!16sbbbb", message[0:20])
         if _id != self.__id: return
-        # 必须是链路层协议
-        if ipproto != 0: return
         self.handle_recv(if_type, ipproto, flags, message[20:])
 
     def handle_recv(self, if_type: int, ipproto: int, flags: int, message: bytes):

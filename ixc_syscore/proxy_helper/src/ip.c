@@ -7,6 +7,8 @@
 #include "ipv6.h"
 #include "ipunfrag.h"
 #include "proxy_helper.h"
+#include "udp.h"
+#include "tcp.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
@@ -50,6 +52,17 @@ void ip_handle(struct mbuf *m)
     if(mf!=0 || frag_off!=0) m=ipunfrag_add(m);
     if(NULL==m) return;
 
+    switch(header->protocol){
+        // 处理TCP协议
+        case 6:
+            tcp_handle(m,0);
+            break;
+        // 处理UDP和UDPLite协议
+        case 17:
+        case 136:
+            udp_handle(m,0);
+            break;
+    }
 }
 
 int ip_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char protocol,void *data,unsigned short length)
