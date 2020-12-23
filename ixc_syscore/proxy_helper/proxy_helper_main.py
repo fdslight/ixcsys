@@ -110,6 +110,7 @@ class service(dispatcher.dispatcher):
         consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
         self.__fd = self.create_handler(-1, netpkt.nspkt_handler)
         port = self.get_handler(self.__fd).get_sock_port()
+        self.get_handler(self.__fd).set_message_auth(self.__rand_key)
 
         RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_ROUTE_FWD"])
         RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_SRC_FILTER"])
@@ -118,8 +119,9 @@ class service(dispatcher.dispatcher):
                                         self.__rand_key, port)
         ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_ROUTE_FWD"],
                                         self.__rand_key, port)
-
         self.__consts = consts
+        # 进行路由测试
+        ok, message = RPCClient.fn_call("router", "/runtime", "add_route", "8.8.8.8", 32, "0.0.0.0", is_ipv6=False)
 
     @property
     def proxy_helper(self):

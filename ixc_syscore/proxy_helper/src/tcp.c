@@ -41,6 +41,11 @@ void tcp_uninit(void)
     map_release(tcp_sessions.sessions,tcp_session_del_cb);
 }
 
+void tcp_handle(struct mbuf *m,int is_ipv6)
+{
+    mbuf_put(m);
+}
+
 int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
 {
     return 0;

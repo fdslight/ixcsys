@@ -66,6 +66,8 @@ struct tcp_sessions{
 int tcp_init(void);
 void tcp_uninit(void);
 
+void tcp_handle(struct mbuf *m,int is_ipv6);
+
 /// 发送TCP数据包
 int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6);
 /// 关闭TCP连接

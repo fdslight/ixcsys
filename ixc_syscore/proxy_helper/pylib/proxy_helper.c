@@ -412,7 +412,7 @@ static PyMemberDef proxy_helper_members[]={
 static PyMethodDef proxy_helper_methods[]={
     {"myloop",(PyCFunction)proxy_helper_myloop,METH_VARARGS,"loop call"},
     {"mtu_set",(PyCFunction)proxy_helper_mtu_set,METH_VARARGS,"set mtu for IP and IPv6"},
-    {"ip_handle",(PyCFunction)proxy_helper_netpkt_handle,METH_VARARGS,"handle ip data packet"},
+    {"netpkt_handle",(PyCFunction)proxy_helper_netpkt_handle,METH_VARARGS,"handle ip data packet"},
     {"udp_send",(PyCFunction)proxy_helper_udp_send,METH_VARARGS,"udp data send"},
     {"tcp_send",(PyCFunction)proxy_helper_tcp_send,METH_VARARGS,"tcp data send"},
     {"tcp_win_size_set",(PyCFunction)proxy_helper_tcp_win_set,METH_VARARGS,"tcp window size set"},
