@@ -14,7 +14,6 @@ class nspkt_handler(nspkt.nspkt_handler):
 
     def handle_recv(self, if_type: int, ipproto: int, flags: int, message: bytes):
         if ipproto not in (6, 17, 136,): return
-
         self.proxy_helper.netpkt_handle(message)
 
     def send_ip_msg(self, message: bytes):

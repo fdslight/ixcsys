@@ -130,7 +130,30 @@ int netpkt_tcp_close_ev(unsigned char *id,int is_ipv6)
 
 int netpkt_udp_recv(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsigned short dport,int is_udplite,int is_ipv6,void *data,int size)
 {
-    return 0;   
+    PyObject *arglist,*result;
+    char src_addr[512],dst_addr[512];
+    int fa;
+
+    if(NULL==udp_recv_cb){
+        STDERR("not set udp_recv_cb\r\n");
+        return -1;
+    }
+
+    fa=is_ipv6?AF_INET6:AF_INET;
+
+    bzero(src_addr,512);
+    bzero(dst_addr,512);
+
+    inet_ntop(fa,saddr,src_addr,512);
+    inet_ntop(fa,daddr,dst_addr,512);
+
+    arglist=Py_BuildValue("(ssHHiiy#)",src_addr,dst_addr,sport,dport,is_udplite,is_ipv6,data,size);
+    result=PyObject_CallObject(udp_recv_cb,arglist);
+ 
+    Py_XDECREF(arglist);
+    Py_XDECREF(result);
+
+    return 0; 
 }
 
 static void
@@ -276,7 +299,6 @@ proxy_helper_netpkt_handle(PyObject *self,PyObject *args)
     m->end=m->tail=m->begin+size;
 
     memcpy(m->data+m->offset,s,size);
-
     ip_handle(m);
 
     Py_RETURN_TRUE;
