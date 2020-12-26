@@ -17,6 +17,7 @@ import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
 
 import ixc_syscore.proxy_helper.handlers.netpkt as netpkt
+import ixc_syscore.proxy_helper.handlers.udp_client as udp_client
 
 import ixc_syscore.proxy_helper.pylib.proxy_helper as proxy_helper
 
@@ -70,6 +71,7 @@ class service(dispatcher.dispatcher):
 
     __fd = None
     __consts = None
+    __udp_fd = None
 
     def init_func(self, debug):
         global_vars["ixcsys.proxy_helper"] = self
@@ -78,6 +80,7 @@ class service(dispatcher.dispatcher):
         self.__tcp_sessions = {}
         self.__rand_key = os.urandom(16)
         self.__fd = -1
+        self.__udp_fd = -1
 
         self.create_poll()
         self.wait_router_proc()
@@ -97,7 +100,10 @@ class service(dispatcher.dispatcher):
         pass
 
     def udp_recv_cb(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool, data: bytes):
-        print(saddr, daddr, sport, dport, data)
+        # 未设置UDP fd那么就退出
+        if self.__udp_fd < 1: return
+        self.get_handler(self.__udp_fd).send_to_proxy_server(data, (saddr, sport,), (daddr, dport,),
+                                                             is_udplite=is_udplite, is_ipv6=is_ipv6)
 
     def start(self):
         self.__proxy_helper = proxy_helper.proxy_helper(
@@ -131,10 +137,20 @@ class service(dispatcher.dispatcher):
     def consts(self):
         return self.__consts
 
+    def start_udp_client(self, port: int):
+        if self.__udp_fd > 0:
+            self.delete_handler(self.__udp_fd)
+            self.__udp_fd = -1
+            return
+        self.__udp_fd = self.create_handler(-1, udp_client.client, ("127.0.0.1", port,))
+
     def stop(self):
-        if self.handler_exists(self.__fd):
+        if self.__fd > 0:
             self.delete_handler(self.__fd)
-            self.__fd = -1
+        if self.__udp_fd > 0:
+            self.delete_handler(self.__udp_fd)
+        self.__fd = -1
+        self.__udp_fd = -1
 
     def myloop(self):
         self.__proxy_helper.myloop()
