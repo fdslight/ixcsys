@@ -97,7 +97,7 @@ class service(dispatcher.dispatcher):
         pass
 
     def udp_recv_cb(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool, data: bytes):
-        pass
+        print(saddr, daddr, sport, dport, data)
 
     def start(self):
         self.__proxy_helper = proxy_helper.proxy_helper(

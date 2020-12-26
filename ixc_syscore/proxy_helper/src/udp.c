@@ -46,8 +46,10 @@ static void __udp_handle_v4(struct mbuf *m)
         ps_header->length=udphdr->length;
 
         csum=csum_calc((unsigned short *)(m->data+offset),m->tail-offset);
-        if(csum!=0xffff){
-            DBG("wrong UDP data packet checksum\r\n");
+
+        // 这段检验和检查有问题,代码需要重新修改
+        if(csum!=0x0000){
+            DBG("wrong UDP data packet checksum 0x%x\r\n",csum);
             mbuf_put(m);
             return;
         }
@@ -70,8 +72,8 @@ static void __udp_handle_v6(struct mbuf *m)
 
 void udp_handle(struct mbuf *m,int is_ipv6)
 {
-    if(is_ipv6) __udp_handle_v4(m);
-    else __udp_handle_v6(m);
+    if(is_ipv6) __udp_handle_v6(m);
+    else __udp_handle_v4(m);
 }
 
 int udp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsigned short dport,int is_udplite,int is_ipv6,unsigned short csum_coverage,void *data,size_t length)
