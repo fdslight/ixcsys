@@ -17,46 +17,19 @@ static void __udp_handle_v4(struct mbuf *m)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_udphdr *udphdr=NULL;
-    struct netutil_ip_ps_header *ps_header;
 
     unsigned char protocol=header->protocol;
-    int hdr_len=(header->ver_and_ihl & 0x0f) * 4,offset=0,is_udplite;
+    int hdr_len=(header->ver_and_ihl & 0x0f) * 4,is_udplite;
     unsigned char saddr[4],daddr[4];
-    unsigned short sport,dport,csum;
+    unsigned short sport,dport;
 
     memcpy(saddr,header->src_addr,4);
     memcpy(daddr,header->dst_addr,4);
 
     m->offset+=hdr_len;
-    offset=m->offset-12;
-
     udphdr=(struct netutil_udphdr *)(m->data+m->offset);
 
-    // 检查UDP协议的检验和
-    if(protocol==17){
-        is_udplite=0;
-
-        ps_header=(struct netutil_ip_ps_header *)(m->data+offset);
-        
-        memcpy(ps_header->src_addr,saddr,4);
-        memcpy(ps_header->dst_addr,daddr,4);
-
-        ps_header->pad[0]=0;
-        ps_header->protocol=protocol;
-        ps_header->length=udphdr->length;
-
-        csum=csum_calc((unsigned short *)(m->data+offset),m->tail-offset);
-
-        // 这段检验和检查有问题,代码需要重新修改
-        if(csum!=0x0000){
-            DBG("wrong UDP data packet checksum 0x%x\r\n",csum);
-            mbuf_put(m);
-            return;
-        }
-    }else{
-        // 检查UDPLite的检验和
-        is_udplite=1;
-    }
+    is_udplite=protocol==17?0:1;
 
     sport=ntohs(udphdr->src_port);
     dport=ntohs(udphdr->dst_port);
@@ -67,7 +40,24 @@ static void __udp_handle_v4(struct mbuf *m)
 
 static void __udp_handle_v6(struct mbuf *m)
 {
+    struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    struct netutil_udphdr *udphdr=NULL;
+    unsigned char next_header=header->next_header;
+    unsigned char saddr[16],daddr[16];
+    unsigned short sport,dport;
+    int is_udplite;
 
+    memcpy(saddr,header->src_addr,16);
+    memcpy(daddr,header->dst_addr,16);
+
+    m->offset+=40;
+    is_udplite=next_header==17?0:1;
+
+    sport=ntohs(udphdr->src_port);
+    dport=ntohs(udphdr->dst_port);
+
+    netpkt_udp_recv(saddr,daddr,sport,dport,is_udplite,1,m->data+m->offset+8,m->tail-m->offset-8);
+    mbuf_put(m);
 }
 
 void udp_handle(struct mbuf *m,int is_ipv6)
