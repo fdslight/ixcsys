@@ -87,8 +87,8 @@ class service(dispatcher.dispatcher):
         self.start_scgi()
         self.start()
 
-    def netpkt_sent_cb(self, byte_data: bytes):
-        pass
+    def netpkt_sent_cb(self, ipproto: int, byte_data: bytes):
+        self.get_handler(self.__fd).send_ip_msg(ipproto, byte_data)
 
     def tcp_conn_ev_cb(self, session_id: bytes, src_addr: str, dst_addr: str, sport: int, dport: int, is_ipv6: bool):
         pass
@@ -101,9 +101,32 @@ class service(dispatcher.dispatcher):
 
     def udp_recv_cb(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool, data: bytes):
         # 未设置UDP fd那么就退出
+        self.test_udp_send(daddr, saddr, dport, sport, is_udplite, is_ipv6,data)
         if self.__udp_fd < 1: return
         self.get_handler(self.__udp_fd).send_to_proxy_server(data, (saddr, sport,), (daddr, dport,),
                                                              is_udplite=is_udplite, is_ipv6=is_ipv6)
+
+    def test_udp_send(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool,
+                      msg: bytes):
+        """
+        @param saddr:
+        @param daddr:
+        @param sport:
+        @param dport:
+        @param is_udplite:
+        @param is_ipv6:
+        @return:
+        """
+        import socket
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+
+        byte_saddr = socket.inet_pton(fa, saddr)
+        byte_daddr = socket.inet_pton(fa, daddr)
+
+        self.proxy_helper.udp_send(byte_saddr, byte_daddr, sport, dport, is_udplite, is_ipv6, 8, msg)
 
     def start(self):
         self.__proxy_helper = proxy_helper.proxy_helper(

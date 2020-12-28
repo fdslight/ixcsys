@@ -95,10 +95,10 @@ int ip_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char protoc
             mf=0x2000;
         }
         
-        m->begin=m->offset=MBUF_BEGIN-20;
-        m->end=m->tail=m->begin+length;
+        m->begin=m->offset=MBUF_BEGIN;
+        m->end=m->tail=m->begin+length+20;
 
-        header=(struct netutil_iphdr *)(m->data+m->offset);
+        header=(struct netutil_iphdr *)(m->data+m->begin);
         bzero(header,20);
 
         header->ver_and_ihl=0x45;
@@ -113,14 +113,14 @@ int ip_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char protoc
         memcpy(header->dst_addr,dst_addr,4);
 
         csum=csum_calc((unsigned short *)header,20);
-        header->checksum=htons(csum);
+        header->checksum=csum;
 
-        memcpy(m->data+m->offset,ptr+tot_size,cur_slice_size);
+        memcpy(m->data+m->begin+20,ptr+tot_size,cur_slice_size);
 
         tot_size+=cur_slice_size;
-        frag_off+=cur_slice_size;
+        frag_off+=(cur_slice_size/8);
 
-        netpkt_send(m,0);
+        netpkt_send(m,protocol,0);
     }
     
     return rs;

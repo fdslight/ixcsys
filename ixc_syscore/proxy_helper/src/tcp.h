@@ -16,19 +16,32 @@
 
 /// TCP缓冲区
 struct tcp_buffer{
-    // 当前块索引
-    int cur_blk_idx;
-    // 已经发送的TCP块大小
-#define TCP_BLK_NUM 256
-    int blk_size[TCP_BLK_NUM];
     // 数据开始位置
     unsigned short begin;
     // 数据结束位置
     unsigned short end;
+    unsigned char data[0xffff];
+};
+
+/// TCP片段信息
+struct tcp_data_seg{
+    struct tcp_data_seg *next;
+    // 该片段是否已经被使用
+    int is_used;
+    // TCP序列号
+    unsigned short seq;
+    // 缓冲区开始位置 
+    unsigned short buf_begin;
+    // 缓冲区结束位置
+    unsigned short buf_end;
 };
 
 /// TCP会话信息
 struct tcp_session{
+    // 发送缓冲区
+    struct tcp_buffer *sent_buffer;
+    // 接收缓冲区
+    struct tcp_buffer *recv_buffer;
     // 是否是IPv6地址
     int is_ipv6;
     // 会话ID

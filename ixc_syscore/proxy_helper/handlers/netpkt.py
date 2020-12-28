@@ -16,7 +16,7 @@ class nspkt_handler(nspkt.nspkt_handler):
         if ipproto not in (6, 17, 136,): return
         self.proxy_helper.netpkt_handle(message)
 
-    def send_ip_msg(self, message: bytes):
+    def send_ip_msg(self, ipproto: int, message: bytes):
         """发送IP消息
         """
-        self.send_msg(self.consts["IXC_NETIF_LAN"], self.consts["IXC_FLAG_ROUTE_FWD"], message)
+        self.send_msg(self.consts["IXC_NETIF_LAN"], ipproto, self.consts["IXC_FLAG_ROUTE_FWD"], message)
