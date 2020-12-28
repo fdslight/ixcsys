@@ -91,7 +91,7 @@ int udp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsi
 
     m->begin=MBUF_BEGIN;
     m->offset=m->begin;
-    m->tail=length+8;
+    m->tail=m->begin+length+8;
     m->end=m->tail;
 
     udphdr=(struct netutil_udphdr *)(m->data+m->offset);
@@ -127,14 +127,14 @@ int udp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsi
         ps_header->length=htons(length+8);
     }
 
+
     memcpy(m->data+m->offset+8,data,length);
 
     if(is_udplite) csum=csum_calc((unsigned short *)(m->data+m->offset),csum_coverage);
-    else csum=csum_calc((unsigned short *)(m->data+m->offset),m->end-offset);
+    else csum=csum_calc((unsigned short *)(m->data+offset),m->end-offset);
     
-    udphdr->checksum=htons(csum);
-    m->begin=m->offset=offset;
-
+    udphdr->checksum=csum;
+ 
     if(is_ipv6) ipv6_send(saddr,daddr,p,m->data+m->begin,m->end-m->begin);
     else ip_send(saddr,daddr,p,m->data+m->begin,m->end-m->begin);
 

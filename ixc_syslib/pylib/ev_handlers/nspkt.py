@@ -56,8 +56,8 @@ class nspkt_handler(udp_handler.udp_handler):
         self.__id = _id
         self.__server_port = 8964
 
-    def send_msg(self, if_type: int, flags: int, message: bytes):
-        header = struct.pack("!16sbbbb", self.__id, if_type, 0, 0, flags)
+    def send_msg(self, if_type: int, ipproto: int, flags: int, message: bytes):
+        header = struct.pack("!16sbbbb", self.__id, if_type, 0, ipproto, flags)
         sent_msg = b"".join([header, message])
 
         self.add_evt_write(self.fileno)

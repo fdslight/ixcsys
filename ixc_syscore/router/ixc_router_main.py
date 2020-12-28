@@ -247,7 +247,7 @@ class service(dispatcher.dispatcher):
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
 
             os.system("ifconfig %s promisc" % lan_phy_ifname)
-            #os.system("ifconfig %s promisc" % self.__WAN_NAME)
+            # os.system("ifconfig %s promisc" % self.__WAN_NAME)
             os.system("ifconfig %s up" % lan_phy_ifname)
 
         lan_addr = lan_ifconfig["ip_addr"]

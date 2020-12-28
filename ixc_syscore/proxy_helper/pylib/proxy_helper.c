@@ -48,7 +48,7 @@ static void ixc_segfault_handle(int signum)
     exit(EXIT_FAILURE);
 }
 
-int netpkt_send(struct mbuf *m,int is_ipv6)
+int netpkt_send(struct mbuf *m,unsigned char protocol,int is_ipv6)
 {
     PyObject *arglist,*result;
 
@@ -57,7 +57,7 @@ int netpkt_send(struct mbuf *m,int is_ipv6)
         return -1;
     }
 
-    arglist=Py_BuildValue("(y#)",m->data+m->begin,m->end-m->begin);
+    arglist=Py_BuildValue("(iy#)",protocol,m->data+m->begin,m->end-m->begin);
     result=PyObject_CallObject(ip_sent_cb,arglist);
  
     Py_XDECREF(arglist);
@@ -314,7 +314,7 @@ proxy_helper_udp_send(PyObject *self,PyObject *args)
     unsigned short sport,dport,csum_coverage;
     int is_ipv6,is_udplite;
 
-    if(!PyArg_ParseTuple(args,"y#y#HHHppy#",&saddr,&saddr_s,&daddr,&daddr_s,&sport,&dport,&is_udplite,&is_ipv6,&csum_coverage,&data,&data_s)) return NULL;
+    if(!PyArg_ParseTuple(args,"y#y#HHppHy#",&saddr,&saddr_s,&daddr,&daddr_s,&sport,&dport,&is_udplite,&is_ipv6,&csum_coverage,&data,&data_s)) return NULL;
 
     if(is_ipv6 && (saddr_s!=16 || daddr_s!=16)){
         PyErr_SetString(PyExc_ValueError,"wrong IPv6 source address or destination address value");
