@@ -1,4 +1,5 @@
 #include<string.h>
+#include<arpa/inet.h>
 
 #include "tcp.h"
 #include "debug.h"
@@ -12,6 +13,27 @@ static void tcp_session_del_cb(void *data)
 
 }
 
+
+static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
+{
+    
+}
+
+static void tcp_session_ack(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
+{
+    mbuf_put(m);
+}
+
+static void tcp_session_fin(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
+{
+    mbuf_put(m);
+}
+
+static void tcp_session_rst(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
+{
+    mbuf_put(m);
+}
+
 static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
 {
     char key[36];
@@ -19,6 +41,11 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
 
     struct tcp_session *session=NULL;
     struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
+    int ack,rst,syn,fin,hdr_len;
+    int status[4],flags=0,error=0;
+
+    unsigned short sport,dport,hdr_and_flags;
+    unsigned int seq,ack_seq;
 
     if(is_ipv6){
         memcpy(key,saddr,16);
@@ -33,6 +60,85 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
     }
 
     session=map_find(map,key,&is_found);
+
+    sport=ntohs(tcphdr->src_port);
+    dport=ntohs(tcphdr->dst_port);
+
+    seq=ntohl(tcphdr->seq_num);
+    ack_seq=ntohl(tcphdr->ack_num);
+
+    hdr_and_flags=ntohs(tcphdr->header_len_and_flag);
+
+    hdr_len=((hdr_and_flags & 0xf000) >> 12) * 4;
+    ack=(hdr_and_flags & 0x0010) >> 4;
+    rst=(hdr_and_flags & 0x0004) >> 2;
+    syn=(hdr_and_flags & 0x0002) >> 1;
+    fin=hdr_and_flags & 0x0001;
+
+    // 不存在session那么就丢弃数据包
+    if((ack || rst || fin) && NULL==session){
+        mbuf_put(m);
+        return;
+    }
+
+    // 如果值都没有设置那么丢弃数据包
+    if(!ack && !rst && !syn && !fin){
+        // 会话存在那么就删除会话数据包
+        if(NULL!=session){
+            STDERR("client send wrong tcp packet\r\n");
+        }
+        mbuf_put(m);
+        return;
+    }
+
+    // 检查状态是否冲突
+    status[0]=ack;
+    status[1]=rst;
+    status[2]=syn;
+    status[3]=fin;
+
+    for(int n=0;n<4;n++){
+        if(status[n]) {
+            flags=1;
+            continue;
+        }
+
+        if(flags && status[n]) error=1;
+    }
+
+    // 处理协议故障
+    if(error){
+        mbuf_put(m);
+        return;
+    }
+
+    tcphdr->src_port=sport;
+    tcphdr->dst_port=dport;
+    tcphdr->seq_num=seq;
+    tcphdr->ack_num=ack_seq;
+    tcphdr->win_size=ntohs(tcphdr->win_size);
+
+    m->offset+=hdr_len;
+
+    if(syn){
+        tcp_session_syn(key,saddr,daddr,tcphdr,is_ipv6,m);
+        return;
+    }
+
+    if(ack){
+        tcp_session_ack(key,saddr,daddr,tcphdr,is_ipv6,m);
+        return;
+    }
+
+    if(rst){
+        tcp_session_rst(key,saddr,daddr,tcphdr,is_ipv6,m);
+        return;
+    }
+
+    if(fin){
+        tcp_session_fin(key,saddr,daddr,tcphdr,is_ipv6,m);
+        return;
+    }
 
     mbuf_put(m);
 }
