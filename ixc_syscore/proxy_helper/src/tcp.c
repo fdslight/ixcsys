@@ -10,13 +10,124 @@ static struct tcp_sessions tcp_sessions;
 
 static void tcp_session_del_cb(void *data)
 {
+    struct tcp_session *session=data;
 
+    free(session);
 }
 
 
+/// 发送TCP数据
+static void tcp_send_data(struct tcp_session *session,int status,void *data,size_t size)
+{
+    struct netutil_ip6_ps_header *ps6_hdr;
+    struct netutil_ip_ps_header *ps_hdr;
+    struct netutil_tcphdr *tcphdr;
+    unsigned short csum;
+    struct mbuf *m=mbuf_get();
+
+    if(NULL==m){
+        STDERR("cannot get mbuf\r\n");
+        return;
+    }
+
+    m->begin=MBUF_BEGIN;
+    m->offset=m->begin;
+    m->tail=MBUF_BEGIN+20;
+    m->end=m->tail;
+
+    tcphdr=(struct netutil_tcphdr *)(m->data+m->offset);
+
+    // 源端口和目标端口要对调
+    tcphdr->src_port=htons(session->dport);
+    tcphdr->dst_port=htons(session->sport);
+
+    // 发送本端的序列号
+    tcphdr->seq_num=htonl(session->ack_seq);
+    // 对端序列号+1
+    tcphdr->ack_num=htonl(session->seq+1);
+
+    // TCP伪头部处理
+    if(session->is_ipv6){
+        ps6_hdr=(struct netutil_ip6_ps_header *)(m->data+m->begin-40);
+        bzero(ps6_hdr,40);
+
+        memcpy(ps6_hdr->src_addr,session->src_addr,16);
+        memcpy(ps6_hdr->dst_addr,session->dst_addr,16);
+
+        ps6_hdr->length=htons(20);
+        ps6_hdr->next_header=6;
+
+        csum=csum_calc((unsigned short *)(m->data+m->begin-40),60);
+    }else{
+        ps_hdr=(struct netutil_ip_ps_header *)(m->data+m->begin-12);
+        bzero(ps_hdr,12);
+
+        memcpy(ps_hdr->src_addr,session->src_addr,4);
+        memcpy(ps_hdr->dst_addr,session->dst_addr,4);
+
+        ps_hdr->length=htons(20);
+        ps_hdr->protocol=6;
+
+        csum=csum_calc((unsigned short *)(m->data+m->begin-12),32);
+    }
+
+    tcphdr->csum=csum;
+}
+
+/// 发送SYN
+static void tcp_send_syn(struct tcp_session *session)
+{
+    tcp_send_data(session,0x02,NULL,0);
+}
+
 static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
 {
-    
+    struct tcp_session *session=NULL;
+    struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
+    char is_found;
+    int rs;
+    session=map_find(map,session_id,&is_found);
+
+    if(NULL==session){
+        session=malloc(sizeof(struct tcp_session));
+        if(NULL==session){
+            STDERR("cannot malloc tcp session\r\n");
+            mbuf_put(m);
+            return;
+        }
+        bzero(session,sizeof(struct tcp_session));
+        rs=map_add(map,session_id,session);
+        if(0!=rs){
+            STDERR("cannot add to map for tcp syn\r\n");
+            free(session);
+            mbuf_put(m);
+            return;
+        }
+        session->tcp_st=0x02;
+    }
+
+    session->is_ipv6=is_ipv6;
+
+    if(is_ipv6) {
+        memcpy(session->id,session_id,36);
+        memcpy(session->src_addr,saddr,16);
+        memcpy(session->dst_addr,daddr,16);
+
+    }else{
+        memcpy(session->id,session_id,12);
+        memcpy(session->src_addr,saddr,4);
+        memcpy(session->dst_addr,daddr,4);
+    }
+
+    session->sport=tcphdr->src_port;
+    session->dport=tcphdr->dst_port;
+    session->seq=tcphdr->seq_num;
+    session->ack_seq=rand();
+    session->my_window_size=TCP_DEFAULT_WIN_SIZE;
+    session->peer_window_size=tcphdr->win_size;
+
+    tcp_send_syn(session);
+    mbuf_put(m);
 }
 
 static void tcp_session_ack(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
