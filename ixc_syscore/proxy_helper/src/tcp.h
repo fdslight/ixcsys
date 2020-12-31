@@ -53,6 +53,8 @@ struct tcp_session{
     // 定时器
     // tcp会话状态
     int tcp_st;
+    // TCP mss
+    int tcp_mss;
     // 源端口号
     unsigned short sport;
     // 目的端口号
