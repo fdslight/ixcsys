@@ -3,6 +3,8 @@
 
 #include "tcp.h"
 #include "debug.h"
+#include "ip.h"
+#include "ipv6.h"
 
 #include "../../../pywind/clib/netutils.h"
 
@@ -32,7 +34,7 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
 
     m->begin=MBUF_BEGIN;
     m->offset=m->begin;
-    m->tail=MBUF_BEGIN+20;
+    m->tail=MBUF_BEGIN+20+size;
     m->end=m->tail;
 
     tcphdr=(struct netutil_tcphdr *)(m->data+m->offset);
@@ -46,6 +48,9 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
     // 对端序列号+1
     tcphdr->ack_num=htonl(session->seq+1);
 
+    tcphdr->header_len_and_flag=0x5000 | status;
+    tcphdr->header_len_and_flag=htons(tcphdr->header_len_and_flag);
+
     // TCP伪头部处理
     if(session->is_ipv6){
         ps6_hdr=(struct netutil_ip6_ps_header *)(m->data+m->begin-40);
@@ -57,7 +62,7 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
         ps6_hdr->length=htons(20);
         ps6_hdr->next_header=6;
 
-        csum=csum_calc((unsigned short *)(m->data+m->begin-40),60);
+        csum=csum_calc((unsigned short *)(m->data+m->begin-40),m->end-m->begin+40);
     }else{
         ps_hdr=(struct netutil_ip_ps_header *)(m->data+m->begin-12);
         bzero(ps_hdr,12);
@@ -68,16 +73,23 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
         ps_hdr->length=htons(20);
         ps_hdr->protocol=6;
 
-        csum=csum_calc((unsigned short *)(m->data+m->begin-12),32);
+        csum=csum_calc((unsigned short *)(m->data+m->begin-12),m->end-m->begin+12);
     }
 
     tcphdr->csum=csum;
+
+    memcpy(m->data+m->begin+20,data,size);
+
+    if(session->is_ipv6) ipv6_send(session->dst_addr,session->src_addr,6,m->data+m->begin,m->end-m->begin);
+    else ip_send(session->dst_addr,session->src_addr,6,m->data+m->begin,m->end-m->begin);
+
+    mbuf_put(m);
 }
 
 /// 发送SYN
 static void tcp_send_syn(struct tcp_session *session)
 {
-    tcp_send_data(session,0x02,NULL,0);
+    tcp_send_data(session,TCP_SYN | TCP_ACK,NULL,0);
 }
 
 static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
@@ -153,7 +165,6 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
     struct tcp_session *session=NULL;
     struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
     int ack,rst,syn,fin,hdr_len;
-    int status[4],flags=0,error=0;
 
     unsigned short sport,dport,hdr_and_flags;
     unsigned int seq,ack_seq;
@@ -181,10 +192,10 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
     hdr_and_flags=ntohs(tcphdr->header_len_and_flag);
 
     hdr_len=((hdr_and_flags & 0xf000) >> 12) * 4;
-    ack=(hdr_and_flags & 0x0010) >> 4;
-    rst=(hdr_and_flags & 0x0004) >> 2;
-    syn=(hdr_and_flags & 0x0002) >> 1;
-    fin=hdr_and_flags & 0x0001;
+    ack= hdr_and_flags & TCP_ACK;
+    rst=hdr_and_flags & TCP_RST;
+    syn=hdr_and_flags & TCP_SYN;
+    fin=hdr_and_flags & TCP_FIN;
 
     // 不存在session那么就丢弃数据包
     if((ack || rst || fin) && NULL==session){
@@ -192,33 +203,19 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
         return;
     }
 
+    // TCP SYN不能携带任何数据
+    if(m->tail-m->offset!=hdr_len && syn){
+        DBG("wrong TCP SYN protocol format\r\n");
+        mbuf_put(m);
+        return;
+    }
     // 如果值都没有设置那么丢弃数据包
     if(!ack && !rst && !syn && !fin){
         // 会话存在那么就删除会话数据包
         if(NULL!=session){
             STDERR("client send wrong tcp packet\r\n");
         }
-        mbuf_put(m);
-        return;
-    }
-
-    // 检查状态是否冲突
-    status[0]=ack;
-    status[1]=rst;
-    status[2]=syn;
-    status[3]=fin;
-
-    for(int n=0;n<4;n++){
-        if(status[n]) {
-            flags=1;
-            continue;
-        }
-
-        if(flags && status[n]) error=1;
-    }
-
-    // 处理协议故障
-    if(error){
+        DBG("wrong client TCP data format\r\n");
         mbuf_put(m);
         return;
     }

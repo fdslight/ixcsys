@@ -8,8 +8,8 @@
 
 
 #define TCP_ACK 0x0010
-#define TCP_RST 0x0040
-#define TCP_SYN 0x0020
+#define TCP_RST 0x0004
+#define TCP_SYN 0x0002
 #define TCP_FIN 0x0001
 /// 获取TCP标志
 #define TCP_FLAGS(v,flags) (v & flags)
