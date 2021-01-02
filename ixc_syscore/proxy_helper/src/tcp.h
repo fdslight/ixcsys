@@ -11,6 +11,21 @@
 #define TCP_RST 0x0004
 #define TCP_SYN 0x0002
 #define TCP_FIN 0x0001
+
+/// TCP状态
+enum{
+    // SYN已经被处理
+    TCP_ST_SYN_RCV,
+    // TCP握手成功
+    TCP_ST_OK,
+    // TCP接收关闭
+    TCP_FIN_RCV,
+    // 发送FIN发送等待
+    TCP_FIN_SND_WAIT,
+    // TCP发送关闭
+    TCP_FIN_SND
+};
+
 /// 获取TCP标志
 #define TCP_FLAGS(v,flags) (v & flags)
 
@@ -53,8 +68,10 @@ struct tcp_session{
     // 定时器
     // tcp会话状态
     int tcp_st;
-    // TCP mss
-    int tcp_mss;
+    // 对端TCP mss
+    int peer_mss;
+    // 本端TCP mss
+    int my_mss;
     // 源端口号
     unsigned short sport;
     // 目的端口号
