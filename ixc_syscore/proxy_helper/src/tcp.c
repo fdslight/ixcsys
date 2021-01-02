@@ -59,7 +59,7 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
         memcpy(ps6_hdr->src_addr,session->src_addr,16);
         memcpy(ps6_hdr->dst_addr,session->dst_addr,16);
 
-        ps6_hdr->length=htons(20);
+        ps6_hdr->length=htons(40+size);
         ps6_hdr->next_header=6;
 
         csum=csum_calc((unsigned short *)(m->data+m->begin-40),m->end-m->begin+40);
@@ -70,9 +70,8 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
         memcpy(ps_hdr->src_addr,session->src_addr,4);
         memcpy(ps_hdr->dst_addr,session->dst_addr,4);
 
-        ps_hdr->length=htons(20);
+        ps_hdr->length=htons(20+size);
         ps_hdr->protocol=6;
-
         csum=csum_calc((unsigned short *)(m->data+m->begin-12),m->end-m->begin+12);
     }
 
@@ -202,6 +201,8 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
         mbuf_put(m);
         return;
     }
+
+    // 检查是否冲突
 
     // TCP SYN不能携带任何数据
     if(m->tail-m->offset!=hdr_len && syn){
