@@ -46,10 +46,11 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
     // 发送本端的序列号
     tcphdr->seq_num=htonl(session->ack_seq);
     // 对端序列号+1
-    tcphdr->ack_num=htonl(session->seq+1);
+    tcphdr->ack_num=htonl(session->seq);
 
     tcphdr->header_len_and_flag=0x5000 | status;
     tcphdr->header_len_and_flag=htons(tcphdr->header_len_and_flag);
+    tcphdr->win_size=htons(session->my_window_size);
 
     // TCP伪头部处理
     if(session->is_ipv6){
@@ -66,6 +67,7 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
     }else{
         ps_hdr=(struct netutil_ip_ps_header *)(m->data+m->begin-12);
         bzero(ps_hdr,12);
+        DBG_FLAGS;
 
         memcpy(ps_hdr->src_addr,session->src_addr,4);
         memcpy(ps_hdr->dst_addr,session->dst_addr,4);
@@ -83,12 +85,6 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
     else ip_send(session->dst_addr,session->src_addr,6,m->data+m->begin,m->end-m->begin);
 
     mbuf_put(m);
-}
-
-/// 发送SYN
-static void tcp_send_syn(struct tcp_session *session)
-{
-    tcp_send_data(session,TCP_SYN | TCP_ACK,NULL,0);
 }
 
 static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
@@ -137,22 +133,38 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
     session->my_window_size=TCP_DEFAULT_WIN_SIZE;
     session->peer_window_size=tcphdr->win_size;
 
-    tcp_send_syn(session);
+    session->tcp_st=TCP_ST_SYN_SND;
+    session->seq+=1;
+
+    tcp_send_data(session,TCP_SYN | TCP_ACK,NULL,0);
+
     mbuf_put(m);
+    return;
 }
 
-static void tcp_session_ack(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
+static void tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
+    if(session->tcp_st==TCP_ST_SYN_SND){
+        session->ack_seq+=1;
+    }
+    session->tcp_st=TCP_ST_OK;
+
+    tcp_send_data(session,TCP_ACK,NULL,0);
+
     mbuf_put(m);
 }
 
-static void tcp_session_fin(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
+static void tcp_session_fin(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
     mbuf_put(m);
 }
 
 static void tcp_session_rst(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
 {
+    struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
+    
+    map_del(map,session_id,tcp_session_del_cb);
+
     mbuf_put(m);
 }
 
@@ -201,9 +213,6 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
         mbuf_put(m);
         return;
     }
-
-    // 检查是否冲突
-
     // TCP SYN不能携带任何数据
     if(m->tail-m->offset!=hdr_len && syn){
         DBG("wrong TCP SYN protocol format\r\n");
@@ -229,27 +238,18 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
 
     m->offset+=hdr_len;
 
-    if(syn){
-        tcp_session_syn(key,saddr,daddr,tcphdr,is_ipv6,m);
-        return;
-    }
-
-    if(ack){
-        tcp_session_ack(key,saddr,daddr,tcphdr,is_ipv6,m);
-        return;
-    }
-
     if(rst){
         tcp_session_rst(key,saddr,daddr,tcphdr,is_ipv6,m);
         return;
     }
 
-    if(fin){
-        tcp_session_fin(key,saddr,daddr,tcphdr,is_ipv6,m);
+    if(syn){
+        tcp_session_syn(key,saddr,daddr,tcphdr,is_ipv6,m);
         return;
     }
 
-    mbuf_put(m);
+    if(ack) tcp_session_ack(session,tcphdr,m);
+    if(fin) tcp_session_fin(session,tcphdr,m);
 }
 
 static void tcp_handle_for_v4(struct mbuf *m)

@@ -14,12 +14,9 @@
 
 /// TCP状态
 enum{
-    // SYN已经被处理
-    TCP_ST_SYN_RCV,
-    // TCP握手成功
+    // SYN已经发送
+    TCP_ST_SYN_SND=1,
     TCP_ST_OK,
-    // TCP接收关闭
-    TCP_FIN_RCV,
     // 发送FIN发送等待
     TCP_FIN_SND_WAIT,
     // TCP发送关闭
@@ -65,6 +62,8 @@ struct tcp_session{
     unsigned char src_addr[16];
     // 目标地址
     unsigned char dst_addr[16];
+    // 对端是否关闭
+    int peer_closed;
     // 定时器
     // tcp会话状态
     int tcp_st;
