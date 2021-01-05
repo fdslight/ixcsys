@@ -44,9 +44,9 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
     tcphdr->dst_port=htons(session->sport);
 
     // 发送本端的序列号
-    tcphdr->seq_num=htonl(session->ack_seq);
+    tcphdr->seq_num=htonl(session->seq);
     // 对端序列号+1
-    tcphdr->ack_num=htonl(session->seq);
+    tcphdr->ack_num=htonl(session->peer_seq);
 
     tcphdr->header_len_and_flag=0x5000 | status;
     tcphdr->header_len_and_flag=htons(tcphdr->header_len_and_flag);
@@ -67,7 +67,6 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
     }else{
         ps_hdr=(struct netutil_ip_ps_header *)(m->data+m->begin-12);
         bzero(ps_hdr,12);
-        DBG_FLAGS;
 
         memcpy(ps_hdr->src_addr,session->src_addr,4);
         memcpy(ps_hdr->dst_addr,session->dst_addr,4);
@@ -128,13 +127,13 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 
     session->sport=tcphdr->src_port;
     session->dport=tcphdr->dst_port;
-    session->seq=tcphdr->seq_num;
-    session->ack_seq=rand();
+    session->seq=rand();
+    session->peer_seq=tcphdr->seq_num;
     session->my_window_size=TCP_DEFAULT_WIN_SIZE;
     session->peer_window_size=tcphdr->win_size;
 
     session->tcp_st=TCP_ST_SYN_SND;
-    session->seq+=1;
+    session->peer_seq+=1;
 
     tcp_send_data(session,TCP_SYN | TCP_ACK,NULL,0);
 
@@ -144,11 +143,9 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 
 static void tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
-    if(session->tcp_st==TCP_ST_SYN_SND){
-        session->ack_seq+=1;
-    }
-    session->tcp_st=TCP_ST_OK;
+    
 
+    session->tcp_st=TCP_ST_OK;
     tcp_send_data(session,TCP_ACK,NULL,0);
 
     mbuf_put(m);

@@ -7,5 +7,6 @@ void ipv6_handle(struct mbuf *m);
 
 int ipv6_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char protocol,void *data,unsigned short length);
 int ipv6_mtu_set(unsigned short mtu);
+int ipv6_frag_and_send(struct mbuf *m);
 
 #endif
