@@ -40,3 +40,8 @@ int ipv6_mtu_set(unsigned short mtu)
     ipv6_mtu=mtu;
     return 0;
 }
+
+int ipv6_frag_and_send(struct mbuf *m)
+{
+    return 0;
+}

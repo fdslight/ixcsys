@@ -79,6 +79,8 @@ struct tcp_session{
     unsigned int seq;
     // 确认序列号
     unsigned int ack_seq;
+    // 对端序列号
+    unsigned int peer_seq;
     // 窗口大小
 #define TCP_DEFAULT_WIN_SIZE 512
     unsigned short my_window_size;
