@@ -6,6 +6,8 @@
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
 
+/// 缓存buffer信息的结构体数目
+#define TCP_BUF_INFO_NUM 32
 
 #define TCP_ACK 0x0010
 #define TCP_RST 0x0004
@@ -27,12 +29,14 @@ enum{
 #define TCP_FLAGS(v,flags) (v & flags)
 
 /// TCP缓冲区
-struct tcp_buffer{
+struct tcp_buffer_info{
+    struct tcp_buffer_info *next;
+    // 是否被使用
+    int is_used;
     // 数据开始位置
     unsigned short begin;
     // 数据结束位置
     unsigned short end;
-    unsigned char data[0xffff];
 };
 
 /// TCP片段信息
@@ -51,9 +55,14 @@ struct tcp_data_seg{
 /// TCP会话信息
 struct tcp_session{
     // 发送缓冲区
-    struct tcp_buffer *sent_buffer;
+    struct tcp_buffer_info *sent_buffer_info_first;
     // 接收缓冲区
-    struct tcp_buffer *recv_buffer;
+    struct tcp_buffer_info *recv_buffer_info_first;;
+    // 接收到的数据
+    unsigned char recv_data[0xffff];
+    // 发送的数据
+    unsigned char sent_data[0xffff];
+
     // 是否是IPv6地址
     int is_ipv6;
     // 会话ID
