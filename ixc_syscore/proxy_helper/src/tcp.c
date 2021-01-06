@@ -5,18 +5,61 @@
 #include "debug.h"
 #include "ip.h"
 #include "ipv6.h"
+#include "proxy_helper.h"
 
 #include "../../../pywind/clib/netutils.h"
 
 static struct tcp_sessions tcp_sessions;
 
+static void tcp_buf_info_free(struct tcp_buffer_info *buf_first,int num)
+{
+    struct tcp_buffer_info *buf_info=buf_first,*t;
+
+    for(int n=0;n<num;n++){
+        if(NULL==buf_info) break;
+
+        t=buf_info->next;
+        free(buf_info);
+        buf_info=t;
+    }
+}
+
+static struct tcp_buffer_info *tcp_buf_info_malloc(int num)
+{
+    struct tcp_buffer_info *first=NULL,*last=NULL,*t;
+
+    for(int n=0;n<num;n++){
+        t=malloc(sizeof(struct tcp_buffer_info));
+        if(NULL==t){
+            STDERR("no memory for malloc struct tcp_buffer_info\r\n");
+            tcp_buf_info_free(first,num);
+            first=NULL;
+            break;
+        }
+        bzero(t,sizeof(struct tcp_buffer_info));
+        if(NULL==first){
+            first=t;
+        }else{
+            last->next=t;
+        }
+        last=t;
+    }
+
+    // 形成一个环形链表
+    last->next=first;
+
+    return first;
+}
+
 static void tcp_session_del_cb(void *data)
 {
     struct tcp_session *session=data;
 
+    tcp_buf_info_free(session->sent_buffer_info_first,TCP_BUF_INFO_NUM);
+    tcp_buf_info_free(session->recv_buffer_info_first,TCP_BUF_INFO_NUM);
+
     free(session);
 }
-
 
 /// 发送TCP数据
 static void tcp_send_data(struct tcp_session *session,int status,void *data,size_t size)
@@ -89,6 +132,7 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
 static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
 {
     struct tcp_session *session=NULL;
+    struct tcp_buffer_info *buf_info;
     struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
     char is_found;
     int rs;
@@ -110,6 +154,24 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
             return;
         }
         session->tcp_st=0x02;
+        buf_info=tcp_buf_info_malloc(TCP_BUF_INFO_NUM);
+        if(NULL==buf_info){
+            STDERR("cannot create tcp buffer info for send\r\n");
+            map_del(map,session_id,tcp_session_del_cb);
+            mbuf_put(m);
+            return;
+        }
+
+        session->sent_buffer_info_first=buf_info;
+
+        buf_info=tcp_buf_info_malloc(TCP_BUF_INFO_NUM);
+        if(NULL==buf_info){
+            STDERR("cannot create tcp buffer info for recv\r\n");
+            map_del(map,session_id,tcp_session_del_cb);
+            mbuf_put(m);
+            return;
+        }
+        session->recv_buffer_info_first=buf_info;
     }
 
     session->is_ipv6=is_ipv6;
@@ -143,8 +205,6 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 
 static void tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
-    
-
     session->tcp_st=TCP_ST_OK;
     tcp_send_data(session,TCP_ACK,NULL,0);
 
@@ -159,7 +219,8 @@ static void tcp_session_fin(struct tcp_session *session,struct netutil_tcphdr *t
 static void tcp_session_rst(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
 {
     struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
-    
+
+    netpkt_tcp_close_ev((unsigned char *)session_id,is_ipv6);
     map_del(map,session_id,tcp_session_del_cb);
 
     mbuf_put(m);
@@ -267,6 +328,7 @@ static void tcp_handle_for_v6(struct mbuf *m)
     m->offset=m->offset+40;
     tcp_session_handle(header->src_addr,header->dst_addr,tcphdr,1,m);
 }
+
 
 int tcp_init(void)
 {
