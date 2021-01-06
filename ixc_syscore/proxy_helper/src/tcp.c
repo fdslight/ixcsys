@@ -61,8 +61,14 @@ static void tcp_session_del_cb(void *data)
     free(session);
 }
 
+/// 发送TCP错误
+static void tcp_send_rst(unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr)
+{
+
+}
+
 /// 发送TCP数据
-static void tcp_send_data(struct tcp_session *session,int status,void *data,size_t size)
+static void tcp_send_data(struct tcp_session *session,unsigned short status,void *data,size_t size)
 {
     struct netutil_ip6_ps_header *ps6_hdr;
     struct netutil_ip_ps_header *ps_hdr;
@@ -80,7 +86,8 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
     m->tail=MBUF_BEGIN+20+size;
     m->end=m->tail;
 
-    tcphdr=(struct netutil_tcphdr *)(m->data+m->offset);
+    tcphdr=(struct netutil_tcphdr *)(m->data+m->begin);
+    bzero(tcphdr,20);
 
     // 源端口和目标端口要对调
     tcphdr->src_port=htons(session->dport);
@@ -116,11 +123,11 @@ static void tcp_send_data(struct tcp_session *session,int status,void *data,size
 
         ps_hdr->length=htons(20+size);
         ps_hdr->protocol=6;
+
         csum=csum_calc((unsigned short *)(m->data+m->begin-12),m->end-m->begin+12);
     }
 
     tcphdr->csum=csum;
-
     memcpy(m->data+m->begin+20,data,size);
 
     if(session->is_ipv6) ipv6_send(session->dst_addr,session->src_addr,6,m->data+m->begin,m->end-m->begin);
@@ -189,7 +196,7 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 
     session->sport=tcphdr->src_port;
     session->dport=tcphdr->dst_port;
-    session->seq=rand();
+    session->seq=0;
     session->peer_seq=tcphdr->seq_num;
     session->my_window_size=TCP_DEFAULT_WIN_SIZE;
     session->peer_window_size=tcphdr->win_size;
@@ -205,14 +212,36 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 
 static void tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
+    int payload_len=m->tail-m->offset;
+
+    // 检查对端确认序列号是否跳跃现象,不合法的确认序列号直接发送TCP RST
+    if(tcphdr->ack_num>session->seq+1){
+        mbuf_put(m);
+        return;
+    }
+
+    // 如果序列号大于确认序列号那么填充接收的数据
+    if(tcphdr->seq_num>session->peer_seq+payload_len){
+
+    }
+
     session->tcp_st=TCP_ST_OK;
-    tcp_send_data(session,TCP_ACK,NULL,0);
+    if(tcphdr->seq_num>=session->peer_seq){
+        session->peer_seq=tcphdr->seq_num;
+        tcp_send_data(session,TCP_ACK,NULL,0);
+    }
 
     mbuf_put(m);
 }
 
 static void tcp_session_fin(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
+    int buf_have_data=0;
+    session->peer_sent_closed=1;
+
+    tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0);
+   
+    //session->tcp_st=TCP_FIN_SND_WAIT;
     mbuf_put(m);
 }
 
@@ -306,8 +335,12 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
         return;
     }
 
-    if(ack) tcp_session_ack(session,tcphdr,m);
-    if(fin) tcp_session_fin(session,tcphdr,m);
+    if(fin){
+        tcp_session_fin(session,tcphdr,m);
+        return;
+    }
+
+    tcp_session_ack(session,tcphdr,m);
 }
 
 static void tcp_handle_for_v4(struct mbuf *m)

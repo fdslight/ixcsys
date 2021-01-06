@@ -71,8 +71,8 @@ struct tcp_session{
     unsigned char src_addr[16];
     // 目标地址
     unsigned char dst_addr[16];
-    // 对端是否关闭
-    int peer_closed;
+    // 对端发送是否关闭
+    int peer_sent_closed;
     // 定时器
     // tcp会话状态
     int tcp_st;
