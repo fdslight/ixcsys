@@ -11,52 +11,9 @@
 
 static struct tcp_sessions tcp_sessions;
 
-static void tcp_buf_info_free(struct tcp_buffer_info *buf_first,int num)
-{
-    struct tcp_buffer_info *buf_info=buf_first,*t;
-
-    for(int n=0;n<num;n++){
-        if(NULL==buf_info) break;
-
-        t=buf_info->next;
-        free(buf_info);
-        buf_info=t;
-    }
-}
-
-static struct tcp_buffer_info *tcp_buf_info_malloc(int num)
-{
-    struct tcp_buffer_info *first=NULL,*last=NULL,*t;
-
-    for(int n=0;n<num;n++){
-        t=malloc(sizeof(struct tcp_buffer_info));
-        if(NULL==t){
-            STDERR("no memory for malloc struct tcp_buffer_info\r\n");
-            tcp_buf_info_free(first,num);
-            first=NULL;
-            break;
-        }
-        bzero(t,sizeof(struct tcp_buffer_info));
-        if(NULL==first){
-            first=t;
-        }else{
-            last->next=t;
-        }
-        last=t;
-    }
-
-    // 形成一个环形链表
-    last->next=first;
-
-    return first;
-}
-
 static void tcp_session_del_cb(void *data)
 {
     struct tcp_session *session=data;
-
-    tcp_buf_info_free(session->sent_buffer_info_first,TCP_BUF_INFO_NUM);
-    tcp_buf_info_free(session->recv_buffer_info_first,TCP_BUF_INFO_NUM);
 
     free(session);
 }
@@ -64,7 +21,7 @@ static void tcp_session_del_cb(void *data)
 /// 发送TCP错误
 static void tcp_send_rst(unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr)
 {
-
+    
 }
 
 /// 发送TCP数据
@@ -139,7 +96,6 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
 static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
 {
     struct tcp_session *session=NULL;
-    struct tcp_buffer_info *buf_info;
     struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
     char is_found;
     int rs;
@@ -160,25 +116,7 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
             mbuf_put(m);
             return;
         }
-        session->tcp_st=0x02;
-        buf_info=tcp_buf_info_malloc(TCP_BUF_INFO_NUM);
-        if(NULL==buf_info){
-            STDERR("cannot create tcp buffer info for send\r\n");
-            map_del(map,session_id,tcp_session_del_cb);
-            mbuf_put(m);
-            return;
-        }
-
-        session->sent_buffer_info_first=buf_info;
-
-        buf_info=tcp_buf_info_malloc(TCP_BUF_INFO_NUM);
-        if(NULL==buf_info){
-            STDERR("cannot create tcp buffer info for recv\r\n");
-            map_del(map,session_id,tcp_session_del_cb);
-            mbuf_put(m);
-            return;
-        }
-        session->recv_buffer_info_first=buf_info;
+        session->tcp_st=TCP_ST_SYN_SND;
     }
 
     session->is_ipv6=is_ipv6;
@@ -197,12 +135,13 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
     session->sport=tcphdr->src_port;
     session->dport=tcphdr->dst_port;
     session->seq=0;
-    session->peer_seq=tcphdr->seq_num;
     session->my_window_size=TCP_DEFAULT_WIN_SIZE;
+
+    session->peer_seq=tcphdr->seq_num;
     session->peer_window_size=tcphdr->win_size;
 
     session->tcp_st=TCP_ST_SYN_SND;
-    session->peer_seq+=1;
+    
 
     tcp_send_data(session,TCP_SYN | TCP_ACK,NULL,0);
 
@@ -210,39 +149,70 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
     return;
 }
 
-static void tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
+static void tcp_insert_to_recv_buf(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
-    int payload_len=m->tail-m->offset;
+    struct tcp_data_seg *p=NULL,*seg;
+    int size=m->tail-m->offset;
+    // 如果长度为0那么不插入tcp接收缓冲区
+    if(0==size) return;
 
-    // 检查对端确认序列号是否跳跃现象,不合法的确认序列号直接发送TCP RST
-    if(tcphdr->ack_num>session->seq+1){
-        mbuf_put(m);
+    seg=tcp_data_seg_get();
+    if(NULL==seg){
+        STDERR("cannot get struct tcp_data_seg\r\n");
+        return;
+    }
+    if(NULL==session->recv_seg_head){
+        seg->buf_begin=0;
+        seg->buf_end=size;
+        memcpy(session->recv_data+seg->buf_begin,m->data+m->offset,size);
         return;
     }
 
-    // 如果序列号大于确认序列号那么填充接收的数据
-    if(tcphdr->seq_num>session->peer_seq+payload_len){
+    // 查找合适的插入位置
 
+
+    // 如果未找到合适的插入位置那么放弃
+    if(NULL==p){
+        tcp_data_seg_put(seg);
+        return;
+    }
+}
+
+/// 函数返回0表示该数据包无效或者非法,否则表示该数据包有效
+static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
+{
+    int payload_len=m->tail-m->offset;
+    struct tcp_data_seg *seg=session->recv_seg_head,*t;
+
+    // 检查对端确认序列号是否超过已经发送的最大值,如果超过直接发送TCP RST
+    if(tcphdr->ack_num>session->seq+1){
+        return 0;
     }
 
     session->tcp_st=TCP_ST_OK;
+    // 插入TCP数据包到接收缓冲区
+    tcp_insert_to_recv_buf(session,tcphdr,m);
+
     if(tcphdr->seq_num>=session->peer_seq){
         session->peer_seq=tcphdr->seq_num;
         tcp_send_data(session,TCP_ACK,NULL,0);
     }
 
-    mbuf_put(m);
+    return 1;
 }
 
 static void tcp_session_fin(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
-    int buf_have_data=0;
     session->peer_sent_closed=1;
 
     tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0);
    
-    //session->tcp_st=TCP_FIN_SND_WAIT;
-    mbuf_put(m);
+    session->tcp_st=TCP_FIN_SND_WAIT;
+
+    // 如果发送缓冲区存在数据那么直接发送ACK
+    if(NULL!=session->sent_seg_head){
+        
+    }
 }
 
 static void tcp_session_rst(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
@@ -262,7 +232,7 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
 
     struct tcp_session *session=NULL;
     struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
-    int ack,rst,syn,fin,hdr_len;
+    int ack,rst,syn,fin,hdr_len,r;
 
     unsigned short sport,dport,hdr_and_flags;
     unsigned int seq,ack_seq;
@@ -335,12 +305,11 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
         return;
     }
 
-    if(fin){
-        tcp_session_fin(session,tcphdr,m);
-        return;
-    }
-
-    tcp_session_ack(session,tcphdr,m);
+    r=tcp_session_ack(session,tcphdr,m);
+    if(fin && r) tcp_session_fin(session,tcphdr,m);
+    
+    // ack和fin的处理不自动回收mbuf
+    mbuf_put(m);
 }
 
 static void tcp_handle_for_v4(struct mbuf *m)
@@ -363,9 +332,10 @@ static void tcp_handle_for_v6(struct mbuf *m)
 }
 
 
-int tcp_init(void)
+int tcp_init(int data_seg_num)
 {
     struct map *m;
+    struct tcp_data_seg *seg;
     int rs;
 
     bzero(&tcp_sessions,sizeof(struct tcp_sessions));
@@ -385,6 +355,18 @@ int tcp_init(void)
     }
     tcp_sessions.sessions=m;
 
+    for(int n=0;n<data_seg_num;n++){
+        seg=malloc(sizeof(struct tcp_data_seg));
+        if(NULL==seg){
+            STDERR("cannot pre malloc struct tcp_data_seg\r\n");
+            tcp_uninit();
+            return -1;
+        }
+        bzero(seg,sizeof(struct tcp_data_seg));
+        seg->next=tcp_sessions.empty_head;
+        tcp_sessions.empty_head=seg;
+    }
+
     return 0;
 }
 
@@ -392,6 +374,39 @@ void tcp_uninit(void)
 {
     map_release(tcp_sessions.sessions6,tcp_session_del_cb);
     map_release(tcp_sessions.sessions,tcp_session_del_cb);
+}
+
+struct tcp_data_seg *tcp_data_seg_get(void)
+{
+    struct tcp_data_seg *seg=NULL;
+    
+    if(NULL!=tcp_sessions.empty_head){
+        seg=tcp_sessions.empty_head;
+        tcp_sessions.empty_head=seg->next;
+    }else{
+        seg=malloc(sizeof(struct tcp_data_seg));
+        if(NULL==seg){
+            STDERR("cannot malloc struct tcp_data_seg\r\n");
+        }else{
+            DBG("malloc struct tcp_data_seg\r\n");
+            tcp_sessions.used_buf_info_num+=1;
+        }
+    }
+    if(NULL!=seg) bzero(seg,sizeof(struct tcp_data_seg));
+
+    return seg;
+}
+
+void tcp_data_seg_put(struct tcp_data_seg *seg)
+{
+    if(NULL==seg) return;
+    if(tcp_sessions.used_buf_info_num>tcp_sessions.pre_alloc_buf_info_num){
+        free(seg);
+        tcp_sessions.used_buf_info_num-=1;
+        return;
+    }
+    seg->next=NULL;
+    tcp_sessions.empty_head=seg;
 }
 
 void tcp_handle(struct mbuf *m,int is_ipv6)

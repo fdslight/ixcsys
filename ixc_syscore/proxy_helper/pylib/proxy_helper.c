@@ -182,7 +182,7 @@ proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    rs=tcp_init();
+    rs=tcp_init(1024);
     if(rs<0){
         STDERR("cannot init tcp\r\n");
         return NULL;
