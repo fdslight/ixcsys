@@ -6,9 +6,6 @@
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
 
-/// 缓存buffer信息的结构体数目
-#define TCP_BUF_INFO_NUM 32
-
 #define TCP_ACK 0x0010
 #define TCP_RST 0x0004
 #define TCP_SYN 0x0002
@@ -28,22 +25,9 @@ enum{
 /// 获取TCP标志
 #define TCP_FLAGS(v,flags) (v & flags)
 
-/// TCP缓冲区
-struct tcp_buffer_info{
-    struct tcp_buffer_info *next;
-    // 是否被使用
-    int is_used;
-    // 数据开始位置
-    unsigned short begin;
-    // 数据结束位置
-    unsigned short end;
-};
-
 /// TCP片段信息
 struct tcp_data_seg{
     struct tcp_data_seg *next;
-    // 该片段是否已经被使用
-    int is_used;
     // TCP序列号
     unsigned short seq;
     // 缓冲区开始位置 
@@ -54,10 +38,10 @@ struct tcp_data_seg{
 
 /// TCP会话信息
 struct tcp_session{
-    // 发送缓冲区
-    struct tcp_buffer_info *sent_buffer_info_first;
-    // 接收缓冲区
-    struct tcp_buffer_info *recv_buffer_info_first;;
+    // 发送段信息
+    struct tcp_data_seg *sent_seg_head;
+    // 接收段信息
+    struct tcp_data_seg *recv_seg_head;
     // 接收到的数据
     unsigned char recv_data[0xffff];
     // 发送的数据
@@ -88,7 +72,7 @@ struct tcp_session{
     unsigned int seq;
     // 确认序列号
     unsigned int ack_seq;
-    // 对端序列号
+    // 已经收到的对端最小可用连续序列号
     unsigned int peer_seq;
     // 窗口大小
 #define TCP_DEFAULT_WIN_SIZE 512
@@ -103,10 +87,19 @@ struct tcp_sessions{
     struct map *sessions;
     // IPv6 TCP会话
     struct map *sessions6;
+    // 空的buf info
+    struct tcp_data_seg *empty_head;
+    // 已经使用的buf info数目
+    int used_buf_info_num;
+    // 预先分配的buf info数目
+    int pre_alloc_buf_info_num;
 };
 
-int tcp_init(void);
+int tcp_init(int data_seg_num);
 void tcp_uninit(void);
+
+struct tcp_data_seg *tcp_data_seg_get(void);
+void tcp_data_seg_put(struct tcp_data_seg *seg);
 
 void tcp_handle(struct mbuf *m,int is_ipv6);
 
