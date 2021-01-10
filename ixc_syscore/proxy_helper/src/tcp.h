@@ -25,23 +25,10 @@ enum{
 /// 获取TCP标志
 #define TCP_FLAGS(v,flags) (v & flags)
 
-/// TCP片段信息
-struct tcp_data_seg{
-    struct tcp_data_seg *next;
-    // TCP序列号
-    unsigned short seq;
-    // 缓冲区开始位置 
-    unsigned short buf_begin;
-    // 缓冲区结束位置
-    unsigned short buf_end;
-};
-
 /// TCP会话信息
 struct tcp_session{
     // 发送段信息
-    struct tcp_data_seg *sent_seg_head;
-    // 接收段信息
-    struct tcp_data_seg *recv_seg_head;
+    struct mbuf *sent_seg_head;
     // 接收到的数据
     unsigned char recv_data[0xffff];
     // 发送的数据
@@ -87,19 +74,12 @@ struct tcp_sessions{
     struct map *sessions;
     // IPv6 TCP会话
     struct map *sessions6;
-    // 空的buf info
-    struct tcp_data_seg *empty_head;
-    // 已经使用的buf info数目
-    int used_buf_info_num;
-    // 预先分配的buf info数目
-    int pre_alloc_buf_info_num;
+    // 发送缓冲计数器,如果为0表示没有任何数据可以需要被发送
+    unsigned long long sent_buf_cnt;
 };
 
-int tcp_init(int data_seg_num);
+int tcp_init(void);
 void tcp_uninit(void);
-
-struct tcp_data_seg *tcp_data_seg_get(void);
-void tcp_data_seg_put(struct tcp_data_seg *seg);
 
 void tcp_handle(struct mbuf *m,int is_ipv6);
 
@@ -111,5 +91,7 @@ int tcp_close(unsigned char *session_id,int is_ipv6);
 int tcp_window_set(unsigned char *session_id,int is_ipv6,unsigned short win_size);
 /// 发送TCP RST报文
 int tcp_send_reset(unsigned char *session_id,int is_ipv6);
+/// 是否还有数据等待发送
+int tcp_have_sent_data(void);
 
 #endif

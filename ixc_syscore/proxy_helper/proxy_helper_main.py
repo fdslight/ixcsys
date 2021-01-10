@@ -91,17 +91,17 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__fd).send_ip_msg(ipproto, byte_data)
 
     def tcp_conn_ev_cb(self, session_id: bytes, src_addr: str, dst_addr: str, sport: int, dport: int, is_ipv6: bool):
-        pass
+        print(session_id, src_addr, dst_addr, sport, dport, is_ipv6)
 
     def tcp_recv_cb(self, session_id: bytes, window_size: int, is_ipv6: bool, data: bytes):
-        pass
+        print(session_id, window_size, data, is_ipv6)
 
     def tcp_close_ev_cb(self, session_id: bytes, is_ipv6: bool):
         pass
 
     def udp_recv_cb(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool, data: bytes):
         # 未设置UDP fd那么就退出
-        self.test_udp_send(daddr, saddr, dport, sport, is_udplite, is_ipv6,data)
+        self.test_udp_send(daddr, saddr, dport, sport, is_udplite, is_ipv6, data)
         if self.__udp_fd < 1: return
         self.get_handler(self.__udp_fd).send_to_proxy_server(data, (saddr, sport,), (daddr, dport,),
                                                              is_udplite=is_udplite, is_ipv6=is_ipv6)
@@ -133,7 +133,7 @@ class service(dispatcher.dispatcher):
             self.netpkt_sent_cb,
             self.tcp_conn_ev_cb,
             self.tcp_recv_cb,
-            self.tcp_recv_cb,
+            self.tcp_close_ev_cb,
             self.udp_recv_cb
         )
         consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
