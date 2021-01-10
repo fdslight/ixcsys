@@ -81,7 +81,15 @@ int netpkt_tcp_connect_ev(unsigned char *id,unsigned char *saddr,unsigned char *
     bzero(src_addr,512);
     bzero(dst_addr,512);
 
-    arglist=Py_BuildValue("(y#ssHH)",id,size,src_addr,dst_addr,sport,dport,is_ipv6);
+    if(is_ipv6){
+        inet_ntop(AF_INET6,saddr,src_addr,512);
+        inet_ntop(AF_INET6,daddr,dst_addr,512);
+    }else{
+        inet_ntop(AF_INET,saddr,src_addr,512);
+        inet_ntop(AF_INET,daddr,dst_addr,512);
+    }
+
+    arglist=Py_BuildValue("(y#ssHHN)",id,size,src_addr,dst_addr,sport,dport,PyBool_FromLong(is_ipv6));
     result=PyObject_CallObject(tcp_conn_ev_cb,arglist);
  
     Py_XDECREF(arglist);
@@ -100,7 +108,7 @@ int netpkt_tcp_recv(unsigned char *id,unsigned short win_size,int is_ipv6,void *
         return -1;
     }
 
-    arglist=Py_BuildValue("(y#Hpy#)",id,size,win_size,is_ipv6,data,length);
+    arglist=Py_BuildValue("(y#HNy#)",id,size,win_size,PyBool_FromLong(is_ipv6),data,length);
     result=PyObject_CallObject(tcp_recv_cb,arglist);
  
     Py_XDECREF(arglist);
@@ -119,7 +127,7 @@ int netpkt_tcp_close_ev(unsigned char *id,int is_ipv6)
         return -1;
     }
 
-    arglist=Py_BuildValue("(y#p)",id,size,is_ipv6);
+    arglist=Py_BuildValue("(y#N)",id,size,PyBool_FromLong(is_ipv6));
     result=PyObject_CallObject(tcp_close_ev_cb,arglist);
  
     Py_XDECREF(arglist);
@@ -182,7 +190,7 @@ proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    rs=tcp_init(1024);
+    rs=tcp_init();
     if(rs<0){
         STDERR("cannot init tcp\r\n");
         return NULL;
@@ -228,7 +236,6 @@ proxy_helper_init(proxy_helper_object *self,PyObject *args,PyObject *kwds)
     Py_XDECREF(tcp_conn_ev_cb);
     Py_XDECREF(tcp_recv_cb);
     Py_XDECREF(tcp_close_ev_cb);
-
 
     Py_XDECREF(udp_recv_cb);
 
@@ -427,6 +434,13 @@ proxy_helper_tcp_close(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 是否整个TCP缓冲区有等待发送的数据
+static PyObject *
+proxy_helper_tcp_have_sent_data(PyObject *self,PyObject *args)
+{
+    return PyBool_FromLong(tcp_have_sent_data());
+}
+
 static PyMemberDef proxy_helper_members[]={
     {NULL}
 };
@@ -440,7 +454,8 @@ static PyMethodDef proxy_helper_methods[]={
     {"tcp_win_size_set",(PyCFunction)proxy_helper_tcp_win_set,METH_VARARGS,"tcp window size set"},
     {"tcp_send_reset",(PyCFunction)proxy_helper_tcp_send_reset,METH_VARARGS,"tcp send reset"},
     {"tcp_close",(PyCFunction)proxy_helper_tcp_close,METH_VARARGS,"tcp connection close"},
-
+    {"tcp_have_sent_data",(PyCFunction)proxy_helper_tcp_have_sent_data,METH_VARARGS,"check if tcp data wait be sent"},
+    
     {NULL,NULL,0,NULL}
 };
 
