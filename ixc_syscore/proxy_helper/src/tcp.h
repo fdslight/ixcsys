@@ -25,8 +25,6 @@ enum{
 /// 获取TCP标志
 #define TCP_FLAGS(v,flags) (v & flags)
 
-struct tcp_session;
-
 /// TCP会话信息
 struct tcp_session{
     // 发送段信息
