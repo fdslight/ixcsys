@@ -2,6 +2,7 @@
 #define IP2SOCKS_TCP_H
 
 #include "mbuf.h"
+#include "tcp_timer.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
@@ -27,13 +28,16 @@ enum{
 
 /// TCP会话信息
 struct tcp_session{
+    // 时间对象
+    struct tcp_timer_node *tm_node;
     // 发送段信息
     struct mbuf *sent_seg_head;
     // 接收到的数据
     unsigned char recv_data[0xffff];
     // 发送的数据
     unsigned char sent_data[0xffff];
-
+    // TCP的间隔时间
+    time_t interval_ms;
     // 是否是IPv6地址
     int is_ipv6;
     // 会话ID
@@ -66,7 +70,6 @@ struct tcp_session{
     unsigned short my_window_size;
     // 对端窗口大小
     unsigned short peer_window_size;
-    
 };
 
 struct tcp_sessions{

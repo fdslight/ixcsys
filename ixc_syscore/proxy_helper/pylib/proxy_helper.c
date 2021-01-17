@@ -13,6 +13,7 @@
 #include "../src/proxy_helper.h"
 #include "../src/udp.h"
 #include "../src/tcp.h"
+#include "../src/tcp_timer.h"
 
 #include "../../../pywind/clib/sysloop.h"
 
@@ -187,6 +188,13 @@ proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=sysloop_init();
     if(rs<0){
         STDERR("cannot init sysloop\r\n");
+        return NULL;
+    }
+
+    // tcp timer需要在tcp之前初始化
+    rs=tcp_timer_init(20,50);
+    if(rs<0){
+        STDERR("cannot init tcp timer\r\n");
         return NULL;
     }
 
