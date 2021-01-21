@@ -154,7 +154,12 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 /// 发送缓冲区的数据
 static void tcp_send_from_buf(struct tcp_session *session,struct netutil_tcphdr *tcphdr)
 {
-    
+    int sent_size=1280;
+    struct mbuf *m=session->sent_seg_head;
+
+    while(1){
+        break;
+    }
 }
 
 /// 函数返回0表示该数据包无效或者非法,否则表示该数据包有效
