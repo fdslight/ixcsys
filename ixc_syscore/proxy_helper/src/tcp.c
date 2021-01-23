@@ -21,7 +21,6 @@ static void tcp_session_del_cb(void *data)
 /// 发送TCP错误
 static void tcp_send_rst(unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr)
 {
-    
 }
 
 /// 发送TCP数据
@@ -154,10 +153,17 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 /// 发送缓冲区的数据
 static void tcp_send_from_buf(struct tcp_session *session,struct netutil_tcphdr *tcphdr)
 {
-    int sent_size=1280;
+    // 根据窗口以及MTU计算出发送数据的大小
+    int sent_size=0;
+    // 总共发送的数据大小
+    int tot_sent_size=0;
     struct mbuf *m=session->sent_seg_head;
 
     while(1){
+        if(NULL==m) break;
+        sent_size=m->tail-m->offset>1280?1280:m->tail-m->offset;
+
+
         break;
     }
 }
@@ -180,6 +186,7 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
 
     session->tcp_st=TCP_ST_OK;
 
+    // 此处对发送的数据包进行确认并且发送发送缓冲区的数据
     if(tcphdr->seq_num==session->peer_seq && session->tcp_st==TCP_ST_OK && payload_len!=0){
         session->peer_seq=tcphdr->seq_num+payload_len;
         netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
