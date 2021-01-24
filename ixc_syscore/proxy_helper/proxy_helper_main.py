@@ -95,6 +95,8 @@ class service(dispatcher.dispatcher):
 
     def tcp_recv_cb(self, session_id: bytes, window_size: int, is_ipv6: bool, data: bytes):
         print(session_id, window_size, data, is_ipv6)
+        b=self.proxy_helper.tcp_send(session_id, b"hello,response", is_ipv6)
+        print(b)
 
     def tcp_close_ev_cb(self, session_id: bytes, is_ipv6: bool):
         pass

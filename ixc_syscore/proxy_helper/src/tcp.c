@@ -18,9 +18,33 @@ static void tcp_session_del_cb(void *data)
     free(session);
 }
 
+static void tcp_session_timeout_cb(void *data)
+{
+    struct tcp_session *session=data;
+
+    // 通过TCP状态对应处理
+    switch(session->tcp_st){
+        case TCP_ST_OK:
+            break;
+        case TCP_FIN_SND_WAIT:
+            break;
+    }
+}
+
 /// 发送TCP错误
 static void tcp_send_rst(unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr)
 {
+}
+
+static struct tcp_session *tcp_session_get(unsigned char *id,int is_ipv6)
+{
+    struct map *m=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
+    struct tcp_session *session;
+    char is_found;
+
+    session=map_find(m,(char *)id,&is_found);
+
+    return session;
 }
 
 /// 发送TCP数据
@@ -45,6 +69,9 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
     tcphdr=(struct netutil_tcphdr *)(m->data+m->begin);
     bzero(tcphdr,20);
 
+    // 计算检验和必须为2的倍数,如果长度为奇数,那么需要填充后一位为0补齐
+    if(size % 2!=0) *(m->data+m->tail+1)='\0';
+    
     // 源端口和目标端口要对调
     tcphdr->src_port=htons(session->dport);
     tcphdr->dst_port=htons(session->sport);
@@ -57,6 +84,8 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
     tcphdr->header_len_and_flag=0x5000 | status;
     tcphdr->header_len_and_flag=htons(tcphdr->header_len_and_flag);
     tcphdr->win_size=htons(session->my_window_size);
+
+    memcpy(m->data+m->begin+20,data,size);
 
     // TCP伪头部处理
     if(session->is_ipv6){
@@ -84,7 +113,7 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
     }
 
     tcphdr->csum=csum;
-    memcpy(m->data+m->begin+20,data,size);
+    
 
     if(session->is_ipv6) ipv6_send(session->dst_addr,session->src_addr,6,m->data+m->begin,m->end-m->begin);
     else ip_send(session->dst_addr,session->src_addr,6,m->data+m->begin,m->end-m->begin);
@@ -115,6 +144,17 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
             mbuf_put(m);
             return;
         }
+
+        session->tm_node=tcp_timer_add(50,tcp_session_timeout_cb,session);
+
+        if(NULL==session->tm_node){
+            STDERR("cannot add to tcp timer\r\n");
+            map_del(map,session_id,NULL);
+            free(session);
+            mbuf_put(m);
+            return;
+        }
+
         session->tcp_st=TCP_ST_SYN_SND;
     }
 
@@ -162,8 +202,7 @@ static void tcp_send_from_buf(struct tcp_session *session,struct netutil_tcphdr 
     while(1){
         if(NULL==m) break;
         sent_size=m->tail-m->offset>1280?1280:m->tail-m->offset;
-
-
+        tcp_send_data(session,TCP_ACK,m->data+m->offset,sent_size);
         break;
     }
 }
@@ -185,12 +224,13 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
     }
 
     session->tcp_st=TCP_ST_OK;
-
     // 此处对发送的数据包进行确认并且发送发送缓冲区的数据
-    if(tcphdr->seq_num==session->peer_seq && session->tcp_st==TCP_ST_OK && payload_len!=0){
+    if(tcphdr->seq_num==session->peer_seq && session->tcp_st==TCP_ST_OK){
         session->peer_seq=tcphdr->seq_num+payload_len;
-        netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
-        tcp_send_data(session,TCP_ACK,NULL,0);
+        if(payload_len!=0) {
+            netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
+        }
+        tcp_send_from_buf(session,tcphdr);
     }
 
     return 1;
@@ -363,6 +403,33 @@ void tcp_handle(struct mbuf *m,int is_ipv6)
 
 int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
 {
+    struct tcp_session *session=tcp_session_get(session_id,is_ipv6);
+    struct mbuf *mbuf;
+
+    if(NULL==session) return -1;
+
+    mbuf=mbuf_get();
+    if(NULL==mbuf){
+        STDERR("cannot get mbuf for send tcp data\r\n");
+        return -2;
+    }
+
+    mbuf->begin=MBUF_BEGIN;
+    mbuf->offset=MBUF_BEGIN;
+    mbuf->tail=mbuf->begin+length;
+    mbuf->end=mbuf->tail;
+    mbuf->next=NULL;
+
+    memcpy(mbuf->data+mbuf->begin,data,length);
+
+    if(NULL==session->sent_seg_head){
+        session->sent_seg_head=mbuf;
+    }else{
+        session->sent_seg_end->next=mbuf;
+    }
+
+    session->sent_seg_end=mbuf;
+
     return 0;
 }
 
@@ -373,12 +440,11 @@ int tcp_close(unsigned char *session_id,int is_ipv6)
 
 int tcp_window_set(unsigned char *session_id,int is_ipv6,unsigned short win_size)
 {
-    struct map *m=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
     struct tcp_session *session;
-    char is_found;
+    session=tcp_session_get(session_id,is_ipv6);
 
-    session=map_find(m,(char *)session_id,&is_found);
-    if(!is_found) return -1;
+    if(NULL==session) return -1;
+
     session->my_window_size=win_size;
 
     return 0;

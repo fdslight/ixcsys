@@ -192,7 +192,7 @@ proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     // tcp timer需要在tcp之前初始化
-    rs=tcp_timer_init(20,50);
+    rs=tcp_timer_init(60,50);
     if(rs<0){
         STDERR("cannot init tcp timer\r\n");
         return NULL;
@@ -349,7 +349,7 @@ proxy_helper_udp_send(PyObject *self,PyObject *args)
 static PyObject *
 proxy_helper_tcp_send(PyObject *self,PyObject *args)
 {
-    int is_ipv6;
+    int is_ipv6,r;
     unsigned char *session_id;
     unsigned char *data;
     Py_ssize_t id_s,data_s;
@@ -366,8 +366,13 @@ proxy_helper_tcp_send(PyObject *self,PyObject *args)
         return NULL;
     }
 
-    tcp_send(session_id,data,data_s,is_ipv6);
-    Py_RETURN_NONE;
+    r=tcp_send(session_id,data,data_s,is_ipv6);
+
+    if(r!=0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
 }
 
 /// 设置TCP的窗口大小
@@ -442,11 +447,17 @@ proxy_helper_tcp_close(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
-/// 是否整个TCP缓冲区有等待发送的数据
+/// 检查是否还有数据
 static PyObject *
-proxy_helper_tcp_have_sent_data(PyObject *self,PyObject *args)
+proxy_helper_have_data(PyObject *self,PyObject *args)
 {
-    return PyBool_FromLong(tcp_have_sent_data());
+    int r=tcp_have_sent_data();
+
+    if(r){
+        Py_RETURN_TRUE;
+    }
+    
+    Py_RETURN_FALSE;
 }
 
 static PyMemberDef proxy_helper_members[]={
@@ -462,7 +473,7 @@ static PyMethodDef proxy_helper_methods[]={
     {"tcp_win_size_set",(PyCFunction)proxy_helper_tcp_win_set,METH_VARARGS,"tcp window size set"},
     {"tcp_send_reset",(PyCFunction)proxy_helper_tcp_send_reset,METH_VARARGS,"tcp send reset"},
     {"tcp_close",(PyCFunction)proxy_helper_tcp_close,METH_VARARGS,"tcp connection close"},
-    {"tcp_have_sent_data",(PyCFunction)proxy_helper_tcp_have_sent_data,METH_VARARGS,"check if tcp data wait be sent"},
+    {"have_data",(PyCFunction)proxy_helper_have_data,METH_VARARGS,"check if have data"},
     
     {NULL,NULL,0,NULL}
 };
