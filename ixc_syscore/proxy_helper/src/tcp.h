@@ -32,6 +32,8 @@ struct tcp_session{
     struct tcp_timer_node *tm_node;
     // 发送段信息
     struct mbuf *sent_seg_head;
+    // 发送段结束
+    struct mbuf *sent_seg_end;
     // 接收到的数据
     unsigned char recv_data[0xffff];
     // 发送的数据

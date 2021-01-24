@@ -2,6 +2,9 @@
 #define TCP_TIMER_H
 
 #include<sys/types.h>
+
+#include "../../../pywind/clib/sysloop.h"
+
 struct tcp_timer_node;
 typedef void (*tcp_timer_cb_t)(void *data);
 typedef unsigned long long tcp_time_t;
@@ -35,6 +38,7 @@ struct tcp_timer{
     struct tcp_timer_tick *tick_head;
     // tick索引
     struct tcp_timer_tick **tick_idx;
+    struct sysloop *loop;
     // 更新时间
     time_t up_time;
     time_t tick_timeout;
