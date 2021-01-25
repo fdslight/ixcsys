@@ -54,9 +54,9 @@ struct tcp_session{
     // tcp会话状态
     int tcp_st;
     // 对端TCP mss
-    int peer_mss;
+    unsigned short peer_mss;
     // 本端TCP mss
-    int my_mss;
+    unsigned short my_mss;
     // 源端口号
     unsigned short sport;
     // 目的端口号

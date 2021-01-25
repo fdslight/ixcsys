@@ -31,6 +31,39 @@ static void tcp_session_timeout_cb(void *data)
     }
 }
 
+/// 处理TCP头部选项
+// opt_data为选项数据
+// opt_len为选项长度
+static void tcp_session_handle_header_opt(struct tcp_session *session,void *opt_data,int opt_len)
+{
+    int kind,length;
+    unsigned char *s=opt_data;
+    unsigned short mss=0;
+
+    for(int n=0;n<opt_len;){
+        kind=s[n];
+        if(0==kind) break;
+        if(1==kind){
+            n++;
+            break;
+        }
+        // 错误的头部长度那么忽略
+        if(n+1>=opt_len) break;
+        length=s[n+1];
+        if(2==kind){
+            // 检查长度是否合法
+            if(length!=4) break;
+            // 防止内存越界
+            if(n+4>opt_len) break;
+            memcpy(&mss,&s[n+2],2);
+            session->peer_mss=ntohs(mss);
+        }
+        n+=length;
+    }
+
+    //DBG("%d\r\n",session->peer_mss);
+}
+
 /// 发送TCP错误
 static void tcp_send_rst(unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr)
 {
@@ -121,7 +154,7 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
     mbuf_put(m);
 }
 
-static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
+static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int hdr_len,int is_ipv6,struct mbuf *m)
 {
     struct tcp_session *session=NULL;
     struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
@@ -154,8 +187,8 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
             mbuf_put(m);
             return;
         }
-
         session->tcp_st=TCP_ST_SYN_SND;
+        session->my_mss=1200;
     }
 
     session->is_ipv6=is_ipv6;
@@ -181,7 +214,7 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 
     session->tcp_st=TCP_ST_SYN_SND;
     
-
+    tcp_session_handle_header_opt(session,m->data+m->offset-hdr_len+20,hdr_len-20);
     tcp_send_data(session,TCP_SYN | TCP_ACK,NULL,0);
 
     session->seq+=1;
@@ -364,7 +397,7 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
     }
 
     if(syn){
-        tcp_session_syn(key,saddr,daddr,tcphdr,is_ipv6,m);
+        tcp_session_syn(key,saddr,daddr,tcphdr,hdr_len,is_ipv6,m);
         return;
     }
 
