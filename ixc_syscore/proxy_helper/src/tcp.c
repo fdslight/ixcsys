@@ -203,19 +203,48 @@ static void tcp_send_from_buf(struct tcp_session *session,struct netutil_tcphdr 
         if(NULL==m) break;
         sent_size=m->tail-m->offset>1280?1280:m->tail-m->offset;
         tcp_send_data(session,TCP_ACK,m->data+m->offset,sent_size);
+        m->offset+=sent_size;
         break;
     }
+
+}
+
+/// 发送确认处理
+static void tcp_sent_ack_handle(struct tcp_session *session,struct netutil_tcphdr *tcphdr)
+{
+    struct mbuf *m=session->sent_seg_head,*t;
+    int size,tot_size=0,ack_size,is_err=0;
+
+    //if(tcphdr->ack_num<=session->seq) return;
+
+    ack_size=tcphdr->ack_num-session->seq;
+
+    while(NULL!=m){
+        size=m->offset-m->begin;
+        tot_size+=size;
+        // 此处处理非法确认号情况
+        if(tot_size>ack_size){
+            is_err=1;
+            break;
+        }
+        //DBG_FLAGS;
+        if(0!=m->tail-m->offset) break;
+        // 如果该mbuf已经被全部发送完毕,那么回收mbuf
+        t=m->next;
+        if(NULL==t) session->sent_seg_end=NULL;
+        //DBG_FLAGS;
+        mbuf_put(m);
+        session->sent_seg_head=t;
+        m=t;
+    }
+
+    if(!is_err) session->seq+=ack_size;
 }
 
 /// 函数返回0表示该数据包无效或者非法,否则表示该数据包有效
 static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
     int payload_len=m->tail-m->offset;
-
-    // 检查对端确认序列号是否超过已经发送的最大值,如果超过直接发送TCP RST
-    if(tcphdr->ack_num>session->seq){
-        return 0;
-    }
 
     session->peer_window_size=tcphdr->win_size;
 
@@ -230,6 +259,7 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
         if(payload_len!=0) {
             netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
         }
+        tcp_sent_ack_handle(session,tcphdr);
         tcp_send_from_buf(session,tcphdr);
     }
 
