@@ -8,7 +8,7 @@ static struct tcp_timer tcp_timer;
 
 static void tcp_timer_loop(struct sysloop *loop)
 {
-    //tcp_timer_do();
+    tcp_timer_do();
 }
 
 /// 根据超时获取对应的tick
@@ -53,6 +53,7 @@ int tcp_timer_init(time_t wheel_max,time_t tick_timeout)
             STDERR("no memory for struct tcp_timer_tick\r\n");
             return -1;
         }
+        bzero(tick,sizeof(struct tcp_timer_tick));
         if(NULL==tcp_timer.tick_head) {
             tcp_timer.tick_head=tick;
         }else{
@@ -147,7 +148,8 @@ void tcp_timer_update(struct tcp_timer_node *node,time_t timeout_ms)
 
 void tcp_timer_del(struct tcp_timer_node *node)
 {
-    node->is_valid=0;
+    // 释放node内存
+    free(node);
 }
 
 void tcp_timer_do(void)
@@ -166,7 +168,6 @@ void tcp_timer_do(void)
 
     for(int n=0;n<tot;n++){
         node=tick->head;
-
         while(NULL!=node){
             if(!node->is_valid){
                 t_node=node->next;
@@ -177,10 +178,12 @@ void tcp_timer_do(void)
                 node=node->next;
             }
         }
-
+        //DBG_FLAGS;
+        // 清空node head,注意回收内存
+        tick->head=NULL;
         tick=tick->next;
     }
-    
+
     tcp_timer.tick_head=tick;
     tcp_timer.up_time=time(NULL);
  
