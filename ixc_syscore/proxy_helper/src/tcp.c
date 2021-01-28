@@ -24,6 +24,7 @@ static void tcp_session_timeout_cb(void *data)
 
     // 通过TCP状态对应处理
     switch(session->tcp_st){
+        // 重新发送数据
         case TCP_ST_OK:
             break;
         case TCP_FIN_SND_WAIT:
