@@ -50,6 +50,8 @@ struct tcp_session{
     unsigned char dst_addr[16];
     // 对端发送是否关闭
     int peer_sent_closed;
+    // 本端发送是否关闭
+    int my_sent_closed;
     // 定时器
     // tcp会话状态
     int tcp_st;
@@ -63,8 +65,6 @@ struct tcp_session{
     unsigned short dport;
     // 序列号
     unsigned int seq;
-    // 确认序列号
-    unsigned int ack_seq;
     // 已经收到的对端最小可用连续序列号
     unsigned int peer_seq;
     // 窗口大小
@@ -81,21 +81,22 @@ struct tcp_sessions{
     struct map *sessions6;
     // 发送缓冲计数器,如果为0表示没有任何数据可以需要被发送
     unsigned long long sent_buf_cnt;
+    unsigned short ip_mss;
+    unsigned short ip6_mss;
 };
 
 int tcp_init(void);
 void tcp_uninit(void);
+/// tcp mss设置
+int tcp_mss_set(unsigned short mss,int is_ipv6);
 
 void tcp_handle(struct mbuf *m,int is_ipv6);
-
 /// 发送TCP数据包
 int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6);
 /// 关闭TCP连接
 int tcp_close(unsigned char *session_id,int is_ipv6);
 /// 窗口大小设置
 int tcp_window_set(unsigned char *session_id,int is_ipv6,unsigned short win_size);
-/// 发送TCP RST报文
-int tcp_send_reset(unsigned char *session_id,int is_ipv6);
 /// 是否还有数据等待发送
 int tcp_have_sent_data(void);
 
