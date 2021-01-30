@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, time
+import sys, os, signal, time, socket
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -18,6 +18,7 @@ import ixc_syslib.web.route as webroute
 
 import ixc_syscore.proxy_helper.handlers.netpkt as netpkt
 import ixc_syscore.proxy_helper.handlers.udp_client as udp_client
+import ixc_syscore.proxy_helper.handlers.tcp_client as tcp_client
 
 import ixc_syscore.proxy_helper.pylib.proxy_helper as proxy_helper
 
@@ -73,6 +74,8 @@ class service(dispatcher.dispatcher):
     __consts = None
     __udp_fd = None
 
+    __proxy_server = None
+
     def init_func(self, debug):
         global_vars["ixcsys.proxy_helper"] = self
 
@@ -91,15 +94,30 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__fd).send_ip_msg(ipproto, byte_data)
 
     def tcp_conn_ev_cb(self, session_id: bytes, src_addr: str, dst_addr: str, sport: int, dport: int, is_ipv6: bool):
-        print(session_id, src_addr, dst_addr, sport, dport, is_ipv6)
+        """
+        fd = self.create_handler(
+            -1,
+            tcp_client.client,
+            session_id, (src_addr, sport), (dst_addr, dport),self.__proxy_server, is_ipv6=is_ipv6
+        )
+        """
 
     def tcp_recv_cb(self, session_id: bytes, window_size: int, is_ipv6: bool, data: bytes):
-        print(session_id, window_size, data, is_ipv6)
-        b=self.proxy_helper.tcp_send(session_id, b"hello,response", is_ipv6)
-        print(b)
+        """
+        fd = self.__tcp_sessions[session_id]
+        self.get_handler(fd).send_to_proxy_server(window_size, data)
+        """
 
     def tcp_close_ev_cb(self, session_id: bytes, is_ipv6: bool):
-        pass
+        """
+        fd = self.__tcp_sessions[session_id]
+        self.get_handler(fd).handle_close_callback()
+
+        del self.__tcp_sessions[session_id]
+        """
+
+    def send_tcp_message(self, session_id: bytes, message: bytes, is_ipv6=False):
+        self.proxy_helper.tcp_send(session_id, message, is_ipv6)
 
     def udp_recv_cb(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool, data: bytes):
         # 未设置UDP fd那么就退出
@@ -107,6 +125,19 @@ class service(dispatcher.dispatcher):
         if self.__udp_fd < 1: return
         self.get_handler(self.__udp_fd).send_to_proxy_server(data, (saddr, sport,), (daddr, dport,),
                                                              is_udplite=is_udplite, is_ipv6=is_ipv6)
+
+    def send_udp_message(self, saddr: tuple, daddr: tuple, message: bytes, is_udplite=False, csum_coverage=8,
+                         is_ipv6=False):
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+
+        byte_saddr = socket.inet_pton(fa, saddr[0])
+        byte_daddr = socket.inet_pton(fa, daddr[0])
+
+        self.proxy_helper.udp_send(byte_saddr, byte_daddr, saddr[1], daddr[1], is_udplite, is_ipv6, csum_coverage,
+                                   message)
 
     def test_udp_send(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool,
                       msg: bytes):

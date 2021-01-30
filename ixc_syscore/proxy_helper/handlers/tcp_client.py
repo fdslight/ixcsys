@@ -85,3 +85,9 @@ class client(tcp_handler.tcp_handler):
             return
         self.writer.write(b"".join(seq))
         self.add_evt_write(self.fileno)
+
+    def handle_close_callback(self):
+        """重写这个方法,处理连接关闭
+        @return:
+        """
+        pass

@@ -135,6 +135,7 @@ void tcp_timer_update(struct tcp_timer_node *node,time_t timeout_ms)
 
     node->next=NULL;
     node->prev=NULL;
+    node->timeout_flags=0;
 
     tick=tcp_timer_get_tick(timeout_ms);
     
@@ -148,8 +149,13 @@ void tcp_timer_update(struct tcp_timer_node *node,time_t timeout_ms)
 
 void tcp_timer_del(struct tcp_timer_node *node)
 {
-    // 释放node内存
-    free(node);
+    // 如果设置了超时标志,那么释放内存
+    if(node->timeout_flags){
+        free(node);
+    }else{
+        // 如果未超时那么设置为无效
+        node->is_valid=1;
+    }
 }
 
 void tcp_timer_do(void)
@@ -174,8 +180,11 @@ void tcp_timer_do(void)
                 free(node);
                 node=t_node;
             }else{
+                node->timeout_flags=1;
+                // 这里可能在回调函数出现删除node情况,此处需要提前指向下一个node
+                t_node=node->next;
                 node->fn(node->data);
-                node=node->next;
+                node=t_node;
             }
         }
         //DBG_FLAGS;
