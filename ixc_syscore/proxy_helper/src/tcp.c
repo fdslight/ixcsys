@@ -13,6 +13,8 @@ static struct tcp_sessions tcp_sessions;
 
 static void tcp_send_from_buf(struct tcp_session *session);
 static void tcp_session_del_cb(void *data);
+static void tcp_send_data(struct tcp_session *session,unsigned short status,void *opt,size_t opt_size,void *data,size_t data_size);
+static void tcp_session_fin_wait_set(struct tcp_session *session);
 
 static void tcp_session_close(struct tcp_session *session)
 {
@@ -21,28 +23,46 @@ static void tcp_session_close(struct tcp_session *session)
     map_del(map,(char *)session->id,tcp_session_del_cb);
 }
 
+static void tcp_session_fin_wait_set(struct tcp_session *session)
+{
+    struct tcp_timer_node *tm_node=session->tm_node;
+    session->tcp_st=TCP_FIN_SND_WAIT;
+
+    // 设置定时器等待时间,等待10s
+    tcp_timer_update(tm_node,10000);
+}
+
 static void tcp_session_del_cb(void *data)
 {
     struct tcp_session *session=data;
     struct tcp_timer_node *tm_node=session->tm_node;
+    struct mbuf *m,*t;
     
     netpkt_tcp_close_ev(session->id,session->is_ipv6);
 
     if(NULL!=tm_node) tcp_timer_del(tm_node);
+    //清除发送缓冲区
+    m=session->sent_seg_head;
+    while(NULL!=m){
+        t=m->next;
+        mbuf_put(m);
+        m=t;
+    }
     free(session);
 }
 
 static void tcp_session_timeout_cb(void *data)
 {
     struct tcp_session *session=data;
+    struct tcp_timer_node *tm_node=session->tm_node;
 
     // 如果对端停止发送并且本端停止发送那么关闭TCP会话连接
     if(session->peer_sent_closed && session->tcp_st==TCP_ST_SYN_SND){
         tcp_session_close(session);
         return;
     }
-
     tcp_send_from_buf(session);
+    tcp_timer_update(tm_node,100);
 }
 
 /// 处理TCP头部选项
@@ -79,8 +99,9 @@ static void tcp_session_handle_header_opt(struct tcp_session *session,void *opt_
 }
 
 /// 发送TCP错误
-static void tcp_send_rst(unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr)
+static void tcp_send_rst(struct tcp_session *session)
 {
+    tcp_send_data(session,TCP_RST,NULL,0,NULL,0);
 }
 
 static struct tcp_session *tcp_session_get(unsigned char *id,int is_ipv6)
@@ -94,14 +115,45 @@ static struct tcp_session *tcp_session_get(unsigned char *id,int is_ipv6)
     return session;
 }
 
+/// 构建TCP选项
+// kinds[]如果有索引为0代表结束
+// return函数返回结果长度,如果小于0代表发生错误,比如参数值不符合规范
+static int tcp_build_opts(unsigned char kinds[],void **values[],unsigned char value_lenths[],void *result)
+{
+    unsigned char kind;
+    int tot_len=0;
+    unsigned char *opt=result,length;
+
+    for(int i=0;;i++){
+        kind=kinds[i];
+        tot_len+=1;
+        *opt=kind;
+        opt++;
+
+        if(kind==0) break;
+        if(kind==1) continue;
+        
+        tot_len+=1;
+        length=value_lenths[i];
+        *opt=length+2;
+        opt++;
+        memcpy(opt,values[i],length);
+        opt+=length;
+        tot_len+=length;
+    }   
+
+    return tot_len;
+}
+
 /// 发送TCP数据
-static void tcp_send_data(struct tcp_session *session,unsigned short status,void *data,size_t size)
+static void tcp_send_data(struct tcp_session *session,unsigned short status,void *opt,size_t opt_size,void *data,size_t data_size)
 {
     struct netutil_ip6_ps_header *ps6_hdr;
     struct netutil_ip_ps_header *ps_hdr;
     struct netutil_tcphdr *tcphdr;
     unsigned short csum;
     struct mbuf *m=mbuf_get();
+    unsigned short hdr_len=20+opt_size;
 
     if(NULL==m){
         STDERR("cannot get mbuf\r\n");
@@ -110,14 +162,14 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
 
     m->begin=MBUF_BEGIN;
     m->offset=m->begin;
-    m->tail=MBUF_BEGIN+20+size;
+    m->tail=MBUF_BEGIN+hdr_len+data_size;
     m->end=m->tail;
 
     tcphdr=(struct netutil_tcphdr *)(m->data+m->begin);
-    bzero(tcphdr,20);
+    bzero(tcphdr,hdr_len);
 
     // 计算检验和必须为2的倍数,如果长度为奇数,那么需要填充后一位为0补齐
-    if(size % 2!=0) *(m->data+m->tail+1)='\0';
+    if(data_size % 2!=0) *(m->data+m->tail+1)='\0';
     
     // 源端口和目标端口要对调
     tcphdr->src_port=htons(session->dport);
@@ -125,14 +177,15 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
 
     // 发送本端的序列号
     tcphdr->seq_num=htonl(session->seq);
-    // 对端序列号+1
     tcphdr->ack_num=htonl(session->peer_seq);
-
-    tcphdr->header_len_and_flag=0x5000 | status;
-    tcphdr->header_len_and_flag=htons(tcphdr->header_len_and_flag);
+    
+    tcphdr->header_len_and_flag=htons(((hdr_len/4)<<12) | status);
     tcphdr->win_size=htons(session->my_window_size);
 
-    memcpy(m->data+m->begin+20,data,size);
+    memcpy(m->data+m->begin+20,opt,opt_size);
+    memcpy(m->data+m->begin+hdr_len,data,data_size);
+
+    data_size+=hdr_len;
 
     // TCP伪头部处理
     if(session->is_ipv6){
@@ -142,7 +195,7 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
         memcpy(ps6_hdr->src_addr,session->src_addr,16);
         memcpy(ps6_hdr->dst_addr,session->dst_addr,16);
 
-        ps6_hdr->length=htons(40+size);
+        ps6_hdr->length=htons(data_size);
         ps6_hdr->next_header=6;
 
         csum=csum_calc((unsigned short *)(m->data+m->begin-40),m->end-m->begin+40);
@@ -153,7 +206,7 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
         memcpy(ps_hdr->src_addr,session->src_addr,4);
         memcpy(ps_hdr->dst_addr,session->dst_addr,4);
 
-        ps_hdr->length=htons(20+size);
+        ps_hdr->length=htons(data_size);
         ps_hdr->protocol=6;
 
         csum=csum_calc((unsigned short *)(m->data+m->begin-12),m->end-m->begin+12);
@@ -172,8 +225,20 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 {
     struct tcp_session *session=NULL;
     struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
+    unsigned short my_mss=0;
     char is_found;
     int rs;
+    unsigned char opt_kinds[]={
+        2,1,1,1,0
+    };
+    void **opt_values[]={
+        (void *)(&my_mss),NULL,NULL
+    };
+    unsigned char opt_lenths[]={
+        2,0,0,0,0
+    };
+    unsigned char buf[1024];
+
     session=map_find(map,session_id,&is_found);
 
     if(NULL==session){
@@ -192,7 +257,7 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
             return;
         }
 
-        session->tm_node=tcp_timer_add(50,tcp_session_timeout_cb,session);
+        session->tm_node=tcp_timer_add(100,tcp_session_timeout_cb,session);
 
         if(NULL==session->tm_node){
             STDERR("cannot add to tcp timer\r\n");
@@ -202,7 +267,7 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
             return;
         }
         session->tcp_st=TCP_ST_SYN_SND;
-        session->my_mss=1200;
+        session->my_mss=is_ipv6?tcp_sessions.ip6_mss:tcp_sessions.ip_mss;
     }
 
     session->is_ipv6=is_ipv6;
@@ -220,17 +285,20 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 
     session->sport=tcphdr->src_port;
     session->dport=tcphdr->dst_port;
-    session->seq=0;
+    session->seq=rand();
     session->my_window_size=TCP_DEFAULT_WIN_SIZE;
 
     session->peer_seq=tcphdr->seq_num+=1;
     session->peer_window_size=tcphdr->win_size;
 
     session->tcp_st=TCP_ST_SYN_SND;
+
+    my_mss=htons(session->my_mss);
     
     tcp_session_handle_header_opt(session,m->data+m->offset-hdr_len+20,hdr_len-20);
-    tcp_send_data(session,TCP_SYN | TCP_ACK,NULL,0);
+    rs=tcp_build_opts(opt_kinds,opt_values,opt_lenths,buf);
 
+    tcp_send_data(session,TCP_SYN | TCP_ACK,buf,rs,NULL,0);
     session->seq+=1;
 
     mbuf_put(m);
@@ -246,6 +314,11 @@ static void tcp_send_from_buf(struct tcp_session *session)
     int tot_sent_size=0;
     struct mbuf *m=session->sent_seg_head;
 
+    if(NULL==m && session->my_sent_closed){
+        tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0,NULL,0);
+        return;
+    }
+
     while(1){
         if(NULL==m) break;
         // 如果两者不相等,说明已经发送过数据,那么重新发送数据
@@ -255,8 +328,13 @@ static void tcp_send_from_buf(struct tcp_session *session)
             sent_size=m->tail-m->offset>1280?1280:m->tail-m->offset;
             m->offset+=sent_size;
         }
-        tcp_send_data(session,TCP_ACK,m->data+m->begin,sent_size);
+        tcp_send_data(session,TCP_ACK,NULL,0,m->data+m->begin,sent_size);
         m=m->next;
+    }
+
+    // 发送完数据包并且本端流关闭的处理方式
+    if(NULL==session->sent_seg_head && session->my_sent_closed){
+        tcp_session_fin_wait_set(session);
     }
 }
 
@@ -288,7 +366,6 @@ static void tcp_sent_ack_handle(struct tcp_session *session,struct netutil_tcphd
         session->sent_seg_head=t;
         m=t;
     }
-
     if(!is_err) session->seq+=ack_size;
 }
 
@@ -303,9 +380,17 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
         netpkt_tcp_connect_ev(session->id,session->src_addr,session->dst_addr,session->sport,session->dport,session->is_ipv6);
     }
 
-    session->tcp_st=TCP_ST_OK;
+    // 如果状态未被设置那么设置TCP状态为OK状态
+    if(session->tcp_st==0) session->tcp_st=TCP_ST_OK;
+    // 对端流关闭的时候检查数据包的合法性
+    if(session->peer_sent_closed && session->peer_seq!=tcphdr->seq_num+payload_len){
+        tcp_send_rst(session);
+        tcp_session_close(session);
+        DBG("wrong client FIN frame stream\r\n");
+        return 0;
+    }
     // 此处对发送的数据包进行确认并且发送发送缓冲区的数据
-    if(tcphdr->seq_num==session->peer_seq && session->tcp_st==TCP_ST_OK){
+    if(tcphdr->seq_num==session->peer_seq){
         session->peer_seq=tcphdr->seq_num+payload_len;
         if(payload_len!=0) {
             netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
@@ -313,20 +398,12 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
         tcp_sent_ack_handle(session,tcphdr);
         tcp_send_from_buf(session);
     }
-
     return 1;
 }
 
 static void tcp_session_fin(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
     session->peer_sent_closed=1;
-
-    // 如果发送缓冲区不存在数据那么直接发送FIN并进入FIN wait状态
-    if(NULL==session->sent_seg_head){
-        session->tcp_st=TCP_FIN_SND_WAIT;
-        session->seq+=1;
-        tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0);
-    }
 }
 
 static void tcp_session_rst(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
@@ -394,6 +471,10 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
         // 会话存在那么就删除会话数据包
         if(NULL!=session){
             STDERR("client send wrong tcp packet\r\n");
+        }else{
+            tcp_send_rst(session);
+            // 发送错误并且关闭会话
+            tcp_session_close(session);
         }
         DBG("wrong client TCP data format\r\n");
         mbuf_put(m);
@@ -466,6 +547,9 @@ int tcp_init(void)
     }
     tcp_sessions.sessions=m;
 
+    tcp_sessions.ip_mss=1420;
+    tcp_sessions.ip6_mss=1200;
+
     return 0;
 }
 
@@ -473,6 +557,19 @@ void tcp_uninit(void)
 {
     map_release(tcp_sessions.sessions6,tcp_session_del_cb);
     map_release(tcp_sessions.sessions,tcp_session_del_cb);
+}
+
+int tcp_mss_set(unsigned short mss,int is_ipv6)
+{
+    if(mss<512){
+        STDERR("min mss value is 512,but your value is %d\r\n",mss);
+        return -1;
+    }
+
+    if(is_ipv6) tcp_sessions.ip6_mss=mss;
+    else tcp_sessions.ip_mss=mss;
+
+    return 0;
 }
 
 void tcp_handle(struct mbuf *m,int is_ipv6)
@@ -487,11 +584,13 @@ int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
     struct mbuf *mbuf;
 
     if(NULL==session) return -1;
-
+    // 如果本端关闭那么不允许发送数据
+    if(session->my_sent_closed) return -2;
+    
     mbuf=mbuf_get();
     if(NULL==mbuf){
         STDERR("cannot get mbuf for send tcp data\r\n");
-        return -2;
+        return -3;
     }
 
     mbuf->begin=MBUF_BEGIN;
@@ -509,12 +608,26 @@ int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
     }
 
     session->sent_seg_end=mbuf;
+    
+    tcp_send_from_buf(session);
 
     return 0;
 }
 
 int tcp_close(unsigned char *session_id,int is_ipv6)
 {
+    struct tcp_session *session;
+    session=tcp_session_get(session_id,is_ipv6);
+    if(NULL==session) return -1;
+    // 设置本端关闭
+    session->my_sent_closed=1;
+    
+    // 如果没有数据那么直接发送FIN数据帧,并且序列号加1
+    if(NULL==session->sent_seg_head){
+        tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0,NULL,0);
+        tcp_session_fin_wait_set(session);
+    }
+    
     return 0;
 }
 
@@ -527,11 +640,6 @@ int tcp_window_set(unsigned char *session_id,int is_ipv6,unsigned short win_size
 
     session->my_window_size=win_size;
 
-    return 0;
-}
-
-int tcp_send_reset(unsigned char *session_id,int is_ipv6)
-{
     return 0;
 }
 

@@ -130,6 +130,7 @@ struct tcp_timer_node *tcp_timer_add(time_t timeout_ms,tcp_timer_cb_t fn,void *d
 void tcp_timer_update(struct tcp_timer_node *node,time_t timeout_ms)
 {
     struct tcp_timer_tick *tick=node->tick;
+
     if(NULL==node->prev) tick->head=node->next;
     else node->prev->next=node->next;
 
@@ -139,11 +140,11 @@ void tcp_timer_update(struct tcp_timer_node *node,time_t timeout_ms)
 
     tick=tcp_timer_get_tick(timeout_ms);
     
-    if(NULL!=tick->next){
+    if(NULL!=tick->head){
         tick->head->prev=node;
         node->next=tick->head;
     }
-
+;
     tick->head=node;
 }
 

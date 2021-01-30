@@ -398,29 +398,6 @@ proxy_helper_tcp_win_set(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
-/// 发送TCP RST
-static PyObject *
-proxy_helper_tcp_send_reset(PyObject *self,PyObject *args)
-{
-    int is_ipv6;
-    unsigned char *session_id;
-    Py_ssize_t id_s;
-
-    if(!PyArg_ParseTuple(args,"y#p",&session_id,&id_s,&is_ipv6)) return NULL;
-    if(is_ipv6 && id_s!=36){
-        PyErr_SetString(PyExc_ValueError,"wrong IPv6 TCP session ID");
-        return NULL;
-    }
-    if(!is_ipv6 && id_s!=12){
-        PyErr_SetString(PyExc_ValueError,"wrong IP TCP session ID");
-        return NULL;
-    }
-
-    tcp_send_reset(session_id,is_ipv6);
-
-    Py_RETURN_NONE;
-}
-
 /// TCP连接关闭
 static PyObject *
 proxy_helper_tcp_close(PyObject *self,PyObject *args)
@@ -447,6 +424,23 @@ proxy_helper_tcp_close(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 设置MSS值
+static PyObject *
+proxy_helper_tcp_mss_set(PyObject *self,PyObject *args)
+{
+    unsigned short mss;
+    int is_ipv6,r;
+
+    if(!PyArg_ParseTuple(args,"Hp",&mss,&is_ipv6)) return NULL;
+
+    r=tcp_mss_set(mss,is_ipv6);
+    if(!r){
+        Py_RETURN_TRUE;
+    }
+
+    Py_RETURN_FALSE;
+}
+
 /// 检查是否还有数据
 static PyObject *
 proxy_helper_have_data(PyObject *self,PyObject *args)
@@ -467,12 +461,16 @@ static PyMemberDef proxy_helper_members[]={
 static PyMethodDef proxy_helper_methods[]={
     {"myloop",(PyCFunction)proxy_helper_myloop,METH_VARARGS,"loop call"},
     {"mtu_set",(PyCFunction)proxy_helper_mtu_set,METH_VARARGS,"set mtu for IP and IPv6"},
+
     {"netpkt_handle",(PyCFunction)proxy_helper_netpkt_handle,METH_VARARGS,"handle ip data packet"},
+
     {"udp_send",(PyCFunction)proxy_helper_udp_send,METH_VARARGS,"udp data send"},
+
     {"tcp_send",(PyCFunction)proxy_helper_tcp_send,METH_VARARGS,"tcp data send"},
     {"tcp_win_size_set",(PyCFunction)proxy_helper_tcp_win_set,METH_VARARGS,"tcp window size set"},
-    {"tcp_send_reset",(PyCFunction)proxy_helper_tcp_send_reset,METH_VARARGS,"tcp send reset"},
     {"tcp_close",(PyCFunction)proxy_helper_tcp_close,METH_VARARGS,"tcp connection close"},
+    {"tcp_mss_set",(PyCFunction)proxy_helper_tcp_mss_set,METH_VARARGS,"tcp mss set"},
+
     {"have_data",(PyCFunction)proxy_helper_have_data,METH_VARARGS,"check if have data"},
     
     {NULL,NULL,0,NULL}
