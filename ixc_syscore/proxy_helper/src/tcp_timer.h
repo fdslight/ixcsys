@@ -23,6 +23,8 @@ struct tcp_timer_node{
     void *data;
     // 是否有效,如果为0表示该会话已经删除
     int is_valid;
+    // timeout标志,如果非0表示超时,0表示未超时
+    int timeout_flags;
 };
 
 /// TCP timer tick

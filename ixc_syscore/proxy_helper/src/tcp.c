@@ -11,10 +11,24 @@
 
 static struct tcp_sessions tcp_sessions;
 
+static void tcp_send_from_buf(struct tcp_session *session);
+static void tcp_session_del_cb(void *data);
+
+static void tcp_session_close(struct tcp_session *session)
+{
+    struct map *map=session->is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
+
+    map_del(map,(char *)session->id,tcp_session_del_cb);
+}
+
 static void tcp_session_del_cb(void *data)
 {
     struct tcp_session *session=data;
+    struct tcp_timer_node *tm_node=session->tm_node;
+    
+    netpkt_tcp_close_ev(session->id,session->is_ipv6);
 
+    if(NULL!=tm_node) tcp_timer_del(tm_node);
     free(session);
 }
 
@@ -22,14 +36,13 @@ static void tcp_session_timeout_cb(void *data)
 {
     struct tcp_session *session=data;
 
-    // 通过TCP状态对应处理
-    switch(session->tcp_st){
-        // 重新发送数据
-        case TCP_ST_OK:
-            break;
-        case TCP_FIN_SND_WAIT:
-            break;
+    // 如果对端停止发送并且本端停止发送那么关闭TCP会话连接
+    if(session->peer_sent_closed && session->tcp_st==TCP_ST_SYN_SND){
+        tcp_session_close(session);
+        return;
     }
+
+    tcp_send_from_buf(session);
 }
 
 /// 处理TCP头部选项
@@ -225,7 +238,7 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 }
 
 /// 发送缓冲区的数据
-static void tcp_send_from_buf(struct tcp_session *session,struct netutil_tcphdr *tcphdr)
+static void tcp_send_from_buf(struct tcp_session *session)
 {
     // 根据窗口以及MTU计算出发送数据的大小
     int sent_size=0;
@@ -235,12 +248,16 @@ static void tcp_send_from_buf(struct tcp_session *session,struct netutil_tcphdr 
 
     while(1){
         if(NULL==m) break;
-        sent_size=m->tail-m->offset>1280?1280:m->tail-m->offset;
-        tcp_send_data(session,TCP_ACK,m->data+m->offset,sent_size);
-        m->offset+=sent_size;
-        break;
+        // 如果两者不相等,说明已经发送过数据,那么重新发送数据
+        if(m->begin!=m->offset){
+            sent_size=m->offset-m->begin;
+        }else{
+            sent_size=m->tail-m->offset>1280?1280:m->tail-m->offset;
+            m->offset+=sent_size;
+        }
+        tcp_send_data(session,TCP_ACK,m->data+m->begin,sent_size);
+        m=m->next;
     }
-
 }
 
 /// 发送确认处理
@@ -294,7 +311,7 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
             netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
         }
         tcp_sent_ack_handle(session,tcphdr);
-        tcp_send_from_buf(session,tcphdr);
+        tcp_send_from_buf(session);
     }
 
     return 1;
@@ -314,10 +331,9 @@ static void tcp_session_fin(struct tcp_session *session,struct netutil_tcphdr *t
 
 static void tcp_session_rst(const char *session_id,unsigned char *saddr,unsigned char *daddr,struct netutil_tcphdr *tcphdr,int is_ipv6,struct mbuf *m)
 {
-    struct map *map=is_ipv6?tcp_sessions.sessions6:tcp_sessions.sessions;
-
-    netpkt_tcp_close_ev((unsigned char *)session_id,is_ipv6);
-    map_del(map,session_id,tcp_session_del_cb);
+    struct tcp_session *session=tcp_session_get((unsigned char *)session_id,is_ipv6);
+    
+    tcp_session_close(session);
 
     mbuf_put(m);
 }

@@ -127,7 +127,7 @@ int netpkt_tcp_close_ev(unsigned char *id,int is_ipv6)
         STDERR("not set tcp_close_ev_cb\r\n");
         return -1;
     }
-
+    
     arglist=Py_BuildValue("(y#N)",id,size,PyBool_FromLong(is_ipv6));
     result=PyObject_CallObject(tcp_close_ev_cb,arglist);
  
