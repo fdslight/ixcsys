@@ -45,10 +45,14 @@ class client(tcp_handler.tcp_handler):
         if size > 4096 and p < 0:
             self.delete_handler(self.fileno)
             return
-        vs, kv_pairs = httputils.parse_http1x_response_header(byte_data.decode("iso-8859-1"))
+        p += 4
+        vs, kv_pairs = httputils.parse_http1x_response_header(byte_data[0:p].decode("iso-8859-1"))
         # 此处检查是否建立连接成功
-
-        # 握手成功的处理方式
+        version, st = vs
+        if st[0:3] != "200":
+            self.dispatcher.tcp_close(self.__session_id, is_ipv6=self.__is_ipv6)
+            return
+            # 握手成功的处理方式
         self.__handshake_ok = True
         self.handle_handshake_ok()
 
@@ -75,6 +79,12 @@ class client(tcp_handler.tcp_handler):
             self.handle_handshake_resp()
         if not self.__handshake_ok: return
 
+        rdata = self.reader.read(0xffff)
+        self.dispatcher.send_tcp_message(self.__session_id, rdata, is_ipv6=self.__is_ipv6)
+
+    def tcp_writable(self):
+        if self.writer.size() == 0: self.remove_evt_write(self.fileno)
+
     def send_to_proxy_server(self, window_size: int, message: bytes):
         seq = [
             struct.pack("!HH", window_size, len(message)),
@@ -86,8 +96,15 @@ class client(tcp_handler.tcp_handler):
         self.writer.write(b"".join(seq))
         self.add_evt_write(self.fileno)
 
+    def tcp_error(self):
+        self.dispatcher.tcp_close(self.__session_id, is_ipv6=self.__is_ipv6)
+
     def handle_close_callback(self):
         """重写这个方法,处理连接关闭
         @return:
         """
-        pass
+        self.delete_handler(self.fileno)
+
+    def tcp_delete(self):
+        self.unregister(self.fileno)
+        self.close()

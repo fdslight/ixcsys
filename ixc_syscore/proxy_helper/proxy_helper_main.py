@@ -117,6 +117,9 @@ class service(dispatcher.dispatcher):
         del self.__tcp_sessions[session_id]
         """
 
+    def tcp_close(self, session_id: bytes, is_ipv6=False):
+        self.proxy_helper.tcp_close(session_id, is_ipv6)
+
     def send_tcp_message(self, session_id: bytes, message: bytes, is_ipv6=False):
         self.proxy_helper.tcp_send(session_id, message, is_ipv6)
 
