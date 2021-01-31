@@ -44,8 +44,6 @@ struct tcp_session{
     time_t delay_ms;
     // 是否是IPv6地址
     int is_ipv6;
-    // 连接是否成功
-    int conn_ok;
     // 会话ID
     unsigned char id[36];
     // 源地址
@@ -69,6 +67,8 @@ struct tcp_session{
     unsigned short dport;
     // 序列号
     unsigned int seq;
+    // 确认序列号
+    unsigned int ack_seq;
     // 已经收到的对端最小可用连续序列号
     unsigned int peer_seq;
     // 窗口大小
