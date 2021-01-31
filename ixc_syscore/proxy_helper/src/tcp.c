@@ -303,6 +303,7 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
     session->sport=tcphdr->src_port;
     session->dport=tcphdr->dst_port;
     session->seq=rand();
+    session->ack_seq=session->seq;
     session->my_window_size=TCP_DEFAULT_WIN_SIZE;
 
     session->peer_seq=tcphdr->seq_num+=1;
@@ -416,11 +417,8 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
             session->peer_seq+=1;
         }
         tcp_sent_ack_handle(session,tcphdr);
-
         // 此处处理关闭ack的特殊情况
-        if(session->tcp_st==TCP_FIN_SND_WAIT && (session->seq==tcphdr->ack_num || session->seq+1==tcphdr->ack_num)){
-            // 对端有发送关闭的请求那么关闭连接
-            DBG_FLAGS;
+        if(session->tcp_st==TCP_FIN_SND_WAIT && session->seq==tcphdr->ack_num){
             if(session->peer_sent_closed) {
                 DBG("tcp four times closed\r\n");
                 tcp_session_close(session);
@@ -656,6 +654,7 @@ int tcp_close(unsigned char *session_id,int is_ipv6)
     
     // 如果没有数据那么直接发送FIN数据帧,并且序列号加1
     if(NULL==session->sent_seg_head){
+        session->seq+=1;
         tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0,NULL,0);
         tcp_session_fin_wait_set(session);
     }
