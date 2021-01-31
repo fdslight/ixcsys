@@ -38,10 +38,14 @@ struct tcp_session{
     unsigned char recv_data[0xffff];
     // 发送的数据
     unsigned char sent_data[0xffff];
-    // TCP的间隔时间
-    time_t interval_ms;
+    // 更新的时间值
+    struct timeval up_time_val;
+    // TCP的延迟时间
+    time_t delay_ms;
     // 是否是IPv6地址
     int is_ipv6;
+    // 连接是否成功
+    int conn_ok;
     // 会话ID
     unsigned char id[36];
     // 源地址

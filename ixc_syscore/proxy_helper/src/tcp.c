@@ -15,6 +15,21 @@ static void tcp_send_from_buf(struct tcp_session *session);
 static void tcp_session_del_cb(void *data);
 static void tcp_send_data(struct tcp_session *session,unsigned short status,void *opt,size_t opt_size,void *data,size_t data_size);
 static void tcp_session_fin_wait_set(struct tcp_session *session);
+static void tcp_send_rst(struct tcp_session *session);
+
+/// 获取延迟,单位是ms
+static time_t tcp_session_get_delay(struct tcp_session *session)
+{
+    struct timeval now_time;
+    time_t delay;
+    
+    gettimeofday(&now_time,NULL);
+
+    delay=(now_time.tv_sec-session->up_time_val.tv_sec)*1000;
+    delay+=(now_time.tv_usec-session->up_time_val.tv_usec)/1000;
+
+    return delay/2;
+}
 
 static void tcp_session_close(struct tcp_session *session)
 {
@@ -38,6 +53,8 @@ static void tcp_session_del_cb(void *data)
     struct tcp_timer_node *tm_node=session->tm_node;
     struct mbuf *m,*t;
     
+    // 发送一次RST数据包,确保TCP被停止
+    tcp_send_rst(session);
     netpkt_tcp_close_ev(session->id,session->is_ipv6);
 
     if(NULL!=tm_node) tcp_timer_del(tm_node);
@@ -294,7 +311,9 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
     session->tcp_st=TCP_ST_SYN_SND;
 
     my_mss=htons(session->my_mss);
-    
+
+    gettimeofday(&(session->up_time_val),NULL);
+
     tcp_session_handle_header_opt(session,m->data+m->offset-hdr_len+20,hdr_len-20);
     rs=tcp_build_opts(opt_kinds,opt_values,opt_lenths,buf);
 
@@ -314,8 +333,11 @@ static void tcp_send_from_buf(struct tcp_session *session)
     int tot_sent_size=0;
     struct mbuf *m=session->sent_seg_head;
 
-    if(NULL==m && session->my_sent_closed){
-        tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0,NULL,0);
+    session->delay_ms=tcp_session_get_delay(session);
+
+    if(NULL==m){
+        if(session->my_sent_closed)tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0,NULL,0);
+        else tcp_send_data(session,TCP_ACK,NULL,0,NULL,0);
         return;
     }
 
@@ -347,7 +369,7 @@ static void tcp_sent_ack_handle(struct tcp_session *session,struct netutil_tcphd
     //if(tcphdr->ack_num<=session->seq) return;
 
     ack_size=tcphdr->ack_num-session->seq;
-
+    
     while(NULL!=m){
         size=m->offset-m->begin;
         tot_size+=size;
@@ -374,28 +396,38 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
 {
     int payload_len=m->tail-m->offset;
 
+    session->delay_ms=tcp_session_get_delay(session);
     session->peer_window_size=tcphdr->win_size;
 
     if(TCP_ST_SYN_SND==session->tcp_st && session->peer_seq==tcphdr->seq_num){
+        session->tcp_st=TCP_ST_OK;
         netpkt_tcp_connect_ev(session->id,session->src_addr,session->dst_addr,session->sport,session->dport,session->is_ipv6);
+        // 第三次握手如果没有数据那么直接返回;
+        if(payload_len==0) return 1;
     }
 
-    // 如果状态未被设置那么设置TCP状态为OK状态
-    if(session->tcp_st==0) session->tcp_st=TCP_ST_OK;
-    // 对端流关闭的时候检查数据包的合法性
-    if(session->peer_sent_closed && session->peer_seq!=tcphdr->seq_num+payload_len){
-        tcp_send_rst(session);
-        tcp_session_close(session);
-        DBG("wrong client FIN frame stream\r\n");
-        return 0;
-    }
     // 此处对发送的数据包进行确认并且发送发送缓冲区的数据
     if(tcphdr->seq_num==session->peer_seq){
         session->peer_seq=tcphdr->seq_num+payload_len;
         if(payload_len!=0) {
             netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
+        }else{
+            // 长度为空的时候序列号加1
+            session->peer_seq+=1;
         }
         tcp_sent_ack_handle(session,tcphdr);
+
+        // 此处处理关闭ack的特殊情况
+        if(session->tcp_st==TCP_FIN_SND_WAIT && (session->seq==tcphdr->ack_num || session->seq+1==tcphdr->ack_num)){
+            // 对端有发送关闭的请求那么关闭连接
+            DBG_FLAGS;
+            if(session->peer_sent_closed) {
+                DBG("tcp four times closed\r\n");
+                tcp_session_close(session);
+            }
+            return 1;
+        }
+
         tcp_send_from_buf(session);
     }
     return 1;
