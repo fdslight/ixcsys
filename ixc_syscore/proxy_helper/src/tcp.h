@@ -18,9 +18,7 @@ enum{
     TCP_ST_SYN_SND=1,
     TCP_ST_OK,
     // 发送FIN发送等待
-    TCP_FIN_SND_WAIT,
-    // TCP发送关闭
-    TCP_FIN_SND
+    TCP_ST_FIN_SND_WAIT
 };
 
 /// 获取TCP标志
@@ -67,8 +65,8 @@ struct tcp_session{
     unsigned short dport;
     // 序列号
     unsigned int seq;
-    // 确认序列号
-    unsigned int ack_seq;
+    // 发送序列号计数器,把序列号加上此数值就是对端要确认的最大序列号
+    unsigned int sent_seq_cnt;
     // 已经收到的对端最小可用连续序列号
     unsigned int peer_seq;
     // 窗口大小

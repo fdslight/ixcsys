@@ -107,6 +107,7 @@ class service(dispatcher.dispatcher):
         fd = self.__tcp_sessions[session_id]
         self.get_handler(fd).send_to_proxy_server(window_size, data)
         """
+        print(data)
         self.send_tcp_message(session_id, b"response", is_ipv6=False)
         self.tcp_close(session_id, is_ipv6=is_ipv6)
 
