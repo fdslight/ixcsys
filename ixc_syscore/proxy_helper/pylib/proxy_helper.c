@@ -402,7 +402,7 @@ proxy_helper_tcp_win_set(PyObject *self,PyObject *args)
 static PyObject *
 proxy_helper_tcp_close(PyObject *self,PyObject *args)
 {
-    int is_ipv6;
+    int is_ipv6,rs;
     unsigned char *session_id;
     Py_ssize_t id_s;
 
@@ -419,9 +419,13 @@ proxy_helper_tcp_close(PyObject *self,PyObject *args)
     }
 
     // 此处关闭TCP连接
-    tcp_close(session_id,is_ipv6);
+    rs=tcp_close(session_id,is_ipv6);
 
-    Py_RETURN_NONE;
+    if(rs!=0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
 }
 
 /// 设置MSS值
@@ -501,11 +505,22 @@ static struct PyModuleDef proxy_helper_module={
 PyMODINIT_FUNC
 PyInit_proxy_helper(void){
     PyObject *m;
+    const char *const_names[] = {
+	};
+
+	const int const_values[] = {
+	};
+    
+    int const_count = sizeof(const_names) / sizeof(NULL);
 
     if(PyType_Ready(&proxy_helper_type) < 0) return NULL;
 
     m=PyModule_Create(&proxy_helper_module);
     if(NULL==m) return NULL;
+
+    for (int n = 0; n < const_count; n++) {
+		if (PyModule_AddIntConstant(m, const_names[n], const_values[n]) < 0) return NULL;
+	}
 
     Py_INCREF(&proxy_helper_type);
     if(PyModule_AddObject(m,"proxy_helper",(PyObject *)&proxy_helper_type)<0){
@@ -513,6 +528,7 @@ PyInit_proxy_helper(void){
         Py_DECREF(m);
         return NULL;
     }
+    
 
     return m;
 }

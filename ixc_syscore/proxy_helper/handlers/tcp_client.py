@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import struct
+import struct, socket
 import pywind.evtframework.handlers.tcp_handler as tcp_handler
 import pywind.web.lib.httputils as httputils
 
@@ -24,13 +24,26 @@ class client(tcp_handler.tcp_handler):
 
         self.__handshake_ok = False
 
+        host, port, server_is_ipv6 = proxy_server
+        if server_is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+        s = socket.socket(fa, socket.SOCK_STREAM)
+        self.set_socket(s)
+        self.connect((host, port))
+
         return self.fileno
 
     def send_conn_request(self):
         """发送连接请求
         @return:
         """
-        s = httputils.build_http1x_req_header("CONNECT", self.dispatcher.http_proxy_url, [])
+        if self.__is_ipv6:
+            s = "[%s]:%s" % self.__dst_addr
+        else:
+            s = "%s:%s" % self.__dst_addr
+        s = httputils.build_http1x_req_header("CONNECT", s, [])
         self.writer.write(s.encode())
         self.add_evt_write(self.fileno)
 
@@ -73,6 +86,7 @@ class client(tcp_handler.tcp_handler):
         self.register(self.fileno)
         self.add_evt_read(self.fileno)
         self.add_evt_write(self.fileno)
+        self.send_conn_request()
 
     def tcp_readable(self):
         if not self.__handshake_ok:

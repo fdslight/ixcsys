@@ -94,6 +94,9 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__fd).send_ip_msg(ipproto, byte_data)
 
     def tcp_conn_ev_cb(self, session_id: bytes, src_addr: str, dst_addr: str, sport: int, dport: int, is_ipv6: bool):
+        if not self.__proxy_server:
+            self.tcp_close(session_id, is_ipv6=is_ipv6)
+            return
         """
         fd = self.create_handler(
             -1,
@@ -221,9 +224,6 @@ class service(dispatcher.dispatcher):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
 
         return ipaddr
-
-    def http_proxy_url(self):
-        return "/"
 
     def start_scgi(self):
         scgi_configs = {

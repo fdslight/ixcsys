@@ -424,7 +424,7 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
 
     // 此处对发送的数据包进行确认并且发送发送缓冲区的数据
     if(tcphdr->seq_num==session->peer_seq){
-        if(payload_len!=0) {
+        if(payload_len!=0 && session->tcp_st==TCP_ST_OK) {
             session->peer_seq=tcphdr->seq_num+payload_len;
             netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
         }else{
@@ -661,13 +661,12 @@ int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
     return 0;
 }
 
-int tcp_close(unsigned char *session_id,int is_ipv6)
+int tcp_close(unsigned char *session_id,int flags,int is_ipv6)
 {
     struct tcp_session *session;
+
     session=tcp_session_get(session_id,is_ipv6);
     if(NULL==session) return -1;
-    // 设置本端关闭
-    session->my_sent_closed=1;
     
     // 如果没有数据那么直接发送FIN数据帧,并且序列号加1
     if(NULL==session->sent_seg_head){
