@@ -301,6 +301,7 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
         memcpy(session->dst_addr,daddr,4);
     }
 
+    session->peer_mss=1200;
     session->sport=tcphdr->src_port;
     session->dport=tcphdr->dst_port;
     session->seq=rand();
@@ -333,6 +334,8 @@ static void tcp_send_from_buf(struct tcp_session *session)
     // 总共发送的数据大小
     int tot_sent_size=0;
     unsigned int seq=session->seq;
+    unsigned short peer_mss=session->peer_mss;
+    unsigned short peer_wind=session->peer_window_size;
     struct mbuf *m=session->sent_seg_head;
 
     if(NULL==m){
@@ -354,7 +357,6 @@ static void tcp_send_from_buf(struct tcp_session *session)
         session->seq+=sent_size;
         m=m->next;
     }
-
     session->seq=seq;
 
     // 发送完数据包并且本端流关闭的处理方式
