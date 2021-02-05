@@ -94,10 +94,10 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__fd).send_ip_msg(ipproto, byte_data)
 
     def tcp_conn_ev_cb(self, session_id: bytes, src_addr: str, dst_addr: str, sport: int, dport: int, is_ipv6: bool):
+        """
         if not self.__proxy_server:
             self.tcp_close(session_id, is_ipv6=is_ipv6)
             return
-        """
         fd = self.create_handler(
             -1,
             tcp_client.client,
@@ -110,9 +110,8 @@ class service(dispatcher.dispatcher):
         fd = self.__tcp_sessions[session_id]
         self.get_handler(fd).send_to_proxy_server(window_size, data)
         """
-        print(data)
-        self.send_tcp_message(session_id, b"response", is_ipv6=False)
-        self.tcp_close(session_id, is_ipv6=is_ipv6)
+        self.send_tcp_message(session_id, data, is_ipv6=False)
+        #self.tcp_close(session_id, is_ipv6=is_ipv6)
 
     def tcp_close_ev_cb(self, session_id: bytes, is_ipv6: bool):
         """

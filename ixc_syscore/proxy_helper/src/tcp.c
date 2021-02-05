@@ -661,7 +661,7 @@ int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
     return 0;
 }
 
-int tcp_close(unsigned char *session_id,int flags,int is_ipv6)
+int tcp_close(unsigned char *session_id,int is_ipv6)
 {
     struct tcp_session *session;
 

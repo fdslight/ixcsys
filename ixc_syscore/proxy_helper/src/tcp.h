@@ -70,7 +70,7 @@ struct tcp_session{
     // 已经收到的对端最小可用连续序列号
     unsigned int peer_seq;
     // 窗口大小
-#define TCP_DEFAULT_WIN_SIZE 512
+#define TCP_DEFAULT_WIN_SIZE 0xffff
     unsigned short my_window_size;
     // 对端窗口大小
     unsigned short peer_window_size;
