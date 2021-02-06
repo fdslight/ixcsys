@@ -391,7 +391,6 @@ static void tcp_sent_ack_handle(struct tcp_session *session,struct netutil_tcphd
         // 如果该mbuf已经被全部发送完毕,那么回收mbuf
         t=m->next;
         if(NULL==t) session->sent_seg_end=NULL;
-        //DBG_FLAGS;
         mbuf_put(m);
         session->sent_seg_head=t;
         m=t;
