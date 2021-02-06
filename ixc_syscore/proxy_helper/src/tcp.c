@@ -1,5 +1,6 @@
 #include<string.h>
 #include<arpa/inet.h>
+#include<sys/time.h>
 
 #include "tcp.h"
 #include "debug.h"
@@ -345,20 +346,24 @@ static void tcp_send_from_buf(struct tcp_session *session)
     }
 
     while(1){
+        // 选取最小值最为窗口大小
+        sent_size=peer_mss>peer_wind?peer_wind:peer_mss;
         if(NULL==m) break;
+        // 对端窗口为0,那么不发送数据
+        if(peer_wind==0) break;
         // 如果两者不相等,说明已经发送过数据,那么重新发送数据
         if(m->begin!=m->offset){
             sent_size=m->offset-m->begin;
         }else{
-            sent_size=m->tail-m->offset>1280?1280:m->tail-m->offset;
+            sent_size=m->tail-m->offset>sent_size?sent_size:m->tail-m->offset;
             m->offset+=sent_size;
         }
+        peer_wind-=sent_size;
         tcp_send_data(session,TCP_ACK,NULL,0,m->data+m->begin,sent_size);
         session->seq+=sent_size;
         m=m->next;
     }
     session->seq=seq;
-
     // 发送完数据包并且本端流关闭的处理方式
     if(NULL==session->sent_seg_head && session->my_sent_closed){
         tcp_session_fin_wait_set(session);
@@ -427,6 +432,7 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
     // 此处对发送的数据包进行确认并且发送发送缓冲区的数据
     if(tcphdr->seq_num==session->peer_seq){
         if(payload_len!=0 && session->tcp_st==TCP_ST_OK) {
+            DBG("recv length:%d\r\n",payload_len);
             session->peer_seq=tcphdr->seq_num+payload_len;
             netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
         }else{
