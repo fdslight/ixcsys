@@ -131,9 +131,10 @@ class service(dispatcher.dispatcher):
     def udp_recv_cb(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool, data: bytes):
         # 未设置UDP fd那么就退出
         self.test_udp_send(daddr, saddr, dport, sport, is_udplite, is_ipv6, data)
+        """
         if self.__udp_fd < 1: return
         self.get_handler(self.__udp_fd).send_to_proxy_server(data, (saddr, sport,), (daddr, dport,),
-                                                             is_udplite=is_udplite, is_ipv6=is_ipv6)
+                                                             is_udplite=is_udplite, is_ipv6=is_ipv6)"""
 
     def send_udp_message(self, saddr: tuple, daddr: tuple, message: bytes, is_udplite=False, csum_coverage=8,
                          is_ipv6=False):

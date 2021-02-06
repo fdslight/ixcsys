@@ -332,8 +332,6 @@ static void tcp_send_from_buf(struct tcp_session *session)
 {
     // 根据窗口以及MTU计算出发送数据的大小
     int sent_size=0;
-    // 总共发送的数据大小
-    int tot_sent_size=0;
     unsigned int seq=session->seq;
     unsigned short peer_mss=session->peer_mss;
     unsigned short peer_wind=session->peer_window_size;
@@ -432,12 +430,9 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
     // 此处对发送的数据包进行确认并且发送发送缓冲区的数据
     if(tcphdr->seq_num==session->peer_seq){
         if(payload_len!=0 && session->tcp_st==TCP_ST_OK) {
-            DBG("recv length:%d\r\n",payload_len);
+            //DBG("recv length:%d\r\n",payload_len);
             session->peer_seq=tcphdr->seq_num+payload_len;
             netpkt_tcp_recv(session->id,tcphdr->win_size,session->is_ipv6,m->data+m->offset,payload_len);
-        }else{
-            // 长度为空的时候序列号加1
-            session->peer_seq+=1;
         }
         tcp_sent_ack_handle(session,tcphdr);
         // 此处处理关闭ack的特殊情况
