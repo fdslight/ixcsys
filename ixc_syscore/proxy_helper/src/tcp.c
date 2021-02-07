@@ -29,7 +29,7 @@ static time_t tcp_session_get_delay(struct tcp_session *session)
     delay=(now_time.tv_sec-session->up_time_val.tv_sec)*1000;
     delay+=(now_time.tv_usec-session->up_time_val.tv_usec)/1000;
 
-    return delay/2;
+    return delay/1.5;
 }
 
 static void tcp_session_close(struct tcp_session *session)
@@ -338,8 +338,7 @@ static void tcp_send_from_buf(struct tcp_session *session)
     struct mbuf *m=session->sent_seg_head;
 
     if(NULL==m){
-        if(session->my_sent_closed)tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0,NULL,0);
-        else tcp_send_data(session,TCP_ACK,NULL,0,NULL,0);
+        if(session->my_sent_closed)tcp_send_data(session,TCP_ACK | TCP_FIN,NULL,0,NULL,0);        
         return;
     }
 
@@ -375,6 +374,7 @@ static void tcp_sent_ack_handle(struct tcp_session *session,struct netutil_tcphd
     int size,tot_size=0,ack_size,is_err=0;
 
     //if(tcphdr->ack_num<=session->seq) return;
+    if(NULL==m) return;
 
     ack_size=tcphdr->ack_num-session->seq;
     
@@ -391,6 +391,7 @@ static void tcp_sent_ack_handle(struct tcp_session *session,struct netutil_tcphd
         // 如果该mbuf已经被全部发送完毕,那么回收mbuf
         t=m->next;
         if(NULL==t) session->sent_seg_end=NULL;
+        //DBG_FLAGS;
         mbuf_put(m);
         session->sent_seg_head=t;
         m=t;
@@ -425,7 +426,6 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
         // 第三次握手如果没有数据那么直接返回;
         if(payload_len==0) return 1;
     }
-
     // 此处对发送的数据包进行确认并且发送发送缓冲区的数据
     if(tcphdr->seq_num==session->peer_seq){
         if(payload_len!=0 && session->tcp_st==TCP_ST_OK) {
@@ -444,8 +444,13 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
         }
         //DBG("%u\r\n",session->sent_seq_cnt);
         if(session->sent_seq_cnt!=0) tcp_send_from_buf(session);
-        else tcp_send_data(session,TCP_ACK,NULL,0,NULL,0);
+        if(payload_len!=0) tcp_send_data(session,TCP_ACK,NULL,0,NULL,0);
+
+        return 1;
     }
+    // 已经接收的数据发送ACK,此处要考虑序列号回转情况
+    if(tcphdr->seq_num+payload_len<=session->peer_seq) tcp_send_data(session,TCP_ACK,NULL,0,NULL,0);
+
     return 1;
 }
 
@@ -541,15 +546,12 @@ static void tcp_session_handle(unsigned char *saddr,unsigned char *daddr,struct 
         tcp_session_rst(key,saddr,daddr,tcphdr,is_ipv6,m);
         return;
     }
-
     if(syn){
         tcp_session_syn(key,saddr,daddr,tcphdr,hdr_len,is_ipv6,m);
         return;
     }
-
     r=tcp_session_ack(session,tcphdr,m);
     if(fin && r) tcp_session_fin(session,tcphdr,m);
-    
     // ack和fin的处理不自动回收mbuf
     mbuf_put(m);
 }
@@ -629,31 +631,48 @@ void tcp_handle(struct mbuf *m,int is_ipv6)
 int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
 {
     struct tcp_session *session=tcp_session_get(session_id,is_ipv6);
-    struct mbuf *mbuf;
+    struct mbuf *mbuf=session->sent_seg_end;
+    int begin,end,is_shared;
 
     if(NULL==session) return -1;
     // 如果本端关闭那么不允许发送数据
     if(session->my_sent_closed) return -2;
-    
-    mbuf=mbuf_get();
-    if(NULL==mbuf){
-        STDERR("cannot get mbuf for send tcp data\r\n");
-        return -3;
+    // 检查mbuf不为空时是否有多余的空间
+    if(NULL!=mbuf){
+        if(mbuf->end-mbuf->offset<length) mbuf=NULL;
     }
 
-    mbuf->begin=MBUF_BEGIN;
-    mbuf->offset=MBUF_BEGIN;
-    mbuf->tail=mbuf->begin+length;
-    mbuf->end=mbuf->tail;
-    mbuf->next=NULL;
+    //此处公用一个mbuf,减少mbuf消耗
+    if(NULL==mbuf){
+        mbuf=mbuf_get();
+        if(NULL==mbuf){
+            STDERR("cannot get mbuf for send tcp data\r\n");
+            return -3;
+        }
+        is_shared=0;
+        mbuf->begin=MBUF_BEGIN;
+        mbuf->offset=MBUF_BEGIN;
+        mbuf->tail=mbuf->begin+length;
+        mbuf->end=mbuf->tail;
+        mbuf->next=NULL;
+        begin=mbuf->begin;
+        end=mbuf->end;
+    }else{
+        is_shared=1;
+        begin=mbuf->end;
+        end=mbuf->end+length;
+    }
 
-    memcpy(mbuf->data+mbuf->begin,data,length);
+    memcpy(mbuf->data+begin,data,length);
 
     if(NULL==session->sent_seg_head){
         session->sent_seg_head=mbuf;
     }else{
-        session->sent_seg_end->next=mbuf;
+        if(!is_shared) session->sent_seg_end->next=mbuf;
     }
+
+    mbuf->tail=end;
+    mbuf->end=end;
 
     session->sent_seg_end=mbuf;
     session->sent_seq_cnt+=length;

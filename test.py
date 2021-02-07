@@ -16,7 +16,9 @@ for i in range(cnt):
 begin = time.time()
 for i in range(cnt):
     s.send(seq[i])
+    print("send ", i + 1)
     _ = s.recv(4096)
+    print("recv ", i + 1)
 
 t = time.time() - begin
 speed = block_size * cnt / t
