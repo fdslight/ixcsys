@@ -232,7 +232,6 @@ static void tcp_send_data(struct tcp_session *session,unsigned short status,void
     }
 
     tcphdr->csum=csum;
-    
 
     if(session->is_ipv6) ipv6_send(session->dst_addr,session->src_addr,6,m->data+m->begin,m->end-m->begin);
     else ip_send(session->dst_addr,session->src_addr,6,m->data+m->begin,m->end-m->begin);
@@ -456,6 +455,7 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
 
 static void tcp_session_fin(struct tcp_session *session,struct netutil_tcphdr *tcphdr,struct mbuf *m)
 {
+    DBG("empty mbuf num:%lu\r\n",mbuf_free_num_get());
     session->peer_sent_closed=1;
 }
 

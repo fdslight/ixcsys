@@ -6,7 +6,7 @@ s = socket.socket()
 s.connect(("8.8.8.8", 8800))
 
 block_size = 1024
-cnt = 1000
+cnt = 256
 seq = []
 
 for i in range(cnt):

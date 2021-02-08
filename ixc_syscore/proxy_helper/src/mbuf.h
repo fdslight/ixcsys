@@ -3,14 +3,6 @@
 
 #include<sys/types.h>
 
-struct mbuf_pool{
-    struct mbuf *empty_head;
-    // 预先分配大小
-    unsigned int pre_alloc_num;
-    // 当前分配大小
-    unsigned int cur_alloc_num;
-};
-
 struct mbuf{
     struct mbuf *next;
     void *priv_data;
@@ -29,5 +21,6 @@ void mbuf_uninit(void);
 
 struct mbuf *mbuf_get(void);
 void mbuf_put(struct mbuf *m);
+size_t mbuf_free_num_get(void);
 
 #endif

@@ -5,6 +5,8 @@
 
 /// 空的mbuf
 static struct mbuf *mbuf_empty_head=NULL;
+/// 空的mbuf数目
+static size_t mbuf_free_num=0;
 /// 已经分配的mbuf数目
 static size_t mbuf_used_num=0;
 /// 预先分配的mbuf数目
@@ -31,6 +33,7 @@ int mbuf_init(size_t pre_alloc_num)
 
     mbuf_used_num=pre_alloc_num;
     mbuf_pre_alloc_num=pre_alloc_num;
+    mbuf_free_num=pre_alloc_num;
 
     return 0;
 }
@@ -65,6 +68,7 @@ struct mbuf *mbuf_get(void)
         mbuf_empty_head=m->next;
 
         m->next=NULL;
+        mbuf_free_num-=1;
 
         return m;
     }
@@ -104,4 +108,11 @@ void mbuf_put(struct mbuf *m)
 
     m->next=mbuf_empty_head;
     mbuf_empty_head=m;
+    mbuf_free_num+=1;
+}
+
+inline
+size_t mbuf_free_num_get(void)
+{
+    return mbuf_free_num; 
 }
