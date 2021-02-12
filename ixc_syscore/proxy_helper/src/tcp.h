@@ -3,6 +3,7 @@
 
 #include "mbuf.h"
 #include "tcp_timer.h"
+#include "tcp_buf.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
@@ -24,18 +25,13 @@ enum{
 /// 获取TCP标志
 #define TCP_FLAGS(v,flags) (v & flags)
 
+#define TCP_SENT_BUF(session) (&((session)->sent_buf))
+
 /// TCP会话信息
 struct tcp_session{
     // 时间对象
     struct tcp_timer_node *tm_node;
-    // 发送段信息
-    struct mbuf *sent_seg_head;
-    // 发送段结束
-    struct mbuf *sent_seg_end;
-    // 接收到的数据
-    unsigned char recv_data[0xffff];
-    // 发送的数据
-    unsigned char sent_data[0xffff];
+    struct tcp_buf sent_buf;
     // 更新的时间值
     struct timeval up_time_val;
     // TCP的延迟时间

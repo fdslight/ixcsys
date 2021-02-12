@@ -64,6 +64,8 @@ int netpkt_send(struct mbuf *m,unsigned char protocol,int is_ipv6)
     Py_XDECREF(arglist);
     Py_XDECREF(result);
 
+    mbuf_put(m);
+
     return 0;
 }
 
@@ -368,11 +370,7 @@ proxy_helper_tcp_send(PyObject *self,PyObject *args)
 
     r=tcp_send(session_id,data,data_s,is_ipv6);
 
-    if(r!=0){
-        Py_RETURN_FALSE;
-    }
-
-    Py_RETURN_TRUE;
+    return PyLong_FromLong(r);
 }
 
 /// 设置TCP的窗口大小

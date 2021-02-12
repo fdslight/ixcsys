@@ -144,7 +144,6 @@ void tcp_timer_update(struct tcp_timer_node *node,time_t timeout_ms)
         tick->head->prev=node;
         node->next=tick->head;
     }
-;
     tick->head=node;
 }
 
