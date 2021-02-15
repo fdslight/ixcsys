@@ -49,7 +49,7 @@ static void tcp_session_fin_wait_set(struct tcp_session *session)
     session->tcp_st=TCP_ST_FIN_SND_WAIT;
 
     // 设置定时器等待时间,等待10s
-    //tcp_timer_update(tm_node,10000);
+    tcp_timer_update(tm_node,10000);
 }
 
 static void tcp_session_del_cb(void *data)
@@ -77,7 +77,7 @@ static void tcp_session_timeout_cb(void *data)
     }
     // 如果发送缓冲区有数据那么发送数据
     if(TCP_SENT_BUF(session)->used_size!=0 && !session->my_sent_closed){
-        //DBG_FLAGS;
+        DBG_FLAGS;
         tcp_send_from_buf(session);
         tcp_timer_update(tm_node,session->delay_ms);
     }
@@ -430,7 +430,7 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
         return 1;
     }
     // 已经接收的数据发送ACK,此处要考虑序列号回转情况
-    if(tcphdr->seq_num+payload_len<=session->peer_seq) tcp_send_data(session,TCP_ACK,NULL,0,NULL,0);
+    if(tcphdr->seq_num+payload_len<session->peer_seq) tcp_send_data(session,TCP_ACK,NULL,0,NULL,0);
 
     return 1;
 }
@@ -625,7 +625,6 @@ int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
 
     tcp_buf_copy_to_tcp_buf(TCP_SENT_BUF(session),data,sent_size);
 
-    DBG_FLAGS;
     // 发送数据,加入到定时器
     tcp_send_from_buf(session);
     tcp_timer_update(session->tm_node,session->delay_ms);

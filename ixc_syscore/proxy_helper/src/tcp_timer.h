@@ -3,7 +3,9 @@
 
 #include<sys/types.h>
 
+#ifndef TEST
 #include "../../../pywind/clib/sysloop.h"
+#endif
 
 struct tcp_timer_node;
 typedef void (*tcp_timer_cb_t)(void *data);
