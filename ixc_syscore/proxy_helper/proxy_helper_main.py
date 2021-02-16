@@ -123,7 +123,7 @@ class service(dispatcher.dispatcher):
         """
 
     def tcp_close(self, session_id: bytes, is_ipv6=False):
-        #self.proxy_helper.tcp_close(session_id, is_ipv6)
+        # self.proxy_helper.tcp_close(session_id, is_ipv6)
         pass
 
     def send_tcp_message(self, session_id: bytes, message: bytes, is_ipv6=False):
@@ -221,6 +221,10 @@ class service(dispatcher.dispatcher):
 
     def myloop(self):
         self.__proxy_helper.myloop()
+        if self.proxy_helper.have_data():
+            self.set_default_io_wait_time(0)
+        else:
+            self.set_default_io_wait_time(3)
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")

@@ -394,6 +394,7 @@ class service(dispatcher.dispatcher):
 
     def myloop(self):
         if self.__pppoe_enable: self.__pppoe.loop()
+
         if not self.router.iowait():
             self.set_default_io_wait_time(0)
         else:

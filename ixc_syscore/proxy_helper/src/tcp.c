@@ -9,14 +9,22 @@
 #include "proxy_helper.h"
 
 #include "../../../pywind/clib/netutils.h"
+#include "../../../pywind/clib/sysloop.h"
+
 
 static struct tcp_sessions tcp_sessions;
+static struct sysloop *tcp_sysloop=NULL;
 
 static void tcp_send_from_buf(struct tcp_session *session);
 static void tcp_session_del_cb(void *data);
 static void tcp_send_data(struct tcp_session *session,unsigned short status,void *opt,size_t opt_size,void *data,size_t data_size);
 static void tcp_session_fin_wait_set(struct tcp_session *session);
 static void tcp_send_rst(struct tcp_session *session);
+
+static void tcp_sysloop_cb(struct sysloop *loop)
+{
+    tcp_timer_do();
+}
 
 /// 获取延迟,单位是ms
 static time_t tcp_session_get_delay(struct tcp_session *session)
@@ -79,10 +87,9 @@ static void tcp_session_timeout_cb(void *data)
     if(TCP_SENT_BUF(session)->used_size!=0 && !session->my_sent_closed){
         DBG_FLAGS;
         tcp_send_from_buf(session);
-        tcp_timer_update(tm_node,session->delay_ms);
+        //tcp_timer_update(tm_node,session->delay_ms);
     }
 }
-
 /// 处理TCP头部选项
 // opt_data为选项数据
 // opt_len为选项长度
@@ -563,8 +570,16 @@ int tcp_init(void)
 
     bzero(&tcp_sessions,sizeof(struct tcp_sessions));
 
+    tcp_sysloop=sysloop_add(tcp_sysloop_cb,NULL);
+
+    if(NULL==tcp_sysloop){
+        STDERR("cannot add to sysloop\r\n");
+        return -1;
+    }
+
     rs=map_new(&m,36);
     if(0!=rs){
+        sysloop_del(tcp_sysloop);
         STDERR("cannot create map for TCPv6\r\n");
         return -1;
     }
@@ -572,6 +587,7 @@ int tcp_init(void)
 
     rs=map_new(&m,12);
     if(0!=rs){
+        sysloop_del(tcp_sysloop);
         map_release(tcp_sessions.sessions6,NULL);
         STDERR("cannot create map for TCP\r\n");
         return -1;
@@ -581,6 +597,8 @@ int tcp_init(void)
     tcp_sessions.ip_mss=1420;
     tcp_sessions.ip6_mss=1200;
 
+    tcp_sessions.sent_buf_cnt=1;
+
     return 0;
 }
 
@@ -588,6 +606,8 @@ void tcp_uninit(void)
 {
     map_release(tcp_sessions.sessions6,tcp_session_del_cb);
     map_release(tcp_sessions.sessions,tcp_session_del_cb);
+
+    sysloop_del(tcp_sysloop);
 }
 
 int tcp_mss_set(unsigned short mss,int is_ipv6)

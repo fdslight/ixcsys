@@ -6,13 +6,6 @@
 
 static struct tcp_timer tcp_timer;
 
-#ifndef TEST
-static void tcp_timer_loop(struct sysloop *loop)
-{
-    tcp_timer_do();
-}
-#endif
-
 /// 根据超时获取对应的tick
 static struct tcp_timer_tick *tcp_timer_get_tick(time_t timeout_ms)
 {
@@ -71,14 +64,6 @@ int tcp_timer_init(time_t wheel_max,time_t tick_timeout)
     tcp_timer.tick_timeout=tick_timeout;
     tcp_timer.tick_num=tot;
 
-#ifndef TEST
-    tcp_timer.loop=sysloop_add(tcp_timer_loop,NULL);
-    if(NULL==tcp_timer.loop){
-        STDERR("cannot add to sysloop for tcp timer\r\n");
-        return -1;
-    }
-#endif
-
     return 0;
 }
 
@@ -101,10 +86,6 @@ void tcp_timer_uninit(void)
     }
 
     free(tcp_timer.tick_idx);
-
-#ifndef TEST
-    if(NULL!=tcp_timer.loop) sysloop_del(tcp_timer.loop);
-#endif
 }
 
 struct tcp_timer_node *tcp_timer_add(time_t timeout_ms,tcp_timer_cb_t fn,void *data)
