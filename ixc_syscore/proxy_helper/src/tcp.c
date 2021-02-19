@@ -56,8 +56,8 @@ static void tcp_session_fin_wait_set(struct tcp_session *session)
     struct tcp_timer_node *tm_node=session->tm_node;
     session->tcp_st=TCP_ST_FIN_SND_WAIT;
 
-    // 设置定时器等待时间,等待10s
-    tcp_timer_update(tm_node,10000);
+    // 注意一定需要判断语句,需要超时才能更新
+    if(session->tm_node->timeout_flags) tcp_timer_update(tm_node,session->delay_ms);
 }
 
 static void tcp_session_del_cb(void *data)
@@ -79,15 +79,15 @@ static void tcp_session_timeout_cb(void *data)
     struct tcp_timer_node *tm_node=session->tm_node;
 
     // 如果对端停止发送并且本端停止发送那么关闭TCP会话连接
-    if(session->peer_sent_closed && session->tcp_st==TCP_ST_FIN_SND_WAIT){
+    if(session->peer_sent_closed && TCP_SENT_BUF(session)->used_size==0){
         tcp_session_close(session);
         return;
     }
     // 如果发送缓冲区有数据那么发送数据
     if(TCP_SENT_BUF(session)->used_size!=0 && !session->my_sent_closed){
-        DBG_FLAGS;
+        //DBG_FLAGS;
         tcp_send_from_buf(session);
-        //tcp_timer_update(tm_node,session->delay_ms);
+        tcp_timer_update(tm_node,session->delay_ms);
     }
 }
 /// 处理TCP头部选项
@@ -346,8 +346,6 @@ static void tcp_send_from_buf(struct tcp_session *session)
     unsigned short used_size=TCP_SENT_BUF(session)->used_size;
 
     unsigned char buf[0xffff];
-
-    DBG_FLAGS;
     
     while(1){
         if(peer_wind==0) break;
@@ -361,7 +359,7 @@ static void tcp_send_from_buf(struct tcp_session *session)
         peer_wind-=sent_size;
         tot_size+=sent_size;
 
-        DBG("%d %d\r\n",tot_size,used_size);
+        //DBG("%d %d\r\n",tot_size,used_size);
 
         if(tot_size>=used_size) break;
         //if(tot_size>=used_size) return;
@@ -384,7 +382,7 @@ static void tcp_sent_ack_handle(struct tcp_session *session,struct netutil_tcphd
         return;
     }
 
-    DBG("ack size %d\r\n",ack_size);
+    //DBG("ack size %d\r\n",ack_size);
     tcp_buf_data_ptr_move(TCP_SENT_BUF(session),ack_size);
 
     session->seq+=ack_size;
@@ -430,7 +428,6 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
             return 1;
         }
         //DBG("%u\r\n",session->sent_seq_cnt);
-        DBG_FLAGS;
         if(session->sent_seq_cnt!=0) tcp_send_from_buf(session);
         else tcp_send_data(session,TCP_ACK,NULL,0,NULL,0);
 
@@ -647,7 +644,9 @@ int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
 
     // 发送数据,加入到定时器
     tcp_send_from_buf(session);
-    tcp_timer_update(session->tm_node,session->delay_ms);
+
+    // 如果已经超时了那么就更新,注意一定需要等待超时才能更新定时器
+    if(session->tm_node->timeout_flags) tcp_timer_update(session->tm_node,session->delay_ms);
 
     return sent_size;
 }
