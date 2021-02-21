@@ -445,15 +445,15 @@ proxy_helper_tcp_mss_set(PyObject *self,PyObject *args)
 
 /// 检查是否还有数据
 static PyObject *
-proxy_helper_have_data(PyObject *self,PyObject *args)
+proxy_helper_io_wait(PyObject *self,PyObject *args)
 {
-    int r=tcp_have_sent_data();
+    unsigned long long conns=tcp_conn_count_get();
 
-    if(r){
-        Py_RETURN_TRUE;
+    if(conns){
+        Py_RETURN_FALSE;
     }
     
-    Py_RETURN_FALSE;
+    Py_RETURN_TRUE;
 }
 
 static PyMemberDef proxy_helper_members[]={
@@ -473,7 +473,7 @@ static PyMethodDef proxy_helper_methods[]={
     {"tcp_close",(PyCFunction)proxy_helper_tcp_close,METH_VARARGS,"tcp connection close"},
     {"tcp_mss_set",(PyCFunction)proxy_helper_tcp_mss_set,METH_VARARGS,"tcp mss set"},
 
-    {"have_data",(PyCFunction)proxy_helper_have_data,METH_VARARGS,"check if have data"},
+    {"io_wait",(PyCFunction)proxy_helper_io_wait,METH_VARARGS,"if wait connection IO"},
     
     {NULL,NULL,0,NULL}
 };

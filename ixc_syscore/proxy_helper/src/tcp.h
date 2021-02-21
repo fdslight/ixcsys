@@ -77,8 +77,7 @@ struct tcp_sessions{
     struct map *sessions;
     // IPv6 TCP会话
     struct map *sessions6;
-    // 发送缓冲计数器,如果为0表示没有任何数据可以需要被发送
-    unsigned long long sent_buf_cnt;
+    unsigned long long conn_count;
     unsigned short ip_mss;
     unsigned short ip6_mss;
 };
@@ -95,7 +94,8 @@ int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6);
 int tcp_close(unsigned char *session_id,int is_ipv6);
 /// 窗口大小设置
 int tcp_window_set(unsigned char *session_id,int is_ipv6,unsigned short win_size);
-/// 是否还有数据等待发送
-int tcp_have_sent_data(void);
+
+/// 获取TCP连接数
+unsigned long long tcp_conn_count_get(void);
 
 #endif

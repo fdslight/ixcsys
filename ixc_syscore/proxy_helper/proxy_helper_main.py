@@ -220,10 +220,11 @@ class service(dispatcher.dispatcher):
 
     def myloop(self):
         self.__proxy_helper.myloop()
-        if self.proxy_helper.have_data():
-            self.set_default_io_wait_time(0)
+
+        if self.proxy_helper.io_wait():
+            self.set_default_io_wait_time(10)
         else:
-            self.set_default_io_wait_time(3)
+            self.set_default_io_wait_time(0)
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")

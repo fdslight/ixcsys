@@ -594,8 +594,6 @@ int tcp_init(void)
     tcp_sessions.ip_mss=1420;
     tcp_sessions.ip6_mss=1200;
 
-    tcp_sessions.sent_buf_cnt=1;
-
     return 0;
 }
 
@@ -683,8 +681,7 @@ int tcp_window_set(unsigned char *session_id,int is_ipv6,unsigned short win_size
 }
 
 inline
-int tcp_have_sent_data(void)
+unsigned long long tcp_conn_count_get(void)
 {
-    if(tcp_sessions.sent_buf_cnt) return 1;
-    return 0;
+    return tcp_sessions.conn_count;
 }
