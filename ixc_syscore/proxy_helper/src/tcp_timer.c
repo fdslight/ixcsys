@@ -10,12 +10,18 @@ static struct tcp_timer tcp_timer;
 static struct tcp_timer_tick *tcp_timer_get_tick(time_t timeout_ms)
 {
     int tot=timeout_ms / tcp_timer.tick_timeout,r=timeout_ms % tcp_timer.tick_timeout;
+    int idx;
     struct tcp_timer_tick *result=NULL;
 
     if(r>0) tot+=1;
     if(tot>0) tot-=1;
 
-    result=tcp_timer.tick_idx[tot];
+    idx=tot+tcp_timer.cur_idx_no;
+    if(idx>=tcp_timer.tick_num) idx=idx-tcp_timer.tick_num;
+
+    //DBG("Index old:%d new:%d\r\n",tcp_timer.cur_idx_no,idx);
+
+    result=tcp_timer.tick_idx[idx];
 
     return result;
 }
@@ -60,9 +66,11 @@ int tcp_timer_init(time_t wheel_max,time_t tick_timeout)
     }
 
     last->next=tcp_timer.tick_head;
-    tcp_timer.up_time=time(NULL);
+
+    gettimeofday(&(tcp_timer.up_time),NULL);
     tcp_timer.tick_timeout=tick_timeout;
     tcp_timer.tick_num=tot;
+    tcp_timer.timeout_max=wheel_max;
 
     return 0;
 }
@@ -103,8 +111,6 @@ struct tcp_timer_node *tcp_timer_add(time_t timeout_ms,tcp_timer_cb_t fn,void *d
     bzero(node,sizeof(struct tcp_timer_node));
 
     tick=tcp_timer_get_tick(timeout_ms);
-
-    if(NULL!=tick->head) tick->head->prev=node;
     
     node->next=tick->head;
     tick->head=node;
@@ -121,23 +127,16 @@ void tcp_timer_update(struct tcp_timer_node *node,time_t timeout_ms)
 {
     struct tcp_timer_tick *tick=node->tick;
 
-    if(NULL==node->prev){
-        tick->head=node->next;
-        if(NULL!=tick->head) tick->head->prev=NULL;
-    }else{
-        node->prev->next=node->next;
+    if(timeout_ms/1000 > tcp_timer.timeout_max){
+        STDERR("cannot update time,the value is too large %ld\r\n",timeout_ms);
+        return;
     }
 
-    node->next=NULL;
-    node->prev=NULL;
-    node->timeout_flags=0;
-
-    tick=tcp_timer_get_tick(timeout_ms);
     
-    if(NULL!=tick->head){
-        tick->head->prev=node;
-        node->next=tick->head;
-    }
+    node->timeout_flags=0;
+    tick=tcp_timer_get_tick(timeout_ms);
+
+    node->next=tick->head;
     tick->head=node;
 }
 
@@ -157,14 +156,12 @@ void tcp_timer_do(void)
     struct timeval tv;
     int ms,tot;
     struct tcp_timer_tick *tick=tcp_timer.tick_head;
-    struct tcp_timer_node *node,*t_node;
+    struct tcp_timer_node *node,*t_node,*head=NULL;
 
     gettimeofday(&tv,NULL);
 
-    ms=(tv.tv_sec-tcp_timer.up_time)*1000+tv.tv_usec/1000;
+    ms=tcp_timer_interval_calc(&(tcp_timer.up_time),&tv);
     tot=ms / tcp_timer.tick_timeout;
-
-    //DBG("%d\r\n",tot);
 
     for(int n=0;n<tot;n++){
         node=tick->head;
@@ -177,7 +174,10 @@ void tcp_timer_do(void)
                 node->timeout_flags=1;
                 // 这里可能在回调函数出现删除node情况,此处需要提前指向下一个node
                 t_node=node->next;
-                node->fn(node->data);
+
+                node->next=head;
+                head=node;
+
                 node=t_node;
             }
         }
@@ -187,8 +187,35 @@ void tcp_timer_do(void)
         tick=tick->next;
     }
 
-    tcp_timer.tick_head=tick;
-    tcp_timer.up_time=time(NULL);
- 
+    // 此处更新tick head，以便超时函数里能够调用tcp_timer_update
+    // 另外注意需要判断时间间隔是否低于单个tick时间,如果不加入判断那么tick永远无法向前移动
+    if(NULL!=head){
+        tcp_timer.tick_head=tick;
+        tcp_timer.cur_idx_no=tick->idx_no;
+        memcpy(&tcp_timer.up_time,&tv,sizeof(struct timeval));
+    }
+
+    node=head;
+    while(NULL!=node){
+        t_node=node->next;
+        node->fn(node->data);
+        node=t_node;
+    }
 }
 
+time_t tcp_timer_interval_calc(struct timeval *begin,struct timeval *end)
+{
+    int usec=end->tv_usec-begin->tv_usec;
+    time_t sec=end->tv_sec-begin->tv_sec;
+    time_t r;
+
+    // 如果微妙差值小于0,那么从秒这里借位
+    if(usec<0){
+        sec--;
+        usec=usec+1000000;
+    }
+
+    r=sec * 1000 + usec/1000;
+    
+    return r;
+}

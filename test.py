@@ -6,7 +6,7 @@ s = socket.socket()
 s.connect(("8.8.8.8", 8800))
 
 block_size = 1024
-cnt = 25600
+cnt = 12800
 seq = []
 
 for i in range(cnt):
@@ -14,6 +14,7 @@ for i in range(cnt):
     seq.append(t)
 
 begin = time.time()
+
 for i in range(cnt):
     s.send(seq[i])
     print("send ", i + 1)

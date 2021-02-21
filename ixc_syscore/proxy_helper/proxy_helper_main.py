@@ -222,7 +222,7 @@ class service(dispatcher.dispatcher):
         self.__proxy_helper.myloop()
 
         if self.proxy_helper.io_wait():
-            self.set_default_io_wait_time(10)
+            self.set_default_io_wait_time(5)
         else:
             self.set_default_io_wait_time(0)
 

@@ -189,5 +189,6 @@ void time_wheel_handle(struct time_wheel *time_wheel)
         tick=tick->next;
     }
 
-    time_wheel->old_time=now;
+    // 这里tick_n大于0才能更新时间,否则tick将永远无法向前移动
+    if(tick_n>0) time_wheel->old_time=now;
 }

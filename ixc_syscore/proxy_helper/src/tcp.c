@@ -26,22 +26,19 @@ static void tcp_sysloop_cb(struct sysloop *loop)
     tcp_timer_do();
 }
 
-/// 获取延迟,单位是ms
-static time_t tcp_session_get_delay(struct tcp_session *session)
+/// 获取数据传输延迟,单位是ms
+static time_t tcp_session_get_data_delay(struct tcp_session *session)
 {
     struct timeval now_time;
     time_t delay;
     
     gettimeofday(&now_time,NULL);
 
-    delay=(now_time.tv_sec-session->up_time_val.tv_sec)*1000;
-    delay+=(now_time.tv_usec-session->up_time_val.tv_usec)/1000;
+    delay=tcp_timer_interval_calc(&(session->data_time_up),&now_time)/1.5;
 
-    memcpy(&(session->up_time_val),&now_time,sizeof(struct timeval));
+    if(delay<TCP_TIMER_TICK_INTERVAL) delay=TCP_TIMER_TICK_INTERVAL;
 
-    if(delay==0) delay=10;
-
-    return delay/1.5;
+    return delay;
 }
 
 static void tcp_session_close(struct tcp_session *session)
@@ -53,36 +50,34 @@ static void tcp_session_close(struct tcp_session *session)
 
 static void tcp_session_fin_wait_set(struct tcp_session *session)
 {
-    struct tcp_timer_node *tm_node=session->tm_node;
+    //struct tcp_timer_node *tm_node=session->tm_node;
     session->tcp_st=TCP_ST_FIN_SND_WAIT;
 
     // 注意一定需要判断语句,需要超时才能更新
-    if(session->tm_node->timeout_flags) tcp_timer_update(tm_node,session->delay_ms);
+    //if(session->tm_node->timeout_flags) tcp_timer_update(tm_node,session->delay_ms);
 }
 
 static void tcp_session_del_cb(void *data)
 {
     struct tcp_session *session=data;
-    struct tcp_timer_node *tm_node=session->tm_node;
     
     // 发送一次RST数据包,确保TCP被停止
     tcp_send_rst(session);
     netpkt_tcp_close_ev(session->id,session->is_ipv6);
 
-    if(NULL!=tm_node) tcp_timer_del(tm_node);
+    if(NULL!=session->data_tm_node) tcp_timer_del(session->data_tm_node);
+    if(NULL!=session->conn_tm_node) tcp_timer_del(session->conn_tm_node);
+
+    tcp_sessions.conn_count-=1;
+
     free(session);
 }
 
-static void tcp_session_timeout_cb(void *data)
+static void tcp_session_data_timeout_cb(void *data)
 {
     struct tcp_session *session=data;
-    struct tcp_timer_node *tm_node=session->tm_node;
+    struct tcp_timer_node *tm_node=session->data_tm_node;
 
-    // 如果对端停止发送并且本端停止发送那么关闭TCP会话连接
-    if(session->peer_sent_closed && TCP_SENT_BUF(session)->used_size==0){
-        tcp_session_close(session);
-        return;
-    }
     // 如果发送缓冲区有数据那么发送数据
     if(TCP_SENT_BUF(session)->used_size!=0 && !session->my_sent_closed){
         //DBG_FLAGS;
@@ -90,6 +85,59 @@ static void tcp_session_timeout_cb(void *data)
         tcp_timer_update(tm_node,session->delay_ms);
     }
 }
+
+static void tcp_session_conn_timeout_cb(void *data)
+{
+    struct tcp_session *session=data;
+    struct timeval now_time;
+    time_t timeout;
+
+    gettimeofday(&now_time,NULL);
+
+    timeout=tcp_timer_interval_calc(&(session->conn_time_up),&now_time)/1000;
+
+    //DBG_FLAGS;
+
+    // 注意这段if代码要在最开始的位置
+    if(session->tcp_st==TCP_ST_FIN_SND_WAIT || session->peer_sent_closed){
+        //DBG_FLAGS;
+        if(timeout>TCP_TIMEOUT_FIN){
+            DBG("TCP fin timeout\r\n");
+            tcp_session_close(session);
+            return;
+        }
+        //DBG_FLAGS;
+        tcp_timer_update(session->conn_tm_node,1000);
+        return;
+    }
+    
+    //DBG_FLAGS;
+    if(session->tcp_st==TCP_ST_OK){
+        if(timeout>=TCP_TIMEOUT_KEEP_ALIVE){
+            DBG("TCP Keep alive timeout\r\n");
+            tcp_session_close(session);
+            return;
+        }
+        //DBG_FLAGS;
+        tcp_timer_update(session->conn_tm_node,1000);
+        return;
+    }
+
+    //DBG_FLAGS;
+    if(session->tcp_st==TCP_ST_SYN_SND){
+        if(timeout>TCP_TIMEOUT_SYN){
+            DBG("TCP syn wait timeout\r\n");
+            tcp_session_close(session);
+            return;
+        }
+        //DBG_FLAGS;
+        tcp_timer_update(session->conn_tm_node,1000);
+        return;
+    }
+
+    tcp_session_close(session);
+}
+
 /// 处理TCP头部选项
 // opt_data为选项数据
 // opt_len为选项长度
@@ -281,9 +329,10 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
             return;
         }
 
-        session->tm_node=tcp_timer_add(100,tcp_session_timeout_cb,session);
+        gettimeofday(&(session->conn_time_up),NULL);
+        session->conn_tm_node=tcp_timer_add(1000,tcp_session_conn_timeout_cb,session);
         
-        if(NULL==session->tm_node){
+        if(NULL==session->conn_tm_node){
             STDERR("cannot add to tcp timer\r\n");
             map_del(map,session_id,NULL);
             free(session);
@@ -294,6 +343,8 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
         tcp_buf_init(TCP_SENT_BUF(session));
         session->tcp_st=TCP_ST_SYN_SND;
         session->my_mss=is_ipv6?tcp_sessions.ip6_mss:tcp_sessions.ip_mss;
+        
+        tcp_sessions.conn_count+=1;
     }else{
         // 如果不是SYN_SND状态则忽略该SYN数据包
         if(session->tcp_st!=TCP_ST_SYN_SND) return;
@@ -323,9 +374,9 @@ static void tcp_session_syn(const char *session_id,unsigned char *saddr,unsigned
 
     session->tcp_st=TCP_ST_SYN_SND;
 
-    my_mss=htons(session->my_mss);
+    gettimeofday(&(session->data_time_up),NULL);
 
-    gettimeofday(&(session->up_time_val),NULL);
+    my_mss=htons(session->my_mss);
 
     tcp_session_handle_header_opt(session,m->data+m->offset-hdr_len+20,hdr_len-20);
     rs=tcp_build_opts(opt_kinds,opt_values,opt_lenths,buf);
@@ -396,7 +447,7 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
     int payload_len=m->tail-m->offset;
     unsigned int tmp=session->seq+session->sent_seq_cnt;
 
-    session->delay_ms=tcp_session_get_delay(session);
+    session->delay_ms=tcp_session_get_data_delay(session);
     session->peer_window_size=tcphdr->win_size;
     
     // 如果确认号大于序列号那么丢弃数据包,这里考虑序列号回转情况
@@ -427,6 +478,9 @@ static int tcp_session_ack(struct tcp_session *session,struct netutil_tcphdr *tc
             }
             return 1;
         }
+        // 如果对端未关闭那么更新连接时间
+        if(!session->peer_sent_closed) gettimeofday(&(session->conn_time_up),NULL);
+
         //DBG("%u\r\n",session->sent_seq_cnt);
         if(session->sent_seq_cnt!=0) tcp_send_from_buf(session);
         else tcp_send_data(session,TCP_ACK,NULL,0,NULL,0);
@@ -632,6 +686,15 @@ int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
     if(NULL==session) return -1;
     // 如果本端关闭那么不允许发送数据
     if(session->my_sent_closed) return -2;
+    
+    // 如果未定义数据时间对象,那么定义数据时间对象
+    if(NULL==session->data_tm_node){
+        session->data_tm_node=tcp_timer_add(session->delay_ms,tcp_session_data_timeout_cb,session);
+        if(NULL==session->data_tm_node){
+            STDERR("cannot create data time node\r\n");
+            return -3;
+        }
+    }
 
     sent_size=tcp_buf_free_buf_get(TCP_SENT_BUF(session));
     sent_size=sent_size>length?length:sent_size;
@@ -644,7 +707,7 @@ int tcp_send(unsigned char *session_id,void *data,int length,int is_ipv6)
     tcp_send_from_buf(session);
 
     // 如果已经超时了那么就更新,注意一定需要等待超时才能更新定时器
-    if(session->tm_node->timeout_flags) tcp_timer_update(session->tm_node,session->delay_ms);
+    if(session->data_tm_node->timeout_flags) tcp_timer_update(session->data_tm_node,session->delay_ms);
 
     return sent_size;
 }

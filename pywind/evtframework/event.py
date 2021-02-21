@@ -232,7 +232,7 @@ class event(object):
         return self.__convert_epoll_events(events)
 
     def __epoll_iowait(self):
-        events = self.__epoll_object.poll(10)
+        events = self.__epoll_object.poll(self.__poll_timeout)
 
         return self.__handle_epoll_events(events)
 

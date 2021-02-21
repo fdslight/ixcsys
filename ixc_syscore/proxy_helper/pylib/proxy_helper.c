@@ -194,7 +194,7 @@ proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     // tcp timer需要在tcp之前初始化
-    rs=tcp_timer_init(60,50);
+    rs=tcp_timer_init(TCP_TIMEOUT_MAX,TCP_TIMER_TICK_INTERVAL);
     if(rs<0){
         STDERR("cannot init tcp timer\r\n");
         return NULL;

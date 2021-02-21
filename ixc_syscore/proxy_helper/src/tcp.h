@@ -13,6 +13,16 @@
 #define TCP_SYN 0x0002
 #define TCP_FIN 0x0001
 
+//////超时,单位是秒,注意这里的时间要小于TCP_TIMEOUT_MAX值
+#define TCP_TIMEOUT_MAX 180
+/// TCP SYN超时时间
+#define TCP_TIMEOUT_SYN 8
+/// TCP KEEP ALIVE超时时间
+#define TCP_TIMEOUT_KEEP_ALIVE 120
+/// TCP FIN超时时间
+#define TCP_TIMEOUT_FIN 8
+
+
 /// TCP状态
 enum{
     // SYN已经发送
@@ -29,11 +39,15 @@ enum{
 
 /// TCP会话信息
 struct tcp_session{
-    // 时间对象
-    struct tcp_timer_node *tm_node;
+    // 数据时间对象
+    struct tcp_timer_node *data_tm_node;
+    // 连接时间对象
+    struct tcp_timer_node *conn_tm_node;
     struct tcp_buf sent_buf;
-    // 更新的时间值
-    struct timeval up_time_val;
+    // TCP数据传输时间更新
+    struct timeval data_time_up;
+    // TCP连接时间更新
+    struct timeval conn_time_up;
     // TCP的延迟时间
     time_t delay_ms;
     // 是否是IPv6地址
