@@ -14,6 +14,8 @@
 #include "../src/udp.h"
 #include "../src/tcp.h"
 #include "../src/tcp_timer.h"
+#include "../src/ipunfrag.h"
+#include "../src/ip6unfrag.h"
 
 #include "../../../pywind/clib/sysloop.h"
 
@@ -184,6 +186,12 @@ proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=mbuf_init(1024);
     if(rs<0){
         STDERR("cannot init mbuf\r\n");
+        return NULL;
+    }
+
+    rs=ipunfrag_init();
+    if(rs<0){
+        STDERR("cannot init ipunfrag\r\n");
         return NULL;
     }
 

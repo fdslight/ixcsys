@@ -2,6 +2,7 @@
 
 import socket, os, time
 
+"""
 s = socket.socket()
 s.connect(("8.8.8.8", 8800))
 
@@ -29,11 +30,10 @@ s.close()
 """
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-for i in range(2):
-    byte_data=os.urandom(1024)
+for i in range(1):
+    byte_data=os.urandom(2048)
     s.sendto(byte_data,("8.8.8.8", 443))
-    print(byte_data)
-    print(s.recvfrom(4096))
+    print(len(byte_data))
+    #print(s.recvfrom(4096))
 
 s.close()
-"""

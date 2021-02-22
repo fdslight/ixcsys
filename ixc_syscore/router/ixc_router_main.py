@@ -240,7 +240,7 @@ class service(dispatcher.dispatcher):
             self.linux_br_create(self.__LAN_BR_NAME, [lan_phy_ifname, self.__LAN_NAME, ])
 
             os.system("ip link set %s promisc on" % lan_phy_ifname)
-            os.system("ip link set %s promisc on" % self.__LAN_NAME)
+            #os.system("ip link set %s promisc on" % self.__LAN_NAME)
             os.system("ip link set %s up" % lan_phy_ifname)
 
         else:
@@ -321,7 +321,7 @@ class service(dispatcher.dispatcher):
         byte_gw = socket.inet_pton(socket.AF_INET, default_gw)
         byte_subnet = socket.inet_pton(socket.AF_INET, "0.0.0.0")
 
-        self.router.route_add(byte_subnet, 0, byte_gw, False, False)
+        self.router.route_add(byte_subnet, 0, byte_gw, False)
 
     def start_scgi(self):
         scgi_configs = {

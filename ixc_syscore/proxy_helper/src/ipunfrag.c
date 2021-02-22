@@ -122,6 +122,7 @@ struct mbuf *ipunfrag_add(struct mbuf *m)
     }else{
         // 检查是否发送了重复的数据包,如果是重复的数据包那么直接丢弃
         new_mbuf=map_find(ipunfrag.m,key,&is_found);
+        //DBG_FLAGS;
         if(NULL!=new_mbuf){
             mbuf_put(m);
             return NULL;
@@ -141,7 +142,7 @@ struct mbuf *ipunfrag_add(struct mbuf *m)
             STDERR("cannot to map\r\n");
             return NULL;
         }
-        
+        //DBG_FLAGS;
         tdata=time_wheel_add(&ipunfrag_time_wheel,new_mbuf,1);
         if(NULL==tdata){
             mbuf_put(m);
@@ -150,12 +151,13 @@ struct mbuf *ipunfrag_add(struct mbuf *m)
             STDERR("cannot add to time wheel\r\n");
             return NULL;
         }
-
+        //DBG_FLAGS;
         new_mbuf->next=NULL;
         new_mbuf->begin=m->offset;
         new_mbuf->offset=m->offset;
         new_mbuf->tail=m->tail;
         new_mbuf->end=m->tail;
+        new_mbuf->priv_data=tdata;
     }
 
     tot_len=ntohs(header->tot_len);
@@ -168,7 +170,6 @@ struct mbuf *ipunfrag_add(struct mbuf *m)
         mbuf_put(new_mbuf);
         return NULL;
     }
-
     memcpy(new_mbuf->data+new_mbuf->offset+offset * 8,m->data+m->offset+header_len,tot_len-header_len);
     
     // 修改尾部偏移
