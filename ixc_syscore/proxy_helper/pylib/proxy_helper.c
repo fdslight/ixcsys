@@ -189,18 +189,24 @@ proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    rs=ipunfrag_init();
-    if(rs<0){
-        STDERR("cannot init ipunfrag\r\n");
-        return NULL;
-    }
-
     rs=sysloop_init();
     if(rs<0){
         STDERR("cannot init sysloop\r\n");
         return NULL;
     }
 
+    rs=ipunfrag_init();
+    if(rs<0){
+        STDERR("cannot init ipunfrag\r\n");
+        return NULL;
+    }
+
+    rs=ip6unfrag_init();
+    if(rs<0){
+        STDERR("cannot init ip6unfrag\r\n");
+        return NULL;
+    }
+    
     // tcp timer需要在tcp之前初始化
     rs=tcp_timer_init(TCP_TIMEOUT_MAX,TCP_TIMER_TICK_INTERVAL);
     if(rs<0){
@@ -535,6 +541,5 @@ PyInit_proxy_helper(void){
         return NULL;
     }
     
-
     return m;
 }

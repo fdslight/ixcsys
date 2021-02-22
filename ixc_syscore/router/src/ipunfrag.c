@@ -84,8 +84,8 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
 {
     struct ixc_mbuf *new_mbuf;
     struct netutil_iphdr *header;
-    int mf,rs,max_v,header_len;
-    unsigned short frag_info,offset,tot_len;
+    int mf,rs,header_len;
+    unsigned short frag_info,offset,tot_len,csum;
     char key[10],is_found;
     struct time_data *tdata;
 
@@ -97,11 +97,19 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
 
     header=(struct netutil_iphdr *)(m->data+m->offset);
     header_len=(header->ver_and_ihl & 0x0f) * 4; 
+    tot_len=ntohs(header->tot_len);
 
     frag_info=ntohs(header->frag_info);
 
     offset=frag_info & 0x1fff;
     mf=frag_info & 0x2000;
+
+    // 限制大小,避免缓冲区溢出
+    if(offset * 8 > 0xff00){
+        map_del(ipunfrag.m,key,ixc_ipunfrag_map_del_cb);
+        ixc_mbuf_put(m);
+        return NULL;
+    }
     
     memcpy(&key[0],header->src_addr,4);
     memcpy(&key[4],header->dst_addr,4);
@@ -115,6 +123,8 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
             ixc_mbuf_put(m);
             return NULL;
         }
+        // 修改尾部偏移
+        new_mbuf->tail+=tot_len-header_len;
     }else{
         // 检查是否发送了重复的数据包,如果是重复的数据包那么直接丢弃
         new_mbuf=map_find(ipunfrag.m,key,&is_found);
@@ -147,6 +157,8 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
             return NULL;
         }
 
+        tdata->data=new_mbuf;
+
         new_mbuf->next=NULL;
         new_mbuf->netif=m->netif;
         new_mbuf->is_ipv6=0;
@@ -156,42 +168,40 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
         new_mbuf->tail=m->tail;
         new_mbuf->end=m->tail;
         new_mbuf->link_proto=m->link_proto;
+
+        new_mbuf->priv_data=tdata;
+        new_mbuf->priv_flags=header_len;
     }
 
-    tot_len=ntohs(header->tot_len);
-
-    // 检查分包长度的合法性
-    max_v=new_mbuf->offset+offset * 8 + tot_len;
-    if(max_v>IXC_MBUF_DATA_MAX_SIZE){
-        STDERR("security problem,invalid ip fragment length\r\n");
-        ixc_mbuf_put(m);
-        ixc_mbuf_put(new_mbuf);
-        return NULL;
-    }
-
-    memcpy(new_mbuf->data+new_mbuf->offset+offset * 8,m->data+m->offset+header_len,tot_len-header_len);
     
-    // 修改尾部偏移
-    new_mbuf->tail+=tot_len;
+
     new_mbuf->end=new_mbuf->tail;
+
+    if(0!=offset) memcpy(new_mbuf->data+new_mbuf->offset+offset * 8 + new_mbuf->priv_flags,m->data+m->offset+header_len,tot_len-header_len);
+    else memcpy(new_mbuf->data+new_mbuf->offset,m->data+m->offset,tot_len);
+
     // 回收mbuf
     ixc_mbuf_put(m);
 
-    new_mbuf->priv_flags+=1;
-    if(mf!=0) {
-        new_mbuf->priv_flags+=1;
-        // 限制单个ID最大分片为8个,超过8个那么删除数据
-        if(new_mbuf->priv_flags>8){
-            map_del(ipunfrag.m,key,ixc_ipunfrag_map_del_cb);
-            return NULL;
-        }
-        return NULL;
-    }
+    // 不是最后一个分包那么直接返回
+    if(mf!=0) return NULL;
+
+    // 此处修改IP头部长度并重新修改checksum
+    header=(struct netutil_iphdr *)(new_mbuf->data+m->offset);
+    header_len=(header->ver_and_ihl & 0x0f) * 4; 
+    header->tot_len=offset * 8 + header_len;
+    header->checksum=0;
+    csum=csum_calc((unsigned short *)header,header_len);
+    header->checksum=htons(csum);
+
     // 处理是最后一个分片的方法
     tdata=new_mbuf->priv_data;
     // 设置定时器为失效
-    tdata->is_deleted=1;
-    // 重置似有参数
+    tdata->is_deleted=1;    
+    // 删除映射记录
+    map_del(ipunfrag.m,key,NULL);
+
+    // 重置私有参数
     new_mbuf->priv_data=NULL;
     new_mbuf->priv_flags=0;
 

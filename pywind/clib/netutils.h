@@ -43,6 +43,14 @@ struct netutil_ip6_ps_header{
     unsigned char next_header;
 };
 
+/// IPv6分片头部
+struct netutil_ip6_frag_header{
+    unsigned char next_header;
+    unsigned char reserved;
+    unsigned short frag_off;
+    unsigned int id;
+};
+
 struct netutil_udphdr{
     unsigned short src_port;
     unsigned short dst_port;

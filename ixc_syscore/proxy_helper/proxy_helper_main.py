@@ -130,7 +130,6 @@ class service(dispatcher.dispatcher):
 
     def udp_recv_cb(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool, data: bytes):
         # 未设置UDP fd那么就退出
-        print(len(data))
         self.test_udp_send(daddr, saddr, dport, sport, is_udplite, is_ipv6, data)
         """
         if self.__udp_fd < 1: return

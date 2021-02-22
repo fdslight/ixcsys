@@ -10,13 +10,6 @@ struct ipunfrag{
     struct map *m;
 };
 
-/// 具体包信息
-struct ipunfrag_pktinfo{
-    unsigned char data[0xffff];
-    int tail;
-    unsigned char key[IPUNFRAG_KEYSIZE];
-};
-
 int ipunfrag_init(void);
 void ipunfrag_uninit(void);
 
