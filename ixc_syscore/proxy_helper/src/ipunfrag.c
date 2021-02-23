@@ -20,7 +20,7 @@ static void ipunfrag_map_del_cb(void *data)
     struct time_data *tdata=m->priv_data;
     
     tdata->is_deleted=1;
-    free(m);
+    mbuf_put(m);
 }
 
 static void ipunfrag_timeout_cb(void *data)

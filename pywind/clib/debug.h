@@ -29,10 +29,12 @@ strftime(__time_buf,512,"%Y-%m-%d %X %Z",__time);fprintf(fd,"%s    ",__time_buf)
 #define ex_malloc(size) DBG(" ");malloc(size)
 
 #else
+
 #define DBG(...)
 #define DBG_FLAGS
 #define ex_free(p) free(p)
 #define ex_malloc(size) malloc(size)
+
 #endif
 
-#endif //NETBUS_DEBUG_H
+#endif //DEBUG_H

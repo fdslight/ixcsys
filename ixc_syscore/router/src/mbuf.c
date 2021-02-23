@@ -1,4 +1,6 @@
 #include<stdlib.h>
+#include<signal.h>
+#include<unistd.h>
 
 #include "mbuf.h"
 #include "../../../pywind/clib/debug.h"
@@ -77,7 +79,7 @@ struct ixc_mbuf *ixc_mbuf_get(void)
         return NULL;
     }
 
-    STDERR("get mbuf from malloc\r\n");
+    //STDERR("get mbuf from malloc\r\n");
 
     m->next=NULL;
     m->netif=NULL;
@@ -105,7 +107,7 @@ void ixc_mbuf_put(struct ixc_mbuf *m)
 
         return;
     }
-
+    m->next=NULL;
     m->next=ixc_mbuf_empty_head;
     ixc_mbuf_empty_head=m;
 }

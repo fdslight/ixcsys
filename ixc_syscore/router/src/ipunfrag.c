@@ -16,7 +16,7 @@ static void ixc_ipunfrag_map_del_cb(void *data)
     struct time_data *tdata=m->priv_data;
 
     tdata->is_deleted=1;
-    free(m);
+    ixc_mbuf_put(m);
 }
 
 static void ixc_ipunfrag_timeout_cb(void *data)

@@ -19,6 +19,80 @@ struct ixc_nat nat;
 struct time_wheel nat_time_wheel;
 struct sysloop *nat_sysloop=NULL;
 
+/// 对IP数据包进行分片并发送
+static void ixc_nat_ipfrag_send(struct ixc_mbuf *m)
+{
+    struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset),*tmp_iphdr;
+    int hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
+    // IP数据内容长度
+    int ipdata_len=m->tail-m->offset-hdr_len;
+    // 每片数据的大小必须未8的倍数
+    int slice_size=(m->netif->mtu_v4-hdr_len)/8;
+    int cur_len=0,data_size=0,mf=1,df=1<<14;
+    unsigned short tot_len,offset=0,csum;
+    struct ixc_mbuf *new_mbuf=NULL;
+
+    m->offset+=hdr_len;
+
+    while (cur_len<ipdata_len){
+        new_mbuf=ixc_mbuf_get();
+
+        if(NULL==new_mbuf){
+            STDERR("cannot get mbuf\r\n");
+            break;
+        }
+
+        // 计算出当前的数据大小
+        data_size=ipdata_len-cur_len;
+        if(data_size>slice_size) data_size=slice_size;
+        else mf=0;
+
+        offset=offset & (mf<<13) & df;
+
+        // 设置mbuf的值
+        new_mbuf->next=NULL;
+        new_mbuf->netif=m->netif;
+        new_mbuf->priv_data=m->priv_data;
+        new_mbuf->priv_flags=m->priv_flags;
+        new_mbuf->is_ipv6=m->is_ipv6;
+        new_mbuf->from=m->from;
+        new_mbuf->begin=IXC_MBUF_BEGIN;
+        new_mbuf->offset=IXC_MBUF_BEGIN;
+        new_mbuf->link_proto=m->link_proto;
+
+        memcpy(new_mbuf->next_host,m->next_host,16);
+        memcpy(new_mbuf->dst_hwaddr,m->dst_hwaddr,6);
+        memcpy(new_mbuf->src_hwaddr,m->src_hwaddr,6);
+
+        // 首先复制头部
+        memcpy(new_mbuf->data+new_mbuf->offset,iphdr,hdr_len);
+
+        // 计算当前分片大小
+        tot_len=hdr_len+data_size;
+
+        tmp_iphdr=(struct netutil_iphdr *)(new_mbuf->data+new_mbuf->offset);
+        
+        tmp_iphdr->checksum=0;
+        tmp_iphdr->tot_len=htons(tot_len);
+
+        // 重新计算IP头部
+        csum=csum_calc((unsigned short *)tmp_iphdr,hdr_len);
+        tmp_iphdr->checksum=htons(csum);
+
+        // 复制数据
+        memcpy(new_mbuf->data+new_mbuf->offset+hdr_len,m->data+m->offset,data_size);
+
+        new_mbuf->tail=new_mbuf->offset+tot_len;
+        new_mbuf->end=new_mbuf->tail;
+
+        m->offset+=data_size;
+        offset+=data_size/8;
+    }
+
+    // 回收传入的mbuf
+    ixc_mbuf_put(m);
+}
+
 /// 获取可用的NAT ID
 static struct ixc_nat_id *ixc_nat_id_get(struct ixc_nat_id_set *id_set)
 {
@@ -70,7 +144,7 @@ static void ixc_nat_del_cb(void *data)
         case 1:
             id_set=&(nat.icmp_set);
             break;
-        case 7:
+        case 6:
             id_set=&(nat.tcp_set);
             break;
         case 17:
@@ -145,7 +219,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             id_ptr=&(icmpecho->id);
             id_set=&(nat.icmp_set);
             break;
-        case 7:
+        case 6:
             tcphdr=(struct netutil_tcphdr *)(m->data+m->offset+hdr_len);
             csum_ptr=&tcphdr->csum;
             id_ptr=is_src?&(tcphdr->src_port):&(tcphdr->dst_port);
@@ -293,7 +367,7 @@ static void ixc_nat_timeout_cb(void *data)
         return;
     }
     
-    DBG_FLAGS;
+    //DBG_FLAGS;
     // 处理未超时的情况
     tdata=time_wheel_add(&nat_time_wheel,session,IXC_NAT_TIMEOUT);
 
