@@ -117,15 +117,18 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
 
     // 如果不是第一个分包检查key是否存在
     if(offset!=0){
+        //DBG_FLAGS;
         new_mbuf=map_find(ipunfrag.m,key,&is_found);
         // key不存在那么直接丢弃数据包
         if(NULL==new_mbuf){
             ixc_mbuf_put(m);
             return NULL;
         }
+        //DBG_FLAGS;
         // 修改尾部偏移
         new_mbuf->tail+=tot_len-header_len;
     }else{
+        //DBG_FLAGS;
         // 检查是否发送了重复的数据包,如果是重复的数据包那么直接丢弃
         new_mbuf=map_find(ipunfrag.m,key,&is_found);
         if(NULL!=new_mbuf){

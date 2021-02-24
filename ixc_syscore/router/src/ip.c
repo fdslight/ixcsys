@@ -21,7 +21,7 @@ static int ixc_ip_check_ok(struct ixc_mbuf *m,struct netutil_iphdr *header)
     unsigned short tot_len;
     unsigned char ipaddr_unspec[]=IXC_IPADDR_UNSPEC;
 
-    if(m->tail-m->offset<20) return 0;
+    if(m->tail-m->offset<28) return 0;
     if(4!=version) return 0;
 
     tot_len=ntohs(header->tot_len);
@@ -48,9 +48,13 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
     unsigned short frag_info,frag_off;
     int mf;
+
+    frag_info=ntohs(iphdr->frag_info);
+    frag_off=frag_info & 0x1fff;
+    mf=frag_info & 0x2000;
     
     // 检查是否是DHCP Client报文
-    if(17==iphdr->protocol){
+    if(17==iphdr->protocol && frag_off==0){
         udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
         // 检查是DHCP client报文并且开启DHCP的那么处理DHCP报文
         if(ntohs(udphdr->dst_port)==68 && ntohs(udphdr->src_port)==67){
@@ -66,10 +70,7 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         return;
     }
 
-    frag_info=ntohs(iphdr->frag_info);
-    frag_off=frag_info & 0x1fff;
-    mf=frag_info & 0x2000;
-
+    //DBG("frag_off %d mf %d\r\n",frag_off,mf);
     // 如果IP数据包有分包那么首先合并数据包
     if(mf!=0 || frag_off!=0) m=ixc_ipunfrag_add(m);
     if(NULL==m) return;

@@ -275,6 +275,7 @@ void rewrite_ip_addr(struct netutil_iphdr *iphdr,unsigned char *new_addr,int is_
     unsigned short csum=iphdr->checksum;
     unsigned short *u16_addr=(unsigned short *)addr;
     unsigned short *u16_new_addr=(unsigned short *)new_addr;
+    unsigned short offset;
     int hdr_len=((iphdr->ver_and_ihl) & 0x0f) * 4;
     struct netutil_udphdr *udphdr;
     struct netutil_tcphdr *tcphdr;
@@ -283,6 +284,10 @@ void rewrite_ip_addr(struct netutil_iphdr *iphdr,unsigned char *new_addr,int is_
     for(int n=0;n<2;n++) csum=csum_calc_incre(*u16_addr++,*u16_new_addr++,csum);
     
     iphdr->checksum=csum;
+    
+    // 只修改第一个分片的TCP以及UDP
+    offset=htons(iphdr->frag_info) & 0x1fff;
+    if(offset!=0) goto __NETUTIL_COPY_ADDR;
 
     // 重置指针位置
     u16_addr=(unsigned short *)addr;
@@ -304,6 +309,7 @@ void rewrite_ip_addr(struct netutil_iphdr *iphdr,unsigned char *new_addr,int is_
             break;
     }
 
+__NETUTIL_COPY_ADDR:
     if(is_src) memcpy(iphdr->src_addr,new_addr,4);
     else memcpy(iphdr->dst_addr,new_addr,4);
 }

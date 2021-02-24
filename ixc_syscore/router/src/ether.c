@@ -43,10 +43,10 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
     }
 
     // 填充以太网以便满足60字节
-    /**if(size<60){
+    if(size<60){
         bzero(mbuf->data+mbuf->end,60-size);
         mbuf->end+=(60-size);
-    }**/
+    }
  
     ixc_netif_send(mbuf);
 

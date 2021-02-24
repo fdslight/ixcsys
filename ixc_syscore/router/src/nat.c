@@ -28,14 +28,14 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
     // IP数据内容长度
     int ipdata_len=m->tail-m->offset-hdr_len;
     // 每片数据的大小必须未8的倍数
-    int slice_size=(m->netif->mtu_v4-hdr_len)/8;
-    int cur_len=0,data_size=0,mf=1,df=1<<14;
-    unsigned short tot_len,offset=0,csum;
+    int slice_size=(m->netif->mtu_v4-hdr_len)/8*8;
+    int cur_len=0,data_size=0,mf=0x2000,df=0x4000;
+    unsigned short tot_len,offset=0,csum,frag_info;
     struct ixc_mbuf *new_mbuf=NULL;
 
     m->offset+=hdr_len;
 
-    DBG("%d %d\r\n",slice_size,ipdata_len);
+    //DBG("%d %d\r\n",slice_size,ipdata_len);
 
     while (cur_len<ipdata_len){
         new_mbuf=ixc_mbuf_get();
@@ -48,9 +48,9 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
         // 计算出当前的数据大小
         data_size=ipdata_len-cur_len;
         if(data_size>slice_size) data_size=slice_size;
-        else mf=0;
+        else mf=0x0000;
 
-        offset=offset & (mf<<13) & df;
+        frag_info=df | mf | offset;
 
         // 设置mbuf的值
         new_mbuf->next=NULL;
@@ -69,15 +69,15 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
 
         // 首先复制头部
         memcpy(new_mbuf->data+new_mbuf->offset,iphdr,hdr_len);
+        tmp_iphdr=(struct netutil_iphdr *)(new_mbuf->data+new_mbuf->offset);
 
         // 计算当前分片大小
         tot_len=hdr_len+data_size;
-
-        tmp_iphdr=(struct netutil_iphdr *)(new_mbuf->data+new_mbuf->offset);
         
-        tmp_iphdr->checksum=0;
         tmp_iphdr->tot_len=htons(tot_len);
-
+        tmp_iphdr->frag_info=htons(frag_info);
+        tmp_iphdr->checksum=0;
+        
         // 重新计算IP头部
         csum=csum_calc((unsigned short *)tmp_iphdr,hdr_len);
         tmp_iphdr->checksum=htons(csum);
@@ -176,7 +176,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 {
     struct netutil_iphdr *iphdr;
     unsigned char addr[4];
-    int hdr_len=0,mf;
+    int hdr_len=0;
     char key[7],tmp[7],is_found;
     struct ixc_nat_session *session;
     unsigned short offset,frag_off;
@@ -199,21 +199,11 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     frag_off=ntohs(iphdr->frag_info);
     offset=frag_off & 0x1fff;
     //df=frag_off & 0x4000;
-    mf=frag_off & 0x2000;
     
     // 如果是LAN to WAN并且不是第一个数据包直接修改源包地址
     if(offset!=0 && is_src){
         rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
         return m;
-    }
-
-    // 对WAN接口的数据进行组包
-    if((offset!=0 || mf!=0) && !is_src){
-        m=ixc_ipunfrag_add(m);
-        if(NULL==m) return NULL;
-        DBG_FLAGS;
-        // 此处重新获取ip头部
-        iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     }
 
     if(is_src) memcpy(addr,iphdr->src_addr,4);
@@ -361,6 +351,7 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
     if(m->netif->mtu_v4>=m->tail-m->offset){
         ixc_qos_add(m);
     }else{
+        //DBG_FLAGS;
         ixc_nat_ipfrag_send(m,1);
     }
 }
@@ -370,11 +361,8 @@ static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
     m=ixc_nat_do(m,1);
     if(NULL==m) return;
 
-    if(m->netif->mtu_v4>=m->tail-m->offset){
-        ixc_addr_map_handle(m);
-    }else{
-        ixc_nat_ipfrag_send(m,0);
-    }
+    ixc_addr_map_handle(m);
+    
 }
 
 static void ixc_nat_timeout_cb(void *data)
