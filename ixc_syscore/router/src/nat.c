@@ -10,6 +10,7 @@
 #include "qos.h"
 #include "debug.h"
 #include "route.h"
+#include "ipunfrag.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -20,7 +21,7 @@ struct time_wheel nat_time_wheel;
 struct sysloop *nat_sysloop=NULL;
 
 /// 对IP数据包进行分片并发送
-static void ixc_nat_ipfrag_send(struct ixc_mbuf *m)
+static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
 {
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset),*tmp_iphdr;
     int hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
@@ -33,6 +34,8 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m)
     struct ixc_mbuf *new_mbuf=NULL;
 
     m->offset+=hdr_len;
+
+    DBG("%d %d\r\n",slice_size,ipdata_len);
 
     while (cur_len<ipdata_len){
         new_mbuf=ixc_mbuf_get();
@@ -87,6 +90,10 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m)
 
         m->offset+=data_size;
         offset+=data_size/8;
+        cur_len+=data_size;
+
+        if(from_wan) ixc_qos_add(new_mbuf);
+        else ixc_addr_map_handle(new_mbuf);
     }
 
     // 回收传入的mbuf
@@ -169,10 +176,10 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 {
     struct netutil_iphdr *iphdr;
     unsigned char addr[4];
-    int hdr_len=0;
+    int hdr_len=0,mf;
     char key[7],tmp[7],is_found;
     struct ixc_nat_session *session;
-    unsigned short offset;
+    unsigned short offset,frag_off;
 
     unsigned short *csum_ptr,csum;
     unsigned short *id_ptr;
@@ -189,16 +196,25 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
 
-    offset=ntohs(iphdr->frag_info) & 0x1fff;
-
+    frag_off=ntohs(iphdr->frag_info);
+    offset=frag_off & 0x1fff;
+    //df=frag_off & 0x4000;
+    mf=frag_off & 0x2000;
+    
     // 如果是LAN to WAN并且不是第一个数据包直接修改源包地址
     if(offset!=0 && is_src){
         rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
         return m;
     }
 
-    // WAN口接收的分包直接丢弃
-    if(offset!=0 && !is_src) return NULL;
+    // 对WAN接口的数据进行组包
+    if((offset!=0 || mf!=0) && !is_src){
+        m=ixc_ipunfrag_add(m);
+        if(NULL==m) return NULL;
+        DBG_FLAGS;
+        // 此处重新获取ip头部
+        iphdr=(struct netutil_iphdr *)(m->data+m->offset);
+    }
 
     if(is_src) memcpy(addr,iphdr->src_addr,4);
     else memcpy(addr,iphdr->dst_addr,4);
@@ -341,14 +357,24 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
 {   
     m=ixc_nat_do(m,0);
     if(NULL==m) return;
-    ixc_qos_add(m);
+   
+    if(m->netif->mtu_v4>=m->tail-m->offset){
+        ixc_qos_add(m);
+    }else{
+        ixc_nat_ipfrag_send(m,1);
+    }
 }
 
 static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
 {
     m=ixc_nat_do(m,1);
     if(NULL==m) return;
-    ixc_addr_map_handle(m);
+
+    if(m->netif->mtu_v4>=m->tail-m->offset){
+        ixc_addr_map_handle(m);
+    }else{
+        ixc_nat_ipfrag_send(m,0);
+    }
 }
 
 static void ixc_nat_timeout_cb(void *data)

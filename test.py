@@ -31,8 +31,8 @@ s.close()
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 for i in range(1):
-    byte_data=os.urandom(4096)
-    s.sendto(byte_data,("8.8.8.8", 443))
-    #print(s.recvfrom(4096))
+    byte_data=os.urandom(2048)
+    s.sendto(byte_data,("192.168.1.44", 4444))
+    print(s.recvfrom(4096))
 
 s.close()
