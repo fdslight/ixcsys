@@ -487,6 +487,7 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
     ra_opt->prefix_flags=0xc0;
     ra_opt->prefix_valid_lifetime=0xffffffff;
     ra_opt->prefix_preferred_lifetime=0xffffffff;
+    
     memcpy(ra_opt->prefix,netif->ip6_subnet,16);
 
     if(NULL==hwaddr){

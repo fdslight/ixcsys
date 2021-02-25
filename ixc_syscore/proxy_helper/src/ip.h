@@ -7,6 +7,5 @@ void ip_handle(struct mbuf *m);
 
 int ip_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char protocol,void *data,unsigned short length);
 int ip_mtu_set(unsigned short mtu);
-int ip_frag_and_send(struct mbuf *m);
 
 #endif

@@ -131,8 +131,3 @@ int ip_mtu_set(unsigned short mtu)
     ip_mtu=mtu;
     return 0;
 }
-
-int ip_frag_and_send(struct mbuf *m)
-{
-    return 0;
-}

@@ -80,7 +80,7 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
         
         // 重新计算IP头部
         csum=csum_calc((unsigned short *)tmp_iphdr,hdr_len);
-        tmp_iphdr->checksum=htons(csum);
+        tmp_iphdr->checksum=csum;
 
         // 复制数据
         memcpy(new_mbuf->data+new_mbuf->offset+hdr_len,m->data+m->offset,data_size);
@@ -347,7 +347,9 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
 {   
     m=ixc_nat_do(m,0);
     if(NULL==m) return;
-   
+
+    //ixc_qos_add(m);
+    
     if(m->netif->mtu_v4>=m->tail-m->offset){
         ixc_qos_add(m);
     }else{

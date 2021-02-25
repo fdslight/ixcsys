@@ -240,7 +240,7 @@ class service(dispatcher.dispatcher):
             self.linux_br_create(self.__LAN_BR_NAME, [lan_phy_ifname, self.__LAN_NAME, ])
 
             os.system("ip link set %s promisc on" % lan_phy_ifname)
-            #os.system("ip link set %s promisc on" % self.__LAN_NAME)
+            # os.system("ip link set %s promisc on" % self.__LAN_NAME)
             os.system("ip link set %s up" % lan_phy_ifname)
 
         else:
@@ -263,7 +263,16 @@ class service(dispatcher.dispatcher):
             os.system("ip -4 addr add %s/%s dev %s" % (manage_addr, prefix, self.__LAN_BR_NAME))
             os.system("ip -4 route add default via %s" % lan_addr)
 
-        # self.router.netif_set_ip(router.IXC_NETIF_LAN, socket.inet_pton(socket.AF_INET6, "2400::1"), 64, True)
+        # IPv6的相关设置
+        enable_static_ipv6 = bool(int(lan_ifconfig["enable_static_ipv6"]))
+        enable_static_ipv6_passthrough = bool(int(lan_ifconfig["enable_static_ipv6_passthrough"]))
+        ip6_addr, v6_prefix = netutils.parse_ip_with_prefix(lan_ifconfig["ip6_addr"])
+
+        byte_ip6addr = socket.inet_pton(socket.AF_INET6, ip6_addr)
+
+        if enable_static_ipv6:
+            self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip6addr, int(v6_prefix),
+                                     True)
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)

@@ -192,10 +192,12 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
     // 此处修改IP头部长度并重新修改checksum
     header=(struct netutil_iphdr *)(new_mbuf->data+m->offset);
     header_len=(header->ver_and_ihl & 0x0f) * 4; 
-    header->tot_len=offset * 8 + header_len;
+    header->tot_len=htons(new_mbuf->tail-new_mbuf->offset);
     header->checksum=0;
+
+    // 重新计算头部checksum
     csum=csum_calc((unsigned short *)header,header_len);
-    header->checksum=htons(csum);
+    header->checksum=csum;
 
     // 处理是最后一个分片的方法
     tdata=new_mbuf->priv_data;
