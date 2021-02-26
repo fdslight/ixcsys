@@ -134,14 +134,16 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
 
     header=(struct netutil_ip6hdr *)(mbuf->data+mbuf->offset);
     mbuf->is_ipv6=1;
+    mbuf->netif=netif;
 
     // 和LAN网口地址不在同一个网段那么丢弃数据包
     if(!ixc_netif_is_subnet(netif,header->dst_addr,1,0)){
         ixc_mbuf_put(mbuf);
         return -1;
     }
-
+   
     memcpy(mbuf->next_host,header->dst_addr,16);
+ 
     ixc_addr_map_handle(mbuf);
 
     return 0;

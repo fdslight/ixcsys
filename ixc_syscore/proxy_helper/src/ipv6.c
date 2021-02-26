@@ -4,6 +4,7 @@
 #include "ip6unfrag.h"
 #include "tcp.h"
 #include "udp.h"
+#include "proxy_helper.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
@@ -58,6 +59,7 @@ int ipv6_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char prot
         need_slice=1;
         srand(time(NULL));
         id=htonl(rand() & 0xffffffff);
+        header_size=48;
     }else {
         header_size=40;
         need_slice=0;
@@ -65,6 +67,7 @@ int ipv6_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char prot
 
     while(cur_payload<length){
         m=mbuf_get();
+ 
         if(NULL==m){
             rs=-1;
             STDERR("cannot get mbuf for ipv6\r\n");
@@ -72,16 +75,14 @@ int ipv6_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char prot
         }
 
         m->begin=m->offset=MBUF_BEGIN;
-        m->end=m->tail=MBUF_BEGIN+data_size+header_size;
-
+        
         bzero(m->data+m->offset,header_size);
+        bzero(m->data+m->offset,200);
         
         header=(struct netutil_ip6hdr *)(m->data+m->offset);
 
         header->ver_and_tc=0x60;
-        header->payload_len=data_size;
-        
-        header->hop_limit=0xff;
+        header->hop_limit=0x40;
 
         memcpy(header->src_addr,src_addr,16);
         memcpy(header->dst_addr,dst_addr,16);
@@ -89,29 +90,44 @@ int ipv6_send(unsigned char *src_addr,unsigned char *dst_addr,unsigned char prot
         // 处理需要分片的情况
         if(need_slice){
             header->next_header=44;
+            
+            if(cur_payload+data_size-8>=length){
+                M=0x0000;
+                data_size=length-cur_payload+8;
+            }else{
+                M=0x0001;
+            }
+
+            m->end=m->tail=MBUF_BEGIN+data_size+40;
+
+            memcpy(m->data+m->offset+header_size,data_ptr,data_size-8);
+
             frag_header=(struct netutil_ip6_frag_header *)(m->data+m->offset+40);
-
-            memcpy(m->data+m->offset+header_size+cur_payload,data_ptr,data_size-8);
-
-            frag_header->next_header=protocol;
-
-            if(cur_payload+data_size-8>=length) M=0x0000;
-            else M=0x0001;
-
-            frag_off=htons((offset<<13) | M);
+            
+            frag_off= (offset << 3 | M);
+            frag_off=htons(frag_off);
             frag_header->frag_off=frag_off;
             frag_header->id=id;
+            frag_header->next_header=protocol;
 
-            cur_payload+=data_size-8;
-            data_ptr=data_ptr+data_size-8;
+            cur_payload=cur_payload+data_size-8;
             offset=offset+(data_size-8)/8;
+
+            data_ptr=data_ptr+cur_payload;
+
         }else{
             header->next_header=protocol;
-
             memcpy(m->data+m->offset+header_size+cur_payload,data_ptr,data_size);
             cur_payload+=data_size;
-            data_ptr=data_ptr+data_size;
+
+            m->end=m->tail=MBUF_BEGIN+data_size+40;
         }
+
+        //DBG("tot %d\r\n",m->end-m->begin);
+
+        header->payload_len=htons(data_size);
+
+        netpkt_send(m,protocol,1);
     }
 
     return rs;

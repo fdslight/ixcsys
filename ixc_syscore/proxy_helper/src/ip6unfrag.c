@@ -139,10 +139,10 @@ struct mbuf *ip6unfrag_add(struct mbuf *m)
         new_mbuf->next=NULL;
         new_mbuf->begin=m->offset;
         new_mbuf->offset=m->offset;
-        new_mbuf->tail=m->tail;
-        new_mbuf->end=m->tail;
+        new_mbuf->tail=new_mbuf->offset+payload_len-8+40;
         new_mbuf->priv_data=tdata;
         new_mbuf->priv_flags=frag_header->id;
+
     }else{
         new_mbuf=map_find(ip6unfrag.m,key,&is_found);
         // key不存在那么直接丢弃数据包
@@ -151,8 +151,7 @@ struct mbuf *ip6unfrag_add(struct mbuf *m)
             return NULL;
         }
         // 修改尾部偏移,这里要减去扩展头部
-        new_mbuf->tail=payload_len-8;
-        new_mbuf->end=new_mbuf->end;
+        new_mbuf->tail+=payload_len-8;
     }
 
     new_mbuf->end=new_mbuf->tail;
@@ -160,7 +159,8 @@ struct mbuf *ip6unfrag_add(struct mbuf *m)
     if(0!=frag_off){
         memcpy(new_mbuf->data+new_mbuf->offset+frag_off * 8 + 40 ,m->data+m->offset+48,payload_len-8);
     }else{
-        memcpy(new_mbuf->data+new_mbuf->offset,m->data+m->offset,payload_len+40);
+        memcpy(new_mbuf->data+new_mbuf->offset,m->data+m->offset,40);
+        memcpy(new_mbuf->data+new_mbuf->offset+40,m->data+m->offset+48,payload_len-8);
         // 此处修改头部
         header=(struct netutil_ip6hdr *)(new_mbuf->data+new_mbuf->offset);
         header->next_header=frag_header->next_header;
@@ -179,6 +179,8 @@ struct mbuf *ip6unfrag_add(struct mbuf *m)
     // 重置私有参数
     new_mbuf->priv_data=NULL;
     new_mbuf->priv_flags=0;
+
+    //DBG("%d\r\n",new_mbuf->tail-new_mbuf->offset);
 
 
     return new_mbuf;

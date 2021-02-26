@@ -47,7 +47,7 @@ class pfwd(udp_handler.udp_handler):
         self.__pkt_size = len(message)
         if self.__pkt_size < 21: return
 
-        _id, if_type, _, ipproto, flags = struct.unpack("!16sbbbb", message[0:20])
+        _id, if_type, _, ipproto, flags = struct.unpack("!16sBBBB", message[0:20])
 
         if 0 != ipproto and self.__pkt_size < 41: return
 

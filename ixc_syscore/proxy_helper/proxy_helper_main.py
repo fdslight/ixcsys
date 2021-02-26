@@ -193,7 +193,7 @@ class service(dispatcher.dispatcher):
                                         self.__rand_key, port)
         self.__consts = consts
         # 进行路由测试
-        ok, message = RPCClient.fn_call("router", "/runtime", "add_route", "8.8.8.8", 32, "0.0.0.0", is_ipv6=False)
+        ok, message = RPCClient.fn_call("router", "/runtime", "add_route", "4444::", 64, "::", is_ipv6=True)
 
     @property
     def proxy_helper(self):

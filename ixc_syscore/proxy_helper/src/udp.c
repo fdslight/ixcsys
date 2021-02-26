@@ -53,10 +53,13 @@ static void __udp_handle_v6(struct mbuf *m)
     m->offset+=40;
     is_udplite=next_header==17?0:1;
 
+    udphdr=(struct netutil_udphdr *)(m->data+m->offset);
+
     sport=ntohs(udphdr->src_port);
     dport=ntohs(udphdr->dst_port);
 
     netpkt_udp_recv(saddr,daddr,sport,dport,is_udplite,1,m->data+m->offset+8,m->tail-m->offset-8);
+    
     mbuf_put(m);
 }
 
@@ -134,7 +137,7 @@ int udp_send(unsigned char *saddr,unsigned char *daddr,unsigned short sport,unsi
     else csum=csum_calc((unsigned short *)(m->data+offset),m->end-offset);
     
     udphdr->checksum=csum;
- 
+    
     if(is_ipv6) ipv6_send(saddr,daddr,p,m->data+m->begin,m->end-m->begin);
     else ip_send(saddr,daddr,p,m->data+m->begin,m->end-m->begin);
 

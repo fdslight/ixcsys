@@ -212,7 +212,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
         return;
     }
     // 找不到记录那么就发送NDP RS报文
-    ixc_icmpv6_send_ns(netif,header->src_addr,header->dst_addr);
+    ixc_icmpv6_send_ns(netif,netif->ip6_local_link_addr,header->dst_addr);
     ixc_mbuf_put(m);
 }
 

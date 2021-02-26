@@ -351,17 +351,20 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
         ixc_route_handle_for_ipv6_local(m,header);
         return;
     }
+    
+    //DBG_FLAGS;
 
     if(NULL==r){
+        //DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
-
+    //DBG_FLAGS;
     // 如果没有网卡,那么发送到其他应用
     if(NULL==r->netif){
-        if(route.is_linked) ixc_router_send(netif->type,0,0,m->data+m->begin,m->end-m->begin);
-        else ixc_router_send(netif->type,header->next_header,0,m->data+m->offset,m->tail-m->offset);
-
+        //DBG_FLAGS;
+        if(route.is_linked) ixc_router_send(netif->type,0,IXC_FLAG_ROUTE_FWD,m->data+m->begin,m->end-m->begin);
+        else ixc_router_send(netif->type,header->next_header,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
         // 这里丢弃数据包,避免内存泄漏
         ixc_mbuf_put(m);
         return;

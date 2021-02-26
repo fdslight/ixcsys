@@ -355,6 +355,8 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 
     int rs;
 
+    DBG_FLAGS;
+
     if(icmp_code!=0){
         ixc_mbuf_put(m);
         return;
@@ -418,7 +420,6 @@ void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr)
     m->offset+=40;
 
     if(icmp_header->type==128 || icmp_header->type==129){
-        //DBG_FLAGS;
         // 不是发往本级的ICMP echo数据包直接丢弃
         if(memcmp(iphdr->dst_addr,netif->ip6_local_link_addr,16) && memcmp(iphdr->dst_addr,netif->ip6addr,16)){
             ixc_mbuf_put(m);

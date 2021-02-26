@@ -26,7 +26,7 @@ class nspkt_handler(udp_handler.udp_handler):
         if address[1] != self.__server_port: return
 
         if len(message) < 34: return
-        _id, if_type, _, ipproto, flags = struct.unpack("!16sbbbb", message[0:20])
+        _id, if_type, _, ipproto, flags = struct.unpack("!16sBBBB", message[0:20])
         if _id != self.__id: return
         self.handle_recv(if_type, ipproto, flags, message[20:])
 
@@ -57,7 +57,7 @@ class nspkt_handler(udp_handler.udp_handler):
         self.__server_port = 8964
 
     def send_msg(self, if_type: int, ipproto: int, flags: int, message: bytes):
-        header = struct.pack("!16sbbbb", self.__id, if_type, 0, ipproto, flags)
+        header = struct.pack("!16sBBBB", self.__id, if_type, 0, ipproto, flags)
         sent_msg = b"".join([header, message])
 
         self.add_evt_write(self.fileno)

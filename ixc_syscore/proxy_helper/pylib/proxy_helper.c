@@ -357,7 +357,7 @@ proxy_helper_udp_send(PyObject *self,PyObject *args)
         return NULL;
     }
 
-    udp_send(saddr,daddr,sport,dport,is_ipv6,is_udplite,csum_coverage,data,data_s);
+    udp_send(saddr,daddr,sport,dport,is_udplite,is_ipv6,csum_coverage,data,data_s);
     Py_RETURN_NONE;
 }
 
