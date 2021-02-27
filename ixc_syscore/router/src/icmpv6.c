@@ -9,9 +9,6 @@
 #include "addr_map.h"
 #include "route.h"
 
-/// 是否开启NDP代理
-static int ndp_proxy_enable=0;
-
 static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *src_ipaddr,unsigned char *dst_ipaddr,void *icmp_data,int length)
 {
     struct ixc_mbuf *m=ixc_mbuf_get();
@@ -290,17 +287,6 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         ptr=netif->ip6addr;
     }
 
-    // 处理开启NDP代理并且目标主机不是本机器和邻居冲突检测的情况
-    if(ndp_proxy_enable && !flags && is_unspec_addr){
-        ptr=iphdr->src_addr;
-        netif=netif->type==IXC_NETIF_WAN?ixc_netif_get(IXC_NETIF_LAN):ixc_netif_get(IXC_NETIF_WAN);
-        
-        if(!is_unspec_addr) memcpy(ns_opt->hwaddr,netif->hwaddr,6);
-
-        ixc_mbuf_put(m);
-        return;
-    }
-
     if(!flags){
         ixc_mbuf_put(m);
         return;
@@ -351,11 +337,11 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     struct ixc_icmpv6_na_header *na_header;
     struct ixc_icmpv6_opt_link_addr *opt;
     struct ixc_addr_map_record *r;
-    unsigned char all_nodes[]=IXC_IP6ADDR_ALL_NODES;
+    //unsigned char all_nodes[]=IXC_IP6ADDR_ALL_NODES;
 
     int rs;
 
-    DBG_FLAGS;
+    //DBG_FLAGS;
 
     if(icmp_code!=0){
         ixc_mbuf_put(m);
@@ -388,20 +374,11 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
 
-    // 如果是WAN口的数据并且开启NDP代理以及目标是all_nodes地址,那么转发一份该报文到LAN口
-    if(netif->type==IXC_NETIF_WAN && ndp_proxy_enable && !memcmp(all_nodes,iphdr->dst_addr,16)){
-        m->netif=ixc_netif_get(IXC_NETIF_LAN);
-        m->offset-=40;
-        ixc_ether_send(m,1);
-        return;
-    }
-
     ixc_mbuf_put(m);
 }
 
 int ixc_icmpv6_init(void)
 {
-    ndp_proxy_enable=0;
     return 0;
 }
 
@@ -569,17 +546,4 @@ int ixc_icmpv6_send_ns(struct ixc_netif *netif,unsigned char *src_ipaddr,unsigne
     ixc_ether_get_multi_hwaddr_by_ipv6(dst_ipaddr,dst_hwaddr);
 
     return ixc_icmpv6_send(netif,dst_hwaddr,src_ipaddr,sol_addr,buf,32);
-}
-
-int ixc_icmpv6_ndp_proxy_enable(int status)
-{
-    ndp_proxy_enable=status;
-    
-    return 0;
-}
-
-inline
-int ixc_icmpv6_is_enabled(void)
-{
-    return ndp_proxy_enable;
 }

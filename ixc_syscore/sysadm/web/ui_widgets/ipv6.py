@@ -8,12 +8,14 @@ class widget(ui_widget.widget):
         configs = RPC.fn_call("router", "/config", "lan_config_get")
         if_config = configs["if_config"]
         enable_static_ipv6 = if_config["enable_static_ipv6"]
-        enable_pass = if_config["enable_static_ipv6_passthrough"]
+        enable_ipv6_pass = if_config["enable_ipv6_pass"]
         ip6_addr = if_config["ip6_addr"]
+        enable_ipv6_security = if_config["enable_ipv6_security"]
 
         configs = {
-            "enable_static_ipv6": bool(int(enable_static_ipv6)),
-            "enable_static_ipv6_passthrough": bool(int(enable_pass)),
+            "enable_static_ipv6": enable_static_ipv6,
+            "enable_ipv6_pass": enable_ipv6_pass,
+            "enable_ipv6_security": bool(int(enable_ipv6_security)),
             "ip6_addr": ip6_addr
         }
 

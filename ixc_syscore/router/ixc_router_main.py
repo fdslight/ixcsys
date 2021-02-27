@@ -265,7 +265,8 @@ class service(dispatcher.dispatcher):
 
         # IPv6的相关设置
         enable_static_ipv6 = bool(int(lan_ifconfig["enable_static_ipv6"]))
-        enable_static_ipv6_passthrough = bool(int(lan_ifconfig["enable_static_ipv6_passthrough"]))
+        enable_ipv6_pass = bool(int(lan_ifconfig["enable_ipv6_pass"]))
+        enable_ipv6_security = bool(int(lan_ifconfig["enable_ipv6_security"]))
         ip6_addr, v6_prefix = netutils.parse_ip_with_prefix(lan_ifconfig["ip6_addr"])
 
         byte_ip6addr = socket.inet_pton(socket.AF_INET6, ip6_addr)
@@ -273,6 +274,8 @@ class service(dispatcher.dispatcher):
         if enable_static_ipv6:
             self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip6addr, int(v6_prefix),
                                      True)
+        self.router.route_ipv6_pass_enable(enable_ipv6_pass)
+        self.router.ip6sec_enable(enable_ipv6_security)
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)

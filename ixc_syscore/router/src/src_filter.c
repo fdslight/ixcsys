@@ -49,9 +49,7 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
         ixc_qos_add(m);
         return;
     }
-
-    if(src_filter.is_linked) ixc_router_send(netif->type,0,IXC_FLAG_SRC_FILTER,m->data+m->begin,m->end-m->begin);
-    else ixc_router_send(netif->type,ipproto,IXC_FLAG_SRC_FILTER,m->data+m->offset,m->tail-m->offset);
+    ixc_router_send(netif->type,ipproto,IXC_FLAG_SRC_FILTER,m->data+m->offset,m->tail-m->offset);
 }
 
 int ixc_src_filter_init(void)
@@ -65,10 +63,9 @@ void ixc_src_filter_uninit(void)
     src_filter.is_opened=0;
 }
 
-int ixc_src_filter_enable(int enable,int is_linked)
+int ixc_src_filter_enable(int enable)
 {
     src_filter.is_opened=enable;
-    src_filter.is_linked=is_linked;
 
     return 0;
 }

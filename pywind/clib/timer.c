@@ -185,6 +185,7 @@ struct time_data *time_wheel_add(struct time_wheel *time_wheel,void *data,time_t
     bzero(tdata,sizeof(struct time_data));
     
     tdata->next=tick->time_data;
+    tdata->data=data;
     tick->time_data=tdata;
 
     return tdata;

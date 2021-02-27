@@ -86,6 +86,7 @@ struct ixc_mbuf *ixc_mbuf_get(void)
     m->priv_data=NULL;
     m->priv_flags=0;
     m->loop_trace=0;
+    m->passthrough=0;
 
     ixc_mbuf_used_num+=1;
 

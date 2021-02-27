@@ -4,44 +4,29 @@
         <h4>IPv6设置</h4>
         <div class="ixc-empty"></div>
         <div class="ixc-empty"></div>
-        <div class="form-group row">
-            <div class="col-sm-3">静态地址下发</div>
-            <div class="col-sm-9">
-                <div class="form-check">
-                    <%
-                        s="""<input class="form-check-input" name="enable_static_ipv6" value="1" type="checkbox" {} />"""
-                        if self.V["enable_static_ipv6"]:x=s.format("checked")
-                        else:x=s.format("")
-                        self.show(x)
-                    %>
-                    <label class="form-check-label" for="gridCheck1">
-                        启用
-                    </label>
-                </div>
-            </div>
+        <div class="form-group">
+            <label>IPv6访问方式</label>
+            <select class="form-control" id="ixc-ipv6-type" name="ipv6_type">
+                <option value="0">自动</option>
+                <option value="1">本地静态地址下发(无法访问互联网)</option>
+                <option value="2">局域网穿透模式</option>
+            </select>
         </div>
-        <div class="form-group row">
-            <div class="col-sm-3">静态地址穿透局域网</div>
-            <div class="col-sm-9">
-                <div class="form-check">
-                    <%
-                        s="""<input class="form-check-input" name="enable_static_ipv6_pass" value="1" type="checkbox" {} />"""
-                        if self.V['enable_static_ipv6_passthrough']:x=s.format("checked")
-                        else:x=s.format("")
-                        self.show(x)
-                    %>
-                    <label class="form-check-label" for="gridCheck1">
-                        启用
-                    </label>
-                </div>
-            </div>
+        <div class="form-group">
+            <label for="inputEmail3">IPv6下发地址段</label>
+            <input type="text" class="form-control" name="static_ipv6"
+                   value="${self.V['ip6_addr']}"/>
         </div>
-        <div class="form-group row">
-            <label for="inputEmail3" class="col-sm-3 col-form-label">IPv6静态地址</label>
-            <div class="col-sm-9">
-                <input type="text" class="form-control" name="static_ipv6"
-                       value="${self.V['ip6_addr']}"/>
-            </div>
+        <div class="form-check">
+            <label class="form-check-label">
+                <%
+                s="""<input class="form-check-input" name="enable_ipv6_security" value="1" type="checkbox" {}/>"""
+                if self.V["enable_ipv6_security"]:x=s.format("checked")
+                else:x=s.format("")
+                self.show(x)
+                %>
+                是否开启IPv6安全
+            </label>
         </div>
         <div class="form-group row">
             <div class="col-sm-12">
@@ -52,19 +37,20 @@
 </div>
 <script type="text/javascript">
     $(document).ready(function () {
-        function change(ele) {
-            let selector = $("#ixc-ipv6-view form input[type='text']");
-            if (ele.is(":checked")) {
-                selector.removeAttr("disabled");
-            } else {
-                selector.attr("disabled", "disabled");
-            }
+        let enable_static_ipv6 = "${self.V['enable_static_ipv6']}";
+        let enable_ipv6_pass = "${self.V['enable_ipv6_pass']}";
+
+        if (enable_static_ipv6 === "1") {
+            $("#ixc-ipv6-type").val("1");
         }
 
-        let ele = $("input[name='enable_static_ipv6']");
-        ele.change(function () {
-            change(ele);
-        });
-        change(ele);
+        if (enable_ipv6_pass === "1") {
+            $("#ixc-ipv6-type").val("2");
+        }
+
+        if (enable_static_ipv6 !== "1" && enable_ipv6_pass !== "1") {
+            $("#ixc-ipv6-type").val("0");
+        }
+
     });
 </script>

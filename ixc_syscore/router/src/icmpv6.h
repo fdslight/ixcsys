@@ -102,9 +102,5 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr);
 int ixc_icmpv6_send_rs(void);
 /// 发送邻居报文请求
 int ixc_icmpv6_send_ns(struct ixc_netif *netif,unsigned char *src_ipaddr,unsigned char *dst_ipaddr);
-/// 开启或者关闭ICMPv6 NDP代理,非0表示开启,0表示关闭
-int ixc_icmpv6_ndp_proxy_enable(int status);
-/// 是否已经开启了NDP代理
-int ixc_icmpv6_is_enabled(void);
 
 #endif

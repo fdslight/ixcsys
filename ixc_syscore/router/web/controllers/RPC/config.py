@@ -24,9 +24,10 @@ class controller(rpc.controller):
             "cur_internet_type_get": self.cur_internet_type_get,
             "internet_type_set": self.internet_type_set,
             "dhcp_positive_heartbeat_set": self.dhcp_positive_heartbeat_set,
+            "lan_ipv6_pass_enable": self.lan_ipv6_pass_enable,
             "lan_static_ipv6_enable": self.lan_static_ipv6_enable,
-            "lan_static_ipv6_pass_enable": self.lan_static_ipv6_pass_enable,
             "lan_static_ipv6_set": self.lan_static_ipv6_set,
+            "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
             "pppoe_set": self.pppoe_set,
             "save": self.save
         }
@@ -114,22 +115,8 @@ class controller(rpc.controller):
         if prefix < 48 or prefix > 64:
             return RPC.ERR_ARGS, "prefix value must be 48 to 64"
 
-        if not netutils.is_subnet(subnet, prefix, subnet, is_ipv6=True):
-            return RPC.ERR_ARGS, "wrong subnet value"
-
         configs = self.__runtime.lan_configs["if_config"]
         configs["ip6_addr"] = "%s/%s" % (subnet, prefix,)
-
-        return 0, None
-
-    def lan_static_ipv6_pass_enable(self, enable: bool):
-        """是否开启或者关闭静态IPv6直通
-        """
-        configs = self.__runtime.lan_configs["if_config"]
-        if enable:
-            configs["enable_static_ipv6_passthrough"] = 1
-        else:
-            configs["enable_static_ipv6_passthrough"] = 0
 
         return 0, None
 
@@ -141,6 +128,24 @@ class controller(rpc.controller):
             configs["enable_static_ipv6"] = 1
         else:
             configs["enable_static_ipv6"] = 0
+
+        return 0, None
+
+    def lan_ipv6_pass_enable(self, enable: bool):
+        configs = self.__runtime.lan_configs["if_config"]
+        if enable:
+            configs["enable_ipv6_pass"] = 1
+        else:
+            configs["enable_ipv6_pass"] = 0
+
+        return 0, None
+
+    def lan_ipv6_security_enable(self, enable: bool):
+        configs = self.__runtime.lan_configs["if_config"]
+        if enable:
+            configs["enable_ipv6_security"] = 1
+        else:
+            configs["enable_ipv6_security"] = 0
 
         return 0, None
 

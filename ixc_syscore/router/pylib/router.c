@@ -20,6 +20,7 @@
 #include "../src/pppoe.h"
 #include "../src/ipunfrag.h"
 #include "../src/debug.h"
+#include "../src/ip6sec.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -137,6 +138,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_mbuf_init(512);
     if(rs<0){
         STDERR("cannot init mbuf\r\n");
+        return NULL;
+    }
+
+    rs=ixc_ip6sec_init();
+    if(rs<0){
+        STDERR("cannot init ip6sec\r\n");
         return NULL;
     }
 
@@ -512,24 +519,23 @@ router_src_filter_set_ip(PyObject *self,PyObject *args)
 static PyObject *
 router_src_filter_enable(PyObject *self,PyObject *args)
 {
-    int enable,is_linked;
+    int enable;
 
-    if(!PyArg_ParseTuple(args,"pp",&enable,&is_linked)) return NULL;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
     
-    ixc_src_filter_enable(enable,is_linked);
+    ixc_src_filter_enable(enable);
 
     Py_RETURN_NONE;
 }
 
-/// 路由作为链路包转发给应用
 static PyObject *
-router_route_set_is_linkpkt_for_app(PyObject *self,PyObject *args)
+router_ip6sec_enable(PyObject *self,PyObject *args)
 {
-    int is_linked;
-    if(!PyArg_ParseTuple(args,"p",&is_linked)) return NULL;
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
 
-    ixc_route_set_is_linkpkt_for_app(is_linked);
-    
+    ixc_ip6sec_enable(enable);
+
     Py_RETURN_NONE;
 }
 
@@ -612,6 +618,17 @@ router_route_del(PyObject *self,PyObject *args)
     }
 
     ixc_route_del(subnet,prefix,is_ipv6);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_route_ipv6_pass_enable(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+
+    ixc_route_ipv6_pass_enable(enable);
 
     Py_RETURN_NONE;
 }
@@ -707,9 +724,11 @@ static PyMethodDef routerMethods[]={
     {"src_filter_set_ip",(PyCFunction)router_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"src_filter_enable",(PyCFunction)router_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
     //
-    {"route_set_is_linkpkt_for_app",(PyCFunction)router_route_set_is_linkpkt_for_app,METH_VARARGS,"forward to application as link packet"},
+    {"ip6sec_enable",(PyCFunction)router_ip6sec_enable,METH_VARARGS,"enable/disable IPv6 security"},
+    //
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
+    {"route_ipv6_pass_enable",(PyCFunction)router_route_ipv6_pass_enable,METH_VARARGS,"enable/disable IPv6 pass"},
     //
     {"pppoe_enable",(PyCFunction)router_pppoe_enable,METH_VARARGS,"enable or disable pppoe"},
     {"pppoe_is_enabled",(PyCFunction)router_pppoe_is_enabled,METH_NOARGS,"check pppoe is enabled"},

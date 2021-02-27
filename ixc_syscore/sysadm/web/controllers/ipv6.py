@@ -13,15 +13,33 @@ class controller(base_controller.BaseController):
         return True
 
     def handle(self):
-        enable_static_v6 = self.request.get_argument("enable_static_ipv6", is_seq=False, is_qs=False)
-        enable_pass = self.request.get_argument("enable_static_ipv6_pass", is_qs=False, is_seq=False)
-        ip6_addr = self.request.get_argument("static_ipv6",is_qs=False,is_seq=False)
+        ipv6_type = self.request.get_argument("ipv6_type", is_seq=False, is_qs=False)
+        ip6_addr = self.request.get_argument("static_ipv6", is_qs=False, is_seq=False)
+        ipv6_security = self.request.get_argument("enable_ipv6_security", is_qs=False, is_seq=False)
 
-        if not enable_static_v6:
-            RPC.fn_call("router", "/config", "lan_static_ipv6_enable", False)
-            RPC.fn_call("router", "/config", "save")
-            self.json_resp(False, {})
+        try:
+            enable_ipv6_security = bool(int(ipv6_security))
+        except ValueError:
+            self.json_resp(True, "wrong enable_ipv6_security value")
             return
+
+        try:
+            i_ipv6_type = int(ipv6_type)
+        except ValueError:
+            self.json_resp(True, "wrong ipv6_type value for data type")
+            return
+
+        if i_ipv6_type not in (0, 1, 2,):
+            self.json_resp(True, "wrong ipv6_type value")
+            return
+
+        enable_static_v6 = False
+        enable_ipv6_pass = False
+
+        if i_ipv6_type == 1:
+            enable_static_v6 = True
+        if i_ipv6_type == 2:
+            enable_ipv6_pass = True
 
         p = ip6_addr.find("/")
         if p < 1:
@@ -44,17 +62,10 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "IPv6 prefix value must be 48 to 64")
             return
 
-        if not netutils.is_subnet(subnet, prefix, subnet, is_ipv6=True):
-            self.json_resp(True, "wrong IPv6 subnet value")
-            return
-
-        if not enable_pass:
-            RPC.fn_call("router", "/config", "lan_static_ipv6_pass_enable", False)
-        else:
-            RPC.fn_call("router", "/config", "lan_static_ipv6_pass_enable", True)
-
-        RPC.fn_call("router", "/config", "lan_static_ipv6_enable", True)
+        RPC.fn_call("router", "/config", "lan_ipv6_pass_enable", enable_ipv6_pass)
+        RPC.fn_call("router", "/config", "lan_static_ipv6_enable", enable_static_v6)
         RPC.fn_call("router", "/config", "lan_static_ipv6_set", subnet, prefix)
+        RPC.fn_call("router", "/config", "lan_ipv6_security_enable", enable_ipv6_security)
         RPC.fn_call("router", "/config", "save")
 
         self.json_resp(False, {})

@@ -12,6 +12,7 @@
 #include "icmpv6.h"
 #include "icmp.h"
 #include "addr_map.h"
+#include "ip6sec.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
@@ -318,22 +319,47 @@ struct ixc_route_info *ixc_route_get(unsigned char *subnet,unsigned char prefix,
     return r_info;
 }
 
+static void ixc_route_ipv6_pass_do(struct ixc_mbuf *m)
+{
+    struct ixc_netif *netif=m->netif;
+    // 此处执行IPv6透传
+    netif=netif->type==IXC_NETIF_WAN?ixc_netif_get(IXC_NETIF_LAN):ixc_netif_get(IXC_NETIF_WAN);
+    m->netif=netif;
+    m->passthrough=1;
+
+    /// 发送数据包
+    if(m->from==IXC_MBUF_FROM_LAN){
+        ixc_src_filter_handle(m);
+    }else{
+        ixc_addr_map_handle(m);
+    }
+}
+
 static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
+    
     // 只支持ICMPv6协议
     if(header->next_header!=58){
         ixc_mbuf_put(m);
         return;
     }
 
-    ixc_icmpv6_handle(m,header);
+    // 如果没有开启IPv6透传那么处理ICMPv6
+    if(!ixc_route_is_enabled_ipv6_pass()){
+        ixc_icmpv6_handle(m,header);
+        return;
+    }
+
+    ixc_route_ipv6_pass_do(m);
 }
 
 static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
-    struct ixc_route_info *r=ixc_route_match(header->dst_addr,1);
+    struct ixc_route_info *r=NULL;
     struct ixc_netif *netif=m->netif;
+
+    m->link_proto=0x86dd;
 
     // 检查地址是否可以被转发
     if(header->dst_addr[0]==0xff){
@@ -351,29 +377,55 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
         ixc_route_handle_for_ipv6_local(m,header);
         return;
     }
+
+    if(netif->type==IXC_NETIF_WAN && route.ipv6_pass){
+        // 检查IPv6安全,注意需要在路由查找代码后面
+        if(!ixc_ip6sec_check_ok(m)){
+            ixc_mbuf_put(m);
+            return;
+        }
+        // 直通数据包
+        ixc_route_ipv6_pass_do(m);
+        return;
+    }
     
     //DBG_FLAGS;
-
-    if(NULL==r){
+    r=ixc_route_match(header->dst_addr,1);
+    // 未开启IPv6并且未开启IPv6直通那么丢弃数据包
+    if(NULL==r && !route.ipv6_pass){
         //DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
+
     //DBG_FLAGS;
-    // 如果没有网卡,那么发送到其他应用
-    if(NULL==r->netif){
-        //DBG_FLAGS;
-        if(route.is_linked) ixc_router_send(netif->type,0,IXC_FLAG_ROUTE_FWD,m->data+m->begin,m->end-m->begin);
-        else ixc_router_send(netif->type,header->next_header,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
-        // 这里丢弃数据包,避免内存泄漏
+    if(NULL!=r){
+        // 如果没有网卡,那么发送到其他应用
+        if(NULL==r->netif){
+            ixc_router_send(netif->type,header->next_header,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
+            // 这里丢弃数据包,避免内存泄漏
+            ixc_mbuf_put(m);
+            return;
+        }else{
+            netif=r->netif;
+        }
+    }else{
+        // 检查IPv6安全,注意需要在路由查找代码后面
+        if(!ixc_ip6sec_check_ok(m)){
+            ixc_mbuf_put(m);
+            return;
+        }
+        // 直通数据包
+        ixc_route_ipv6_pass_do(m);
+        return;
+    }
+
+    if(!ixc_ip6sec_check_ok(m)){
         ixc_mbuf_put(m);
         return;
     }
 
-    netif=r->netif;
     m->netif=netif;
-    m->link_proto=0x86dd;
-
     memcpy(m->src_hwaddr,netif->hwaddr,6);
 
     // 如果是本地网段,把next host指向下一台主机
@@ -386,7 +438,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     if(m->from==IXC_MBUF_FROM_LAN){
         ixc_src_filter_handle(m);
     }else{
-        ixc_qos_add(m);
+        ixc_addr_map_handle(m);
     }
 }
 
@@ -441,10 +493,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果没有网卡,那么发送到其他应用
     if(NULL==r->netif){
-        DBG("forward data to application\r\n");
-        if(route.is_linked) ixc_router_send(netif->type,0,IXC_FLAG_ROUTE_FWD,m->data+m->begin,m->end-m->begin);
-        else ixc_router_send(netif->type,iphdr->protocol,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
-
+        ixc_router_send(netif->type,iphdr->protocol,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
         // 这里丢弃数据包,避免内存泄漏
         ixc_mbuf_put(m);
         return;
@@ -485,8 +534,15 @@ void ixc_route_handle(struct ixc_mbuf *m)
     else ixc_route_handle_for_ip(m);
 }
 
-int ixc_route_set_is_linkpkt_for_app(int is_linked)
+inline
+int ixc_route_is_enabled_ipv6_pass(void)
 {
-    route.is_linked=is_linked;
+    return route.ipv6_pass;
+}
+
+int ixc_route_ipv6_pass_enable(int enable)
+{
+    route.ipv6_pass=enable;
+
     return 0;
 }

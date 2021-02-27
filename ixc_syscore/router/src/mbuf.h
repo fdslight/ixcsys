@@ -34,6 +34,8 @@ struct ixc_mbuf{
     // 结束位置
 #define IXC_MBUF_END 0xffff
     int end;
+    // 是否开启透传
+    int passthrough;
     
     union{
         unsigned short link_proto;

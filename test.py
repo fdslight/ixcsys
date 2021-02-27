@@ -2,12 +2,11 @@
 
 import socket, os, time
 
-"""
-s = socket.socket()
-s.connect(("8.8.8.8", 8800))
+s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+s.connect(("8888::1", 8800))
 
 block_size = 1024
-cnt = 12800
+cnt = 1000
 seq = []
 
 for i in range(cnt):
@@ -18,9 +17,9 @@ begin = time.time()
 
 for i in range(cnt):
     s.send(seq[i])
-    print("send ", i + 1)
-    _ = s.recv(4096)
-    print("recv ", i + 1)
+    #print("send ", i + 1)
+    #_ = s.recv(4096)
+    #print("recv ", i + 1)
 
 t = time.time() - begin
 speed = block_size * cnt / t
@@ -37,3 +36,4 @@ for i in range(1):
     print(s.recvfrom(4096))
 
 s.close()
+"""

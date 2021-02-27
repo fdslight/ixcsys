@@ -375,6 +375,8 @@ static void ixc_nat_timeout_cb(void *data)
 
     DBG_FLAGS;
 
+    //session->tdata=NULL;
+
     // 如果NAT会话超时那么就删除数据
     if(now_time-session->up_time>=IXC_NAT_TIMEOUT){
         IXC_PRINT_IP("nat session timeout",session->addr);

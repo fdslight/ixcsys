@@ -10,9 +10,11 @@ ip_addr = 192.168.11.1
 manage_addr = 192.168.11.254
 ;子网掩码
 mask = 255.255.255.0
-;是否开启静态IPv5
+;是否开启静态IPv6
 enable_static_ipv6 = 1
-;是否直通静态地址
-enable_static_ipv6_passthrough = 1
+# 是否直通IPv6数据包,开启此项静态IPv6将会失效,反之开启静态IPv6那么此项会失效
+enable_ipv6_pass = 0
 ;IPv6地址
 ip6_addr = 2410::/64
+;IPv6安全是否启用
+enable_ipv6_security=0

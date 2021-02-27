@@ -30,7 +30,8 @@ struct ixc_route{
     struct map *ip6_rt;
     struct ixc_route_prefix *ip_pre_head;
     struct ixc_route_prefix *ip6_pre_head;
-    int is_linked;
+    // 是否开启IPv6透传
+    int ipv6_pass;
 };
 
 int ixc_route_init(void);
@@ -46,7 +47,9 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6);
 struct ixc_route_info *ixc_route_get(unsigned char *subnet,unsigned char prefix,int is_ipv6);
 
 void ixc_route_handle(struct ixc_mbuf *m);
-/// 是否以链路层数据转发给应用层
-int ixc_route_set_is_linkpkt_for_app(int is_linked);
+/// 是否开启了IPv6透传
+int ixc_route_is_enabled_ipv6_pass(void);
+/// 启用或者关闭IPv6透传
+int ixc_route_ipv6_pass_enable(int enable);
 
 #endif
