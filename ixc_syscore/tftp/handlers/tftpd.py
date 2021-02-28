@@ -76,7 +76,7 @@ class context(object):
         self.__is_ack = False
         self.__is_finished = size != tftplib.BLK_SIZE
 
-        return not self.__is_finished, self.__block_no, fdata
+        return self.__is_finished, self.__block_no, fdata
 
     def write(self, block_no: int, byte_data: bytes):
         """写入数据
@@ -207,11 +207,7 @@ class tftp(object):
             self.send_error_msg(tftplib.ERR_OP, "server cannot support WRQ", client_addr)
             return
 
-        if (session_id not in self.sessions) and opcode == tftplib.OP_RRQ:
-            self.send_error_msg(tftplib.ERR_NOT_DEF, "not send RRQ", client_addr)
-            return
-
-        if opcode == tftplib.OP_RRQ:
+        if opcode == tftplib.OP_RRQ and (session_id not in self.sessions):
             self.handle_rrq(obj, client_addr)
             return
 

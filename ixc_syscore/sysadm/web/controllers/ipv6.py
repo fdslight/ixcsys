@@ -17,6 +17,7 @@ class controller(base_controller.BaseController):
         ip6_addr = self.request.get_argument("static_ipv6", is_qs=False, is_seq=False)
         ipv6_security = self.request.get_argument("enable_ipv6_security", is_qs=False, is_seq=False)
 
+        if not ipv6_security: ipv6_security = 0
         try:
             enable_ipv6_security = bool(int(ipv6_security))
         except ValueError:

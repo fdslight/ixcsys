@@ -381,6 +381,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     if(netif->type==IXC_NETIF_WAN && route.ipv6_pass){
         // 检查IPv6安全,注意需要在路由查找代码后面
         if(!ixc_ip6sec_check_ok(m)){
+            DBG_FLAGS;
             ixc_mbuf_put(m);
             return;
         }

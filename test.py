@@ -2,6 +2,7 @@
 
 import socket, os, time
 
+"""
 s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
 s.connect(("8888::1", 8800))
 
@@ -25,15 +26,13 @@ t = time.time() - begin
 speed = block_size * cnt / t
 print("%s byte/s" % speed)
 s.close()
-
 """
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind(("0.0.0.0", 4444))
 
 for i in range(1):
-    byte_data = os.urandom(2048)
-    s.sendto(byte_data, ("192.168.1.176", 4444))
+    byte_data = os.urandom(119)
+    s.sendto(byte_data, ("192.168.1.176", 53))
     print(s.recvfrom(4096))
 
 s.close()
-"""

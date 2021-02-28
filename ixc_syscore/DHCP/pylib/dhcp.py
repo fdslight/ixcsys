@@ -208,3 +208,18 @@ class dhcp_builder(dhcp):
         link_data = netpkt.build_ether_data(dst_hwaddr, src_hwaddr, 0x0800, ippkt)
 
         return link_data
+
+    def set_boot(self, server_name: str, filename: str):
+        byte_s = filename.encode("iso-8859-1")
+        if len(filename) > 127:
+            raise ValueError("wrong filename length")
+        filled = bytes(128 - len(byte_s))
+        self.file = b"".join([byte_s, filled])
+
+        byte_s = server_name.encode("iso-8859-1")
+        if len(byte_s) > 63:
+            raise ValueError("wrong server name length")
+        filled = bytes(64 - len(byte_s))
+
+        self.sname=b"".join([byte_s,filled])
+

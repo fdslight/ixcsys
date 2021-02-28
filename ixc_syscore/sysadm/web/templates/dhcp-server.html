@@ -1,14 +1,18 @@
 <div id="ixc-dhcp-server-view" class="ixc-menu-content" style="display: none;">
-    <form style="width: 50%;margin: auto;min-width: 400px;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" enctype="application/x-www-form-urlencoded" method="post"
+          action="${self.url_prefix}/dhcp_server" class="ixc-conf-form">
+        <h4>DHCP服务器设置</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
         <div class="form-group row">
             <div class="col-sm-2">DHCP启用</div>
             <div class="col-sm-10">
                 <div class="form-check">
                     <%
-                        s="""<input class="form-check-input" type="checkbox" value="{}" {} />"""
-                        if self.V["public"]["enable"]:x=s.format("1","checked")
-                        else:x=s.format("","")
-                        self.show(x)
+                    s="""<input class="form-check-input" type="checkbox" value="1" name="enable_dhcp" {}/>"""
+                    if self.V["public"]["enable"]:x=s.format("checked")
+                    else:x=s.format("{}")
+                    self.show(x)
                     %>
                     <label class="form-check-label" for="gridCheck1">
                         开启
@@ -19,19 +23,21 @@
         <div class="form-group row">
             <label for="inputEmail3" class="col-sm-2 col-form-label">开始地址</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" placeholder="开始地址" value="${self.V['public']['range_begin']}"/>
+                <input type="text" name="addr_begin" class="form-control" placeholder="开始地址"
+                       value="${self.V['public']['range_begin']}"/>
             </div>
         </div>
         <div class="form-group row">
             <label for="inputEmail3" class="col-sm-2 col-form-label">结束地址</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" placeholder="结束地址" value="${self.V['public']['range_end']}"/>
+                <input type="text" name="addr_end" class="form-control" placeholder="结束地址"
+                       value="${self.V['public']['range_end']}"/>
             </div>
         </div>
         <div class="form-group row">
             <label for="inputEmail3" class="col-sm-2 col-form-label">引导文件</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" placeholder="PXE引导文件名"
+                <input type="text" class="form-control" placeholder="PXE引导文件名" name="boot_file"
                        value="${self.V['public']['boot_file']}"/>
             </div>
         </div>

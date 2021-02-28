@@ -331,11 +331,11 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         rewrite_ip_addr(iphdr,session->addr,is_src);
         csum=csum_calc_incre(*id_ptr,session->lan_id,*csum_ptr);
         *id_ptr=session->lan_id;
-        session->up_time=time(NULL);
     }else {
         rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
         csum=csum_calc_incre(*id_ptr,session->wan_id,*csum_ptr);
         *id_ptr=session->wan_id;
+        session->up_time=time(NULL);
     }
 
     *csum_ptr=csum;

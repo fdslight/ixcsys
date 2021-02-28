@@ -117,7 +117,7 @@ class service(dispatcher.dispatcher):
         self.__dhcp_server_configs = conf.ini_parse_from_file(self.__dhcp_server_conf_path)
 
     def save_dhcp_server_configs(self):
-        pass
+        conf.save_to_ini(self.__dhcp_server_configs, self.__dhcp_server_conf_path)
 
     @property
     def server_configs(self):

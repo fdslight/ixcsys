@@ -53,19 +53,5 @@
 </div>
 <script type="text/javascript">
     $(document).ready(function () {
-        function change(ele) {
-            let selector = $("#ixc-dns-server-view form input[type='text']");
-            if (ele.is(":checked")) {
-                selector.attr("disabled", "disabled");
-            } else {
-                selector.removeAttr("disabled");
-            }
-        }
-
-        let ele = $("input[name='enable_auto']");
-        ele.change(function () {
-            change(ele);
-        });
-        change(ele);
     });
 </script>

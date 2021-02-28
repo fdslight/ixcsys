@@ -31,6 +31,8 @@ class dhcp_server(object):
 
     __tmp_alloc_addrs = None
 
+    __boot_file = None
+
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
         self.__runtime = runtime
@@ -43,8 +45,9 @@ class dhcp_server(object):
 
         self.__alloc = ipalloc.alloc(addr_begin, addr_finish, subnet, int(prefix))
         self.__my_ipaddr = socket.inet_pton(socket.AF_INET, my_ipaddr)
-        self.__hostname = hostname.encode()
+        self.__hostname = hostname
         self.__hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+        self.__boot_file = runtime.server_configs["public"]["boot_file"]
 
         self.__dhcp_parser = dhcp.dhcp_parser()
         self.__dhcp_builder = dhcp.dhcp_builder()
@@ -134,6 +137,8 @@ class dhcp_server(object):
 
         # neg_ok 如果为True的时候那么表示DHCP协商成功
         self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
+
+        self.__dhcp_builder.set_boot(self.__hostname,self.__boot_file)
         self.dhcp_msg_send(resp_opts)
 
     def dhcp_msg_send(self, resp_opts: list):
@@ -181,6 +186,7 @@ class dhcp_server(object):
         # 更新时间
         o["time"] = time.time()
 
+        self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
         self.dhcp_msg_send(resp_opts)
 
     def handle_dhcp_decline(self, opts: list):
