@@ -95,10 +95,9 @@ def main():
         if action == "start":
             start_all()
         elif action == "stop":
-            if action == "debug":
-                print(__helper)
-                return
             stop_all()
+        elif action == "debug":
+            print(__helper)
         else:
             stop_all()
             start_all()
