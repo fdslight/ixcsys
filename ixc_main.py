@@ -7,7 +7,12 @@ sys.path.append(sys_dir)
 
 # 必须要启动的服务
 must_services = [
-    "ixc_syscore/sysadm", "ixc_syscore/router"
+    "ixc_syscore/router",
+    "ixc_syscore/sysadm",
+    "ixc_syscore/DHCP",
+    "ixc_syscore/DNS",
+    "ixc_syscore/proxy_helper",
+    "ixc_syscore/tftp"
 ]
 
 
@@ -70,14 +75,14 @@ def loop():
 
 def main():
     __helper = """
-    start [app_uri] | stop [app_uri]  | debug app_uri
+    start [app_uri] | stop [app_uri]  | debug app_uri | restart [app_uri]
     """
     if len(sys.argv) < 2:
         print(__helper)
         return
     set_pub_env()
     action = sys.argv[1]
-    if action not in ("start", "stop", "debug",):
+    if action not in ("start", "stop", "debug", "restart",):
         print(__helper)
         return
 
@@ -89,11 +94,14 @@ def main():
     if not uri:
         if action == "start":
             start_all()
-        else:
+        elif action == "stop":
             if action == "debug":
                 print(__helper)
                 return
             stop_all()
+        else:
+            stop_all()
+            start_all()
         return
 
     if action in ("start", "debug",):
@@ -102,6 +110,11 @@ def main():
         else:
             debug = False
         start(uri, debug=debug)
+        return
+
+    if action == "restart":
+        stop(uri)
+        start(uri)
         return
 
     stop(uri)

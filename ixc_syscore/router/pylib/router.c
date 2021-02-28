@@ -12,7 +12,6 @@
 #include "../src/qos.h"
 #include "../src/route.h"
 #include "../src/src_filter.h"
-#include "../src/vpn.h"
 #include "../src/ether.h"
 #include "../src/ip.h"
 #include "../src/ip6.h"
@@ -180,12 +179,6 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_src_filter_init();
     if(rs<0){
         STDERR("cannot init P2P\r\n");
-        return NULL;
-    }
-
-    rs=ixc_vpn_init();
-    if(rs<0){
-        STDERR("cannot init vpn\r\n");
         return NULL;
     }
 

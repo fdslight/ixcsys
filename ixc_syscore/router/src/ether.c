@@ -5,7 +5,6 @@
 #include "arp.h"
 #include "ip.h"
 #include "ip6.h"
-#include "vpn.h"
 #include "netif.h"
 #include "router.h"
 #include "pppoe.h"
@@ -81,12 +80,6 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
 
     mbuf->offset+=14;
     mbuf->link_proto=type;
-
-    // 如果打开了VPN选项,那么直接发送LAN数据到用户空间
-    if(ixc_vpn_is_opened() && IXC_NETIF_LAN==netif->type){
-        ixc_router_send(netif->type,0,IXC_FLAG_L2VPN,mbuf->data+mbuf->begin,mbuf->end-mbuf->begin);
-        return;
-    }
     
     if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){
         // 如果WAN口开启PPPoE那么限制只支持PPPoE数据包

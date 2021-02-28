@@ -42,7 +42,7 @@ static void ixc_ip6sec_timeout_cb(void *data)
         return;
     }
 
-    tdata=time_wheel_add(&ip6sec_time_wheel,sec_info,10);
+    tdata=time_wheel_add(&ip6sec_time_wheel,sec_info,IXC_IP6SEC_TIMEOUT-x);
     if(NULL==tdata){
         STDERR("cannot add to time wheel for IPv6 security\r\n");
         map_del(ip6sec.m,sec_info->key,ixc_ip6sec_del_cb);
@@ -79,7 +79,7 @@ static int ixc_ip6sec_add(const char key[],int is_tmp)
     }
 
     if(is_tmp){
-        tdata=time_wheel_add(&ip6sec_time_wheel,sec_info,10);
+        tdata=time_wheel_add(&ip6sec_time_wheel,sec_info,IXC_IP6SEC_TIMEOUT);
         if(NULL==tdata){
             free(sec_info);
             map_del(ip6sec.m,key,NULL);

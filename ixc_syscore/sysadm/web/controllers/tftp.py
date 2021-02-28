@@ -15,7 +15,12 @@ class controller(base_controller.BaseController):
 
     def handle(self):
         file_dir = self.request.get_argument("file_dir", is_seq=False, is_qs=False)
-        enable_v6 = self.request.get_argument("enable_ipv6", is_seq=False, is_qs=False)
+        s_enable_v6 = self.request.get_argument("enable_ipv6", is_seq=False, is_qs=False)
+
+        if not s_enable_v6:
+            enable_v6 = 0
+        else:
+            enable_v6 = 1
 
         js = {"enable_ipv6": enable_v6, "file_dir": file_dir}
 
