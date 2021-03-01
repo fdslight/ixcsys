@@ -75,9 +75,6 @@ class service(dispatcher.dispatcher):
 
     # WAN到LAN的DNS ID映射
     __id_wan2lan = None
-    # LAN到WAN的DNS ID映射
-    __id_lan2wan = None
-
     __matcher = None
 
     __empty_dns_ids = None
@@ -97,7 +94,6 @@ class service(dispatcher.dispatcher):
         self.__dns_conf_path = "%s/dns.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__id_wan2lan = {}
-        self.__id_lan2wan = {}
 
         self.__matcher = rule.matcher()
         self.__empty_dns_ids = []
@@ -239,8 +235,8 @@ class service(dispatcher.dispatcher):
         _list = [struct.pack("!H", new_dns_id), message[2:]]
         new_msg = b"".join(_list)
 
-        self.__id_lan2wan[dns_id] = {"id": new_dns_id, "up_time": time.time()}
-        self.__id_wan2lan[new_dns_id] = {"id": dns_id, "address": address, "is_ipv6": is_ipv6, "action": None}
+        self.__id_wan2lan[new_dns_id] = {"id": dns_id, "address": address, "is_ipv6": is_ipv6, "action": None,
+                                         "time": time.time()}
 
         questions = msg_obj.question
         if len(questions) != 1 or msg_obj.opcode != 0:
@@ -256,9 +252,7 @@ class service(dispatcher.dispatcher):
 
         action = match_rs["action"]
         # 如果规则为丢弃那么直接丢弃该DNS请求
-        # 这里rewrite暂时作为丢弃处理
-        if action == "drop" or action == "rewrite":
-            del self.__id_lan2wan[dns_id]
+        if action == "drop":
             del self.__id_wan2lan[new_dns_id]
             return
         self.__id_wan2lan[new_dns_id]["action"] = match_rs
@@ -291,18 +285,14 @@ class service(dispatcher.dispatcher):
         if now_t - self.__up_time < 5: return
 
         dels = []
-        for _id in self.__id_lan2wan:
-            o = self.__id_lan2wan[_id]
-            up_time = o["up_time"]
-            # 查询时间大于3s那么清除映射记录
-            if now_t - up_time < 3: continue
+        for _id in self.__id_wan2lan:
+            t = self.__id_wan2lan[_id]["time"]
+            if now_t - t < 3: continue
             dels.append(_id)
+
         for _id in dels:
-            o = self.__id_lan2wan[_id]
-            _id2 = o["id"]
             self.put_dns_id(_id)
-            del self.__id_lan2wan[_id]
-            del self.__id_wan2lan[_id2]
+            del self.__id_wan2lan[_id]
 
         self.__up_time = time.time()
 

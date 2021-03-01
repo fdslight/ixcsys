@@ -66,8 +66,13 @@ class context(object):
         """获取文件块
         :return tuple,(True|False,byte_data),True表示文件未结束,False表示文件已结束
         """
+        t = time.time() - self.__up_time
         if not self.__is_ack and self.__last_byte_data:
+            # 小于1s步伐送数据包
+            if t < 1: return None
             return len(self.__last_byte_data) == tftplib.BLK_SIZE, self.__block_no, self.__last_byte_data
+
+        if self.__is_finished: return None
 
         fdata = self.__fd.read(tftplib.BLK_SIZE)
         size = len(fdata)
@@ -115,7 +120,9 @@ class context(object):
         return self.__is_ack
 
     def do_read(self):
-        have_content, block_no, byte_data = self.get_block()
+        rs = self.get_block()
+        if not rs: return
+        have_content, block_no, byte_data = rs
         self.__tftp_obj.send_data_msg(block_no, byte_data, self.__client_addr)
 
         return self.is_finished()
