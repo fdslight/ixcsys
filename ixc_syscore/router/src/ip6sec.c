@@ -149,6 +149,7 @@ int ixc_ip6sec_check_ok(struct ixc_mbuf *m)
 
     // 如果未启用IPv6安全,那么始终认为安全通过
     if(!ip6sec.enable) return 1;
+    if(header->next_header==58) return 1;
 
     if(m->from==IXC_MBUF_FROM_LAN){
         memcpy(&key[0],header->src_addr,16);
@@ -164,7 +165,9 @@ int ixc_ip6sec_check_ok(struct ixc_mbuf *m)
     if(m->from==IXC_MBUF_FROM_WAN){
         // 找不到访问记录那么旧删除
         if(NULL==sec_info){
-            DBG_FLAGS;
+            IXC_PRINT_IP6("src address ",header->src_addr);
+            IXC_PRINT_IP6("dst address ",header->dst_addr);
+            DBG("next header %d\r\n",header->next_header);
             ixc_mbuf_put(m);
             return 0;
         }
