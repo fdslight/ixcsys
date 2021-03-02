@@ -4,7 +4,7 @@
 #include "ip6unfrag.h"
 #include "tcp.h"
 #include "udp.h"
-#include "proxy_helper.h"
+#include "ip2socks.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"

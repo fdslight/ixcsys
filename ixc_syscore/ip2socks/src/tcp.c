@@ -6,7 +6,7 @@
 #include "debug.h"
 #include "ip.h"
 #include "ipv6.h"
-#include "proxy_helper.h"
+#include "ip2socks.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"

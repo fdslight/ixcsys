@@ -11,7 +11,7 @@ class controller(rpc.controller):
     __runtime = None
 
     def rpc_init(self):
-        self.__runtime = global_vars["ixcsys.proxy_helper"]
+        self.__runtime = global_vars["ixcsys.ip2socks"]
 
         self.fobjs = {
         }

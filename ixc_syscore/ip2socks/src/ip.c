@@ -6,7 +6,7 @@
 #include "ip.h"
 #include "ipv6.h"
 #include "ipunfrag.h"
-#include "proxy_helper.h"
+#include "ip2socks.h"
 #include "udp.h"
 #include "tcp.h"
 

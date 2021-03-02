@@ -57,7 +57,7 @@ class context(object):
         """块号加1
         """
         if self.__block_no == 0xffff:
-            self.__block_no = 1
+            self.__block_no = 0
         else:
             self.__block_no += 1
         return self.__block_no

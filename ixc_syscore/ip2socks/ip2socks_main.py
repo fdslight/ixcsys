@@ -16,11 +16,11 @@ import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
 
-import ixc_syscore.proxy_helper.handlers.netpkt as netpkt
-import ixc_syscore.proxy_helper.handlers.udp_client as udp_client
-import ixc_syscore.proxy_helper.handlers.tcp_client as tcp_client
+import ixc_syscore.ip2socks.handlers.netpkt as netpkt
+import ixc_syscore.ip2socks.handlers.udp_client as udp_client
+import ixc_syscore.ip2socks.handlers.tcp_client as tcp_client
 
-import ixc_syscore.proxy_helper.pylib.proxy_helper as proxy_helper
+import ixc_syscore.ip2socks.pylib.ip2socks as ip2socks
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -34,7 +34,7 @@ def __stop_service():
 
 def __start_service(debug):
     if not debug and os.path.isfile(PID_FILE):
-        print("the proxy_helper process exists")
+        print("the ip2socks process exists")
         return
 
     if not debug:
@@ -65,7 +65,7 @@ def __start_service(debug):
 
 class service(dispatcher.dispatcher):
     __debug = None
-    __proxy_helper = None
+    __ip2socks = None
 
     __tcp_sessions = None
     __rand_key = None
@@ -77,7 +77,7 @@ class service(dispatcher.dispatcher):
     __proxy_server = None
 
     def init_func(self, debug):
-        global_vars["ixcsys.proxy_helper"] = self
+        global_vars["ixcsys.ip2socks"] = self
 
         self.__debug = debug
         self.__tcp_sessions = {}
@@ -123,10 +123,10 @@ class service(dispatcher.dispatcher):
         """
 
     def tcp_close(self, session_id: bytes, is_ipv6=False):
-        self.proxy_helper.tcp_close(session_id, is_ipv6)
+        self.ip2socks.tcp_close(session_id, is_ipv6)
 
     def send_tcp_message(self, session_id: bytes, message: bytes, is_ipv6=False):
-        self.proxy_helper.tcp_send(session_id, message, is_ipv6)
+        self.ip2socks.tcp_send(session_id, message, is_ipv6)
 
     def udp_recv_cb(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool, data: bytes):
         # 未设置UDP fd那么就退出
@@ -146,7 +146,7 @@ class service(dispatcher.dispatcher):
         byte_saddr = socket.inet_pton(fa, saddr[0])
         byte_daddr = socket.inet_pton(fa, daddr[0])
 
-        self.proxy_helper.udp_send(byte_saddr, byte_daddr, saddr[1], daddr[1], is_udplite, is_ipv6, csum_coverage,
+        self.ip2socks.udp_send(byte_saddr, byte_daddr, saddr[1], daddr[1], is_udplite, is_ipv6, csum_coverage,
                                    message)
 
     def test_udp_send(self, saddr: str, daddr: str, sport: int, dport: int, is_udplite: bool, is_ipv6: bool,
@@ -169,10 +169,10 @@ class service(dispatcher.dispatcher):
         byte_saddr = socket.inet_pton(fa, saddr)
         byte_daddr = socket.inet_pton(fa, daddr)
 
-        self.proxy_helper.udp_send(byte_saddr, byte_daddr, sport, dport, is_udplite, is_ipv6, 8, msg)
+        self.ip2socks.udp_send(byte_saddr, byte_daddr, sport, dport, is_udplite, is_ipv6, 8, msg)
 
     def start(self):
-        self.__proxy_helper = proxy_helper.proxy_helper(
+        self.__ip2socks = ip2socks.ip2socks(
             self.netpkt_sent_cb,
             self.tcp_conn_ev_cb,
             self.tcp_recv_cb,
@@ -196,8 +196,8 @@ class service(dispatcher.dispatcher):
         ok, message = RPCClient.fn_call("router", "/runtime", "add_route", "4444::", 64, "::", is_ipv6=True)
 
     @property
-    def proxy_helper(self):
-        return self.__proxy_helper
+    def ip2socks(self):
+        return self.__ip2socks
 
     @property
     def consts(self):
@@ -219,9 +219,9 @@ class service(dispatcher.dispatcher):
         self.__udp_fd = -1
 
     def myloop(self):
-        self.__proxy_helper.myloop()
+        self.__ip2socks.myloop()
 
-        if self.proxy_helper.io_wait():
+        if self.ip2socks.io_wait():
             self.set_default_io_wait_time(5)
         else:
             self.set_default_io_wait_time(0)
@@ -258,7 +258,7 @@ class service(dispatcher.dispatcher):
 
 
 def main():
-    __helper = "ixc_syscore/proxy_helper: start | stop | debug"
+    __helper = "ixc_syscore/ip2socks: start | stop | debug"
     if len(sys.argv) != 2:
         print(__helper)
         return

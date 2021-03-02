@@ -10,7 +10,7 @@
 #include "../src/debug.h"
 #include "../src/ip.h"
 #include "../src/ipv6.h"
-#include "../src/proxy_helper.h"
+#include "../src/ip2socks.h"
 #include "../src/udp.h"
 #include "../src/tcp.h"
 #include "../src/tcp_timer.h"
@@ -21,7 +21,7 @@
 
 typedef struct{
     PyObject_HEAD
-}proxy_helper_object;
+}ip2socks_object;
 
 /// TCP发送回调函数
 static PyObject *ip_sent_cb=NULL;
@@ -170,17 +170,17 @@ int netpkt_udp_recv(unsigned char *saddr,unsigned char *daddr,unsigned short spo
 }
 
 static void
-proxy_helper_dealloc(proxy_helper_object *self)
+ip2socks_dealloc(ip2socks_object *self)
 {
     mbuf_uninit();
 }
 
 static PyObject *
-proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+ip2socks_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    proxy_helper_object *self;
+    ip2socks_object *self;
     int rs=0;
-    self=(proxy_helper_object *)type->tp_alloc(type,0);
+    self=(ip2socks_object *)type->tp_alloc(type,0);
     if(NULL==self) return NULL;
 
     rs=mbuf_init(1024);
@@ -226,7 +226,7 @@ proxy_helper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-proxy_helper_init(proxy_helper_object *self,PyObject *args,PyObject *kwds)
+ip2socks_init(ip2socks_object *self,PyObject *args,PyObject *kwds)
 {
     PyObject *fn_ip_sent_cb;
     PyObject *fn_tcp_conn_ev_cb,*fn_tcp_close_ev_cb,*fn_tcp_recv_cb;
@@ -283,14 +283,14 @@ proxy_helper_init(proxy_helper_object *self,PyObject *args,PyObject *kwds)
 }
 
 static PyObject *
-proxy_helper_myloop(PyObject *self,PyObject *args)
+ip2socks_myloop(PyObject *self,PyObject *args)
 {
     sysloop_do();
     Py_RETURN_NONE;
 }
 
 static PyObject *
-proxy_helper_mtu_set(PyObject *self,PyObject *args)
+ip2socks_mtu_set(PyObject *self,PyObject *args)
 {
     int mtu,is_ipv6;
     if(!PyArg_ParseTuple(args,"ip",&mtu,&is_ipv6)) return NULL;
@@ -308,7 +308,7 @@ proxy_helper_mtu_set(PyObject *self,PyObject *args)
 
 /// 处理接收到的网络数据包
 static PyObject *
-proxy_helper_netpkt_handle(PyObject *self,PyObject *args)
+ip2socks_netpkt_handle(PyObject *self,PyObject *args)
 {
     const char *s;
     Py_ssize_t size;
@@ -337,7 +337,7 @@ proxy_helper_netpkt_handle(PyObject *self,PyObject *args)
 
 /// 发送UDP数据包
 static PyObject *
-proxy_helper_udp_send(PyObject *self,PyObject *args)
+ip2socks_udp_send(PyObject *self,PyObject *args)
 {
     unsigned char *saddr,*daddr;
     char *data;
@@ -363,7 +363,7 @@ proxy_helper_udp_send(PyObject *self,PyObject *args)
 
 /// 发送TCP数据包
 static PyObject *
-proxy_helper_tcp_send(PyObject *self,PyObject *args)
+ip2socks_tcp_send(PyObject *self,PyObject *args)
 {
     int is_ipv6,r;
     unsigned char *session_id;
@@ -389,7 +389,7 @@ proxy_helper_tcp_send(PyObject *self,PyObject *args)
 
 /// 设置TCP的窗口大小
 static PyObject *
-proxy_helper_tcp_win_set(PyObject *self,PyObject *args)
+ip2socks_tcp_win_set(PyObject *self,PyObject *args)
 {
     int is_ipv6;
     unsigned char *session_id;
@@ -412,7 +412,7 @@ proxy_helper_tcp_win_set(PyObject *self,PyObject *args)
 
 /// TCP连接关闭
 static PyObject *
-proxy_helper_tcp_close(PyObject *self,PyObject *args)
+ip2socks_tcp_close(PyObject *self,PyObject *args)
 {
     int is_ipv6,rs;
     unsigned char *session_id;
@@ -442,7 +442,7 @@ proxy_helper_tcp_close(PyObject *self,PyObject *args)
 
 /// 设置MSS值
 static PyObject *
-proxy_helper_tcp_mss_set(PyObject *self,PyObject *args)
+ip2socks_tcp_mss_set(PyObject *self,PyObject *args)
 {
     unsigned short mss;
     int is_ipv6,r;
@@ -459,7 +459,7 @@ proxy_helper_tcp_mss_set(PyObject *self,PyObject *args)
 
 /// 检查是否还有数据
 static PyObject *
-proxy_helper_io_wait(PyObject *self,PyObject *args)
+ip2socks_io_wait(PyObject *self,PyObject *args)
 {
     unsigned long long conns=tcp_conn_count_get();
 
@@ -470,52 +470,52 @@ proxy_helper_io_wait(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
-static PyMemberDef proxy_helper_members[]={
+static PyMemberDef ip2socks_members[]={
     {NULL}
 };
 
-static PyMethodDef proxy_helper_methods[]={
-    {"myloop",(PyCFunction)proxy_helper_myloop,METH_VARARGS,"loop call"},
-    {"mtu_set",(PyCFunction)proxy_helper_mtu_set,METH_VARARGS,"set mtu for IP and IPv6"},
+static PyMethodDef ip2socks_methods[]={
+    {"myloop",(PyCFunction)ip2socks_myloop,METH_VARARGS,"loop call"},
+    {"mtu_set",(PyCFunction)ip2socks_mtu_set,METH_VARARGS,"set mtu for IP and IPv6"},
 
-    {"netpkt_handle",(PyCFunction)proxy_helper_netpkt_handle,METH_VARARGS,"handle ip data packet"},
+    {"netpkt_handle",(PyCFunction)ip2socks_netpkt_handle,METH_VARARGS,"handle ip data packet"},
 
-    {"udp_send",(PyCFunction)proxy_helper_udp_send,METH_VARARGS,"udp data send"},
+    {"udp_send",(PyCFunction)ip2socks_udp_send,METH_VARARGS,"udp data send"},
 
-    {"tcp_send",(PyCFunction)proxy_helper_tcp_send,METH_VARARGS,"tcp data send"},
-    {"tcp_win_size_set",(PyCFunction)proxy_helper_tcp_win_set,METH_VARARGS,"tcp window size set"},
-    {"tcp_close",(PyCFunction)proxy_helper_tcp_close,METH_VARARGS,"tcp connection close"},
-    {"tcp_mss_set",(PyCFunction)proxy_helper_tcp_mss_set,METH_VARARGS,"tcp mss set"},
+    {"tcp_send",(PyCFunction)ip2socks_tcp_send,METH_VARARGS,"tcp data send"},
+    {"tcp_win_size_set",(PyCFunction)ip2socks_tcp_win_set,METH_VARARGS,"tcp window size set"},
+    {"tcp_close",(PyCFunction)ip2socks_tcp_close,METH_VARARGS,"tcp connection close"},
+    {"tcp_mss_set",(PyCFunction)ip2socks_tcp_mss_set,METH_VARARGS,"tcp mss set"},
 
-    {"io_wait",(PyCFunction)proxy_helper_io_wait,METH_VARARGS,"if wait connection IO"},
+    {"io_wait",(PyCFunction)ip2socks_io_wait,METH_VARARGS,"if wait connection IO"},
     
     {NULL,NULL,0,NULL}
 };
 
-static PyTypeObject proxy_helper_type={
+static PyTypeObject ip2socks_type={
     PyVarObject_HEAD_INIT(NULL,0)
-    .tp_name="proxy_helper.proxy_helper",
+    .tp_name="ip2socks.ip2socks",
     .tp_doc="python proxy helper library",
-    .tp_basicsize=sizeof(proxy_helper_object),
+    .tp_basicsize=sizeof(ip2socks_object),
     .tp_itemsize=0,
     .tp_flags=Py_TPFLAGS_DEFAULT,
-    .tp_new=proxy_helper_new,
-    .tp_init=(initproc)proxy_helper_init,
-    .tp_dealloc=(destructor)proxy_helper_dealloc,
-    .tp_members=proxy_helper_members,
-    .tp_methods=proxy_helper_methods
+    .tp_new=ip2socks_new,
+    .tp_init=(initproc)ip2socks_init,
+    .tp_dealloc=(destructor)ip2socks_dealloc,
+    .tp_members=ip2socks_members,
+    .tp_methods=ip2socks_methods
 };
 
-static struct PyModuleDef proxy_helper_module={
+static struct PyModuleDef ip2socks_module={
     PyModuleDef_HEAD_INIT,
-    "proxy_helper",
+    "ip2socks",
     NULL,
     -1,
-    proxy_helper_methods
+    ip2socks_methods
 };
 
 PyMODINIT_FUNC
-PyInit_proxy_helper(void){
+PyInit_ip2socks(void){
     PyObject *m;
     const char *const_names[] = {
 	};
@@ -525,18 +525,18 @@ PyInit_proxy_helper(void){
     
     int const_count = sizeof(const_names) / sizeof(NULL);
 
-    if(PyType_Ready(&proxy_helper_type) < 0) return NULL;
+    if(PyType_Ready(&ip2socks_type) < 0) return NULL;
 
-    m=PyModule_Create(&proxy_helper_module);
+    m=PyModule_Create(&ip2socks_module);
     if(NULL==m) return NULL;
 
     for (int n = 0; n < const_count; n++) {
 		if (PyModule_AddIntConstant(m, const_names[n], const_values[n]) < 0) return NULL;
 	}
 
-    Py_INCREF(&proxy_helper_type);
-    if(PyModule_AddObject(m,"proxy_helper",(PyObject *)&proxy_helper_type)<0){
-        Py_DECREF(&proxy_helper_type);
+    Py_INCREF(&ip2socks_type);
+    if(PyModule_AddObject(m,"ip2socks",(PyObject *)&ip2socks_type)<0){
+        Py_DECREF(&ip2socks_type);
         Py_DECREF(m);
         return NULL;
     }

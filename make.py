@@ -17,7 +17,7 @@ __builds = [
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
     "ixc_syscore/tftp",
-    "ixc_syscore/proxy_helper"
+    "ixc_syscore/ip2socks"
 ]
 
 __helper = """

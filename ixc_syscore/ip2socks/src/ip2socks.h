@@ -1,5 +1,5 @@
-#ifndef PROXY_HELPER_H
-#define PROXY_HELPER_H
+#ifndef IP2SOCKS_H
+#define IP2SOCKS_H
 
 #include "mbuf.h"
 
