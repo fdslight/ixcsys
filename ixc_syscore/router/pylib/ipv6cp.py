@@ -4,6 +4,7 @@ import time, random
 
 import ixc_syscore.router.pylib.ncp as ncp
 import ixc_syscore.router.pylib.lcp as lcp
+import ixc_syscore.router.pylib.router as router
 
 
 class IPv6CP(ncp.NCP):
@@ -36,6 +37,8 @@ class IPv6CP(ncp.NCP):
         self.__my_ipaddr_subnet = byte_data[2:]
         self.__my_ipaddr_ok = True
         self.__try_count = 0
+
+        self.pppoe.runtime.router.netif_set_ip(router.IXC_NETIF_WAN, self.__my_ipaddr_subnet, 64, True)
 
     def handle_cfg_nak(self, _id: int, byte_data: bytes):
         if len(byte_data) != 10: return
