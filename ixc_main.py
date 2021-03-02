@@ -13,7 +13,7 @@ must_services = [
     "ixc_syscore/DNS",
     "ixc_syscore/ip2socks",
     "ixc_syscore/tftp",
-
+    # "ixc_syscore/sys_proxy"
 ]
 
 
