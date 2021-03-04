@@ -107,7 +107,7 @@ class _request(object):
         form_type = self.__get_post_form_type()
         self.__form_type = form_type
 
-        if form_type == self.__FORM_TYPE_UNKOWN: raise RequestErr("unkown form type")
+        if form_type == self.__FORM_TYPE_UNKOWN: pass
         if form_type == self.__FORM_TYPE_PLAIN: pass
         if form_type == self.__FORM_TYPE_MULTIPART:
             boundary = self.__get_form_multipart_boundary()

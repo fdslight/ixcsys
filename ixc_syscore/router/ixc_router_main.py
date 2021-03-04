@@ -78,6 +78,7 @@ class service(dispatcher.dispatcher):
 
     __lan_configs = None
     __wan_configs = None
+    __router_configs = None
 
     __is_linux = None
     __scgi_fd = None
@@ -140,6 +141,14 @@ class service(dispatcher.dispatcher):
         path = "%s/wan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         conf.save_to_ini(self.__wan_configs, path)
 
+    def load_router_configs(self):
+        path = "%s/router.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__router_configs = conf.ini_parse_from_file(path)
+
+    def save_router_configs(self):
+        path = "%s/router.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        conf.save_to_ini(self.__router_configs, path)
+
     @property
     def router(self):
         return self.__router
@@ -155,6 +164,10 @@ class service(dispatcher.dispatcher):
     @property
     def wan_configs(self):
         return self.__wan_configs
+
+    @property
+    def router_configs(self):
+        return self.__router_configs
 
     @property
     def debug(self):
@@ -362,6 +375,16 @@ class service(dispatcher.dispatcher):
     def get_manage_addr(self):
         return self.lan_configs["if_config"]["manage_addr"]
 
+    def set_router(self):
+        """对路由器进行设置
+        :return:
+        """
+        self.load_router_configs()
+        # 首先对QOS尽享设置
+        qos = self.__router_configs["qos"]
+        udp_udplite_first = bool(int(qos["udp_udplite_first"]))
+        self.router.qos_udp_udplite_first_enable(udp_udplite_first)
+
     def init_func(self, debug):
         self.__debug = debug
         self.__if_lan_fd = -1
@@ -403,6 +426,7 @@ class service(dispatcher.dispatcher):
         self.__pfwd_fd = self.create_handler(-1, pfwd.pfwd)
 
         self.start_scgi()
+        self.set_router()
 
     def myloop(self):
         if self.__pppoe_enable: self.__pppoe.loop()

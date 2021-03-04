@@ -331,6 +331,17 @@ router_iowait(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_qos_udp_udplite_first(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+
+    ixc_qos_udp_udplite_first(enable);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 router_myloop(PyObject *self,PyObject *args)
 {
     sysloop_do();
@@ -704,6 +715,8 @@ static PyMethodDef routerMethods[]={
     {"send_netpkt",(PyCFunction)router_send_netpkt,METH_VARARGS,"send network packet to protocol statck"},
     //
     {"iowait",(PyCFunction)router_iowait,METH_VARARGS,"tell if wait"},
+    //
+    {"qos_udp_udplite_first_enable",(PyCFunction)router_qos_udp_udplite_first,METH_VARARGS,"set udp or udplite first"},
     //
     {"myloop",(PyCFunction)router_myloop,METH_VARARGS,"loop call"},
     //

@@ -77,10 +77,11 @@ class service(dispatcher.dispatcher):
     __id_wan2lan = None
     __matcher = None
 
-    __empty_dns_ids = None
     __up_time = None
 
     __scgi_fd = None
+
+    __cur_dns_id = None
 
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
@@ -96,9 +97,9 @@ class service(dispatcher.dispatcher):
         self.__id_wan2lan = {}
 
         self.__matcher = rule.matcher()
-        self.__empty_dns_ids = []
         self.__up_time = time.time()
         self.__scgi_fd = -1
+        self.__cur_dns_id = 1
 
         self.create_poll()
         self.wait_router_proc()
@@ -146,16 +147,12 @@ class service(dispatcher.dispatcher):
         return ipaddr
 
     def get_dns_id(self):
-        rs = -1
-        if self.__empty_dns_ids: return self.__empty_dns_ids.pop(0)
-        for i in range(256):
-            dns_id = random.randint(1, 0xfffe)
-            if dns_id in self.__id_wan2lan: continue
-            rs = dns_id
-        return rs
+        dns_id = self.__cur_dns_id
+        self.__cur_dns_id += 1
+        # 此处重置DNS ID
+        if self.__cur_dns_id > 0xfffe: self.__cur_dns_id = 1
 
-    def put_dns_id(self, _id: int):
-        self.__empty_dns_ids.append(_id)
+        return dns_id
 
     def set_route(self, subnet: str, prefix: int, is_ipv6=False):
         RPCClient.fn_call("router", "/runtime", "add_route", subnet, prefix, None, is_ipv6=is_ipv6)
@@ -291,7 +288,6 @@ class service(dispatcher.dispatcher):
             dels.append(_id)
 
         for _id in dels:
-            self.put_dns_id(_id)
             del self.__id_wan2lan[_id]
 
         self.__up_time = time.time()

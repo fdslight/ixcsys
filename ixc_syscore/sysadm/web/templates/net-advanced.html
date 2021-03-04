@@ -1,0 +1,26 @@
+<div id="ixc-net-advanced-view" class="ixc-menu-content" style="display: none;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/net_advanced">
+        <h4>QOS设置</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-check">
+            <label class="form-check-label">
+                <%
+                s="""<input class="form-check-input" name="udp_udplite_first" value="1" type="checkbox" {}/>"""
+                if self.V["udp_udplite_first"]:x=s.format("checked")
+                else:x=s.format("")
+                self.show(x)
+                %>
+                游戏优先模式
+            </label>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+</script>

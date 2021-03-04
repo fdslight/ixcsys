@@ -29,6 +29,8 @@ class controller(rpc.controller):
             "lan_static_ipv6_set": self.lan_static_ipv6_set,
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
             "pppoe_set": self.pppoe_set,
+            "router_config_get": self.router_config_get,
+            "qos_set_udp_udplite_first":self.qos_set_udp_udplite_first,
             "save": self.save
         }
 
@@ -158,7 +160,23 @@ class controller(rpc.controller):
 
         return 0, None
 
+    def router_config_get(self):
+        configs = self.__runtime.router_configs
+
+        return 0, configs
+
+    def qos_set_udp_udplite_first(self, enable: bool):
+        configs = self.__runtime.router_configs["qos"]
+        if enable:
+            configs["udp_udplite_first"] = 1
+        else:
+            configs["udp_udplite_first"] = 0
+        self.__runtime.router.qos_udp_udplite_first_enable(enable)
+
+        return 0, None
+
     def save(self):
         self.__runtime.save_wan_configs()
         self.__runtime.save_lan_configs()
+        self.__runtime.save_router_configs()
         return 0, None
