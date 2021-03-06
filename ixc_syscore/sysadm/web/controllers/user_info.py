@@ -16,15 +16,15 @@ class controller(base_controller.BaseController):
         passwd_new2 = self.request.get_argument("passwd_new2", is_seq=False, is_qs=False)
 
         if not passwd_old or not passwd_new1 or not passwd_new2:
-            self.json_resp(True, "密码不能为空")
+            self.json_resp(True, self.LA("密码不能为空"))
             return
 
         if passwd_new1 != passwd_new2:
-            self.json_resp(True, "新密码不一致")
+            self.json_resp(True, self.LA("新密码不一致"))
             return
 
         if len(passwd_new1) < 8:
-            self.json_resp(True, "密码不能小于8位")
+            self.json_resp(True, self.LA("密码不能小于8位"))
             return
 
         fpath = "%s/user.json" % self.my_config_dir
@@ -38,7 +38,7 @@ class controller(base_controller.BaseController):
         info = json.loads(s)
 
         if info["password"] != old_hash:
-            self.json_resp(True, "错误的旧密码")
+            self.json_resp(True, self.LA("错误的旧密码"))
             return
 
         info["password"] = new_hash
