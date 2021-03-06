@@ -11,9 +11,7 @@ must_services = [
     "ixc_syscore/sysadm",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
-    "ixc_syscore/ip2socks",
     "ixc_syscore/tftp",
-    # "ixc_syscore/sys_proxy"
 ]
 
 
