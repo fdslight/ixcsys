@@ -74,7 +74,6 @@ class service(dispatcher.dispatcher):
         self.create_poll()
         self.wait_router_proc()
         self.load_configs()
-        self.start_tftp()
         self.start_scgi()
 
     def myloop(self):
@@ -94,7 +93,6 @@ class service(dispatcher.dispatcher):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
 
         return ipaddr
-
 
     def start_scgi(self):
         scgi_configs = {
@@ -119,6 +117,23 @@ class service(dispatcher.dispatcher):
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+
+    def handle_netpkt_from_lan(self, message: bytes):
+        """处理来自于局域网的网络数据包
+        :param message:
+        :return:
+        """
+        pass
+
+    def handle_dns_request(self, dns_msg: bytes):
+        pass
+
+    def handle_netpkt_from_tunnel(self, action: int, message: bytes):
+        """处理来自于隧道的数据包
+        :param message:
+        :return:
+        """
+        pass
 
 
 def main():
