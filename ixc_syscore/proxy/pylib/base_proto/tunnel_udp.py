@@ -8,7 +8,7 @@ seq: 4 bit 当前分包序号
 reverse:4 bit 保留
 action:4bit 动作
 """
-import freenet.lib.base_proto.utils as proto_utils
+import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
 import struct
 
 MIN_FIXED_HEADER_SIZE = 22

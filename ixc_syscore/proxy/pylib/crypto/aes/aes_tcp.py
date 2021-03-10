@@ -8,9 +8,9 @@ sys.path.append("../../../")
 import hashlib
 import os
 
-import freenet.lib.base_proto.tunnel_tcp as tunnel
-import freenet.lib.base_proto.utils as proto_utils
-import freenet.lib.crypto.aes._aes_cfb as aes_cfb
+import ixc_syscore.proxy.pylib.base_proto.tunnel_tcp as tunnel
+import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
+import ixc_syscore.proxy.pylib.crypto.aes._aes_cfb as aes_cfb
 
 FIXED_HEADER_SIZE = 48
 

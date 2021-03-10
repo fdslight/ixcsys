@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import freenet.lib.base_proto.tunnel_udp as tunnel
+import ixc_syscore.proxy.pylib.base_proto.tunnel_udp as tunnel
 
 
 class encrypt(tunnel.builder):

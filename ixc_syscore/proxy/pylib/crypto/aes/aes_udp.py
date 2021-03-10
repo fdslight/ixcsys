@@ -6,11 +6,10 @@ import sys
 sys.path.append("../../../")
 """
 
-import hashlib
-import os
+import hashlib, os
 
-import freenet.lib.base_proto.tunnel_udp as tunnel
-import freenet.lib.crypto.aes._aes_cfb as aes_cfb
+import ixc_syscore.proxy.pylib.base_proto.tunnel_udp as tunnel
+import ixc_syscore.proxy.pylib.crypto.aes._aes_cfb as aes_cfb
 
 FIXED_HEADER_SIZE = 48
 
