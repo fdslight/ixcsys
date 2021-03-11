@@ -11,7 +11,7 @@ static void timeout_fn(void *data)
 {
     struct time_data *x;
 
-    x=time_wheel_add(&wheel,data,2);
+    x=time_wheel_add(&wheel,data,10);
 
     DBG("hello,world\r\n");
 }
@@ -19,16 +19,17 @@ static void timeout_fn(void *data)
 int main(int argc,char *argv[])
 {
  
-    int rs=time_wheel_new(&wheel,60,2,timeout_fn,16);
-    struct time_data *tdata=time_wheel_add(&wheel,NULL,1);
+    int rs=time_wheel_new(&wheel,60,10,timeout_fn,16);
 
-    sleep(2);
+    struct time_data *tdata=time_wheel_add(&wheel,NULL,10);
+
+    
 
     printf("%d\r\n",rs);
-
+    sleep(10);
     time_wheel_handle(&wheel);
 
-    sleep(2);
+    sleep(10);
     time_wheel_handle(&wheel);
 
 
