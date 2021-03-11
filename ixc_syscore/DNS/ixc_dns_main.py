@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, time, struct, random
+import sys, os, signal, time, struct, base64, json
 import dns.message
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -255,7 +255,12 @@ class service(dispatcher.dispatcher):
         self.__id_wan2lan[new_dns_id]["action"] = match_rs
         # 发送DNS数据到其他应用程序,如果找不到文件号那么丢弃数据包
         if self.__dns_client < 0: return
-        self.get_handler(self.__dns_client).send_forward_msg(message)
+
+        msg = {
+            "action": action,
+            "message": base64.b16encode(message)
+        }
+        self.get_handler(self.__dns_client).send_forward_msg(json.dumps(msg).encode())
 
     @property
     def matcher(self):
