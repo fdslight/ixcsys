@@ -229,6 +229,30 @@ class service(dispatcher.dispatcher):
         return self.__configs
 
     @property
+    def proxy_domain_rule_raw_get(self):
+        fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        with open(fpath, "r") as f:
+            s = f.read()
+        f.close()
+        return s.encode().decode("latin1")
+
+    @property
+    def pass_ip_rule_raw_get(self):
+        fpath = "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        with open(fpath, "r") as f:
+            s = f.read()
+        f.close()
+        return s.encode().decode("latin1")
+
+    @property
+    def proxy_ip_rule_raw_get(self):
+        fpath = "%s/proxy_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        with open(fpath, "r") as f:
+            s = f.read()
+        f.close()
+        return s.encode().decode("latin1")
+
+    @property
     def session_id(self):
         if not self.__session_id:
             connection = self.__configs["connection"]
@@ -423,7 +447,7 @@ class service(dispatcher.dispatcher):
             return
 
         # 调用RPC加入路由
-        ok, result = RPCClient.fn_call("router", "/runtime", "add_route", host, prefix, "0.0.0.0", is_ipv6=is_ipv6)
+        RPCClient.fn_call("router", "/runtime", "add_route", host, prefix, "0.0.0.0", is_ipv6=is_ipv6)
 
         if not is_dynamic:
             name = "%s/%s" % (host, prefix,)
@@ -465,7 +489,7 @@ class service(dispatcher.dispatcher):
             if not prefix: prefix = 32
 
         # 此处调用RPC删除路由
-        ok, result = RPCClient.fn_call("router", "/runtime", "del_route", host, prefix, is_ipv6=is_ipv6)
+        RPCClient.fn_call("router", "/runtime", "del_route", host, prefix, is_ipv6=is_ipv6)
 
         if is_dynamic:
             self.__route_timer.drop(host)

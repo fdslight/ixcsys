@@ -1,0 +1,129 @@
+<div id="ixc-conn-view" class="ixc-menu-content" style="display: block;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/proxy_conn">
+        <h4>隧道连接</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-group row">
+            <label for="inputEmail3" class="col-sm-2 col-form-label">服务器地址</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="inputEmail3" value="${self.V['connection']['host']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="inputPassword3" class="col-sm-2 col-form-label">服务器端口</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="inputPassword3" value="${self.V['connection']['port']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="inputPassword3" class="col-sm-2 col-form-label">连接超时(s)</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="inputPassword3" value="${self.V['connection']['conn_timeout']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="inputPassword3" class="col-sm-2 col-form-label">用户名</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="inputPassword3" value="${self.V['connection']['username']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="inputPassword3" class="col-sm-2 col-form-label">密码</label>
+            <div class="col-sm-10">
+                <input type="password" class="form-control" id="inputPassword3" value="${self.V['connection']['password']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">IPv6隧道</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="gridCheck1">
+                    <label class="form-check-label" for="gridCheck1">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">心跳</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="gridCheck1">
+                    <label class="form-check-label" for="gridCheck1">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">HTTPS隧道</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="gridCheck1">
+                    <label class="form-check-label" for="gridCheck1">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">UDP隧道可靠性</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="gridCheck1">
+                    <label class="form-check-label" for="gridCheck1">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <h4>HTTPS隧道</h4>
+        <div class="form-group row">
+            <label for="inputPassword3" class="col-sm-2 col-form-label">URL</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="inputPassword3" value="${self.V['tunnel_over_https']['url']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="inputPassword3" class="col-sm-2 col-form-label">验证ID</label>
+            <div class="col-sm-10">
+                <input type="password" class="form-control" id="inputPassword3" value="${self.V['tunnel_over_https']['auth_id']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="inputPassword3" class="col-sm-2 col-form-label">SNI主机</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="inputPassword3" placeholder="Password">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">开启SNI</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="gridCheck1">
+                    <label class="form-check-label" for="gridCheck1">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">严格模式</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="gridCheck1">
+                    <label class="form-check-label" for="gridCheck1">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            </div>
+        </div>
+    </form>
+</div>

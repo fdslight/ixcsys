@@ -55,7 +55,7 @@ static void ixc_addr_map_timeout_cb(void *data)
         return;
     }
 
-    tdata=time_wheel_add(&(addr_map.time_wheel),r,IXC_ADDR_MAP_TIMEOUT);
+    tdata=time_wheel_add(&(addr_map.time_wheel),r,10);
     r->tdata=tdata;
     tdata->data=r;
 
@@ -156,7 +156,7 @@ int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hw
         return -1;
     }
 
-    tdata=time_wheel_add(&(addr_map.time_wheel),r,IXC_ADDR_MAP_TIMEOUT);
+    tdata=time_wheel_add(&(addr_map.time_wheel),r,10);
     if(NULL==tdata){
         STDERR("cannot add to timer\r\n");
         map_del(map,(char *)ip,NULL);

@@ -1,0 +1,37 @@
+<div id="ixc-proxy-view" class="ixc-menu-content">
+    <nav class="nav nav-pills flex-column flex-sm-row" style="background-color: rgba(8,64,92,0.07);">
+        <a class="flex-sm-fill text-sm-center nav-link ixc-proxy-type"
+           id="ixc-proxy-conn" name="conn"
+           href="${self.url_prefix}/?show=ixc-proxy.ixc-proxy-conn&page=proxy&type=conn">连接设置</a>
+        <a class="flex-sm-fill text-sm-center nav-link ixc-proxy-type" name="dns"
+           href="${self.url_prefix}/?show=ixc-proxy.ixc-dns&page=proxy&type=dns"
+           id="ixc-dns">DNS规则</a>
+        <a class="flex-sm-fill text-sm-center nav-link ixc-proxy-type" id="ixc-pass-ip"
+           href="${self.url_prefix}/?show=ixc-proxy.ixc-pass-ip&page=proxy&type=pass-ip" name="pass-ip">不使用隧道IP名单</a>
+        <a class="flex-sm-fill text-sm-center nav-link ixc-proxy-type" id="ixc-proxy-ip"
+           href="${self.url_prefix}/?show=ixc-proxy.ixc-proxy-ip&page=proxy&type=proxy-ip"
+           name="proxy-ip">强制使用隧道IP名单</a>
+    </nav>
+    <div class="ixc-empty"></div>
+    <div class="ixc-empty"></div>
+    <div class="ixc-empty"></div>
+    <%
+    if self.qs('type')=="conn":self.show(self.include("proxy-conn.html"))
+    elif self.qs('type')=="dns":self.show(self.include("proxy-dns.html"))
+    elif self.qs('type')=="pass-ip":self.show(self.include("proxy-pass-ip.html"))
+    elif self.qs('type')=="proxy-ip":self.show(self.include("proxy-ip.html"))
+    else:self.show("not found page")
+    %>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(".ixc-proxy-type").click(function () {
+                let attr_name = $(this).attr("name");
+                $(".ixc-proxy-type").removeClass("active");
+                $(this).addClass("active");
+
+                $(".ixc-proxy-type").css("display", "none");
+                $("#ixc-" + attr_name + "-view").css("display", "block");
+            });
+        });
+    </script>
+</div>
