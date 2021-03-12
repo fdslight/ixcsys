@@ -32,6 +32,7 @@ static void ixc_addr_map_sysloop_cb(struct sysloop *lp)
         STDERR("addr map not initialized\r\n");
         return;
     }
+    DBG_FLAGS;
     time_wheel_handle(&(addr_map.time_wheel));
 }
 

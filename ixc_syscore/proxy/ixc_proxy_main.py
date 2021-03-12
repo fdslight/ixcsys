@@ -21,6 +21,7 @@ import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
 
 import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
+import ixc_syscore.proxy.pylib.file_parser as file_parser
 import ixc_syscore.proxy.handlers.tunnel as tunnel
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -102,7 +103,6 @@ class service(dispatcher.dispatcher):
         self.wait_router_proc()
         self.load_configs()
         self.start_scgi()
-
         self.start(debug)
 
     def start(self, debug):
@@ -116,7 +116,6 @@ class service(dispatcher.dispatcher):
             sys.exit(-1)
 
         crypto_fpath = "%s/%s" % (os.getenv("IXC_MYAPP_CONF_DIR"), conn["crypto_configfile"])
-
         if not os.path.isfile(crypto_fpath):
             print("crypto configfile not exists")
             sys.exit(-1)
@@ -135,6 +134,75 @@ class service(dispatcher.dispatcher):
         ''''''
 
         signal.signal(signal.SIGUSR1, self.__set_rules)
+
+    def __set_rules(self, signum, frame):
+        fpaths = [
+            "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR"),
+            "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR"),
+            "%s/proxy_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        ]
+
+        for fpath in fpaths:
+            if not os.path.isfile(fpath):
+                sys.stderr.write("cannot found %s\r\n" % fpath)
+                return
+        try:
+            rules = file_parser.parse_host_file(fpaths[0])
+            self.get_handler(self.__dns_fileno).set_host_rules(rules)
+
+            rules = file_parser.parse_ip_subnet_file(fpaths[1])
+            self.get_handler(self.__dns_fileno).set_ip_rules(rules)
+
+            rules = file_parser.parse_ip_subnet_file(fpaths[2])
+            self.__set_static_ip_rules(rules)
+
+        except file_parser.FilefmtErr:
+            logging.print_error()
+
+    def __set_static_ip_rules(self, rules):
+        nameserver = self.__configs["public"]["remote_dns"]
+        ns_is_ipv6 = netutils.is_ipv6_address(nameserver)
+
+        # 查看新的规则
+        kv_pairs_new = {}
+        for subnet, prefix in rules:
+            if not netutils.is_ipv6_address(subnet) and not netutils.is_ipv4_address(subnet):
+                logging.print_error("wrong pre ip rule %s/%s" % (subnet, prefix,))
+                continue
+            is_ipv6 = netutils.is_ipv6_address(subnet)
+
+            # 找到和nameserver冲突的路由那么跳过
+            t = netutils.calc_subnet(nameserver, prefix, is_ipv6=ns_is_ipv6)
+            if t == subnet:
+                logging.print_error(
+                    "conflict preload ip rules %s/%s with nameserver %s" % (subnet, prefix, nameserver,)
+                )
+                continue
+
+            name = "%s/%s" % (subnet, prefix,)
+            kv_pairs_new[name] = (subnet, prefix, is_ipv6,)
+        # 需要删除的列表
+        need_dels = []
+        # 需要增加的路由
+        need_adds = []
+
+        for name in kv_pairs_new:
+            # 新的规则旧的没有那么就需要添加
+            if name not in self.__static_routes:
+                need_adds.append(kv_pairs_new[name])
+
+        for name in self.__static_routes:
+            # 旧的规则新的没有,那么就是需要删除
+            if name not in kv_pairs_new:
+                need_dels.append(self.__static_routes[name])
+
+        # 删除需要删除的路由
+        for subnet, prefix, is_ipv6 in need_dels:
+            self.__del_route(subnet, prefix=prefix, is_ipv6=is_ipv6, is_dynamic=False)
+
+        # 增加需要增加的路由
+        for subnet, prefix, is_ipv6 in need_adds:
+            self.set_route(subnet, prefix=prefix, is_ipv6=is_ipv6, is_dynamic=False)
 
     def myloop(self):
         pass
@@ -355,8 +423,7 @@ class service(dispatcher.dispatcher):
             return
 
         # 调用RPC加入路由
-        cmd = "ip %s route add %s/%s dev %s" % (s, host, prefix, self.__DEVNAME)
-        os.system(cmd)
+        ok, result = RPCClient.fn_call("router", "/runtime", "add_route", host, prefix, "0.0.0.0", is_ipv6=is_ipv6)
 
         if not is_dynamic:
             name = "%s/%s" % (host, prefix,)
@@ -393,13 +460,12 @@ class service(dispatcher.dispatcher):
         if is_dynamic: is_ipv6 = self.__routes[host]
 
         if is_ipv6:
-            s = "-6"
             if not prefix: prefix = 128
         else:
-            s = ""
             if not prefix: prefix = 32
 
         # 此处调用RPC删除路由
+        ok, result = RPCClient.fn_call("router", "/runtime", "del_route", host, prefix, is_ipv6=is_ipv6)
 
         if is_dynamic:
             self.__route_timer.drop(host)

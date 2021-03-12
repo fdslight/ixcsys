@@ -24,7 +24,10 @@ static void ixc_ipunfrag_timeout_cb(void *data)
     char key[10];
 
     struct ixc_mbuf *m=data;
+    DBG_FLAGS;
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
+
+    DBG_FLAGS;
 
     memcpy(&key[0],header->src_addr,4);
     memcpy(&key[4],header->dst_addr,4);
@@ -35,6 +38,7 @@ static void ixc_ipunfrag_timeout_cb(void *data)
 
 static void ixc_ipunfrag_sysloop_cb(struct sysloop *loop)
 {
+    DBG_FLAGS;
     time_wheel_handle(&ipunfrag_time_wheel);
 }
 
@@ -175,8 +179,6 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
         new_mbuf->priv_data=tdata;
         new_mbuf->priv_flags=header_len;
     }
-
-    
 
     new_mbuf->end=new_mbuf->tail;
 
