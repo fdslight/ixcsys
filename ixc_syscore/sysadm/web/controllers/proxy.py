@@ -83,6 +83,32 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的connection.port值范围")
             return
 
+        try:
+            conn_timeout = int(kv_map["connection"]["conn_timeout"])
+        except ValueError:
+            self.json_resp(True, "错误的连接超时值")
+            return
+        except TypeError:
+            self.json_resp(True, "错误的连接超时值")
+            return
+
+        if conn_timeout < 20:
+            self.json_resp(True, "连接超时应等于大于20s")
+            return
+
+        try:
+            heartbeat_timeout = int(kv_map["connection"]["heartbeat_timeout"])
+        except ValueError:
+            self.json_resp(True, "错误的连接心跳值")
+            return
+        except TypeError:
+            self.json_resp(True, "错误的连接心跳值")
+            return
+
+        if heartbeat_timeout < 10:
+            self.json_resp(True, "心跳值应大于或者等于10s")
+            return
+
         if kv_map["connection"]["tunnel_type"] not in ("tcp", "udp",):
             self.json_resp(True, "错误的隧道协议类型")
             return
