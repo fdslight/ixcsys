@@ -22,7 +22,8 @@ static void ixc_addr_map_del_cb(void *data)
     struct ixc_addr_map_record *r=data;
     struct time_data *tdata=r->tdata;
 
-    tdata->is_deleted=1;
+    if(NULL!=tdata) tdata->is_deleted=1;
+    
     free(r);
 }
 
@@ -57,7 +58,7 @@ static void ixc_addr_map_timeout_cb(void *data)
 
     tdata=time_wheel_add(&(addr_map.time_wheel),r,10);
     r->tdata=tdata;
-    tdata->data=r;
+    //tdata->data=r;
 
     // 对IPv6的处理方式
     if(r->is_ipv6){
