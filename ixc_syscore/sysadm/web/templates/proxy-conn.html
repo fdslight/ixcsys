@@ -1,9 +1,27 @@
 <div id="ixc-conn-view" class="ixc-menu-content" style="display: block;">
     <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
-          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/proxy_conn">
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/proxy?type=conn">
         <h4>隧道连接</h4>
         <div class="ixc-empty"></div>
         <div class="ixc-empty"></div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">隧道类型</label>
+            <div class="col-sm-2">
+                <select class="form-control" name="connection.tunnel_type">
+                    <option value="tcp">TCP</option>
+                    <option value="udp">UDP</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">加密模块</label>
+            <div class="col-sm-2">
+                <select class="form-control" name="connection.crypto_module">
+                    <option value="noany">noany</option>
+                    <option value="aes">aes</option>
+                </select>
+            </div>
+        </div>
         <div class="form-group row">
             <label for="inputEmail3" class="col-sm-2 col-form-label">服务器地址</label>
             <div class="col-sm-10">
@@ -11,35 +29,42 @@
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputPassword3" class="col-sm-2 col-form-label">服务器端口</label>
+            <label class="col-sm-2 col-form-label">服务器端口</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" id="inputPassword3" value="${self.V['connection']['port']}">
+                <input type="text" class="form-control" value="${self.V['connection']['port']}">
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputPassword3" class="col-sm-2 col-form-label">连接超时(s)</label>
+            <label class="col-sm-2 col-form-label">连接超时(s)</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" id="inputPassword3" value="${self.V['connection']['conn_timeout']}">
+                <input type="text" class="form-control"
+                       value="${self.V['connection']['conn_timeout']}">
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputPassword3" class="col-sm-2 col-form-label">用户名</label>
+            <label class="col-sm-2 col-form-label">用户名</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" id="inputPassword3" value="${self.V['connection']['username']}">
+                <input type="text" class="form-control" value="${self.V['connection']['username']}">
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputPassword3" class="col-sm-2 col-form-label">密码</label>
+            <label class="col-sm-2 col-form-label">密码</label>
             <div class="col-sm-10">
-                <input type="password" class="form-control" id="inputPassword3" value="${self.V['connection']['password']}">
+                <input type="password" class="form-control"
+                       value="${self.V['connection']['password']}">
             </div>
         </div>
         <div class="form-group row">
             <div class="col-sm-2">IPv6隧道</div>
             <div class="col-sm-10">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1">
-                    <label class="form-check-label" for="gridCheck1">
+                    <%
+                    if self.V['connection']['enable_ipv6']:self.show("""<input class="form-check-input"
+                                                                               name="connection.enable_ipv6"
+                                                                               type="checkbox" checked="checked">""")
+                    else:self.show("""<input class="form-check-input" name="connection.enable_ipv6" type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
                         启用
                     </label>
                 </div>
@@ -49,19 +74,37 @@
             <div class="col-sm-2">心跳</div>
             <div class="col-sm-10">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1">
-                    <label class="form-check-label" for="gridCheck1">
+                    <%
+                    if self.V['connection']['enable_heartbeat']:self.show("""<input class="form-check-input"
+                                                                                    name="connection.enable_heartbeat"
+                                                                                    type="checkbox" checked="checked">""")
+                    else:self.show("""<input class="form-check-input" name="connection.enable_heartbeat"
+                                             type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
                         启用
                     </label>
                 </div>
             </div>
         </div>
         <div class="form-group row">
+            <label class="col-sm-2 col-form-label">心跳时间</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" value="${self.V['connection']['heartbeat_timeout']}">
+            </div>
+        </div>
+        <div class="form-group row">
             <div class="col-sm-2">HTTPS隧道</div>
             <div class="col-sm-10">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1">
-                    <label class="form-check-label" for="gridCheck1">
+                    <%
+                    if self.V['connection']['tunnel_over_https']:self.show("""<input class="form-check-input"
+                                                                                     name="connection.tunnel_over_https"
+                                                                                     type="checkbox" checked="checked">""")
+                    else:self.show("""<input class="form-check-input" name="connection.tunnel_over_https"
+                                             type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
                         启用
                     </label>
                 </div>
@@ -71,8 +114,14 @@
             <div class="col-sm-2">UDP隧道可靠性</div>
             <div class="col-sm-10">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1">
-                    <label class="form-check-label" for="gridCheck1">
+                    <%
+                    if self.V['connection']['tunnel_over_https']:self.show("""<input class="form-check-input"
+                                                                                     name="connection.udp_tunnel_redundancy"
+                                                                                     type="checkbox" checked="checked">""")
+                    else:self.show("""<input class="form-check-input" name="connection.udp_tunnel_redundancy"
+                                             type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
                         启用
                     </label>
                 </div>
@@ -81,29 +130,38 @@
         <hr/>
         <h4>HTTPS隧道</h4>
         <div class="form-group row">
-            <label for="inputPassword3" class="col-sm-2 col-form-label">URL</label>
+            <label class="col-sm-2 col-form-label">URL</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" id="inputPassword3" value="${self.V['tunnel_over_https']['url']}">
+                <input type="text" class="form-control"
+                       value="${self.V['tunnel_over_https']['url']}">
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputPassword3" class="col-sm-2 col-form-label">验证ID</label>
+            <label class="col-sm-2 col-form-label">验证ID</label>
             <div class="col-sm-10">
-                <input type="password" class="form-control" id="inputPassword3" value="${self.V['tunnel_over_https']['auth_id']}">
+                <input type="password" class="form-control"
+                       value="${self.V['tunnel_over_https']['auth_id']}">
             </div>
         </div>
         <div class="form-group row">
-            <label for="inputPassword3" class="col-sm-2 col-form-label">SNI主机</label>
+            <label class="col-sm-2 col-form-label">SNI主机</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" id="inputPassword3" placeholder="Password">
+                <input type="text" class="form-control" value="${self.V['tunnel_over_https']['https_sni_host']}">
             </div>
         </div>
         <div class="form-group row">
             <div class="col-sm-2">开启SNI</div>
             <div class="col-sm-10">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1">
-                    <label class="form-check-label" for="gridCheck1">
+                    <%
+                    if self.V['tunnel_over_https']['enable_https_sni']:self.show("""<input class="form-check-input"
+                                                                                           name="tunnel_over_https.enable_https_sni"
+                                                                                           type="checkbox"
+                                                                                           checked="checked">""")
+                    else:self.show("""<input class="form-check-input" name="tunnel_over_https.enable_https_sni"
+                                             type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
                         启用
                     </label>
                 </div>
@@ -113,8 +171,15 @@
             <div class="col-sm-2">严格模式</div>
             <div class="col-sm-10">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1">
-                    <label class="form-check-label" for="gridCheck1">
+                    <%
+                    if self.V['tunnel_over_https']['strict_https']:self.show("""<input class="form-check-input"
+                                                                                       name="tunnel_over_https.strict_https"
+                                                                                       type="checkbox"
+                                                                                       checked="checked">""")
+                    else:self.show("""<input class="form-check-input" name="tunnel_over_https.strict_https"
+                                             type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
                         启用
                     </label>
                 </div>

@@ -252,6 +252,21 @@ class service(dispatcher.dispatcher):
         f.close()
         return s.encode().decode("latin1")
 
+    def update_domain_rule(self, text: str):
+        fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        with open(fpath, "w") as f: f.write(text)
+        f.close()
+
+    def update_pass_ip_rule(self, text: str):
+        fpath = "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        with open(fpath, "w") as f: f.write(text)
+        f.close()
+
+    def update_proxy_ip_rule(self, text: str):
+        fpath = "%s/proxy_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        with open(fpath, "w") as f: f.write(text)
+        f.close()
+
     @property
     def session_id(self):
         if not self.__session_id:
