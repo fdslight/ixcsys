@@ -115,7 +115,7 @@ class service(dispatcher.dispatcher):
             print("cannot found tcp or udp crypto module")
             sys.exit(-1)
 
-        crypto_fpath = "%s/%s" % (os.getenv("IXC_MYAPP_CONF_DIR"), conn["crypto_configfile"])
+        crypto_fpath = "%s/%s.json" % (os.getenv("IXC_MYAPP_CONF_DIR"), conn["crypto_module"])
         if not os.path.isfile(crypto_fpath):
             print("crypto configfile not exists")
             sys.exit(-1)
@@ -266,6 +266,11 @@ class service(dispatcher.dispatcher):
         fpath = "%s/proxy_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
         with open(fpath, "w") as f: f.write(text)
         f.close()
+
+    def conn_cfg_update(self, dic: dict):
+        fpath = "%s/proxy.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        conf.save_to_ini(dic, fpath)
+        self.load_configs()
 
     @property
     def session_id(self):

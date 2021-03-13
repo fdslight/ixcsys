@@ -19,6 +19,7 @@ class controller(rpc.controller):
             "dns_rule_update": self.dns_rule_update,
             "pass_ip_rule_update": self.pass_ip_rule_update,
             "proxy_ip_rule_update": self.proxy_ip_rule_update,
+            "conn_cfg_update": self.conn_cfg_update,
             "do_update": self.do_update
         }
 
@@ -51,6 +52,10 @@ class controller(rpc.controller):
     def proxy_ip_rule_update(self, text: str):
         self.__runtime.update_proxy_ip_rule(text)
 
+        return 0, None
+
+    def conn_cfg_update(self, dic: dict):
+        self.__runtime.conn_cfg_update(dic)
         return 0, None
 
     def do_update(self):

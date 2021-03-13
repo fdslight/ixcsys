@@ -22,8 +22,14 @@ class widget(ui_widget.widget):
 
         if _type not in ("conn", "dns", "pass-ip", "proxy-ip",): _type = "conn"
 
-        configs = RPC.fn_call("proxy", "/config", "config_get", _type)
-        if _type == "conn":
-            configs = self.convert_conn_cfg(configs)
+        if RPC.RPCReadyOk("proxy"):
+            configs = RPC.fn_call("proxy", "/config", "config_get", _type)
+            if _type == "conn":
+                configs = self.convert_conn_cfg(configs)
+            uri = "proxy.html"
+        else:
+            configs = {}
+            uri = "no-proc.html"
+            configs = {"proc_name": "proxy"}
 
-        return True, "proxy.html", configs
+        return True, uri, configs
