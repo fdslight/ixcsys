@@ -45,6 +45,7 @@ class controller(base_controller.BaseController):
                 "password": None,
                 "udp_tunnel_redundancy": None,
                 "enable_heartbeat": None,
+                "heartbeat_timeout": None,
                 "tunnel_over_https": None
             },
             "tunnel_over_https": {

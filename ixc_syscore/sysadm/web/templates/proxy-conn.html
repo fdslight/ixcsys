@@ -117,7 +117,7 @@
             <div class="col-sm-10">
                 <div class="form-check">
                     <%
-                    if self.V['connection']['tunnel_over_https']:self.show("""<input class="form-check-input"
+                    if self.V['connection']['udp_tunnel_redundancy']:self.show("""<input class="form-check-input"
                                                                                      name="connection.udp_tunnel_redundancy"
                                                                                      type="checkbox" checked="checked">""")
                     else:self.show("""<input class="form-check-input" name="connection.udp_tunnel_redundancy"
