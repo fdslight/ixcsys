@@ -441,15 +441,10 @@ class service(dispatcher.dispatcher):
         if host in self.__routes: return
         # 如果是服务器的地址,那么不设置路由,避免使用ip_rules规则的时候进入死循环,因为服务器地址可能不在ip_rules文件中
         if host == self.__server_ip: return
-        # 检查路由是否和nameserver冲突,如果冲突那么不添加路由
-        nameserver = None
-        if nameserver == host: return
 
         if is_ipv6:
-            s = "-6"
             if not prefix: prefix = 128
         else:
-            s = ""
             if not prefix: prefix = 32
 
         if is_ipv6:
