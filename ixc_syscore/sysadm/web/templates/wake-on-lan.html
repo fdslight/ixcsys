@@ -1,0 +1,20 @@
+<div id="ixc-wake-on-lan-view" class="ixc-menu-content">
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">序号</th>
+            <th scope="col">机器名</th>
+            <th scope="col">硬件地址</th>
+            <th scope="col">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+            <%
+                count=1
+                for name in self.V:
+                    s="""<th scope="row">%d</th><td>%s</td><td>%s</td>""" % (count,name,self.V[name])
+                    self.show(s)
+            %>
+        </tbody>
+    </table>
+</div>
