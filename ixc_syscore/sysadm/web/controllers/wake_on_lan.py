@@ -51,15 +51,25 @@ class controller(base_controller.BaseController):
         del info[alias_name]
         self.save(info)
 
+    def wake(self, hwaddr: str):
+        """唤醒机器
+        :param hwaddr:
+        :return:
+        """
+        pass
+
     def handle(self):
         action = self.request.get_argument("action", is_seq=False, is_qs=True)
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
         alias_name = self.request.get_argument("alias_name", is_seq=False, is_qs=False)
 
-        if action not in ("add", "delete",):
+        if action not in ("add", "delete", "wake"):
             self.json_resp(True, "错误的请求动作")
             return
 
-        # 此处检查硬件地址是否合法
+        if action == "wake":
+            self.wake(hwaddr)
+            return
+            # 此处检查硬件地址是否合法
 
         self.json_resp(False, {})
