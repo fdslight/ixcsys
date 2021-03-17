@@ -23,6 +23,8 @@ import ixc_syslib.web.route as webroute
 import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
 import ixc_syscore.proxy.pylib.file_parser as file_parser
 import ixc_syscore.proxy.handlers.tunnel as tunnel
+import ixc_syscore.proxy.handlers.netpkt as netpkt
+import ixc_syscore.proxy.handlers.dns_proxy as dns_proxy
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 LOG_FILE = "/tmp/ixc_proxy.log"
@@ -72,7 +74,10 @@ ROUTE_TIMEOUT = 480
 
 class service(dispatcher.dispatcher):
     __conf_path = None
+
     __conn_fd = None
+    __fwd_fd = None
+    __dns_fd = None
 
     __debug = None
     __configs = None
@@ -88,6 +93,10 @@ class service(dispatcher.dispatcher):
     __routes = None
     __static_routes = None
     __route_timer = None
+
+    __consts = None
+    __rand_key = None
+    __manage_addr = None
 
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
@@ -132,7 +141,8 @@ class service(dispatcher.dispatcher):
             sys.stdout = open(LOG_FILE, "a+")
             sys.stderr = open(ERR_FILE, "a+")
         ''''''
-
+        self.set_forward()
+        self.__set_rules(None, None)
         signal.signal(signal.SIGUSR1, self.__set_rules)
 
     def __set_rules(self, signum, frame):
@@ -147,11 +157,11 @@ class service(dispatcher.dispatcher):
                 sys.stderr.write("cannot found %s\r\n" % fpath)
                 return
         try:
-            rules = file_parser.parse_host_file(fpaths[0])
-            self.get_handler(self.__dns_fileno).set_host_rules(rules)
+            # rules = file_parser.parse_host_file(fpaths[0])
+            # self.get_handler(self.__dns_fileno).set_host_rules(rules)
 
             rules = file_parser.parse_ip_subnet_file(fpaths[1])
-            self.get_handler(self.__dns_fileno).set_ip_rules(rules)
+            # self.get_handler(self.__dns_fileno).set_ip_rules(rules)
 
             rules = file_parser.parse_ip_subnet_file(fpaths[2])
             self.__set_static_ip_rules(rules)
@@ -160,8 +170,8 @@ class service(dispatcher.dispatcher):
             logging.print_error()
 
     def __set_static_ip_rules(self, rules):
-        nameserver = self.__configs["public"]["remote_dns"]
-        ns_is_ipv6 = netutils.is_ipv6_address(nameserver)
+        # nameserver = self.__configs["public"]["remote_dns"]
+        # ns_is_ipv6 = netutils.is_ipv6_address(nameserver)
 
         # 查看新的规则
         kv_pairs_new = {}
@@ -172,12 +182,12 @@ class service(dispatcher.dispatcher):
             is_ipv6 = netutils.is_ipv6_address(subnet)
 
             # 找到和nameserver冲突的路由那么跳过
-            t = netutils.calc_subnet(nameserver, prefix, is_ipv6=ns_is_ipv6)
-            if t == subnet:
-                logging.print_error(
-                    "conflict preload ip rules %s/%s with nameserver %s" % (subnet, prefix, nameserver,)
-                )
-                continue
+            # t = netutils.calc_subnet(nameserver, prefix, is_ipv6=ns_is_ipv6)
+            # if t == subnet:
+            #    logging.print_error(
+            #        "conflict preload ip rules %s/%s with nameserver %s" % (subnet, prefix, nameserver,)
+            #    )
+            #    continue
 
             name = "%s/%s" % (subnet, prefix,)
             kv_pairs_new[name] = (subnet, prefix, is_ipv6,)
@@ -303,6 +313,10 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
 
+    @property
+    def manage_addr(self):
+        return self.__manage_addr
+
     def wait_router_proc(self):
         """等待路由进程
         """
@@ -318,22 +332,28 @@ class service(dispatcher.dispatcher):
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-    def handle_netpkt_from_lan(self, message: bytes):
-        """处理来自于局域网的网络数据包
-        :param message:
-        :return:
-        """
-        pass
+    def handle_msg_from_tunnel(self, session_id: bytes, action: int, message: bytes):
+        if session_id != self.__session_id:
+            logging.print_error("wrong session_id from server")
+            self.delete_handler(self.__conn_fd)
+            return
+
+        if action == proto_utils.ACT_DNS:
+            self.get_handler(self.__dns_fd).send_dns_msg(message)
+            return
+
+        ip_ver = (message[0] & 0xf0) >> 4
+        if ip_ver not in (4, 6,): return
+
+        if ip_ver == 4:
+            p = message[9]
+        else:
+            p = message[6]
+
+        self.get_handler(self.__fwd_fd).send_msg(0, p, self.__consts["IXC_FLAG_ROUTE_FWD"], message)
 
     def send_dns_request_to_tunnel(self, dns_msg: bytes):
         self.send_msg_to_tunnel(proto_utils.ACT_DNS, dns_msg)
-
-    def handle_netpkt_from_tunnel(self, message: bytes):
-        """处理来自于隧道的数据包
-        :param message:
-        :return:
-        """
-        self.send_msg_to_tunnel(proto_utils.ACT_IPDATA, message)
 
     def send_msg_to_tunnel(self, action: int, message: bytes):
         if not self.handler_exists(self.__conn_fd):
@@ -341,6 +361,24 @@ class service(dispatcher.dispatcher):
         if not self.handler_exists(self.__conn_fd): return
         handler = self.get_handler(self.__conn_fd)
         handler.send_msg_to_tunnel(self.session_id, action, message)
+
+    def set_forward(self):
+        self.__dns_fd = self.create_handler(-1, dns_proxy.dns_proxy)
+        self.__rand_key = os.urandom(16)
+        consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
+        self.__fwd_fd = self.create_handler(-1, netpkt.netpkt_handler)
+        port = self.get_handler(self.__fwd_fd).get_sock_port()
+        self.get_handler(self.__fwd_fd).set_message_auth(self.__rand_key)
+
+        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_ROUTE_FWD"])
+        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_SRC_FILTER"])
+
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_SRC_FILTER"],
+                                        self.__rand_key, port)
+        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_ROUTE_FWD"],
+                                        self.__rand_key, port)
+        self.__consts = consts
+        self.__manage_addr = self.get_manage_addr()
 
     def __open_tunnel(self):
         conn = self.__configs["connection"]
@@ -387,7 +425,7 @@ class service(dispatcher.dispatcher):
         if not rs:
             self.delete_handler(self.__conn_fd)
 
-    def tell_tunnel_close(self):
+    def tunnel_conn_fail(self):
         self.__conn_fd = -1
 
     def get_server_ip(self, host):
@@ -402,7 +440,7 @@ class service(dispatcher.dispatcher):
 
         enable_ipv6 = bool(int(self.__configs["connection"]["enable_ipv6"]))
         resolver = dns.resolver.Resolver()
-        resolver.nameservers = [self.__configs["public"]["remote_dns"]]
+        resolver.nameservers = ["180.76.76.76"]
 
         try:
             if enable_ipv6:

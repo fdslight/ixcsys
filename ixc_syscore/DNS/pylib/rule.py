@@ -45,7 +45,7 @@ class matcher(object):
                 is_found = False
                 break
             o = o[x]
-        if is_found: return o["action"]
+        if is_found: return o["rule_info"]
         if not cb_flags:
             # 找不到那么替换子域名重新匹配一次
             _list = host.split(".")
@@ -53,10 +53,11 @@ class matcher(object):
             return self.match(".".join(_list), cb_flags=True)
         return None
 
-    def add_rule(self, rule: str, action: dict):
+    def add_rule(self, rule: str, action: str, priv_data=None):
         """加入规则
         :param rule,规则
         :param action
+        :param priv_data
         :return Boolean,添加成功那么返回True,不存在则返回False
         """
         if rule in self.__rules: return False
@@ -69,7 +70,7 @@ class matcher(object):
             if x not in o: o[x] = {"refcnt": 0, "action": None}
             o = o[x]
             o["refcnt"] += 1
-        o["action"] = action
+        o["rule_info"] = {"action": action, "priv_data": priv_data}
         self.__rules[rule] = None
         return True
 
@@ -120,10 +121,9 @@ class matcher(object):
         """
         return rule in self.__rules
 
-
 """
 cls = matcher()
-cls.add_rule("www.google.com", "xxx")
+cls.add_rule("www.google.com", "drop")
 cls.add_rule("*.google.com", "this is action")
 # print(cls.rules)
 # print(cls.rule_tree)

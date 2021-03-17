@@ -20,7 +20,7 @@ class dns_proxy(udp_handler.udp_handler):
         return self.fileno
 
     def udp_readable(self, message, address):
-        if address[0] != "127.0.0.1": return
+        if address[0] != "127.0.0.1" and address[0] != self.dispatcher.manage_addr: return
         if address[1] != 8964: return
 
         s = base64.b16decode(message)
@@ -38,6 +38,9 @@ class dns_proxy(udp_handler.udp_handler):
 
     def get_port(self):
         return self.getsockname()[1]
+
+    def send_dns_msg(self, message: bytes):
+        pass
 
     def udp_timeout(self):
         now = time.time()

@@ -106,6 +106,9 @@ class service(dispatcher.dispatcher):
         self.start_dns()
         self.start_scgi()
 
+    def rule_forward_set(self, port: int):
+        self.get_handler(self.__dns_client).set_forward_port(port)
+
     def load_configs(self):
         self.__dns_configs = conf.ini_parse_from_file(self.__dns_conf_path)
 
@@ -258,6 +261,7 @@ class service(dispatcher.dispatcher):
 
         msg = {
             "action": action,
+            "priv_data": match_rs["priv_data"],
             "message": base64.b16encode(message)
         }
         self.get_handler(self.__dns_client).send_forward_msg(json.dumps(msg).encode())

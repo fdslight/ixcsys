@@ -1,0 +1,19 @@
+<div id="ixc-proc-manage-view" class="ixc-menu-content">
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">用户</th>
+            <th scope="col">进程号</th>
+            <th scope="col">启动命令</th>
+            <th scope="col">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+            <%
+            for proc in self.V['proc_list']:
+                s="""<tr><td scope="row">%s</td><td>%s</td><td>%s</td><td></td></tr>""" % (proc["UID"],proc["PID"],proc["CMD"])
+                self.show(s)
+            %>
+        </tbody>
+    </table>
+</div>

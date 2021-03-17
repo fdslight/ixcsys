@@ -138,7 +138,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         if self.writer.size() == 0: self.remove_evt_write(self.fileno)
 
     def tcp_delete(self):
-        self.dispatcher.tell_tunnel_close()
+        self.dispatcher.tunnel_conn_fail()
         self.unregister(self.fileno)
         self.close()
 
@@ -194,7 +194,6 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         if self.__over_https:
             self.do_ssl_handshake()
 
-        self.dispatcher.tunnel_conn_ok()
 
     def evt_read(self):
         if not self.is_conn_ok():
@@ -434,7 +433,6 @@ class udp_tunnel(udp_handler.udp_handler):
         try:
             self.connect((server_ip, server_address[1]))
         except socket.gaierror:
-            self.dispatcher.tunnel_conn_ok()
             logging.print_general("not_found_host", server_address)
             return False
 
@@ -445,7 +443,6 @@ class udp_tunnel(udp_handler.udp_handler):
         self.__update_time = time.time()
         self.register(self.fileno)
         self.add_evt_read(self.fileno)
-        self.dispatcher.tunnel_conn_ok()
 
         return True
 
@@ -487,7 +484,7 @@ class udp_tunnel(udp_handler.udp_handler):
 
     def udp_delete(self):
         self.unregister(self.fileno)
-        self.dispatcher.tell_tunnel_close()
+        self.dispatcher.tunnel_conn_fail()
         self.close()
         if not self.__server_address: return
         logging.print_general("udp_close", self.__server_address)

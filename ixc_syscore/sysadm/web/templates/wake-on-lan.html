@@ -12,7 +12,7 @@
             <%
                 count=1
                 for name in self.V:
-                    s="""<th scope="row">%d</th><td>%s</td><td>%s</td>""" % (count,name,self.V[name])
+                    s="""<tr><td scope="row">%d</td><td>%s</td><td>%s</td></tr>""" % (count,name,self.V[name])
                     self.show(s)
             %>
         </tbody>
