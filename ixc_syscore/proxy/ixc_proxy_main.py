@@ -109,7 +109,7 @@ class service(dispatcher.dispatcher):
         self.__route_timer = timer.timer()
 
         self.create_poll()
-        self.wait_router_proc()
+        self.wait_proc()
         self.load_configs()
         self.start_scgi()
         self.start(debug)
@@ -317,17 +317,11 @@ class service(dispatcher.dispatcher):
     def manage_addr(self):
         return self.__manage_addr
 
-    def wait_router_proc(self):
-        """等待路由进程
+    def wait_proc(self):
+        """等待进程
         """
-        while 1:
-            ok = RPCClient.RPCReadyOk("router")
-            if not ok:
-                time.sleep(5)
-            else:
-                break
-            ''''''
-        return
+        proc_list = ["router", "DNS"]
+        for proc in proc_list: RPCClient.wait_proc(proc)
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
@@ -377,6 +371,9 @@ class service(dispatcher.dispatcher):
                                         self.__rand_key, port)
         ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_ROUTE_FWD"],
                                         self.__rand_key, port)
+
+        RPCClient.fn_call("DNS", "/rule", "set_forward", self.get_handler(self.__dns_fd).get_port())
+
         self.__consts = consts
         self.__manage_addr = self.get_manage_addr()
 

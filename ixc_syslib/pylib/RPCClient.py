@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, pickle, socket
+import os, pickle, socket, time
 import ixc_syslib.pylib.SCGIClient as SCGIClient
 
 
@@ -44,6 +44,17 @@ def RPCReadyOk(app_name: str):
         return False
 
     return True
+
+
+def wait_proc(name: str):
+    while 1:
+        ok = RPCReadyOk(name)
+        if not ok:
+            time.sleep(3)
+        else:
+            break
+        ''''''
+    ''''''
 
 
 class RPCClient(SCGIClient.SCGIClient):

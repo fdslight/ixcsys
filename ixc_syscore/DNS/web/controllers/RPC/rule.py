@@ -19,6 +19,7 @@ class controller(rpc.controller):
             "add": self.add,
             "del": self.delete,
             "list": self.list,
+            "set_forward": self.set_forward
         }
 
     def add(self, host: str, action_name: str, priv_data=None):
