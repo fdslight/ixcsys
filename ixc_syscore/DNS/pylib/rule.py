@@ -28,9 +28,7 @@ class matcher(object):
     __rules = None
 
     def __init__(self):
-        self.__cb_flags = False
-        self.__rule_tree = {}
-        self.__rules = {}
+        self.clear()
 
     def match(self, host: str, cb_flags=False):
         """匹配主机
@@ -67,7 +65,7 @@ class matcher(object):
 
         for x in _list:
             # 新建的引用计数为0
-            if x not in o: o[x] = {"refcnt": 0, "action": None}
+            if x not in o: o[x] = {"refcnt": 0, "action": None, "rule_info": None}
             o = o[x]
             o["refcnt"] += 1
         o["rule_info"] = {"action": action, "priv_data": priv_data}
@@ -121,9 +119,14 @@ class matcher(object):
         """
         return rule in self.__rules
 
+    def clear(self):
+        self.__rule_tree = {}
+        self.__rules = {}
+
+
 """
 cls = matcher()
-cls.add_rule("www.google.com", "drop")
+cls.add_rule("*.facebook.com", "drop")
 cls.add_rule("*.google.com", "this is action")
 # print(cls.rules)
 # print(cls.rule_tree)

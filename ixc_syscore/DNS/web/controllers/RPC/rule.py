@@ -19,7 +19,9 @@ class controller(rpc.controller):
             "add": self.add,
             "del": self.delete,
             "list": self.list,
-            "set_forward": self.set_forward
+            "set_forward": self.set_forward,
+            "get_forward": self.get_forward,
+            "clear": self.clear
         }
 
     def add(self, host: str, action_name: str, priv_data=None):
@@ -27,8 +29,7 @@ class controller(rpc.controller):
         """
         if not isinstance(action_name, str):
             return RPC.ERR_ARGS, "wrong action_name argument type"
-        self.__runtime.matcher.add_rule(host, action_name, priv_data=priv_data)
-        return 0, None
+        return 0, self.__runtime.matcher.add_rule(host, action_name, priv_data=priv_data)
 
     def delete(self, host: str):
         """删除DNS规则
@@ -41,6 +42,10 @@ class controller(rpc.controller):
         """
         return 0, self.__runtime.matcher.rules
 
+    def clear(self):
+        self.__runtime.matcher.clear()
+        return 0, None
+
     def set_forward(self, port: int):
         """设置重定向服务器
         :param port:
@@ -51,3 +56,9 @@ class controller(rpc.controller):
         self.__runtime.rule_forward_set(port)
 
         return 0, None
+
+    def get_forward(self):
+        """获取DNS服务器的转发端口
+        :return:
+        """
+        return 0, self.__runtime.get_forward()

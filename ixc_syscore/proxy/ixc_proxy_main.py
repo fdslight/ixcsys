@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, time, importlib
+import sys, os, signal, time, importlib, struct
 import dns.resolver
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -22,6 +22,7 @@ import ixc_syslib.web.route as webroute
 
 import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
 import ixc_syscore.proxy.pylib.file_parser as file_parser
+import ixc_syscore.proxy.pylib.ip_match as ip_match
 import ixc_syscore.proxy.handlers.tunnel as tunnel
 import ixc_syscore.proxy.handlers.netpkt as netpkt
 import ixc_syscore.proxy.handlers.dns_proxy as dns_proxy
@@ -98,6 +99,11 @@ class service(dispatcher.dispatcher):
     __rand_key = None
     __manage_addr = None
 
+    __dns_map = None
+    __up_time = None
+
+    __ip_match = None
+
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
 
@@ -107,6 +113,9 @@ class service(dispatcher.dispatcher):
         self.__routes = {}
         self.__static_routes = {}
         self.__route_timer = timer.timer()
+        self.__dns_map = {}
+        self.__up_time = time.time()
+        self.__ip_match = ip_match.ip_match()
 
         self.create_poll()
         self.wait_proc()
@@ -146,6 +155,11 @@ class service(dispatcher.dispatcher):
         signal.signal(signal.SIGUSR1, self.__set_rules)
 
     def __set_rules(self, signum, frame):
+        RPCClient.fn_call("DNS", "/rule", "clear")
+        port = RPCClient.fn_call("DNS", "/rule", "get_forward")
+        self.get_handler(self.__dns_fd).set_forward(port)
+        self.__ip_match.clear()
+
         fpaths = [
             "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR"),
             "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR"),
@@ -156,13 +170,22 @@ class service(dispatcher.dispatcher):
             if not os.path.isfile(fpath):
                 sys.stderr.write("cannot found %s\r\n" % fpath)
                 return
+            ''''''
         try:
-            # rules = file_parser.parse_host_file(fpaths[0])
-            # self.get_handler(self.__dns_fileno).set_host_rules(rules)
-
+            rules = file_parser.parse_host_file(fpaths[0])
+            for r in rules:
+                host, n = r
+                action = "encrypt"
+                if n == 2:
+                    action = "drop"
+                if n == 0:
+                    action = "encrypt"
+                if n == 1:
+                    action = "proxy"
+                RPCClient.fn_call("DNS", "/rule", "add", host, action)
             rules = file_parser.parse_ip_subnet_file(fpaths[1])
-            # self.get_handler(self.__dns_fileno).set_ip_rules(rules)
-
+            for subnet, prefix in rules:
+                self.__ip_match.add_rule(subnet, prefix)
             rules = file_parser.parse_ip_subnet_file(fpaths[2])
             self.__set_static_ip_rules(rules)
 
@@ -215,7 +238,19 @@ class service(dispatcher.dispatcher):
             self.set_route(subnet, prefix=prefix, is_ipv6=is_ipv6, is_dynamic=False)
 
     def myloop(self):
-        pass
+        del_dns_list = []
+        now = time.time()
+        if now - self.__up_time < 3: return
+
+        for dns_id in self.__dns_map:
+            dns_info = self.__dns_map[dns_id]
+            t = dns_info["time"]
+            if t > 3: del_dns_list.append(dns_id)
+
+        for dns_id in del_dns_list:
+            del self.__dns_map[dns_id]
+
+        self.__up_time = time.time()
 
     @property
     def https_configs(self):
@@ -332,21 +367,64 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__conn_fd)
             return
 
-        if action == proto_utils.ACT_DNS:
-            self.get_handler(self.__dns_fd).send_dns_msg(message)
+        if action == proto_utils.ACT_IPDATA:
+            ip_ver = (message[0] & 0xf0) >> 4
+            if ip_ver not in (4, 6,): return
+
+            if ip_ver == 4:
+                p = message[9]
+            else:
+                p = message[6]
+            self.get_handler(self.__fwd_fd).send_msg(0, p, self.__consts["IXC_FLAG_ROUTE_FWD"], message)
             return
 
-        ip_ver = (message[0] & 0xf0) >> 4
-        if ip_ver not in (4, 6,): return
+        if len(message) < 2: return
 
-        if ip_ver == 4:
-            p = message[9]
-        else:
-            p = message[6]
+        dns_id = struct.unpack("!H", message[0:2])
+        if dns_id not in self.__dns_map: return
 
-        self.get_handler(self.__fwd_fd).send_msg(0, p, self.__consts["IXC_FLAG_ROUTE_FWD"], message)
+        o = self.__dns_map["dns_id"]
 
-    def send_dns_request_to_tunnel(self, dns_msg: bytes):
+        # 如果DNS只走加密那么直接发送DNS数据包
+        if self.__dns_map["action"] == "encrypt":
+            self.get_handler(self.__dns_fd).send_dns_msg(message)
+            del self.__dns_map[dns_id]
+            return
+
+        # 此处处理DNS消息
+        try:
+            msg_obj = dns.message.from_wire(message)
+        except:
+            return
+
+        for rrset in msg_obj.answer:
+            for cname in rrset:
+                isset_route = True
+                prefix = None
+                is_ipv6 = False
+                ip = cname.__str__()
+                if netutils.is_ipv4_address(ip):
+                    if self.__ip_match.match(ip, is_ipv6=False):
+                        isset_route = False
+                    else:
+                        prefix = 32
+                    ''''''
+                elif netutils.is_ipv6_address(ip):
+                    if self.__ip_match.match(ip, is_ipv6=True):
+                        isset_route = False
+                    else:
+                        prefix = 128
+                        is_ipv6 = True
+                    ''''''
+                else:
+                    continue
+                if isset_route: self.set_route(ip, prefix, is_ipv6=is_ipv6)
+            ''''''
+        del self.__dns_map[dns_id]
+
+    def send_dns_request_to_tunnel(self, action: str, dns_msg: bytes):
+        dns_id = struct.unpack("!H", dns_msg[0:2])
+        self.__dns_map[dns_id] = {"time": time.time(), "action": action}
         self.send_msg_to_tunnel(proto_utils.ACT_DNS, dns_msg)
 
     def send_msg_to_tunnel(self, action: int, message: bytes):

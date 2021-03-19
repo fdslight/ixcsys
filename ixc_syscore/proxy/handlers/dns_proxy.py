@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-import socket, base64, json, time, struct
+import socket, pickle
 import pywind.evtframework.handlers.udp_handler as udp_handler
 
 
 class dns_proxy(udp_handler.udp_handler):
-    __map = None
+    __forward_port = None
 
     def init_func(self, creator_fd):
-        self.__map = {}
+        self.__forward_port = -1
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         self.set_socket(s)
@@ -21,17 +21,13 @@ class dns_proxy(udp_handler.udp_handler):
 
     def udp_readable(self, message, address):
         if address[0] != "127.0.0.1" and address[0] != self.dispatcher.manage_addr: return
-        if address[1] != 8964: return
+        if address[1] != self.__forward_port: return
 
-        s = base64.b16decode(message)
-        dic = json.loads(s)
+        o = pickle.loads(message)
+        dns_msg = o["message"]
+        action = o["action"]
 
-        action = dic["action"]
-        dns_msg = dic["message"]
-
-        dns_id, = struct.unpack("!H", dns_msg[0:2])
-        self.__map[dns_id] = {"time": time.time(), "action": action}
-        self.dispatcher.send_dns_request_to_tunnel(dns_msg)
+        self.dispatcher.send_dns_request_to_tunnel(action, dns_msg)
 
     def udp_writable(self):
         self.remove_evt_write(self.fileno)
@@ -42,15 +38,8 @@ class dns_proxy(udp_handler.udp_handler):
     def send_dns_msg(self, message: bytes):
         pass
 
+    def set_forward(self, port: int):
+        self.__forward_port = port
+
     def udp_timeout(self):
-        now = time.time()
-        dels = []
-
-        for dns_id in self.__map:
-            o = self.__map[dns_id]
-            t = o["time"]
-            if now - t >= 3: dels.append(dns_id)
-
-        for dns_id in dels: del self.__map[dns_id]
-
-        self.set_timeout(self.fileno, 10)
+        pass

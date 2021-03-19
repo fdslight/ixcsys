@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, time, struct, base64, json
+import sys, os, signal, time, struct, json, pickle
 import dns.message
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -80,7 +80,6 @@ class service(dispatcher.dispatcher):
     __up_time = None
 
     __scgi_fd = None
-
     __cur_dns_id = None
 
     def init_func(self, *args, **kwargs):
@@ -186,38 +185,11 @@ class service(dispatcher.dispatcher):
 
         o = self.__id_wan2lan[dns_id]
         x_dns_id = o["id"]
-        action = o["action"]
-
         new_msg = b"".join([struct.pack("!H", x_dns_id), message[2:]])
 
-        # 未设置动作那么直接发送
-        if not action:
-            self.get_handler(fd).send_msg(new_msg, o["address"])
-            return
-
-        act_name = action["action"]
-        # 重定向以及自动设置路由
-        if act_name != "forward_and_auto_route":
-            self.get_handler(fd).send_msg(new_msg, o["address"])
-            return
-
-        try:
-            msg_obj = dns.message.from_wire(new_msg)
-        except:
-            return
-
-        for rrset in msg_obj.answer:
-            for cname in rrset:
-                ip = cname.__str__()
-                if netutils.is_ipv4_address(ip):
-                    self.set_route(ip, 32, is_ipv6=False)
-                    continue
-                if netutils.is_ipv6_address(ip):
-                    self.set_route(ip, 128, is_ipv6=True)
-                    continue
-                ''''''
-            ''''''
         self.get_handler(fd).send_msg(new_msg, o["address"])
+        # 此处删除记录
+        del self.__id_wan2lan[dns_id]
 
     def handle_msg_from_dnsclient(self, message: bytes, address: tuple, is_ipv6=False):
         """处理来自于DNS客户端的消息
@@ -235,13 +207,14 @@ class service(dispatcher.dispatcher):
         _list = [struct.pack("!H", new_dns_id), message[2:]]
         new_msg = b"".join(_list)
 
-        self.__id_wan2lan[new_dns_id] = {"id": dns_id, "address": address, "is_ipv6": is_ipv6, "action": None,
+        self.__id_wan2lan[new_dns_id] = {"id": dns_id, "address": address, "is_ipv6": is_ipv6,
                                          "time": time.time()}
 
         questions = msg_obj.question
-        if len(questions) != 1 or msg_obj.opcode != 0:
+        if len(questions) != 1:
             self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6)
             return
+
         q = questions[0]
         host = b".".join(q.name[0:-1]).decode("iso-8859-1")
         match_rs = self.__matcher.match(host)
@@ -255,16 +228,15 @@ class service(dispatcher.dispatcher):
         if action == "drop":
             del self.__id_wan2lan[new_dns_id]
             return
-        self.__id_wan2lan[new_dns_id]["action"] = match_rs
         # 发送DNS数据到其他应用程序,如果找不到文件号那么丢弃数据包
         if self.__dns_client < 0: return
 
         msg = {
             "action": action,
             "priv_data": match_rs["priv_data"],
-            "message": base64.b16encode(message)
+            "message": message
         }
-        self.get_handler(self.__dns_client).send_forward_msg(json.dumps(msg).encode())
+        self.get_handler(self.__dns_client).send_forward_msg(pickle.dumps(msg))
 
     @property
     def matcher(self):
@@ -273,6 +245,9 @@ class service(dispatcher.dispatcher):
     @property
     def configs(self):
         return self.__dns_configs
+
+    def get_forward(self):
+        return self.get_handler(self.__dns_client).get_port()
 
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)
