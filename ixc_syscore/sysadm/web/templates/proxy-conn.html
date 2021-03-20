@@ -21,6 +21,7 @@
                     <option value="aes">aes</option>
                 </select>
             </div>
+            <div class="col-sm-2"><a href="#" style="display: block;margin-top: 5px;">模块配置</a></div>
         </div>
         <div class="form-group row">
             <label class="col-sm-2 col-form-label">服务器地址</label>
@@ -60,10 +61,10 @@
             <div class="col-sm-10">
                 <div class="form-check">
                     <%
-                    if self.V['connection']['enable_ipv6']:self.show("""<input class="form-check-input"
+                        if self.V['connection']['enable_ipv6']:self.show("""<input class="form-check-input"
                                                                                name="connection.enable_ipv6"
                                                                                type="checkbox" checked="checked">""")
-                    else:self.show("""<input class="form-check-input" name="connection.enable_ipv6" type="checkbox">""")
+                        else:self.show("""<input class="form-check-input" name="connection.enable_ipv6" type="checkbox">""")
                     %>
                     <label class="form-check-label">
                         启用
@@ -76,10 +77,10 @@
             <div class="col-sm-10">
                 <div class="form-check">
                     <%
-                    if self.V['connection']['enable_heartbeat']:self.show("""<input class="form-check-input"
+                        if self.V['connection']['enable_heartbeat']:self.show("""<input class="form-check-input"
                                                                                     name="connection.enable_heartbeat"
                                                                                     type="checkbox" checked="checked">""")
-                    else:self.show("""<input class="form-check-input" name="connection.enable_heartbeat"
+                        else:self.show("""<input class="form-check-input" name="connection.enable_heartbeat"
                                              type="checkbox">""")
                     %>
                     <label class="form-check-label">
@@ -100,10 +101,10 @@
             <div class="col-sm-10">
                 <div class="form-check">
                     <%
-                    if self.V['connection']['tunnel_over_https']:self.show("""<input class="form-check-input"
+                        if self.V['connection']['tunnel_over_https']:self.show("""<input class="form-check-input"
                                                                                      name="connection.tunnel_over_https"
                                                                                      type="checkbox" checked="checked">""")
-                    else:self.show("""<input class="form-check-input" name="connection.tunnel_over_https"
+                        else:self.show("""<input class="form-check-input" name="connection.tunnel_over_https"
                                              type="checkbox">""")
                     %>
                     <label class="form-check-label">
@@ -117,10 +118,10 @@
             <div class="col-sm-10">
                 <div class="form-check">
                     <%
-                    if self.V['connection']['udp_tunnel_redundancy']:self.show("""<input class="form-check-input"
+                        if self.V['connection']['udp_tunnel_redundancy']:self.show("""<input class="form-check-input"
                                                                                      name="connection.udp_tunnel_redundancy"
                                                                                      type="checkbox" checked="checked">""")
-                    else:self.show("""<input class="form-check-input" name="connection.udp_tunnel_redundancy"
+                        else:self.show("""<input class="form-check-input" name="connection.udp_tunnel_redundancy"
                                              type="checkbox">""")
                     %>
                     <label class="form-check-label">
@@ -157,11 +158,11 @@
             <div class="col-sm-10">
                 <div class="form-check">
                     <%
-                    if self.V['tunnel_over_https']['enable_https_sni']:self.show("""<input class="form-check-input"
+                        if self.V['tunnel_over_https']['enable_https_sni']:self.show("""<input class="form-check-input"
                                                                                            name="tunnel_over_https.enable_https_sni"
                                                                                            type="checkbox"
                                                                                            checked="checked">""")
-                    else:self.show("""<input class="form-check-input" name="tunnel_over_https.enable_https_sni"
+                        else:self.show("""<input class="form-check-input" name="tunnel_over_https.enable_https_sni"
                                              type="checkbox">""")
                     %>
                     <label class="form-check-label">
@@ -175,11 +176,11 @@
             <div class="col-sm-10">
                 <div class="form-check">
                     <%
-                    if self.V['tunnel_over_https']['strict_https']:self.show("""<input class="form-check-input"
+                        if self.V['tunnel_over_https']['strict_https']:self.show("""<input class="form-check-input"
                                                                                        name="tunnel_over_https.strict_https"
                                                                                        type="checkbox"
                                                                                        checked="checked">""")
-                    else:self.show("""<input class="form-check-input" name="tunnel_over_https.strict_https"
+                        else:self.show("""<input class="form-check-input" name="tunnel_over_https.strict_https"
                                              type="checkbox">""")
                     %>
                     <label class="form-check-label">

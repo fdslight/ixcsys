@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, time, importlib, struct
+import sys, os, signal, time, importlib, struct, socket
 import dns.resolver
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -422,6 +422,17 @@ class service(dispatcher.dispatcher):
         if not self.handler_exists(self.__conn_fd):
             self.__open_tunnel()
         if not self.handler_exists(self.__conn_fd): return
+
+        ip_ver = (message[0] & 0xf0) >> 4
+        if ip_ver not in (4, 6,): return
+
+        if ip_ver == 4:
+            host = socket.inet_ntop(socket.AF_INET, message[16:20])
+        else:
+            host = socket.inet_ntop(socket.AF_INET6, message[24:40])
+
+        self.__update_route_access(host)
+
         handler = self.get_handler(self.__conn_fd)
         handler.send_msg_to_tunnel(self.session_id, action, message)
 
@@ -637,7 +648,8 @@ class service(dispatcher.dispatcher):
         return path
 
     def myloop(self):
-        pass
+        names = self.__route_timer.get_timeout_names()
+        for name in names: self.__del_route(name)
 
 
 def main():
