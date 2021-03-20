@@ -24,8 +24,10 @@ class widget(ui_widget.widget):
 
         if RPC.RPCReadyOk("proxy"):
             configs = RPC.fn_call("proxy", "/config", "config_get", _type)
+            crypto_modules = RPC.fn_call("proxy", "/config", "get_crypto_modules")
             if _type == "conn":
                 configs = self.convert_conn_cfg(configs)
+            configs["crypto_modules"] = crypto_modules
             uri = "proxy.html"
         else:
             configs = {}

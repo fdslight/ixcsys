@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import ixc_syslib.web.controllers.rpc_controller as rpc
-
-import ixc_syslib.pylib.RPCClient as RPC
-
 from pywind.global_vars import global_vars
-import pywind.lib.netutils as netutils
+
+import ixc_syslib.web.controllers.rpc_controller as rpc
+import ixc_syslib.pylib.RPCClient as RPC
+import ixc_syscore.proxy.pylib.crypto.utils as crypto_utils
 
 
 class controller(rpc.controller):
@@ -20,6 +19,8 @@ class controller(rpc.controller):
             "pass_ip_rule_update": self.pass_ip_rule_update,
             "proxy_ip_rule_update": self.proxy_ip_rule_update,
             "conn_cfg_update": self.conn_cfg_update,
+            "get_crypto_modules": self.get_crypto_modules,
+            "get_crypto_module_conf": self.get_crypto_module_conf,
             "do_update": self.do_update
         }
 
@@ -63,3 +64,9 @@ class controller(rpc.controller):
         :return:
         """
         return 0, None
+
+    def get_crypto_modules(self):
+        return 0, crypto_utils.get_crypto_modules()
+
+    def get_crypto_module_conf(self, name: str):
+        return 0, self.__runtime.get_crypto_module_conf(name)

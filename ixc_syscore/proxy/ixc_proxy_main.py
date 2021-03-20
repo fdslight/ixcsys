@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, time, importlib, struct, socket
+import sys, os, signal, time, importlib, struct, socket, json
 import dns.resolver
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -23,6 +23,7 @@ import ixc_syslib.web.route as webroute
 import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
 import ixc_syscore.proxy.pylib.file_parser as file_parser
 import ixc_syscore.proxy.pylib.ip_match as ip_match
+import ixc_syscore.proxy.pylib.crypto.utils as crypto_utils
 import ixc_syscore.proxy.handlers.tunnel as tunnel
 import ixc_syscore.proxy.handlers.netpkt as netpkt
 import ixc_syscore.proxy.handlers.dns_proxy as dns_proxy
@@ -646,6 +647,25 @@ class service(dispatcher.dispatcher):
         """
         path = "%s/ca-bundle.crt" % os.getenv("IXC_MYAPP_CONF_DIR")
         return path
+
+    def get_crypto_module_conf(self, name: str):
+        path = "%s/%s.json" % (os.getenv("IXC_MYAPP_CONF_DIR"), name)
+        if not os.path.isfile(path): return None
+        if name not in crypto_utils.get_crypto_modules(): return None
+
+        with open(path, "r") as f:
+            s = f.read()
+        f.close()
+
+        return json.loads(s)
+
+    def save_crypto_module_conf(self, name: str, dic: dict):
+        if name not in crypto_utils.get_crypto_modules(): return False
+        path = "%s/%s.json" % (os.getenv("IXC_MYAPP_CONF_DIR"), name)
+        with open(path, "w") as f:
+            f.write(json.dumps(dic))
+        f.close()
+        return True
 
     def myloop(self):
         names = self.__route_timer.get_timeout_names()
