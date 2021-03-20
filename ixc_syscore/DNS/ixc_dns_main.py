@@ -186,7 +186,6 @@ class service(dispatcher.dispatcher):
         o = self.__id_wan2lan[dns_id]
         x_dns_id = o["id"]
         new_msg = b"".join([struct.pack("!H", x_dns_id), message[2:]])
-
         self.get_handler(fd).send_msg(new_msg, o["address"])
         # 此处删除记录
         del self.__id_wan2lan[dns_id]
@@ -196,6 +195,7 @@ class service(dispatcher.dispatcher):
         """
         dns_id, = struct.unpack("!H", message[0:2])
         new_dns_id = self.get_dns_id()
+
         if new_dns_id < 0:
             logging.print_error("cannot get DNS ID for DNS proxy")
             return
@@ -234,7 +234,7 @@ class service(dispatcher.dispatcher):
         msg = {
             "action": action,
             "priv_data": match_rs["priv_data"],
-            "message": message
+            "message": new_msg
         }
         self.get_handler(self.__dns_client).send_forward_msg(pickle.dumps(msg))
 
@@ -268,7 +268,7 @@ class service(dispatcher.dispatcher):
         dels = []
         for _id in self.__id_wan2lan:
             t = self.__id_wan2lan[_id]["time"]
-            if now_t - t < 3: continue
+            if now_t - t < 5: continue
             dels.append(_id)
 
         for _id in dels:

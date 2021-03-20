@@ -36,7 +36,8 @@ class dns_proxy(udp_handler.udp_handler):
         return self.getsockname()[1]
 
     def send_dns_msg(self, message: bytes):
-        pass
+        self.add_evt_write(self.fileno)
+        self.sendto(message, (self.dispatcher.manage_addr, self.__forward_port))
 
     def set_forward(self, port: int):
         self.__forward_port = port

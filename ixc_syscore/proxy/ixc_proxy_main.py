@@ -378,15 +378,14 @@ class service(dispatcher.dispatcher):
             self.get_handler(self.__fwd_fd).send_msg(0, p, self.__consts["IXC_FLAG_ROUTE_FWD"], message)
             return
 
-        if len(message) < 2: return
-
+        if len(message) < 8: return
         dns_id = struct.unpack("!H", message[0:2])
         if dns_id not in self.__dns_map: return
 
-        o = self.__dns_map["dns_id"]
+        o = self.__dns_map[dns_id]
 
         # 如果DNS只走加密那么直接发送DNS数据包
-        if self.__dns_map["action"] == "encrypt":
+        if o["action"] == "encrypt":
             self.get_handler(self.__dns_fd).send_dns_msg(message)
             del self.__dns_map[dns_id]
             return
@@ -420,6 +419,7 @@ class service(dispatcher.dispatcher):
                     continue
                 if isset_route: self.set_route(ip, prefix, is_ipv6=is_ipv6)
             ''''''
+        self.get_handler(self.__dns_fd).send_dns_msg(message)
         del self.__dns_map[dns_id]
 
     def send_dns_request_to_tunnel(self, action: str, dns_msg: bytes):
@@ -644,6 +644,9 @@ class service(dispatcher.dispatcher):
         """
         path = "%s/ca-bundle.crt" % os.getenv("IXC_MYAPP_CONF_DIR")
         return path
+
+    def myloop(self):
+        pass
 
 
 def main():

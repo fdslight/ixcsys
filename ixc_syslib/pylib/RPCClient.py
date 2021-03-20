@@ -57,6 +57,10 @@ def wait_proc(name: str):
     ''''''
 
 
+def wait_processes(names: list):
+    for name in names: wait_proc(name)
+
+
 class RPCClient(SCGIClient.SCGIClient):
     def __init__(self, app_name: str):
         super().__init__("/tmp/ixcsys/%s/scgi.sock" % app_name, is_unix_socket=True)
