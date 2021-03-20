@@ -157,6 +157,7 @@ class service(dispatcher.dispatcher):
     def __set_rules(self, signum, frame):
         RPCClient.fn_call("DNS", "/rule", "clear")
         port = RPCClient.fn_call("DNS", "/rule", "get_forward")
+        RPCClient.fn_call("DNS", "/config", "forward_dns_result")
         self.get_handler(self.__dns_fd).set_forward(port)
         self.__ip_match.clear()
 
@@ -236,6 +237,10 @@ class service(dispatcher.dispatcher):
         # 增加需要增加的路由
         for subnet, prefix, is_ipv6 in need_adds:
             self.set_route(subnet, prefix=prefix, is_ipv6=is_ipv6, is_dynamic=False)
+
+    def auto_proxy_with_ip(self, ip: str, is_ipv6=False):
+        if self.__ip_match.match(ip, is_ipv6=is_ipv6): return
+        self.set_route(ip, is_ipv6=is_ipv6)
 
     def myloop(self):
         del_dns_list = []
@@ -398,27 +403,13 @@ class service(dispatcher.dispatcher):
 
         for rrset in msg_obj.answer:
             for cname in rrset:
-                isset_route = True
-                prefix = None
-                is_ipv6 = False
                 ip = cname.__str__()
                 if netutils.is_ipv4_address(ip):
-                    if self.__ip_match.match(ip, is_ipv6=False):
-                        isset_route = False
-                    else:
-                        prefix = 32
-                    ''''''
-                elif netutils.is_ipv6_address(ip):
-                    if self.__ip_match.match(ip, is_ipv6=True):
-                        isset_route = False
-                    else:
-                        prefix = 128
-                        is_ipv6 = True
-                    ''''''
-                else:
+                    self.set_route(ip, prefix=32)
                     continue
-                if isset_route: self.set_route(ip, prefix, is_ipv6=is_ipv6)
-            ''''''
+                if netutils.is_ipv6_address(ip):
+                    self.set_route(ip, prefix=128)
+                    continue
         self.get_handler(self.__dns_fd).send_dns_msg(message)
         del self.__dns_map[dns_id]
 

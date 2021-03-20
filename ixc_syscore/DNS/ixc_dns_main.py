@@ -82,6 +82,9 @@ class service(dispatcher.dispatcher):
     __scgi_fd = None
     __cur_dns_id = None
 
+    # 是否重定向DNS结果
+    __forward_result = None
+
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
 
@@ -99,6 +102,7 @@ class service(dispatcher.dispatcher):
         self.__up_time = time.time()
         self.__scgi_fd = -1
         self.__cur_dns_id = 1
+        self.__forward_result = False
 
         self.create_poll()
         self.wait_router_proc()
@@ -187,6 +191,34 @@ class service(dispatcher.dispatcher):
         x_dns_id = o["id"]
         new_msg = b"".join([struct.pack("!H", x_dns_id), message[2:]])
         self.get_handler(fd).send_msg(new_msg, o["address"])
+
+        if not o["from_forward"] and self.__forward_result:
+            try:
+                msg_obj = dns.message.from_wire(new_msg)
+            except:
+                del self.__id_wan2lan[dns_id]
+                return
+            for rrset in msg_obj.answer:
+                for cname in rrset:
+                    flags = False
+                    ip = cname.__str__()
+                    is_ipv6 = False
+                    if netutils.is_ipv4_address(ip):
+                        flags = True
+                    elif netutils.is_ipv6_address(ip):
+                        flags = True
+                        is_ipv6 = True
+                    else:
+                        continue
+                    if not flags: continue
+                    msg = {
+                        "action": "dns_result",
+                        "priv_data": None,
+                        "message": (ip, is_ipv6,)
+                    }
+                    self.get_handler(self.__dns_client).send_forward_msg(pickle.dumps(msg))
+                ''''''
+            ''''''
         # 此处删除记录
         del self.__id_wan2lan[dns_id]
 
@@ -208,7 +240,7 @@ class service(dispatcher.dispatcher):
         new_msg = b"".join(_list)
 
         self.__id_wan2lan[new_dns_id] = {"id": dns_id, "address": address, "is_ipv6": is_ipv6,
-                                         "time": time.time()}
+                                         "time": time.time(), "from_forward": False}
 
         questions = msg_obj.question
         if len(questions) != 1:
@@ -236,6 +268,8 @@ class service(dispatcher.dispatcher):
             "priv_data": match_rs["priv_data"],
             "message": new_msg
         }
+
+        self.__id_wan2lan[new_dns_id]["from_forward"] = True
         self.get_handler(self.__dns_client).send_forward_msg(pickle.dumps(msg))
 
     @property
@@ -245,6 +279,9 @@ class service(dispatcher.dispatcher):
     @property
     def configs(self):
         return self.__dns_configs
+
+    def forward_dns_result(self):
+        self.__forward_result = True
 
     def get_forward(self):
         return self.get_handler(self.__dns_client).get_port()

@@ -17,6 +17,7 @@ class controller(rpc.controller):
         self.fobjs = {
             "config_get": self.config_get,
             "set_parent_server": self.set_parent_server,
+            "forward_dns_result": self.forward_dns_result,
             "enable": self.enable,
             "save": self.save
         }
@@ -55,6 +56,13 @@ class controller(rpc.controller):
             configs["public"]["enable_auto"] = 1
         else:
             configs["public"]["enable_auto"] = 0
+        return 0, None
+
+    def forward_dns_result(self):
+        """重定向DNS结果
+        :return:
+        """
+        self.__runtime.forward_dns_result()
         return 0, None
 
     def save(self):
