@@ -21,6 +21,7 @@ import ixc_syscore.router.pylib.pppoe as pppoe
 
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
+import ixc_syslib.pylib.RPCClient as RPC
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -82,8 +83,6 @@ class service(dispatcher.dispatcher):
 
     __is_linux = None
     __scgi_fd = None
-
-    __info_file = None
 
     __pfwd_fd = None
 
@@ -182,7 +181,6 @@ class service(dispatcher.dispatcher):
         return self.__pppoe_passwd
 
     def release(self):
-        if os.path.isfile(self.__info_file): os.remove(self.__info_file)
         if self.is_linux:
             os.system("ip link set %s down" % self.__LAN_NAME)
             os.system("ip link set %s down" % self.__WAN_NAME)
@@ -404,7 +402,6 @@ class service(dispatcher.dispatcher):
         self.__pfwd_fd = -1
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
-        self.__info_file = "%s/../syscall/ipconf.json" % os.getenv("IXC_MYAPP_TMP_DIR")
 
         # 此处检查FreeBSD是否加载了if_tap.ko模块
         if not self.is_linux:
@@ -476,6 +473,7 @@ def main():
     else:
         debug = False
 
+    RPC.wait_proc("init")
     __start_service(debug)
 
 

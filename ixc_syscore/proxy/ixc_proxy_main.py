@@ -361,7 +361,7 @@ class service(dispatcher.dispatcher):
     def wait_proc(self):
         """等待进程
         """
-        proc_list = ["router", "DNS"]
+        proc_list = ["router", "DNS", "sysadm"]
         for proc in proc_list: RPCClient.wait_proc(proc)
 
     def release(self):

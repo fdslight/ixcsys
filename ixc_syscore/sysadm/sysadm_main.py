@@ -13,8 +13,8 @@ import pywind.web.handlers.scgi as scgi
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.RPCClient as RPCClient
-
 import ixc_syscore.sysadm.handlers.httpd as httpd
+
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -71,6 +71,7 @@ class service(dispatcher.dispatcher):
 
     __scgi_fd = None
 
+
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
 
@@ -106,12 +107,12 @@ class service(dispatcher.dispatcher):
         self.__httpd_fd6 = -1
         self.__httpd_ssl_fd = -1
         self.__httpd_ssl_fd6 = -1
-
         self.__debug = debug
 
         self.__httpd_cfg_path = "%s/httpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__scgi_fd = -1
+
 
         self.load_configs()
         self.create_poll()
@@ -119,6 +120,7 @@ class service(dispatcher.dispatcher):
         self.wait_router_proc()
         self.start_scgi()
         self.http_start()
+
 
     def start_scgi(self):
         scgi_configs = {
@@ -142,18 +144,12 @@ class service(dispatcher.dispatcher):
     def wait_router_proc(self):
         """等待路由进程
         """
-        while 1:
-            ok = RPCClient.RPCReadyOk("router")
-            if not ok:
-                time.sleep(5)
-            else:
-                break
-            ''''''
-        return
+        RPCClient.wait_proc("router")
 
     @property
     def debug(self):
         return self.__debug
+
 
     def release(self):
         if self.__scgi_fd:
@@ -171,7 +167,6 @@ class service(dispatcher.dispatcher):
         if self.__httpd_ssl_fd6 > 0:
             self.delete_handler(self.__httpd_ssl_fd6)
             self.__httpd_ssl_fd6 = -1
-
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
 

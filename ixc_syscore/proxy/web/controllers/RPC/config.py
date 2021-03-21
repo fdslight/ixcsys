@@ -21,6 +21,7 @@ class controller(rpc.controller):
             "conn_cfg_update": self.conn_cfg_update,
             "get_crypto_modules": self.get_crypto_modules,
             "get_crypto_module_conf": self.get_crypto_module_conf,
+            "update_crypto_module_conf": self.update_crypto_module_conf,
             "do_update": self.do_update
         }
 
@@ -70,3 +71,6 @@ class controller(rpc.controller):
 
     def get_crypto_module_conf(self, name: str):
         return 0, self.__runtime.get_crypto_module_conf(name)
+
+    def update_crypto_module_conf(self, name: str, dic: dict):
+        return 0, self.__runtime.save_crypto_module_conf(name, dic)

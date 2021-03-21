@@ -1,12 +1,32 @@
 #!/usr/bin/env python3
 
-import time, traceback, sys
+import time, traceback, sys, socket, pickle, os
+
+# 一般的信息
+LEVEL_INFO = 0
+# 告警信息
+LEVEL_ALERT = 1
+# 错误信息
+LEVEL_ERR = 2
+
+LEVELS = (
+    LEVEL_INFO, LEVEL_ALERT, LEVEL_ERR,
+)
 
 
-def print_general(text, address):
-    s1 = time.strftime("%Y-%m-%d %H:%M:%S %Z")
-    print("%s\t%s:%s\t%s" % (text, address[0], address[1], s1))
-    sys.stdout.flush()
+def syslog_write(name: str, message: str, level=LEVEL_INFO):
+    if level not in LEVELS:
+        raise ValueError("wrong argument value for level")
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("127.0.0.1", 514))
+
+    o = {
+        "level": level,
+        "name": name,
+        "message": message
+    }
+    s.send(pickle.dumps(o))
+    s.close()
 
 
 def print_error(text=""):
@@ -15,9 +35,46 @@ def print_error(text=""):
 
     if text:
         text = "%s\r\n%s\r\n%s\r\n" % (s1, text, s2,)
-        sys.stderr.write(text)
     else:
         excpt = traceback.format_exc()
-        error = "%s\r\n%s\r\n%s" % (s1, excpt, s2)
-        sys.stderr.write(error)
-    sys.stderr.flush()
+        text = "%s\r\n%s\r\n%s" % (s1, excpt, s2)
+
+    app_name = os.getenv("IXC_MYAPP_NAME")
+    if not app_name:
+        sys.stderr.write(text)
+        sys.stderr.flush()
+    else:
+        syslog_write(app_name, text, level=LEVEL_ERR)
+
+
+def print_info(text):
+    app_name = os.getenv("IXC_MYAPP_NAME")
+    if not app_name:
+        sys.stdout.write(text)
+        sys.stdout.flush()
+    else:
+        syslog_write(app_name, text, level=LEVEL_INFO)
+
+
+def print_alert(text):
+    app_name = os.getenv("IXC_MYAPP_NAME")
+    if not app_name:
+        sys.stdout.write(text)
+        sys.stdout.flush()
+    else:
+        syslog_write(app_name, text, level=LEVEL_ALERT)
+
+
+class stdout(object):
+    def read(self, *args, **kwargs):
+        return b""
+
+    def write(self, *args, **kwargs):
+        pass
+
+    def flush(self):
+        pass
+
+
+class stderr(object):
+    pass

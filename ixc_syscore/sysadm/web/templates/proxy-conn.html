@@ -217,7 +217,7 @@
 
                 <!-- 模态框底部 -->
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-secondary" id="ixc-proxy-crypto-module-conf-submit">修改</button>
                 </div>
             </div>
         </div>
@@ -244,6 +244,20 @@
                 }
                 $("#ixc-proxy-crypto-module-conf-content").val(JSON.stringify(result["message"]));
                 modal.modal();
+            });
+        });
+
+        $("#ixc-proxy-crypto-module-conf-submit").click(function () {
+            let content = $("#ixc-proxy-crypto-module-conf-content").val();
+            let module_name = $("#ixc-proxy-crypto-module").val();
+
+            $.post("${self.url_prefix}/proxy_module_config", {"module": module_name, "conf": content}, function (result) {
+                let is_error = result["is_error"];
+                if (is_error) {
+                    alert(result["message"]);
+                }else{
+                    alert("修改成功");
+                }
             });
         });
 
