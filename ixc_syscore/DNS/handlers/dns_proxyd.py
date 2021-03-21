@@ -74,6 +74,13 @@ class proxy_client(udp_handler.udp_handler):
     def get_port(self):
         return self.socket.getsockname()[1]
 
+    def get_nameservers(self):
+        return [self.__ns1, self.__ns2]
+
+    def set_nameservers(self, ns1: str, ns2: str):
+        self.__ns1 = ns1
+        self.__ns2 = ns2
+
 
 class proxyd(udp_handler.udp_handler):
     __is_ipv6 = None

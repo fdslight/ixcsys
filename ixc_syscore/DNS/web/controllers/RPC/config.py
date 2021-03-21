@@ -19,6 +19,7 @@ class controller(rpc.controller):
             "set_parent_server": self.set_parent_server,
             "forward_dns_result": self.forward_dns_result,
             "enable": self.enable,
+            "get_nameservers": self.get_nameservers,
             "save": self.save
         }
 
@@ -68,3 +69,10 @@ class controller(rpc.controller):
     def save(self):
         self.__runtime.save_configs()
         return 0, None
+
+    def get_nameservers(self, is_ipv6=False):
+        """获取DNS服务器,该返回值会根据DNS的配置方式在运行期间变化
+        :param is_ipv6:
+        :return:
+        """
+        return 0, self.__runtime.get_nameservers(is_ipv6=is_ipv6)

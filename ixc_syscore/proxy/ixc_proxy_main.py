@@ -29,8 +29,6 @@ import ixc_syscore.proxy.handlers.netpkt as netpkt
 import ixc_syscore.proxy.handlers.dns_proxy as dns_proxy
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
-LOG_FILE = "/tmp/ixc_proxy.log"
-ERR_FILE = "/tmp/ixc_proxy_error.log"
 
 
 def __stop_service():
@@ -125,7 +123,6 @@ class service(dispatcher.dispatcher):
         self.load_configs()
 
         self.create_poll()
-        self.wait_proc()
         self.start_scgi()
         self.reset()
 
@@ -161,33 +158,13 @@ class service(dispatcher.dispatcher):
 
         self.__crypto_configs = crypto_configs
 
-        if not debug:
-            sys.stdout = open(LOG_FILE, "a+")
-            sys.stderr = open(ERR_FILE, "a+")
-        ''''''
         self.set_forward()
         self.__set_rules()
 
-    def __set_rules(self):
-        RPCClient.fn_call("DNS", "/rule", "clear")
-        port = RPCClient.fn_call("DNS", "/rule", "get_forward")
-        RPCClient.fn_call("DNS", "/config", "forward_dns_result")
-        self.get_handler(self.__dns_fd).set_forward(port)
-        self.__ip_match.clear()
-
-        fpaths = [
-            "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR"),
-            "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR"),
-            "%s/proxy_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
-        ]
-
-        for fpath in fpaths:
-            if not os.path.isfile(fpath):
-                sys.stderr.write("cannot found %s\r\n" % fpath)
-                return
-            ''''''
+    def set_domain_rule(self):
+        fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
         try:
-            rules = file_parser.parse_host_file(fpaths[0])
+            rules = file_parser.parse_host_file(fpath)
             for r in rules:
                 host, n = r
                 action = "encrypt"
@@ -198,12 +175,33 @@ class service(dispatcher.dispatcher):
                 if n == 1:
                     action = "proxy"
                 RPCClient.fn_call("DNS", "/rule", "add", host, action)
-            rules = file_parser.parse_ip_subnet_file(fpaths[1])
+        except file_parser.FilefmtErr:
+            logging.print_error()
+
+    def __set_rules(self):
+        RPCClient.fn_call("DNS", "/rule", "clear")
+        port = RPCClient.fn_call("DNS", "/rule", "get_forward")
+        RPCClient.fn_call("DNS", "/config", "forward_dns_result")
+
+        self.get_handler(self.__dns_fd).set_forward(port)
+        self.__ip_match.clear()
+        self.set_domain_rule()
+
+        fpaths = [
+            "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR"),
+            "%s/proxy_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        ]
+        for fpath in fpaths:
+            if not os.path.isfile(fpath):
+                sys.stderr.write("cannot found %s\r\n" % fpath)
+                return
+            ''''''
+        try:
+            rules = file_parser.parse_ip_subnet_file(fpaths[0])
             for subnet, prefix in rules:
                 self.__ip_match.add_rule(subnet, prefix)
-            rules = file_parser.parse_ip_subnet_file(fpaths[2])
+            rules = file_parser.parse_ip_subnet_file(fpaths[1])
             self.__set_static_ip_rules(rules)
-
         except file_parser.FilefmtErr:
             logging.print_error()
 
@@ -327,16 +325,22 @@ class service(dispatcher.dispatcher):
         fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
         with open(fpath, "w") as f: f.write(text)
         f.close()
+        RPCClient.fn_call("DNS", "/rule", "clear")
+        self.set_domain_rule()
 
     def update_pass_ip_rule(self, text: str):
         fpath = "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
         with open(fpath, "w") as f: f.write(text)
         f.close()
+        self.reset()
+        self.__set_rules()
 
     def update_proxy_ip_rule(self, text: str):
         fpath = "%s/proxy_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
         with open(fpath, "w") as f: f.write(text)
         f.close()
+        self.reset()
+        self.__set_rules()
 
     def conn_cfg_update(self, dic: dict):
         fpath = "%s/proxy.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
@@ -375,12 +379,6 @@ class service(dispatcher.dispatcher):
     @property
     def manage_addr(self):
         return self.__manage_addr
-
-    def wait_proc(self):
-        """等待进程
-        """
-        proc_list = ["router", "DNS", "sysadm", "init"]
-        for proc in proc_list: RPCClient.wait_proc(proc)
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
@@ -736,7 +734,10 @@ def main():
     if action == "debug":
         debug = True
     else:
+        sys.stderr = logging.stderr()
+        sys.stdout = logging.stdout()
         debug = False
+    RPCClient.wait_processes(["router", "DNS", "sysadm", "init"])
     __start_service(debug)
 
 

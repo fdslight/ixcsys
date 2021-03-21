@@ -15,7 +15,6 @@ import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syscore.sysadm.handlers.httpd as httpd
 
-
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
 
@@ -71,7 +70,6 @@ class service(dispatcher.dispatcher):
 
     __scgi_fd = None
 
-
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
 
@@ -113,14 +111,11 @@ class service(dispatcher.dispatcher):
 
         self.__scgi_fd = -1
 
-
         self.load_configs()
         self.create_poll()
 
-        self.wait_router_proc()
         self.start_scgi()
         self.http_start()
-
 
     def start_scgi(self):
         scgi_configs = {
@@ -141,15 +136,9 @@ class service(dispatcher.dispatcher):
     def myloop(self):
         pass
 
-    def wait_router_proc(self):
-        """等待路由进程
-        """
-        RPCClient.wait_proc("router")
-
     @property
     def debug(self):
         return self.__debug
-
 
     def release(self):
         if self.__scgi_fd:
@@ -191,6 +180,7 @@ def main():
     else:
         debug = False
 
+    RPCClient.wait_processes(["init","router"])
     __start_service(debug)
 
 

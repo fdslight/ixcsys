@@ -80,10 +80,15 @@ class service(dispatcher.dispatcher):
         self.__sessions = {}
 
         self.create_poll()
-        self.wait_router_proc()
+        self.start_scgi()
+        self.reset()
+
+    def reset(self):
+        if self.__tftpd_fd > 0: self.delete_handler(self.__tftpd_fd)
+        if self.__tftpd_fd6 > 0: self.delete_handler(self.__tftpd_fd6)
+
         self.load_configs()
         self.start_tftp()
-        self.start_scgi()
 
     def myloop(self):
         if self.__tftpd_fd > 0: self.get_handler(self.__tftpd_fd).loop()
@@ -106,6 +111,7 @@ class service(dispatcher.dispatcher):
 
     def save_configs(self):
         conf.save_to_ini(self.__configs, self.__conf_path)
+        self.reset()
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
@@ -127,18 +133,6 @@ class service(dispatcher.dispatcher):
         }
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
-
-    def wait_router_proc(self):
-        """等待路由进程
-        """
-        while 1:
-            ok = RPCClient.RPCReadyOk("router")
-            if not ok:
-                time.sleep(5)
-            else:
-                break
-            ''''''
-        return
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
@@ -167,6 +161,7 @@ def main():
     else:
         debug = False
 
+    RPCClient.wait_processes(["router", "init", "sysadm"])
     __start_service(debug)
 
 

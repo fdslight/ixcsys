@@ -105,7 +105,6 @@ class service(dispatcher.dispatcher):
         self.__forward_result = False
 
         self.create_poll()
-        self.wait_router_proc()
         self.start_dns()
         self.start_scgi()
 
@@ -115,25 +114,16 @@ class service(dispatcher.dispatcher):
     def load_configs(self):
         self.__dns_configs = conf.ini_parse_from_file(self.__dns_conf_path)
 
-    def wait_router_proc(self):
-        """等待路由进程
-        """
-        while 1:
-            ok = RPCClient.RPCReadyOk("router")
-            if not ok:
-                time.sleep(5)
-            else:
-                break
-            ''''''
-        return
-
     def start_dns(self):
         self.load_configs()
         manage_addr = self.get_manage_addr()
         ipv4 = self.__dns_configs["ipv4"]
+        ipv6 = self.__dns_configs["ipv6"]
 
         self.__dns_client = self.create_handler(-1, dns_proxyd.proxy_client, ipv4["main_dns"], ipv4["second_dns"],
                                                 is_ipv6=False)
+        self.__dns_client6 = self.create_handler(-1, dns_proxyd.proxy_client, ipv6["main_dns"], ipv6["second_dns"],
+                                                 is_ipv6=True)
         self.__dns_server = self.create_handler(-1, dns_proxyd.proxyd, (manage_addr, 53), is_ipv6=False)
 
     def start_scgi(self):
@@ -251,6 +241,8 @@ class service(dispatcher.dispatcher):
         host = b".".join(q.name[0:-1]).decode("iso-8859-1")
         match_rs = self.__matcher.match(host)
 
+        logging.print_info("DNS QUERY: %s" % host)
+
         if not match_rs:
             self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6)
             return
@@ -279,6 +271,12 @@ class service(dispatcher.dispatcher):
     @property
     def configs(self):
         return self.__dns_configs
+
+    def get_nameservers(self, is_ipv6=False):
+        if is_ipv6:
+            return self.get_handler(self.__dns_client).get_nameservers()
+        else:
+            return self.get_handler(self.__dns_client6).get_nameservers()
 
     def forward_dns_result(self):
         self.__forward_result = True
@@ -337,6 +335,7 @@ def main():
     else:
         debug = False
 
+    RPCClient.wait_processes(["init", "router", "sysadm"])
     __start_service(debug)
 
 

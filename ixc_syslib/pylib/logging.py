@@ -31,7 +31,7 @@ def syslog_write(name: str, message: str, level=LEVEL_INFO):
 
 def print_error(text=""):
     s1 = "<error time='%s'>" % time.strftime("%Y-%m-%d %H:%M:%S %Z")
-    s2 = "</error>\r\n\r\n"
+    s2 = "</error>\r\n"
 
     if text:
         text = "%s\r\n%s\r\n%s\r\n" % (s1, text, s2,)

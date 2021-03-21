@@ -96,13 +96,17 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__scgi_fd).after()
 
     def log_write(self, level: int, name: str, message: str):
+        t = message.replace("\n", "")
+        t = t.replace("\r", "")
+        if not t: return
+
         level_map = {
             logging.LEVEL_INFO: "INFO",
             logging.LEVEL_ALERT: "ALERT",
             logging.LEVEL_ERR: "ERROR"
         }
         if self.debug:
-            fmt_msg = "application:%s\r\nlevel:%s\r\n%s" % (name, level_map[level], message,)
+            fmt_msg = "\r\n\r\napplication:%s\r\nlevel:%s\r\n%s" % (name, level_map[level], message,)
             if level == logging.LEVEL_ERR:
                 sys.stdout.write(fmt_msg)
             else:

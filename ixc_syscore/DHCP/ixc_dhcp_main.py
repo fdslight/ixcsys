@@ -169,13 +169,6 @@ class service(dispatcher.dispatcher):
         self.__dhcp_fd = self.create_handler(-1, dhcp.dhcp_service)
         dhcp_msg_port = self.get_handler(self.__dhcp_fd).get_sock_port()
 
-        while 1:
-            ok = RPCClient.RPCReadyOk("router")
-            if not ok:
-                time.sleep(5)
-            else:
-                break
-
         if self.debug: print("start DHCP")
 
         self.get_handler(self.__dhcp_fd).set_message_auth(self.__rand_key)
@@ -343,6 +336,7 @@ def main():
     else:
         debug = False
 
+    RPCClient.wait_processes(["init", "router", "sysadm"])
     __start_service(debug)
 
 
