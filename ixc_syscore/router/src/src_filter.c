@@ -13,14 +13,30 @@ static struct ixc_src_filter src_filter;
 static void ixc_src_filter_send(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=m->netif;
-    int is_not_subnet;
+    int is_not_subnet,size;
     unsigned char result[16];
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
-    unsigned char ipproto=0;
+    unsigned char ipproto=0,*addr_ptr,*pkt_addr_ptr;
 
     // 只处理LAN网卡
     if(IXC_NETIF_LAN!=netif->type){
+        ixc_qos_add(m);
+        return;
+    }
+    
+    if(m->is_ipv6){
+        size=16;
+        addr_ptr=src_filter.my_ip6;
+        pkt_addr_ptr=ip6hdr->src_addr;
+    }else{
+        size=4;
+        addr_ptr=src_filter.my_ip;
+        pkt_addr_ptr=iphdr->src_addr;
+    }
+
+    // 如果是本机的数据包那么就跳过
+    if(!memcmp(addr_ptr,pkt_addr_ptr,size)){
         ixc_qos_add(m);
         return;
     }
@@ -85,6 +101,14 @@ int ixc_src_filter_set_ip(unsigned char *subnet,unsigned char prefix,int is_ipv6
         memcpy(src_filter.ip_subnet,subnet,4);
         msk_calc(prefix,0,src_filter.ip_mask);
     }
+
+    return 0;
+}
+
+int ixc_src_filter_set_self(unsigned char *address,int is_ipv6)
+{
+    if(is_ipv6) memcpy(src_filter.my_ip6,address,16);
+    else memcpy(src_filter.my_ip,address,4);
 
     return 0;
 }
