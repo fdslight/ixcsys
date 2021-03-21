@@ -22,7 +22,6 @@ class controller(rpc.controller):
             "get_crypto_modules": self.get_crypto_modules,
             "get_crypto_module_conf": self.get_crypto_module_conf,
             "update_crypto_module_conf": self.update_crypto_module_conf,
-            "do_update": self.do_update
         }
 
     def config_get(self, cfg_type: str):
@@ -58,12 +57,6 @@ class controller(rpc.controller):
 
     def conn_cfg_update(self, dic: dict):
         self.__runtime.conn_cfg_update(dic)
-        return 0, None
-
-    def do_update(self):
-        """执行更新动作,使规则立即生效
-        :return:
-        """
         return 0, None
 
     def get_crypto_modules(self):

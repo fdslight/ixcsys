@@ -105,6 +105,8 @@ class service(dispatcher.dispatcher):
 
     __ip_match = None
 
+    __enable = None
+
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
 
@@ -117,12 +119,24 @@ class service(dispatcher.dispatcher):
         self.__dns_map = {}
         self.__up_time = time.time()
         self.__ip_match = ip_match.ip_match()
+        self.__conn_fd = -1
+        self.__enable = False
+
+        self.load_configs()
 
         self.create_poll()
         self.wait_proc()
-        self.load_configs()
         self.start_scgi()
-        self.start(debug)
+        self.reset()
+
+    def reset(self):
+        if bool(int(self.configs["connection"]["enable"])):
+            self.__enable = True
+            self.start(self.__debug)
+        else:
+            self.__enable = False
+            if self.__conn_fd > 0: self.delete_handler(self.__conn_fd)
+            self.del_routes()
 
     def start(self, debug):
         conn = self.__configs["connection"]
@@ -152,10 +166,9 @@ class service(dispatcher.dispatcher):
             sys.stderr = open(ERR_FILE, "a+")
         ''''''
         self.set_forward()
-        self.__set_rules(None, None)
-        signal.signal(signal.SIGUSR1, self.__set_rules)
+        self.__set_rules()
 
-    def __set_rules(self, signum, frame):
+    def __set_rules(self):
         RPCClient.fn_call("DNS", "/rule", "clear")
         port = RPCClient.fn_call("DNS", "/rule", "get_forward")
         RPCClient.fn_call("DNS", "/config", "forward_dns_result")
@@ -258,6 +271,13 @@ class service(dispatcher.dispatcher):
 
         self.__up_time = time.time()
 
+        names = self.__route_timer.get_timeout_names()
+        for name in names:
+            if name in self.__routes:
+                self.__del_route(name)
+            ''''''
+        ''''''
+
     @property
     def https_configs(self):
         configs = self.__configs.get("tunnel_over_https", {})
@@ -322,6 +342,7 @@ class service(dispatcher.dispatcher):
         fpath = "%s/proxy.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         conf.save_to_ini(dic, fpath)
         self.load_configs()
+        self.reset()
 
     @property
     def session_id(self):
@@ -336,9 +357,6 @@ class service(dispatcher.dispatcher):
 
     def load_configs(self):
         self.__configs = conf.ini_parse_from_file(self.__conf_path)
-
-    def save_configs(self):
-        conf.save_to_ini(self.__configs, self.__conf_path)
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
@@ -366,8 +384,27 @@ class service(dispatcher.dispatcher):
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+        if self.__conn_fd > 0:
+            self.delete_handler(self.__conn_fd)
+            self.__conn_fd = -1
+
+    def del_routes(self):
+        dels = []
+        for name in self.__static_routes:
+            r = self.__static_routes[name]
+            dels.append(r)
+        for host, prefix, is_ipv6 in dels:
+            self.__del_route(host, prefix=prefix, is_ipv6=is_ipv6, is_dynamic=False)
+
+        dels = []
+        for host in self.__routes:
+            dels.append((host, self.__routes[host]))
+        for host, is_ipv6 in dels:
+            self.__del_route(host, is_ipv6=is_ipv6)
 
     def handle_msg_from_tunnel(self, session_id: bytes, action: int, message: bytes):
+        if not self.__enable: return
+
         if session_id != self.__session_id:
             logging.print_error("wrong session_id from server")
             self.delete_handler(self.__conn_fd)
@@ -410,18 +447,26 @@ class service(dispatcher.dispatcher):
                 if netutils.is_ipv6_address(ip):
                     self.set_route(ip, prefix=128)
                     continue
+                ''''''
+            ''''''
         self.get_handler(self.__dns_fd).send_dns_msg(message)
         del self.__dns_map[dns_id]
 
     def send_dns_request_to_tunnel(self, action: str, dns_msg: bytes):
+        if not self.__enable: return
         dns_id = struct.unpack("!H", dns_msg[0:2])
         self.__dns_map[dns_id] = {"time": time.time(), "action": action}
         self.send_msg_to_tunnel(proto_utils.ACT_DNS, dns_msg)
 
     def send_msg_to_tunnel(self, action: int, message: bytes):
+        if not self.__enable: return
         if not self.handler_exists(self.__conn_fd):
             self.__open_tunnel()
         if not self.handler_exists(self.__conn_fd): return
+
+        if action != proto_utils.ACT_IPDATA:
+            self.get_handler(self.__conn_fd).send_msg_to_tunnel(self.session_id, action, message)
+            return
 
         ip_ver = (message[0] & 0xf0) >> 4
         if ip_ver not in (4, 6,): return
@@ -660,15 +705,17 @@ class service(dispatcher.dispatcher):
 
     def save_crypto_module_conf(self, name: str, dic: dict):
         if name not in crypto_utils.get_crypto_modules(): return False
+
+        mname = "ixc_syscore.proxy.pylib.crypto.%s.check" % name
+        importlib.import_module(mname)
+        m = sys.modules[mname]
+        if not m.check_crypto_module_config(dic): return False
+
         path = "%s/%s.json" % (os.getenv("IXC_MYAPP_CONF_DIR"), name)
         with open(path, "w") as f:
             f.write(json.dumps(dic))
         f.close()
         return True
-
-    def myloop(self):
-        names = self.__route_timer.get_timeout_names()
-        for name in names: self.__del_route(name)
 
 
 def main():
@@ -690,7 +737,6 @@ def main():
         debug = True
     else:
         debug = False
-
     __start_service(debug)
 
 

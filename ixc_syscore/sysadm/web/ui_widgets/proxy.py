@@ -11,6 +11,7 @@ class widget(ui_widget.widget):
         conn["enable_ipv6"] = bool(int(conn["enable_ipv6"]))
         conn["udp_tunnel_redundancy"] = bool(int(conn["udp_tunnel_redundancy"]))
         conn["tunnel_over_https"] = bool(int(conn["tunnel_over_https"]))
+        conn["enable"] = bool(int(conn["enable"]))
 
         tunnel_over_https["enable_https_sni"] = bool(int(tunnel_over_https["enable_https_sni"]))
         tunnel_over_https["strict_https"] = bool(int(tunnel_over_https["strict_https"]))
@@ -25,6 +26,7 @@ class widget(ui_widget.widget):
         if RPC.RPCReadyOk("proxy"):
             configs = RPC.fn_call("proxy", "/config", "config_get", _type)
             crypto_modules = RPC.fn_call("proxy", "/config", "get_crypto_modules")
+
             if _type == "conn":
                 configs = self.convert_conn_cfg(configs)
             configs["crypto_modules"] = crypto_modules

@@ -35,6 +35,7 @@ class controller(base_controller.BaseController):
     def handle_conn(self):
         kv_map = {
             "connection": {
+                "enable": None,
                 "enable_ipv6": None,
                 "host": None,
                 "port": None,
@@ -64,6 +65,11 @@ class controller(base_controller.BaseController):
                 value = self.request.get_argument(name, is_seq=False, is_qs=False)
                 o[y] = value
             ''''''
+
+        if kv_map["connection"]["enable"]:
+            kv_map["connection"]["enable"] = "1"
+        else:
+            kv_map["connection"]["enable"] = "0"
 
         if kv_map["connection"]["enable_ipv6"]:
             kv_map["connection"]["enable_ipv6"] = "1"
