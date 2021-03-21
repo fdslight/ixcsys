@@ -403,6 +403,10 @@ class service(dispatcher.dispatcher):
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
+        if not self.debug:
+            sys.stdout = logging.stdout()
+            sys.stderr = logging.stderr()
+
         # 此处检查FreeBSD是否加载了if_tap.ko模块
         if not self.is_linux:
             fd = os.popen("kldstat")

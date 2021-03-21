@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import time, traceback, sys, socket, pickle, os
+import time, traceback, sys, socket, pickle, os, io
 
 # 一般的信息
 LEVEL_INFO = 0
@@ -31,13 +31,13 @@ def syslog_write(name: str, message: str, level=LEVEL_INFO):
 
 def print_error(text=""):
     s1 = "<error time='%s'>" % time.strftime("%Y-%m-%d %H:%M:%S %Z")
-    s2 = "</error>"
+    s2 = "</error>\r\n\r\n"
 
     if text:
         text = "%s\r\n%s\r\n%s\r\n" % (s1, text, s2,)
     else:
         excpt = traceback.format_exc()
-        text = "%s\r\n%s\r\n%s" % (s1, excpt, s2)
+        text = "%s\r\n%s\r\n%s\r\n" % (s1, excpt, s2)
 
     app_name = os.getenv("IXC_MYAPP_NAME")
     if not app_name:
@@ -65,16 +65,21 @@ def print_alert(text):
         syslog_write(app_name, text, level=LEVEL_ALERT)
 
 
-class stdout(object):
-    def read(self, *args, **kwargs):
-        return b""
+class stdout(io.StringIO):
+    def write(self, s):
+        print_info(s)
+        return len(s)
 
-    def write(self, *args, **kwargs):
-        pass
-
-    def flush(self):
-        pass
+    def writelines(self, lines):
+        s = "".join(lines)
+        print_info(s)
 
 
-class stderr(object):
-    pass
+class stderr(io.StringIO):
+    def write(self, s):
+        print_error(s)
+        return len(s)
+
+    def writelines(self, lines):
+        s = "".join(lines)
+        print_error(s)

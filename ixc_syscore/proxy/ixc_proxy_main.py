@@ -361,7 +361,7 @@ class service(dispatcher.dispatcher):
     def wait_proc(self):
         """等待进程
         """
-        proc_list = ["router", "DNS", "sysadm"]
+        proc_list = ["router", "DNS", "sysadm", "init"]
         for proc in proc_list: RPCClient.wait_proc(proc)
 
     def release(self):
@@ -383,7 +383,6 @@ class service(dispatcher.dispatcher):
                 p = message[6]
             self.get_handler(self.__fwd_fd).send_msg(0, p, self.__consts["IXC_FLAG_ROUTE_FWD"], message)
             return
-
         if len(message) < 8: return
         dns_id = struct.unpack("!H", message[0:2])
         if dns_id not in self.__dns_map: return
