@@ -7,12 +7,13 @@ sys.path.append(sys_dir)
 
 # 必须要启动的服务
 must_services = [
+    "ixc_syscore/init",
     "ixc_syscore/router",
     "ixc_syscore/sysadm",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
     "ixc_syscore/tftp",
-    "ixc_syscore/init"
+    "ixc_syscore/proxy",
 ]
 
 
@@ -35,7 +36,9 @@ def start_all():
 
 
 def stop_all():
-    for x in must_services: stop(x)
+    _list = must_services.copy()
+    _list.reverse()
+    for x in _list: stop(x)
 
 
 def start(uri: str, debug=False):

@@ -8,15 +8,14 @@ if not BASE_DIR: BASE_DIR = "."
 
 sys.path.append(BASE_DIR)
 
-import pywind.lib.sys_build as sys_build
-
 __builds = [
-    "ixc_syscore",
     "ixc_syscore/router",
     "ixc_syscore/sysadm",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
     "ixc_syscore/tftp",
+    "ixc_syscore/proxy",
+    "ixc_syscore/init",
 ]
 
 __helper = """
@@ -55,12 +54,7 @@ def __read_build_config():
     return o
 
 
-def __build(args: list):
-    if len(args) < 1:
-        print("ERROR:please input build_name")
-        return
-
-    build_name = args[0]
+def __build(build_name, args: list):
     if build_name not in __builds:
         print("ERROR:not found build name %s" % build_name)
         return
@@ -116,15 +110,15 @@ def __build(args: list):
 
 
 def __build_all(args: list):
-    pass
+    for x in __builds: __build(x, args)
 
 
-def __install(args: list):
+def __install(name, args: list):
     pass
 
 
 def __install_all(args: list):
-    pass
+    for x in __builds: __install(x, args)
 
 
 def main():
@@ -142,7 +136,10 @@ def main():
         return
 
     if action == "build":
-        __build(sys.argv[2:])
+        if len(sys.argv) < 3:
+            print(__helper)
+            return
+        __build(sys.argv[2], sys.argv[3:])
         return
 
     if action == "build_all":
@@ -150,7 +147,10 @@ def main():
         return
 
     if action == "install":
-        __install(sys.argv[2:])
+        if len(sys.argv) < 3:
+            print(__helper)
+            return
+        __install(sys.argv[2], sys.argv[3:])
         return
 
     if action == "install_all":

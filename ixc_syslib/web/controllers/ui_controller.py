@@ -80,7 +80,7 @@ class controller(app_handler.handler):
             os.remove(fpath)
 
     def __init_session(self):
-        self.__session_timeout = 900
+        self.__session_timeout = 1200
         self.__session_dir = "/tmp/ixcsys_sessions"
         self.__users_session_info_file = "%s/users_session_info.json" % self.__session_dir
 

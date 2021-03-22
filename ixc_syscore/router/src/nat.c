@@ -11,6 +11,7 @@
 #include "debug.h"
 #include "route.h"
 #include "ipunfrag.h"
+#include "port_map.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -19,6 +20,38 @@ static int nat_is_initialized=0;
 struct ixc_nat nat;
 struct time_wheel nat_time_wheel;
 struct sysloop *nat_sysloop=NULL;
+
+
+/// 查找是否在端口映射记录中
+static struct ixc_port_map_record *ixc_nat_port_map_get(struct ixc_mbuf *m,int from_wan)
+{
+    struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
+    struct netutil_tcphdr *tcphdr=NULL;
+    struct netutil_udphdr *udphdr=NULL;
+    struct ixc_port_map_record *r=NULL;
+
+    unsigned short port;
+
+    int header_len=(header->ver_and_ihl & 0x0f)*4;
+    
+    switch(header->protocol){
+        case 6:
+            tcphdr=(struct netutil_tcphdr *)(m->data+m->offset+header_len);
+            port=from_wan?tcphdr->dst_port:tcphdr->src_port;
+            r=ixc_port_map_find(header->protocol,port);
+            break;
+        case 17:
+        case 136:
+            udphdr=(struct netutil_udphdr *)(m->data+m->offset+header_len);
+            port=from_wan?udphdr->dst_port:udphdr->src_port;
+            r=ixc_port_map_find(header->protocol,port);
+            break;
+        default:
+            break;
+    }
+
+    return r;
+}
 
 /// 对IP数据包进行分片并发送
 static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
@@ -139,14 +172,18 @@ static void ixc_nat_id_put(struct ixc_nat_id_set *id_set,struct ixc_nat_id *id)
 
 static void ixc_nat_del_cb(void *data)
 {
+    DBG_FLAGS;
     struct ixc_nat_session *s=data;
-    struct ixc_nat_id_set *id_set;
+    struct ixc_nat_id_set *id_set=NULL;
     struct time_data *tdata=s->tdata;
+
     s->refcnt-=1;
     
+    DBG_FLAGS;
     // 引用计数不为0那么直接返回
     if(s->refcnt!=0) return;
 
+    DBG_FLAGS;
     switch(s->protocol){
         case 1:
             id_set=&(nat.icmp_set);
@@ -165,8 +202,11 @@ static void ixc_nat_del_cb(void *data)
 
     IXC_PRINT_IP("nat session delete",s->addr);
     
-    ixc_nat_id_put(id_set,s->nat_id);
-    tdata->is_deleted=1;
+    if(NULL!=id_set){
+        ixc_nat_id_put(id_set,s->nat_id);
+    }
+    
+    if(NULL!=tdata) tdata->is_deleted=1;
     
     free(s);
 }
@@ -344,11 +384,17 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 }
 
 static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
-{   
-    m=ixc_nat_do(m,0);
-    if(NULL==m) return;
+{
+    struct ixc_port_map_record *port_map_record=ixc_nat_port_map_get(m,1);
+    struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
 
-    //ixc_qos_add(m);
+    // 首先检查端口映射记录是否存在,若存在那么就重写IP地址
+    if(NULL!=port_map_record){
+        rewrite_ip_addr(header,m->netif->ipaddr,0);
+    }else{
+        m=ixc_nat_do(m,0);
+        if(NULL==m) return;
+    }
     
     if(m->netif->mtu_v4>=m->tail-m->offset){
         ixc_qos_add(m);
@@ -360,9 +406,17 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
 
 static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
 {
-    m=ixc_nat_do(m,1);
-    if(NULL==m) return;
+    struct ixc_port_map_record *port_map_record=ixc_nat_port_map_get(m,1);
+    struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
 
+    // 如果在端口映射记录中那么就只重写源IP地址
+    if(NULL!=port_map_record){
+        rewrite_ip_addr(header,m->netif->ipaddr,1);
+    }else{
+        m=ixc_nat_do(m,1);
+        if(NULL==m) return;
+    }
+    
     ixc_addr_map_handle(m);
     
 }

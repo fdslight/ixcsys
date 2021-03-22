@@ -30,7 +30,10 @@ class controller(rpc.controller):
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
             "pppoe_set": self.pppoe_set,
             "router_config_get": self.router_config_get,
-            "qos_set_udp_udplite_first":self.qos_set_udp_udplite_first,
+            "qos_set_udp_udplite_first": self.qos_set_udp_udplite_first,
+            "port_map_add": self.port_map_add,
+            "port_map_del": self.port_map_del,
+            "port_map_configs_get": self.port_map_configs_get,
             "save": self.save
         }
 
@@ -180,3 +183,32 @@ class controller(rpc.controller):
         self.__runtime.save_lan_configs()
         self.__runtime.save_router_configs()
         return 0, None
+
+    def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
+        """端口映射添加
+        :param protocol:
+        :param port:
+        :param address:
+        :param alias_name:映射名
+        :return:
+        """
+        if protocol not in (6, 17, 136,):
+            return RPC.ERR_ARGS, "wrong protocol number value %s" % protocol
+        if not netutils.is_port_number(port):
+            return RPC.ERR_ARGS, "wrong port number value %s" % port
+
+        if not netutils.is_ipv4_address(address):
+            return RPC.ERR_ARGS, "wrong address value %s" % address
+
+        return 0, self.__runtime.port_map_add(protocol, port, address, alias_name)
+
+    def port_map_del(self, protocol: int, port: int):
+        if protocol not in (6, 17, 136,):
+            return RPC.ERR_ARGS, "wrong protocol number value %s" % protocol
+        if not netutils.is_port_number(port):
+            return RPC.ERR_ARGS, "wrong port number value %s" % port
+
+        return 0, self.__runtime.port_map_del(protocol, port)
+
+    def port_map_configs_get(self):
+        return 0, self.__runtime.port_map_configs

@@ -241,7 +241,7 @@ class service(dispatcher.dispatcher):
         host = b".".join(q.name[0:-1]).decode("iso-8859-1")
         match_rs = self.__matcher.match(host)
 
-        logging.print_info("DNS QUERY: %s" % host)
+        logging.print_info("DNS_QUERY: %s from %s" % (host, address[0]))
 
         if not match_rs:
             self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6)

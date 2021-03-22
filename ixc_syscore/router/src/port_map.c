@@ -41,12 +41,14 @@ int ixc_port_map_add(unsigned char *address,unsigned char protocol,unsigned shor
     char key[3];
     int rs;
     struct ixc_port_map_record *r=NULL;
+    
+    port=htons(port);
 
     key[0]=protocol;
     memcpy(&key[1],&port,2);
 
     r=malloc(sizeof(struct ixc_port_map_record));
-    if(NULL!=r){
+    if(NULL==r){
         STDERR("cannot malloc for struct ixc_port_map_record\r\n");
         return -1;
     }
@@ -61,7 +63,7 @@ int ixc_port_map_add(unsigned char *address,unsigned char protocol,unsigned shor
     }
 
     r->protocol=protocol;
-    r->port=htons(port);
+    r->port=port;
     memcpy(r->address,address,4);
 
     return 0;
@@ -72,6 +74,8 @@ void ixc_port_map_del(unsigned char protocol,unsigned short port)
 {
     char key[3],is_found;
     struct ixc_port_map_record *r=NULL;
+    
+    port=htons(port);
 
     key[0]=protocol;
     memcpy(&key[1],&port,2);

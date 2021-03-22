@@ -1,5 +1,0 @@
-[conf]
-;是否开启IPv6监听
-enable_ipv6 = 1
-;文件目录
-file_dir = /tmp

@@ -71,7 +71,6 @@ class service(dispatcher.dispatcher):
             logging.LEVEL_ALERT: {},
             logging.LEVEL_ERR: {}
         }
-
         self.create_poll()
         self.start_scgi()
         self.log_start()
@@ -113,10 +112,10 @@ class service(dispatcher.dispatcher):
                 sys.stderr.write(fmt_msg)
             return
         o = self.__logs[level]
-        if name not in o:
-            o[name] = []
-        z = o[name]
-        z.append(message)
+        #if name not in o:
+        #    o[name] = []
+        #z = o[name]
+        #z.append(message)
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))

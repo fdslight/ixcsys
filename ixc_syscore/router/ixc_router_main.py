@@ -80,6 +80,7 @@ class service(dispatcher.dispatcher):
     __lan_configs = None
     __wan_configs = None
     __router_configs = None
+    __port_map_configs = None
 
     __is_linux = None
     __scgi_fd = None
@@ -144,9 +145,29 @@ class service(dispatcher.dispatcher):
         path = "%s/router.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__router_configs = conf.ini_parse_from_file(path)
 
+    def load_port_map_configs(self):
+        path = "%s/port_map.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+        with open(path, "r") as f: s = f.read()
+        f.close()
+        self.__port_map_configs = json.loads(s)
+
     def save_router_configs(self):
         path = "%s/router.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         conf.save_to_ini(self.__router_configs, path)
+
+    def save_port_map_configs(self):
+        path = "%s/port_map.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+        with open(path, "w") as f: f.write(json.dumps(self.__port_map_configs))
+        f.close()
+
+    def reset_port_map(self):
+        for name in self.__port_map_configs:
+            protocol, port, address = self.__port_map_configs[name]
+            self.router.port_map_del(protocol, port)
+        self.load_port_map_configs()
+        for name in self.__port_map_configs:
+            protocol, port, address = self.__port_map_configs[name]
+            self.router.port_map_add(protocol, port, address)
 
     @property
     def router(self):
@@ -167,6 +188,10 @@ class service(dispatcher.dispatcher):
     @property
     def router_configs(self):
         return self.__router_configs
+
+    @property
+    def port_map_configs(self):
+        return self.__port_map_configs
 
     @property
     def debug(self):
@@ -383,6 +408,12 @@ class service(dispatcher.dispatcher):
         udp_udplite_first = bool(int(qos["udp_udplite_first"]))
         self.router.qos_udp_udplite_first_enable(udp_udplite_first)
 
+    def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
+        pass
+
+    def port_map_del(self, protocol: int, port: int):
+        pass
+
     def init_func(self, debug):
         self.__debug = debug
         self.__if_lan_fd = -1
@@ -406,6 +437,13 @@ class service(dispatcher.dispatcher):
         if not self.debug:
             sys.stdout = logging.stdout()
             sys.stderr = logging.stderr()
+
+            temp_dir = os.getenv("IXC_MYAPP_TMP_DIR")
+
+            stdout_path = "%s/stdout.log" % temp_dir
+            stderr_path = "%s/stderr.log" % temp_dir
+
+            self.router.clog_set(stdout_path, stderr_path)
 
         # 此处检查FreeBSD是否加载了if_tap.ko模块
         if not self.is_linux:

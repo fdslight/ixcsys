@@ -20,6 +20,7 @@
 #include "../src/ipunfrag.h"
 #include "../src/debug.h"
 #include "../src/ip6sec.h"
+#include "../src/port_map.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -137,6 +138,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_mbuf_init(512);
     if(rs<0){
         STDERR("cannot init mbuf\r\n");
+        return NULL;
+    }
+
+    rs=ixc_port_map_init();
+    if(rs<0){
+        STDERR("cannot init port_map\r\n");
         return NULL;
     }
 
@@ -705,6 +712,68 @@ router_pppoe_reset(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 端口映射添加
+static PyObject *
+router_port_map_add(PyObject *self,PyObject *args)
+{
+    unsigned short port;
+    unsigned char protocol;
+    const char *address;
+    unsigned char naddr[4];
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"BHs",&protocol,&port,&address)) return NULL;
+    inet_pton(AF_INET,address,naddr);
+
+    if(protocol!=6 && protocol!=17 && protocol!=136){
+        STDERR("unsupported protocol %d\r\n",protocol);
+        Py_RETURN_FALSE;
+    }
+
+    rs=ixc_port_map_add(naddr,protocol,port);
+    if(rs<0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+/// 端口映射删除
+static PyObject *
+router_port_map_del(PyObject *self,PyObject *args)
+{
+    unsigned short port;
+    unsigned char protocol;
+
+    if(!PyArg_ParseTuple(args,"BHs",&protocol,&port)) return NULL;
+
+    ixc_port_map_del(protocol,port);
+
+    Py_RETURN_TRUE;
+
+}
+
+/// C语言LOG设置
+static PyObject *
+router_clog_set(PyObject *self,PyObject *args)
+{
+    const char *stdout_path,*stderr_path;
+
+    if(!PyArg_ParseTuple(args,"ss",&stdout_path,&stderr_path)) return NULL;
+
+    if(freopen(stdout_path,"a+",stdout)==NULL){
+        STDERR("cannot set stdout\r\n");
+        return NULL;
+    }
+
+    if(freopen(stderr_path,"a+",stderr)==NULL){
+        STDERR("cannot set stderr\r\n");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -743,6 +812,11 @@ static PyMethodDef routerMethods[]={
     {"pppoe_set_ok",(PyCFunction)router_pppoe_set_ok,METH_VARARGS,"set pppoe ok or not ok"},
     {"pppoe_data_send",(PyCFunction)router_pppoe_data_send,METH_VARARGS,"send pppoe session data"},
     {"pppoe_reset",(PyCFunction)router_pppoe_reset,METH_VARARGS,"reset pppoe session"},
+    //
+    {"port_map_add",(PyCFunction)router_port_map_add,METH_VARARGS,"port map add"},
+    {"port_map_del",(PyCFunction)router_port_map_del,METH_VARARGS,"port map delete"},
+    //
+    {"clog_set",(PyCFunction)router_clog_set,METH_VARARGS,"set c language log path"},
     //
     {NULL,NULL,0,NULL}
 };

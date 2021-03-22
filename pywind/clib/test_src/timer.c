@@ -6,7 +6,7 @@
 #include "../debug.h"
 
  
-   struct time_wheel wheel;
+struct time_wheel wheel;
 static void timeout_fn(void *data)
 {
     struct time_data *x;
@@ -19,11 +19,10 @@ static void timeout_fn(void *data)
 int main(int argc,char *argv[])
 {
  
-    int rs=time_wheel_new(&wheel,60,10,timeout_fn,16);
+    int rs=time_wheel_new(&wheel,2,10,timeout_fn,16);
 
     struct time_data *tdata=time_wheel_add(&wheel,NULL,10);
 
-    
 
     printf("%d\r\n",rs);
     sleep(10);
@@ -32,6 +31,8 @@ int main(int argc,char *argv[])
     sleep(10);
     time_wheel_handle(&wheel);
 
+    sleep(10);
+    time_wheel_handle(&wheel);
 
     return 0;
 }

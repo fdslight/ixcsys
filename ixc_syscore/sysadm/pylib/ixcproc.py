@@ -55,7 +55,7 @@ def ixc_running_proc_get():
     results = []
     for proc in os_proc_list:
         cmd = proc["CMD"]
-        p = cmd.find("ixc_main.py")
+        p = cmd.find("ixcsys")
         if p < 0: continue
         results.append(proc)
 

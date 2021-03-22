@@ -22,6 +22,6 @@ int ixc_port_map_add(unsigned char *address,unsigned char protocol,unsigned shor
 /// 删除映射记录
 void ixc_port_map_del(unsigned char protocol,unsigned short port);
 /// 检查记录是否存在
-int ixc_port_map_add(unsigned char *address,unsigned char protocol,unsigned short port);
+struct ixc_port_map_record *ixc_port_map_find(unsigned char protocol,unsigned short port);
 
 #endif
