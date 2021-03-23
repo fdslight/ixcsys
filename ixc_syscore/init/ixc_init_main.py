@@ -104,6 +104,7 @@ class service(dispatcher.dispatcher):
             logging.LEVEL_ALERT: "ALERT",
             logging.LEVEL_ERR: "ERROR"
         }
+        self.__debug = True
         if self.debug:
             fmt_msg = "\r\n\r\napplication:%s\r\nlevel:%s\r\n%s" % (name, level_map[level], message,)
             if level == logging.LEVEL_ERR:
@@ -112,10 +113,10 @@ class service(dispatcher.dispatcher):
                 sys.stderr.write(fmt_msg)
             return
         o = self.__logs[level]
-        #if name not in o:
+        # if name not in o:
         #    o[name] = []
-        #z = o[name]
-        #z.append(message)
+        # z = o[name]
+        # z.append(message)
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))

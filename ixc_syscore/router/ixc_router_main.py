@@ -312,6 +312,7 @@ class service(dispatcher.dispatcher):
                                      True)
         self.router.route_ipv6_pass_enable(enable_ipv6_pass)
         self.router.ip6sec_enable(enable_ipv6_security)
+        self.router.src_filter_self_ip_set(manage_addr,False)
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)
@@ -409,10 +410,21 @@ class service(dispatcher.dispatcher):
         self.router.qos_udp_udplite_first_enable(udp_udplite_first)
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
-        pass
+        self.__port_map_configs[alias_name] = [protocol, port, address]
+        self.save_port_map_configs()
+        self.reset_port_map()
 
     def port_map_del(self, protocol: int, port: int):
-        pass
+        alias_name = None
+        for name in self.__port_map_configs:
+            p, _port, address = self.__port_map_configs[name]
+            if p == protocol and _port == port:
+                alias_name = name
+                break
+            ''''''
+        if alias_name: del self.__port_map_configs[alias_name]
+        self.save_port_map_configs()
+        self.reset_port_map()
 
     def init_func(self, debug):
         self.__debug = debug
@@ -466,6 +478,9 @@ class service(dispatcher.dispatcher):
 
         self.start_scgi()
         self.set_router()
+
+        self.load_port_map_configs()
+        self.reset_port_map()
 
     def myloop(self):
         if self.__pppoe_enable: self.__pppoe.loop()

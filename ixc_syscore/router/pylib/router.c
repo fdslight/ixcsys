@@ -763,7 +763,7 @@ router_port_map_del(PyObject *self,PyObject *args)
     unsigned short port;
     unsigned char protocol;
 
-    if(!PyArg_ParseTuple(args,"BHs",&protocol,&port)) return NULL;
+    if(!PyArg_ParseTuple(args,"BH",&protocol,&port)) return NULL;
 
     ixc_port_map_del(protocol,port);
 
