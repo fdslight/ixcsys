@@ -79,6 +79,8 @@ class service(dispatcher.dispatcher):
         self.__tftpd_fd6 = -1
         self.__sessions = {}
 
+        RPCClient.wait_processes(["router", "init", "sysadm"])
+
         self.create_poll()
         self.start_scgi()
         self.reset()
@@ -161,7 +163,6 @@ def main():
     else:
         debug = False
 
-    RPCClient.wait_processes(["router", "init", "sysadm"])
     __start_service(debug)
 
 

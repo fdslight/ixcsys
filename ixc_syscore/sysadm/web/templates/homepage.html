@@ -12,7 +12,7 @@ ${self.inherit("base.html")}
             <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             </div>
             <form class="form-inline">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="button">重启系统</button>
+                <button class="btn btn-outline-success my-2 my-sm-0" type="button" id="ixc-sys-restart">重启路由</button>
                 &nbsp;&nbsp;&nbsp;
                 <a class="btn btn-outline-success my-2 my-sm-0" href="${self.url_prefix}/signout">注销</a>
             </form>
@@ -45,9 +45,10 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-menu" id="ixc-ipv6">
                         <a href="${self.url_prefix}/?show=ixc-ipv6&page=ipv6">IPv6设置</a>
                     </li>
+                    <!--
                     <li class="list-group-item ixc-left-menu" id="ixc-ip-bind">
                         <a href="${self.url_prefix}/?show=ixc-ip-bind&page=ip-bind">IP地址绑定</a>
-                    </li>
+                    </li>-->
                     <li class="list-group-item ixc-left-menu" id="ixc-port-map">
                         <a href="${self.url_prefix}/?show=ixc-port-map&page=port-map">端口映射</a>
                     </li>
@@ -154,7 +155,8 @@ ${self.inherit("base.html")}
                         let is_error = result.is_error;
                         let message = result.message;
                         if (is_error) {
-                            err_ele.html(message)
+                            alert((message));
+                            //err_ele.html(message)
                         } else {
                             alert("${self.LA('update ok')}");
                         }
@@ -167,6 +169,15 @@ ${self.inherit("base.html")}
                 return false;
             });
 
+            // 重启路由器
+            $("#ixc-sys-restart").click(function () {
+                $.get("${self.url_prefix}/restart", {}, function (result) {
+                    let is_error = result["is_error"];
+                    let message = result["message"];
+
+                    alert(message);
+                });
+            });
             load_page();
         });
     </script>

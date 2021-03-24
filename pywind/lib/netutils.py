@@ -99,6 +99,8 @@ def parse_ip_with_prefix(ip):
     except ValueError:
         return None
 
+    if prefix < 0: return None
+
     return (addr, prefix,)
 
 

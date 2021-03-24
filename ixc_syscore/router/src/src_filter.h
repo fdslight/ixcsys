@@ -5,11 +5,9 @@
 #include "mbuf.h"
 
 struct ixc_src_filter{
-    unsigned char my_ip6[16];
     unsigned char ip6_subnet[16];
     unsigned char ip6_mask[16];
 
-    unsigned char my_ip[4];
     unsigned char ip_subnet[4];
     unsigned char ip_mask[4];
 
@@ -26,8 +24,8 @@ void ixc_src_filter_uninit(void);
 int ixc_src_filter_enable(int enable);
 int ixc_src_filter_set_ip(unsigned char *subnet,unsigned char prefix,int is_ipv6);
 
-/// 设置自身IP地址,如果是自身IP地址那么跳过
-int ixc_src_filter_set_self(unsigned char *address,int is_ipv6);
+/// 设置过滤协议
+int ixc_src_filter_set_protocols(unsigned char *protocols);
 
 void ixc_src_filter_handle(struct ixc_mbuf *m);
 

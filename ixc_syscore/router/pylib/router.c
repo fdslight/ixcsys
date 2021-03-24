@@ -21,6 +21,7 @@
 #include "../src/debug.h"
 #include "../src/ip6sec.h"
 #include "../src/port_map.h"
+#include "../src/global.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -132,6 +133,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=sysloop_init();
     if(rs<0){
         STDERR("cannot init sysloop\r\n");
+        return NULL;
+    }
+
+    rs=ixc_g_init();
+    if(rs<0){
+        STDERR("cannot init global\r\n");
         return NULL;
     }
 
@@ -539,9 +546,26 @@ router_src_filter_enable(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_src_filter_set_protocols(PyObject *self,PyObject *args)
+{
+    unsigned char *protocols;
+    Py_ssize_t size;
+
+    if(!PyArg_ParseTuple(args,"y#",&protocols,&size)) return NULL;
+    if(size!=0xff){
+        PyErr_SetString(PyExc_ValueError,"wrong protocol format length");
+        return NULL;
+    }
+
+    ixc_src_filter_set_protocols(protocols);
+
+    Py_RETURN_NONE;
+}
+
 /// 设置路由器自身IP地址
 static PyObject *
-router_src_filter_self_ip_set(PyObject *self,PyObject *args)
+router_g_manage_addr_set(PyObject *self,PyObject *args)
 {
     const char *s;
     int is_ipv6;
@@ -552,7 +576,7 @@ router_src_filter_self_ip_set(PyObject *self,PyObject *args)
     if(is_ipv6) inet_pton(AF_INET6,s,n_addr);
     else inet_pton(AF_INET,s,n_addr);
 
-    ixc_src_filter_set_self(n_addr,is_ipv6);
+    ixc_g_manage_addr_set(n_addr,is_ipv6);
 
     Py_RETURN_TRUE;
 }
@@ -816,7 +840,9 @@ static PyMethodDef routerMethods[]={
     //
     {"src_filter_set_ip",(PyCFunction)router_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"src_filter_enable",(PyCFunction)router_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
-    {"src_filter_self_ip_set",(PyCFunction)router_src_filter_self_ip_set,METH_VARARGS,"set router self address"},
+    {"src_filter_set_protocols",(PyCFunction)router_src_filter_set_protocols,METH_VARARGS,"set src filter protocol"},
+    //
+    {"g_manage_addr_set",(PyCFunction)router_g_manage_addr_set,METH_VARARGS,"set router self address"},
     //
     {"ip6sec_enable",(PyCFunction)router_ip6sec_enable,METH_VARARGS,"enable/disable IPv6 security"},
     //

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syslib.pylib.RPCClient as RPC
+import ixc_syslib.pylib.logging as logging
 
 
 class widget(ui_widget.widget):
@@ -15,6 +16,9 @@ class widget(ui_widget.widget):
 
         tunnel_over_https["enable_https_sni"] = bool(int(tunnel_over_https["enable_https_sni"]))
         tunnel_over_https["strict_https"] = bool(int(tunnel_over_https["strict_https"]))
+
+        src_filter = configs["src_filter"]
+        src_filter["enable"] = bool(int(src_filter["enable"]))
 
         return configs
 

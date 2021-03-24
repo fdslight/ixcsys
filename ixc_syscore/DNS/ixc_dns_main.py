@@ -21,6 +21,7 @@ import ixc_syslib.web.route as webroute
 
 import ixc_syscore.DNS.handlers.dns_proxyd as dns_proxyd
 import ixc_syscore.DNS.pylib.rule as rule
+import ixc_syscore.DNS.pylib.os_resolv as os_resolv
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -104,9 +105,12 @@ class service(dispatcher.dispatcher):
         self.__cur_dns_id = 1
         self.__forward_result = False
 
+        RPCClient.wait_processes(["init", "router", "sysadm"])
+
         self.create_poll()
         self.start_dns()
         self.start_scgi()
+        self.add_ns_os_resolv()
 
     def rule_forward_set(self, port: int):
         self.get_handler(self.__dns_client).set_forward_port(port)
@@ -311,6 +315,19 @@ class service(dispatcher.dispatcher):
 
         self.__up_time = time.time()
 
+    def add_ns_os_resolv(self):
+        """加入nameserver到操作系统resolv中
+        :return:
+        """
+        manage_addr = self.get_manage_addr()
+        cls = os_resolv.resolv()
+        # 如果存在那么不加入
+        if cls.exists(manage_addr): return
+
+        _list = cls.get_os_resolv()
+        _list.append(("nameserver", manage_addr))
+        cls.write_to_file(_list)
+
     def myloop(self):
         self.auto_clean()
 
@@ -335,7 +352,6 @@ def main():
     else:
         debug = False
 
-    RPCClient.wait_processes(["init", "router", "sysadm"])
     __start_service(debug)
 
 

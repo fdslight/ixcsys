@@ -31,7 +31,7 @@ class controller(rpc.controller):
         if cfg_type == "dns":
             return 0, {"rules": self.__runtime.proxy_domain_rule_raw_get}
 
-        if cfg_type == "conn":
+        if cfg_type in ("conn",):
             return 0, self.__runtime.configs
 
         if cfg_type == "pass-ip":

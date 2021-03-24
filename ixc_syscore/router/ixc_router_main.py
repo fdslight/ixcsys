@@ -146,27 +146,29 @@ class service(dispatcher.dispatcher):
         self.__router_configs = conf.ini_parse_from_file(path)
 
     def load_port_map_configs(self):
-        path = "%s/port_map.json" % os.getenv("IXC_MYAPP_CONF_DIR")
-        with open(path, "r") as f: s = f.read()
-        f.close()
-        self.__port_map_configs = json.loads(s)
+        path = "%s/port_map.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__port_map_configs = conf.ini_parse_from_file(path)
 
     def save_router_configs(self):
         path = "%s/router.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         conf.save_to_ini(self.__router_configs, path)
 
     def save_port_map_configs(self):
-        path = "%s/port_map.json" % os.getenv("IXC_MYAPP_CONF_DIR")
-        with open(path, "w") as f: f.write(json.dumps(self.__port_map_configs))
-        f.close()
+        path = "%s/port_map.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        conf.save_to_ini(self.__port_map_configs, path)
 
     def reset_port_map(self):
         for name in self.__port_map_configs:
-            protocol, port, address = self.__port_map_configs[name]
+            o = self.__port_map_configs[name]
+            protocol = int(o["protocol"])
+            port = int(o["port"])
             self.router.port_map_del(protocol, port)
         self.load_port_map_configs()
         for name in self.__port_map_configs:
-            protocol, port, address = self.__port_map_configs[name]
+            o = self.__port_map_configs[name]
+            protocol = int(o["protocol"])
+            port = int(o["port"])
+            address = o["address"]
             self.router.port_map_add(protocol, port, address)
 
     @property
@@ -312,7 +314,7 @@ class service(dispatcher.dispatcher):
                                      True)
         self.router.route_ipv6_pass_enable(enable_ipv6_pass)
         self.router.ip6sec_enable(enable_ipv6_security)
-        self.router.src_filter_self_ip_set(manage_addr,False)
+        self.router.g_manage_addr_set(manage_addr, False)
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)
@@ -410,14 +412,20 @@ class service(dispatcher.dispatcher):
         self.router.qos_udp_udplite_first_enable(udp_udplite_first)
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
-        self.__port_map_configs[alias_name] = [protocol, port, address]
+        self.__port_map_configs[alias_name] = {
+            "protocol": protocol,
+            "port": port,
+            "address": address
+        }
         self.save_port_map_configs()
         self.reset_port_map()
 
     def port_map_del(self, protocol: int, port: int):
         alias_name = None
         for name in self.__port_map_configs:
-            p, _port, address = self.__port_map_configs[name]
+            o = self.__port_map_configs[name]
+            p = int(o["protocol"])
+            _port = int(o["port"])
             if p == protocol and _port == port:
                 alias_name = name
                 break
@@ -443,6 +451,8 @@ class service(dispatcher.dispatcher):
         self.__is_linux = sys.platform.startswith("linux")
         self.__scgi_fd = -1
         self.__pfwd_fd = -1
+
+        RPC.wait_proc("init")
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
@@ -530,7 +540,6 @@ def main():
     else:
         debug = False
 
-    RPC.wait_proc("init")
     __start_service(debug)
 
 

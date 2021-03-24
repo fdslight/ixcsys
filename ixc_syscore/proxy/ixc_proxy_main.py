@@ -120,6 +120,8 @@ class service(dispatcher.dispatcher):
         self.__conn_fd = -1
         self.__enable = False
 
+        RPCClient.wait_processes(["router", "DNS", "sysadm", "init"])
+
         self.load_configs()
 
         self.create_poll()
@@ -133,6 +135,10 @@ class service(dispatcher.dispatcher):
         else:
             self.__enable = False
             if self.__conn_fd > 0: self.delete_handler(self.__conn_fd)
+            # 清除DNS规则
+            RPCClient.fn_call("DNS", "/rule", "clear")
+            # 关闭src filter
+            RPCClient.fn_call("router", "/config", "src_filter_enable", False)
             self.del_routes()
 
     def start(self, debug):
@@ -500,6 +506,18 @@ class service(dispatcher.dispatcher):
         self.__consts = consts
         self.__manage_addr = self.get_manage_addr()
 
+        # 此处设置源代理
+        src_filter = self.configs["src_filter"]
+        enable = bool(int(src_filter["enable"]))
+        ip, prefix = netutils.parse_ip_with_prefix(src_filter["ip_range"])
+        ip6, prefix6 = netutils.parse_ip_with_prefix(src_filter["ip6_range"])
+        protocol = src_filter["protocol"]
+
+        RPCClient.fn_call("router", "/config", "src_filter_enable", enable)
+        RPCClient.fn_call("router", "/config", "src_filter_set_ip", ip, prefix, is_ipv6=False)
+        RPCClient.fn_call("router", "/config", "src_filter_set_ip", ip6, prefix6, is_ipv6=True)
+        RPCClient.fn_call("router", "/config", "src_filter_set_protocols", protocol)
+
     def __open_tunnel(self):
         conn = self.__configs["connection"]
         host = conn["host"]
@@ -737,7 +755,7 @@ def main():
         sys.stderr = logging.stderr()
         sys.stdout = logging.stdout()
         debug = False
-    RPCClient.wait_processes(["router", "DNS", "sysadm", "init"])
+
     __start_service(debug)
 
 

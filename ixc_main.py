@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys
+import os, sys, signal, time, traceback
 
 sys_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -72,8 +72,74 @@ def stop(uri: str):
     os.system(stop_file)
 
 
-def loop():
-    pass
+import pywind.lib.proc as proc
+
+PID_PATH = "/tmp/ixcsys/ixcsys.pid"
+
+
+def start_main():
+    if os.path.isfile(PID_PATH):
+        print("the ixcsys process exists")
+        return
+
+    pid = os.fork()
+    if pid != 0: sys.exit(0)
+
+    os.setsid()
+    os.umask(0)
+    pid = os.fork()
+
+    if pid != 0: sys.exit(0)
+    proc.write_pid(PID_PATH, os.getpid())
+
+    cls = ixc_main_d()
+    try:
+        cls.loop()
+    except KeyboardInterrupt:
+        stop_all()
+    except:
+        err = traceback.format_exc()
+        sys.stderr.write("%s\r\n" % err)
+
+    os.remove(PID_PATH)
+    sys.exit(0)
+
+
+def stop_main():
+    pid = proc.get_pid(PID_PATH)
+
+    if pid < 0:
+        print("cannot found ixcsys process")
+        return
+
+    try:
+        os.kill(pid, signal.SIGINT)
+    except ProcessLookupError:
+        os.remove(PID_PATH)
+
+
+class ixc_main_d(object):
+    def __init__(self):
+        signal.signal(signal.SIGUSR1, self.sig_handle)
+        start_all()
+
+    def sig_handle(self, signum, frame):
+        if signum == signal.SIGUSR1:
+            self.restart()
+            return
+        stop_all()
+        sys.exit(0)
+
+    def restart(self):
+        """重启
+        :return:
+        """
+        stop_all()
+        time.sleep(30)
+        start_all()
+
+    def loop(self):
+        while 1: time.sleep(60)
 
 
 def main():
@@ -96,14 +162,18 @@ def main():
 
     if not uri:
         if action == "start":
-            start_all()
+            start_main()
         elif action == "stop":
-            stop_all()
+            stop_main()
+            # stop_all()
         elif action == "debug":
             print(__helper)
         else:
-            stop_all()
-            start_all()
+            pid = proc.get_pid(PID_PATH)
+            if pid < 0:
+                start_main()
+            else:
+                os.kill(pid, signal.SIGUSR1)
         return
 
     if action in ("start", "debug",):

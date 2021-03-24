@@ -1,4 +1,74 @@
 <div id="ixc-wake-on-lan-view" class="ixc-menu-content">
+    <div class="row">
+        <div class="col-sm-8"></div>
+        <div class="col-sm-2">
+            <input type="button" class="btn btn-info" value="临时唤醒" style="width: 100%;" data-toggle="modal"
+                   data-target="#ixc-wake-on-lan-wake-temp-modal"/>
+        </div>
+        <div class="col-sm-2">
+            <input type="button" class="btn btn-primary" value="添加" style="width: 100%;" data-toggle="modal"
+                   data-target="#ixc-wake-on-lan-modal"/>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ixc-wake-on-lan-wake-temp-modal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalCenterTitle">临时唤醒</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="ixc-wake-on-lan-wake-temp-form">
+                        <input type="hidden" value="wake" name="action"/>
+                        <div class="form-group">
+                            <label>硬件地址</label>
+                            <input type="text" class="form-control" name="hwaddr"/>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="ixc-wake-on-lan-wake-do">唤醒</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ixc-wake-on-lan-modal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalCenterTitle">局域网唤醒</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="ixc-wake-on-lan-form">
+                        <input type="hidden" value="add" name="action"/>
+                        <div class="form-group">
+                            <label>机器名</label>
+                            <input type="text" class="form-control"
+                                   placeholder="MAC地址别名" name="name">
+                        </div>
+                        <div class="form-group">
+                            <label>硬件地址</label>
+                            <input type="text" class="form-control" name="hwaddr"/>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="ixc-wake-on-lan-add">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <table class="table">
         <thead>
         <tr>
@@ -10,11 +80,87 @@
         </thead>
         <tbody>
             <%
-                count=1
-                for name in self.V:
-                    s="""<tr><td scope="row">%d</td><td>%s</td><td>%s</td></tr>""" % (count,name,self.V[name])
-                    self.show(s)
+            x=1
+            for name in self.V:
+                o=self.V[name]
+                s="""<tr>
+                <td>%s</td>
+                <td>%s</td>
+                <td>%s</td>
+                <td>
+                    <a href="#" name="ixc-wake-on-lan-wake-%s" class="ixc-wake-on-lan-wake">%s</a>
+                    <input type="hidden" value="action=wake&hwaddr=%s" id="ixc-wake-on-lan-wake-%s" />
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <a href="#" name="ixc-wake-on-lan-del-%s" class="ixc-wake-on-lan-del">%s</a>
+                    <input type="hidden" value="action=delete&name=%s" id="ixc-wake-on-lan-del-%s" />
+                </td>
+                </tr>
+                """ % (
+                x,name,o["hwaddr"],
+                x,"唤醒",o["hwaddr"],x,
+                x,"删除",name,x)
+                self.show(s)
+                x+=1
             %>
         </tbody>
     </table>
 </div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#ixc-wake-on-lan-add").click(function () {
+            let form_content = $("#ixc-wake-on-lan-form").serialize();
+            $.post("${self.url_prefix}/wake_on_lan", form_content, function (result) {
+                let is_error = result["is_error"];
+                let message = result["message"];
+
+                if (is_error) {
+                    alert(message);
+                } else {
+                    window.location.reload(true);
+                }
+            });
+        });
+
+        $(".ixc-wake-on-lan-del").click(function () {
+            let name = $(this).attr("name")
+            let arg = $("#" + name).val();
+
+            $.post("${self.url_prefix}/wake_on_lan", arg, function (result) {
+                let is_error = result["is_error"];
+                let message = result["message"];
+
+                if (is_error) {
+                    alert(message);
+                } else {
+                    window.location.reload(true);
+                }
+            });
+            return false;
+        });
+
+        $(".ixc-wake-on-lan-wake").click(function () {
+            let name = $(this).attr("name")
+            let arg = $("#" + name).val();
+
+            $.post("${self.url_prefix}/wake_on_lan", arg, function (result) {
+                let is_error = result["is_error"];
+                let message = result["message"];
+
+                alert(message);
+            });
+            return false;
+        });
+
+        $("#ixc-wake-on-lan-wake-do").click(function () {
+            let arg = $("#ixc-wake-on-lan-wake-temp-form").serialize();
+
+            $.post("${self.url_prefix}/wake_on_lan", arg, function (result) {
+                let is_error = result["is_error"];
+                let message = result["message"];
+
+                alert(message);
+            });
+            return false;
+        });
+    });
+</script>

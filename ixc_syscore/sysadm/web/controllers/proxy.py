@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import pywind.lib.netutils as netutils
+
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
 
 import ixc_syslib.pylib.RPCClient as RPC
@@ -55,6 +57,12 @@ class controller(base_controller.BaseController):
                 "enable_https_sni": None,
                 "https_sni_host": "www.example.com",
                 "strict_https": None
+            },
+            "src_filter": {
+                "enable": None,
+                "ip_range": None,
+                "ip6_range": None,
+                "protocol": None,
             }
         }
 
@@ -154,6 +162,47 @@ class controller(base_controller.BaseController):
 
         if kv_map["tunnel_over_https"]["url"][0] != "/":
             self.json_resp(True, "HTTPS隧道的url值格式错误")
+            return
+
+        if kv_map["src_filter"]["enable"]:
+            kv_map["src_filter"]["enable"] = "1"
+        else:
+            kv_map["src_filter"]["enable"] = "0"
+
+        if kv_map["src_filter"]["protocol"] not in ("TCP", "UDP", "UDPLite", "ALL",):
+            self.json_resp(True, "不支持的源端代理协议")
+            return
+
+        ip_range = kv_map["src_filter"]["ip_range"]
+        ip6_range = kv_map["src_filter"]["ip6_range"]
+
+        if not ip_range or not ip6_range:
+            self.json_resp(True, "空的源端代理IP地址或IPv6地址")
+            return
+
+        tmp = netutils.parse_ip_with_prefix(ip_range)
+        if not tmp:
+            self.json_resp(True, "错误的源端代理IP地址格式")
+            return
+
+        ip, prefix = tmp
+        if not netutils.is_ipv4_address(ip):
+            self.json_resp(True, "错误的源端代理IP地址格式")
+            return
+        if prefix > 32:
+            self.json_resp(True, "错误的源端代理IP地址格式")
+            return
+
+        tmp = netutils.parse_ip_with_prefix(ip6_range)
+        if not tmp:
+            self.json_resp(True, "错误的源端代理IPv6地址格式")
+            return
+        ip6, prefix = tmp
+        if not netutils.is_ipv6_address(ip6):
+            self.json_resp(True, "错误的源端代理IPv6地址格式")
+            return
+        if prefix > 128:
+            self.json_resp(True, "错误的源端代理IPv6地址格式")
             return
 
         RPC.fn_call("proxy", "/config", "conn_cfg_update", kv_map)

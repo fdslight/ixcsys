@@ -11,7 +11,7 @@ class controller(base_controller.BaseController):
         self.request.set_allow_methods(["POST"])
         return True
 
-    def handle(self):
+    def handle_add(self):
         name = self.request.get_argument("alias-name", is_seq=False, is_qs=False)
         port = self.request.get_argument("port", is_seq=False, is_qs=False)
         ip = self.request.get_argument("ip", is_seq=False, is_qs=False)
@@ -62,10 +62,47 @@ class controller(base_controller.BaseController):
         port = int(port)
 
         for name in port_map:
-            p, _port, address = port_map[name]
+            o = port_map[name]
+            p = int(o["protocol"])
+            _port = int(o["port"])
             if p == proto_number and port == _port:
                 self.finish_with_json({"is_error": True, "messsage": "映射已经存在,请删除后重试"})
                 return
             ''''''
         RPC.fn_call("router", "/config", "port_map_add", proto_number, port, ip, name)
         self.finish_with_json({"is_error": False, "message": "添加成功"})
+
+    def handle_delete(self):
+        port = self.request.get_argument("port", is_seq=False, is_qs=False)
+        protocol = self.request.get_argument("protocol", is_seq=False, is_qs=False)
+
+        if not port or not protocol:
+            self.finish_with_json({"is_error": True, "message": "错误的请求参数"})
+            return
+
+        if not netutils.is_port_number(port):
+            self.finish_with_json({"is_error": True, "messsage": "错误的端口值"})
+            return
+
+        if protocol not in ("TCP", "UDP", "UDPLite",):
+            self.finish_with_json({"is_error": True, "messsage": "不支持的协议"})
+            return
+
+        if protocol == "TCP":
+            proto_number = 6
+        elif protocol == "UDP":
+            proto_number = 17
+        else:
+            proto_number = 136
+        port = int(port)
+
+        RPC.fn_call("router", "/config", "port_map_del", proto_number, port)
+
+        self.finish_with_json({"is_error": False, "message": "删除成功"})
+
+    def handle(self):
+        action = self.request.get_argument("action", is_seq=False, is_qs=False)
+        if not action:
+            self.handle_add()
+        else:
+            self.handle_delete()

@@ -60,6 +60,17 @@
         </tr>
         </thead>
         <tbody>
+            <%
+            x=1
+            for name in self.V:
+                o=self.V[name]
+                s="""<tr><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href="#" class="ixc-port-map-del-do" name="%s">%s</a>
+                <input type="hidden" value="action=delete&protocol=%s&port=%s" id="ixc-port-map-del-%s" />
+                </td></tr>
+                """ % (x,name,o["protocol"],o["port"],o["address"],x,"删除",o["protocol"],o["port"],x)
+                self.show(s)
+                x+=1
+            %>
         </tbody>
     </table>
 </div>
@@ -74,9 +85,27 @@
                 if (is_error) {
                     alert(message);
                 } else {
-                    window.location.refresh();
+                    window.location.reload(true);
                 }
             });
-        })
+        });
+
+        $(".ixc-port-map-del-do").click(function () {
+            let seq = $(this).attr("name")
+            let arg = $("#ixc-port-map-del-" + seq).val();
+
+            $.post("${self.url_prefix}/port_map", arg, function (result) {
+                let is_error = result["is_error"];
+                let message = result["message"];
+
+                if (is_error) {
+                    alert(message);
+                } else {
+                    window.location.reload(true);
+                }
+            });
+
+            return false;
+        });
     });
 </script>

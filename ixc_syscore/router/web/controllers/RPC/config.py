@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import socket
+
 import ixc_syslib.web.controllers.rpc_controller as rpc
 
 from pywind.global_vars import global_vars
@@ -34,6 +36,9 @@ class controller(rpc.controller):
             "port_map_add": self.port_map_add,
             "port_map_del": self.port_map_del,
             "port_map_configs_get": self.port_map_configs_get,
+            "src_filter_set_ip": self.src_filter_set_ip,
+            "src_filter_enable": self.src_filter_enable,
+            "src_filter_set_protocols": self.src_filter_set_protocols,
             "save": self.save
         }
 
@@ -212,3 +217,27 @@ class controller(rpc.controller):
 
     def port_map_configs_get(self):
         return 0, self.__runtime.port_map_configs
+
+    def src_filter_set_ip(self, ip: str, prefix: int, is_ipv6=False):
+        if is_ipv6:
+            byte_addr = socket.inet_pton(socket.AF_INET6, ip)
+        else:
+            byte_addr = socket.inet_pton(socket.AF_INET, ip)
+
+        return 0, self.__runtime.router.src_filter_set_ip(byte_addr, prefix, is_ipv6);
+
+    def src_filter_enable(self, enable: bool):
+        return 0, self.__runtime.router.src_filter_enable(enable)
+
+    def src_filter_set_protocols(self, protocol: str):
+        seq = list(bytes(0xff))
+        if protocol == "UDP" or protocol == "ALL":
+            seq[17] = 1
+        if protocol == "TCP" or protocol == "ALL":
+            seq[6] = 1
+        if protocol == "UDPLite" or protocol == "ALL":
+            seq[136] = 1
+
+        byte_data = bytes(seq)
+
+        return 0, self.__runtime.router.src_filter_set_protocols(byte_data)

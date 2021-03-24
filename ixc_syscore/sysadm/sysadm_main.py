@@ -5,6 +5,8 @@ sys.path.append(os.getenv("IXC_SYS_DIR"))
 
 if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MYAPP_TMP_DIR"))
 
+from pywind.global_vars import global_vars
+
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as cfg
@@ -70,6 +72,10 @@ class service(dispatcher.dispatcher):
 
     __scgi_fd = None
 
+    # 是否需要重启
+    __is_restart = None
+    __up_time = None
+
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
 
@@ -110,6 +116,11 @@ class service(dispatcher.dispatcher):
         self.__httpd_cfg_path = "%s/httpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__scgi_fd = -1
+        self.__is_restart = False
+
+        global_vars["ixcsys.sysadm"] = self
+
+        RPCClient.wait_processes(["init", "router"])
 
         self.load_configs()
         self.create_poll()
@@ -134,11 +145,29 @@ class service(dispatcher.dispatcher):
         return ipaddr
 
     def myloop(self):
-        pass
+        if not self.__is_restart: return
+
+        # 这里需要等待一会儿重启,因为需要向浏览器响应信息
+        now = time.time()
+        if now - self.__up_time > 10:
+            self.do_restart()
 
     @property
     def debug(self):
         return self.__debug
+
+    def do_restart(self):
+        """执行路由器重启
+        :return:
+        """
+        # 向主进程发送信号进行重启
+        fpath = "/tmp/ixcsys/ixcsys.pid"
+        pid = proc.get_pid(fpath)
+        os.kill(pid, signal.SIGUSR1)
+
+    def restart(self):
+        self.__up_time = time.time()
+        self.__is_restart = True
 
     def release(self):
         if self.__scgi_fd:
@@ -180,7 +209,6 @@ def main():
     else:
         debug = False
 
-    RPCClient.wait_processes(["init","router"])
     __start_service(debug)
 
 

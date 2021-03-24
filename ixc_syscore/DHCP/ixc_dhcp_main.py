@@ -106,6 +106,8 @@ class service(dispatcher.dispatcher):
 
         # if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
+        RPCClient.wait_processes(["init", "router", "sysadm"])
+
         self.load_dhcp_server_configs()
 
         self.create_poll()
@@ -336,7 +338,6 @@ def main():
     else:
         debug = False
 
-    RPCClient.wait_processes(["init", "router", "sysadm"])
     __start_service(debug)
 
 

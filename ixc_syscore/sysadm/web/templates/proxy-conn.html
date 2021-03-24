@@ -152,6 +152,8 @@
         </div>
         <hr/>
         <h4>HTTPS隧道</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
         <div class="form-group row">
             <label class="col-sm-2 col-form-label">URL</label>
             <div class="col-sm-10">
@@ -209,6 +211,56 @@
                 </div>
             </div>
         </div>
+        <hr/>
+
+        <!-----源端代理--->
+        <h4>源端代理(可以使指定的局域网IP地址进行指定协议的全局代理)</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">IP地址范围</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" name="src_filter.ip_range"
+                       value="${self.V['src_filter']['ip_range']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">IPv6地址范围</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" name="src_filter.ip6_range"
+                       value="${self.V['src_filter']['ip6_range']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">协议选择</label>
+            <div class="col-sm-2">
+                <select class="form-control" name="src_filter.protocol" id="ixc-proxy-src-filter-protocol">
+                    <option value="TCP">TCP</option>
+                    <option value="UDP">UDP</option>
+                    <option value="UDPLite">UDPLite</option>
+                    <option value="ALL">ALL</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">源端代理开关</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <%
+                        if self.V['src_filter']['enable']:self.show("""<input class="form-check-input"
+                                                                            name="src_filter.enable"
+                                                                            type="checkbox" checked="checked">""")
+                        else:self.show("""<input class="form-check-input" name="src_filter.enable"
+                                     type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!----->
         <div class="form-group row">
             <div class="col-sm-12">
                 <button type="submit" class="btn btn-primary float-lg-right">确定</button>
@@ -243,9 +295,11 @@
     $(document).ready(function () {
         let tunnel_type = "${self.V['connection']['tunnel_type']}";
         let crypto_module = "${self.V['connection']['crypto_module']}";
+        let src_filter_protocol="${self.V['src_filter']['protocol']}";
 
         $("#ixc-proxy-tunnel-type").val(tunnel_type);
         $("#ixc-proxy-crypto-module").valueOf(crypto_module);
+        $("#ixc-proxy-src-filter-protocol").val(src_filter_protocol);
 
         $("#ixc-proxy-crypto-module-config").click(function () {
             let module_name = $("#ixc-proxy-crypto-module").val();

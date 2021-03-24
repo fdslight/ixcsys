@@ -4,6 +4,7 @@
 #include "qos.h"
 #include "netif.h"
 #include "router.h"
+#include "global.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
@@ -27,11 +28,11 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
     
     if(m->is_ipv6){
         size=16;
-        addr_ptr=src_filter.my_ip6;
+        addr_ptr=ixc_g_manage_addr_get(1);
         pkt_addr_ptr=ip6hdr->src_addr;
     }else{
         size=4;
-        addr_ptr=src_filter.my_ip;
+        addr_ptr=ixc_g_manage_addr_get(0);
         pkt_addr_ptr=iphdr->src_addr;
     }
 
@@ -105,11 +106,9 @@ int ixc_src_filter_set_ip(unsigned char *subnet,unsigned char prefix,int is_ipv6
     return 0;
 }
 
-int ixc_src_filter_set_self(unsigned char *address,int is_ipv6)
+int ixc_src_filter_set_protocols(unsigned char *protocols)
 {
-    if(is_ipv6) memcpy(src_filter.my_ip6,address,16);
-    else memcpy(src_filter.my_ip,address,4);
-
+    memcpy(src_filter.protocols,protocols,0xff);
     return 0;
 }
 

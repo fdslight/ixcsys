@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-import json
-import ixc_syscore.sysadm.web.controllers.controller as base_controller
 
-import ixc_syslib.pylib.RPCClient as RPC
+from pywind.global_vars import global_vars
+
+import pywind.lib.configfile as conf
+
+import ixc_syscore.sysadm.pylib.wol as wol
+import ixc_syscore.sysadm.web.controllers.controller as base_controller
 
 
 class controller(base_controller.BaseController):
@@ -17,59 +20,78 @@ class controller(base_controller.BaseController):
         """获取信息
         :return:
         """
-        fpath = "%s/wake_on_lan.json" % self.my_config_dir
-        with open(fpath, "r") as f: s = f.read()
-        f.close()
-
-        return json.loads(s)
+        fpath = "%s/wake_on_lan.ini" % self.my_config_dir
+        return conf.ini_parse_from_file(fpath)
 
     def save(self, dic: dict):
-        fpath = "%s/wake_on_lan.json" % self.my_config_dir
-        with open(fpath, "w") as f: f.write(json.dumps(dic))
-        f.close()
+        fpath = "%s/wake_on_lan.ini" % self.my_config_dir
+        conf.save_to_ini(dic, fpath)
 
-    def add(self, alias_name: str, hwaddr: str):
+    def add(self):
         """增加硬件地址
         :param alias_name:
         :param hwaddr:
         :return:
         """
+        hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
+        name = self.request.get_argument("name", is_seq=False, is_qs=False)
+
         info = self.get_info()
 
-        if alias_name in info: return
+        if name in info:
+            self.finish_with_json({"is_error": True, "message": "机器名已经存在"})
+            return
 
-        info[alias_name] = hwaddr
+        info[name] = {"hwaddr": hwaddr}
         self.save(info)
+        self.finish_with_json({"is_error": False, "message": "添加成功"})
 
-    def delete(self, alias_name: str):
-        """
-        :param alias_name:
-        :return:
-        """
+    def delete(self):
+        name = self.request.get_argument("name", is_seq=False, is_qs=False)
+        if not name:
+            self.finish_with_json({"is_error": True, "message": "空的机器名"})
+            return
+
         info = self.get_info()
-        if alias_name not in info: return
-        del info[alias_name]
-        self.save(info)
+        if name not in info:
+            self.finish_with_json({"is_error": True, "message": "未找到机器名"})
+            return
 
-    def wake(self, hwaddr: str):
+        del info[name]
+        self.save(info)
+        self.finish_with_json({"is_error": False, "message": "删除成功"})
+
+    def wake(self):
         """唤醒机器
         :param hwaddr:
         :return:
         """
-        pass
+        hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
+        if not hwaddr:
+            self.finish_with_json({"is_error": True, "message": "空的机器硬件地址"})
+            return
+
+        g = global_vars["ixcsys.sysadm"]
+
+        manage_addr = g.get_manage_addr()
+        w = wol.wake_on_lan(bind_ip=manage_addr)
+        w.wake(hwaddr)
+
+        self.finish_with_json({"is_error": False, "message": "唤醒成功"})
 
     def handle(self):
-        action = self.request.get_argument("action", is_seq=False, is_qs=True)
-        hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
-        alias_name = self.request.get_argument("alias_name", is_seq=False, is_qs=False)
+        action = self.request.get_argument("action", is_seq=False, is_qs=False)
 
-        if action not in ("add", "delete", "wake"):
-            self.json_resp(True, "错误的请求动作")
+        if action not in ("add", "delete", "wake",):
+            self.finish_with_json({"is_error": True, "message": "错误的请求动作"})
             return
 
-        if action == "wake":
-            self.wake(hwaddr)
+        if action == "add":
+            self.add()
             return
-            # 此处检查硬件地址是否合法
 
-        self.json_resp(False, {})
+        if action == "delete":
+            self.delete()
+            return
+
+        self.wake()
