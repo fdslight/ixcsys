@@ -8,7 +8,6 @@ sys_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(sys_dir)
 
 import pywind.lib.configfile as cfg
-import pywind.lib.netutils as netutils
 
 helper = """if wan | lan  hwaddr your_hardware_addresss
 if wan | lan  dev your_network_card_name
