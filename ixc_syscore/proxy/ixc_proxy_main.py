@@ -638,7 +638,10 @@ class service(dispatcher.dispatcher):
             return
 
         # 调用RPC加入路由
-        RPCClient.fn_call("router", "/runtime", "add_route", host, prefix, "0.0.0.0", is_ipv6=is_ipv6)
+        if is_ipv6:
+            RPCClient.fn_call("router", "/runtime", "add_route", host, prefix, "::", is_ipv6=is_ipv6)
+        else:
+            RPCClient.fn_call("router", "/runtime", "add_route", host, prefix, "0.0.0.0", is_ipv6=is_ipv6)
 
         if not is_dynamic:
             name = "%s/%s" % (host, prefix,)

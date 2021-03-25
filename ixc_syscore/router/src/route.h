@@ -12,6 +12,7 @@ struct ixc_route_prefix{
     // 该前缀被引用的次数
     unsigned long long refcnt;
     unsigned char mask[16];
+    unsigned char pad[3];
     unsigned char prefix;
 };
 
@@ -22,6 +23,7 @@ struct ixc_route_info{
     // 指向的网关
     unsigned char gw[16];
     int is_ipv6;
+    unsigned char pad[3];
     unsigned char prefix;
 };
 

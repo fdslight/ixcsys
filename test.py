@@ -2,16 +2,5 @@
 
 import ixc_syslib.pylib.RPCClient as RPC
 
-protocol = "ALL"
-
-seq = list(bytes(0xff))
-if protocol == "UDP" or protocol == "ALL":
-    seq[17] = 1
-if protocol == "TCP" or protocol == "ALL":
-    seq[6] = 1
-if protocol == "UDPLite" or protocol == "ALL":
-    seq[136] = 1
-
-byte_data = bytes(seq)
-
-print(len(byte_data))
+rs=RPC.fn_call("router", "/runtime", "add_route", "2607:f8b0:4007:800::2004", 128, "::", is_ipv6=True)
+print(rs)

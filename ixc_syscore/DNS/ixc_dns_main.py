@@ -325,7 +325,7 @@ class service(dispatcher.dispatcher):
         if cls.exists(manage_addr): return
 
         _list = cls.get_os_resolv()
-        _list.append(("nameserver", manage_addr))
+        _list.insert(0,("nameserver",manage_addr))
         cls.write_to_file(_list)
 
     def myloop(self):

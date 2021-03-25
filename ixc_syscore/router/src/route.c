@@ -56,11 +56,12 @@ static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
     t->next=NULL;
     t->refcnt=1;
     t->prefix=prefix;
-    
+
     msk_calc(prefix,is_ipv6,t->mask);
     
     if(NULL==*head){
         *head=t;
+        //DBG("add prefix %d\r\n",(*head)->prefix);
         return 0;
     }
 
@@ -250,9 +251,16 @@ int ixc_route_add(unsigned char *subnet,unsigned char prefix,unsigned char *gw,i
     r->is_ipv6=is_ipv6;
     r->netif=netif;
 
+    /**
     if(NULL==netif){
-        DBG("route forward to application\r\n");
-    }
+        if(is_ipv6){
+            IXC_PRINT_IP6("route forward to application for subnet ",r->subnet);
+            IXC_PRINT_IP6("route forward to application for key ",key);
+            DBG("IPv6 route forward to application prefix %d\r\n",prefix);
+        }else{
+            IXC_PRINT_IP("route forward to application for subnet ",r->subnet);
+        }
+    }**/
 
     if(NULL!=gw){
         if(is_ipv6) memcpy(r->gw,gw,16);
@@ -296,6 +304,14 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
         subnet_calc_with_msk(ip,p->mask,is_ipv6,(unsigned char *)key);
         key[idx]=p->prefix;
         r=map_find(m,key,&is_found);
+
+        /**
+        if(is_ipv6){
+            IXC_PRINT_IP6("route mask ",p->mask);
+            IXC_PRINT_IP6("route find ",ip);
+            IXC_PRINT_IP6("route find key ",key);
+        }**/
+
         if(r) break;
         p=p->next;
     }
@@ -398,11 +414,11 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
         ixc_mbuf_put(m);
         return;
     }
-
     //DBG_FLAGS;
     if(NULL!=r){
         // 如果没有网卡,那么发送到其他应用
         if(NULL==r->netif){
+            IXC_PRINT_IP6(" ",header->dst_addr);
             ixc_router_send(netif->type,header->next_header,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
             // 这里丢弃数据包,避免内存泄漏
             ixc_mbuf_put(m);

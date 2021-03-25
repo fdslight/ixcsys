@@ -151,7 +151,7 @@ def main():
         return
     set_pub_env()
     action = sys.argv[1]
-    if action not in ("start", "stop", "debug", "restart",):
+    if action not in ("start", "stop", "debug", "restart", "force_stop"):
         print(__helper)
         return
 
@@ -159,6 +159,10 @@ def main():
         uri = sys.argv[2]
     else:
         uri = ""
+
+    if action == "force_stop":
+        stop_all()
+        return
 
     if not uri:
         if action == "start":
