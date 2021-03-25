@@ -10,6 +10,6 @@ A software router for Linux
 # how to run ixcsys?
 1.first you must tell ixcsys your computer physical network card by run "python3 ixc_cfg.py"    
 2.secondly run command "python3 ixc_main.py start" as root user   
-3.last you can open "http://192.168.11.254" manage router by your browser
+3.last you can open "http://192.168.11.254" manage router by your browser  
 4.the ixcsys default user is "admin" and password is "admin"
 
