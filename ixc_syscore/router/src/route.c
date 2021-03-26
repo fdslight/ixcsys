@@ -410,6 +410,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     r=ixc_route_match(header->dst_addr,1);
     // 未开启IPv6并且未开启IPv6直通那么丢弃数据包
     if(NULL==r && !route.ipv6_pass){
+        IXC_PRINT_IP6("Not found route ",header->dst_addr);
         //DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
@@ -418,7 +419,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     if(NULL!=r){
         // 如果没有网卡,那么发送到其他应用
         if(NULL==r->netif){
-            IXC_PRINT_IP6(" ",header->dst_addr);
+            IXC_PRINT_IP6("Send to app for ipv6 address ",header->dst_addr);
             ixc_router_send(netif->type,header->next_header,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
             // 这里丢弃数据包,避免内存泄漏
             ixc_mbuf_put(m);

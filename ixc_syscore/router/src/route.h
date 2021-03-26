@@ -12,7 +12,7 @@ struct ixc_route_prefix{
     // 该前缀被引用的次数
     unsigned long long refcnt;
     unsigned char mask[16];
-    unsigned char pad[3];
+    unsigned char pad[7];
     unsigned char prefix;
 };
 
