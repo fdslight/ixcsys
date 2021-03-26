@@ -449,7 +449,7 @@ class service(dispatcher.dispatcher):
                     self.set_route(ip, prefix=32)
                     continue
                 if netutils.is_ipv6_address(ip):
-                    self.set_route(ip, prefix=128)
+                    self.set_route(ip, prefix=128, is_ipv6=True)
                     continue
                 ''''''
             ''''''
