@@ -44,7 +44,7 @@ static int ixc_vsw_add_to_vstable(unsigned char *hwaddr,int flags)
 
     tdata=time_wheel_add(&vsw_time_wheel,r,10);
     if(NULL==tdata){
-        fre(r);
+        free(r);
         STDERR("cannot add to time wheel\r\n");
         return -1;
     }
