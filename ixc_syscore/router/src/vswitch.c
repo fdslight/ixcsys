@@ -31,6 +31,35 @@ static void ixc_vsw_del_cb(void *data)
     struct ixc_vsw_record *r=data;
 }
 
+/// 加入到虚拟交换表
+static int ixc_vsw_add_to_vstable(unsigned char *hwaddr,int flags)
+{
+    struct ixc_vsw_record *r=malloc(sizeof(struct ixc_vsw_record));
+    struct time_data *tdata;
+
+    if(NULL==r){
+        STDERR("cannot malloc for struct ixc_vsw_record\r\n");
+        return -1;
+    }
+
+    tdata=time_wheel_add(&vsw_time_wheel,r,10);
+    if(NULL==tdata){
+        fre(r);
+        STDERR("cannot add to time wheel\r\n");
+        return -1;
+    }
+
+    bzero(r,sizeof(struct ixc_vsw_record));
+
+    r->up_time=time(NULL);
+    r->tdata=tdata;
+    r->flags=flags;
+
+    memcpy(r->hwaddr,hwaddr,6);
+
+    return 0;
+}
+
 int ixc_vsw_init(void)
 {
     int rs;
