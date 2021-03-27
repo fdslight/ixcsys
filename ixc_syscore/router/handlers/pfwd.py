@@ -21,7 +21,7 @@ class pfwd(udp_handler.udp_handler):
             router.IXC_FLAG_DHCP_CLIENT: None,
             router.IXC_FLAG_DHCP_SERVER: None,
             router.IXC_FLAG_ARP: None,
-            router.IXC_FLAG_L2VPN: None,
+            router.IXC_FLAG_VSWITCH: None,
             router.IXC_FLAG_SRC_FILTER: None,
             router.IXC_FLAG_ROUTE_FWD: None,
         }
@@ -74,7 +74,6 @@ class pfwd(udp_handler.udp_handler):
         if flags == router.IXC_FLAG_ARP:
             _list = [
                 router.IXC_FLAG_ARP,
-                router.IXC_FLAG_L2VPN,
                 router.IXC_FLAG_DHCP_SERVER,
                 router.IXC_FLAG_DHCP_CLIENT,
             ]

@@ -7,8 +7,8 @@
 #define IXC_FLAG_DHCP_CLIENT 1
 /// 表示是一个DHCP SERVER数据包
 #define IXC_FLAG_DHCP_SERVER 2
-/// 表示一个L2VPN的数据包
-#define IXC_FLAG_L2VPN 3
+/// 表示一个VSWITCH数据包
+#define IXC_FLAG_VSWITCH 3
 /// 表示一个Source filter数据包
 #define IXC_FLAG_SRC_FILTER 4
 /// 表示是一个带链路层头部的路由转发包

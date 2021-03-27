@@ -2,6 +2,8 @@
 #ifndef IXC_VSWITCH_H
 #define IXC_VSWITCH_H
 
+#include<sys/types.h>
+
 #include "mbuf.h"
 
 #include "../../../pywind/clib/map.h"
@@ -12,6 +14,7 @@
 
 struct ixc_vsw_record{
     struct time_data *tdata;
+    time_t up_time;
     unsigned char hwaddr[6];
     unsigned char pad;
 

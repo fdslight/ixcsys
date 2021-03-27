@@ -4,6 +4,7 @@
 #include "vswitch.h"
 #include "debug.h"
 #include "ether.h"
+#include "router.h"
 
 #include "../../../pywind/clib/timer.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -89,14 +90,23 @@ int ixc_vsw_is_enabled(void)
 /// 处理MAC映射表存在的情况
 static struct ixc_mbuf *ixc_vsw_handle_exists(struct ixc_mbuf *m,struct ixc_ether_header *header,struct ixc_vsw_record *r)
 {
+    r->up_time=time(NULL);
+    // 如果是本地数据包那么直接返回
+    if(IXC_VSW_FLG_LOCAL==r->flags) return m;
+    
+    ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
+    ixc_mbuf_put(m);
+
     return NULL;
 }
 
 /// 处理MAC映射表不存在的情况
 static struct ixc_mbuf *ixc_vsw_handle_no_exists(struct ixc_mbuf *m,struct ixc_ether_header *header)
 {
+    // 首先转发一遍数据包到应用空间
+    ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
     
-    return NULL;
+    return m;
 }
 
 struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
@@ -105,6 +115,8 @@ struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
     struct ixc_mbuf *result;
     struct ixc_ether_header *eth_header=(struct ixc_ether_header *)(m->data+m->offset);
     char is_found;
+
+    if(!vsw_table.enable) return m;
 
     r=map_find(vsw_table.m,(char *)(eth_header->dst_hwaddr),&is_found);
     

@@ -907,7 +907,7 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_ARP);
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_CLIENT);
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_SERVER);
-    PyModule_AddIntMacro(m,IXC_FLAG_L2VPN);
+    PyModule_AddIntMacro(m,IXC_FLAG_VSWITCH);
     PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
 
