@@ -22,6 +22,7 @@
 #include "../src/ip6sec.h"
 #include "../src/port_map.h"
 #include "../src/global.h"
+#include "../src/vswitch.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -139,6 +140,12 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     rs=ixc_g_init();
     if(rs<0){
         STDERR("cannot init global\r\n");
+        return NULL;
+    }
+
+    rs=ixc_vsw_init();
+    if(rs<0){
+        STDERR("cannot init vswitch\r\n");
         return NULL;
     }
 

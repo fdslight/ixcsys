@@ -86,9 +86,6 @@ class service(dispatcher.dispatcher):
     # 是否重定向DNS结果
     __forward_result = None
 
-    # 是否抛弃v6 DNS
-    __drop_v6_dns = None
-
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
 
@@ -107,7 +104,6 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = -1
         self.__cur_dns_id = 1
         self.__forward_result = False
-        self.__drop_v6_dns = False
 
         RPCClient.wait_processes(["init", "router", "sysadm"])
 
@@ -137,7 +133,6 @@ class service(dispatcher.dispatcher):
         # 此处检查IPv6方式,如果是静态下发那么丢弃DNS AAAA请求
         lan_configs = RPCClient.fn_call("router", "/config", "lan_config_get")
         if_cfg = lan_configs["if_config"]
-        self.__drop_v6_dns = bool(int(if_cfg["enable_static_ipv6"]))
 
     def start_scgi(self):
         scgi_configs = {

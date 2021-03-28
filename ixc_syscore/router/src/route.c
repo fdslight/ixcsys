@@ -433,8 +433,8 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
             ixc_mbuf_put(m);
             return;
         }
-        // 直通数据包
-        ixc_route_ipv6_pass_do(m);
+        
+        if(route.ipv6_pass) ixc_route_ipv6_pass_do(m);
         return;
     }
 
