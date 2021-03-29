@@ -12,10 +12,8 @@ include_dirs = [
 
 ]
 
-debug = False
 
-
-def gen_build_config():
+def gen_build_config(debug):
     build_config = {"debug": debug,
                     "c_includes": include_dirs,
                     "libs": [],
@@ -36,23 +34,29 @@ def gen_build_config():
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "", ["python3_include=", "debug", "help"])
+        opts, args = getopt.getopt(sys.argv[1:], "", ["python3_include=", "with_debug", "help"])
     except getopt.GetoptError:
         print(__helper)
         return
+
+    if len(sys.argv) < 2:
+        print(__helper)
+        return
+
+    debug = False
 
     for name, value in opts:
         if name == "--python3_include":
             include_dirs.append(value)
             continue
-        if name == "--debug":
+        if name == "--with_debug":
             debug = True
             continue
         if name == "--help":
             print(__helper)
             return
 
-    gen_build_config()
+    gen_build_config(debug)
 
 
 if __name__ == '__main__': main()

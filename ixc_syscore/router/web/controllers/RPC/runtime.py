@@ -27,6 +27,7 @@ class controller(rpc.controller):
             "del_route": self.del_route,
             "set_wan_ipaddr": self.set_wan_ipaddr,
             "wan_ready_ok": self.wan_ready_ok,
+            "vsw_enable": self.vsw_enable
         }
 
     def get_all_consts(self):
@@ -196,3 +197,10 @@ class controller(rpc.controller):
 
     def wan_ready_ok(self):
         return 0, self.router.wan_ready_ok()
+
+    def vsw_enable(self, enable: bool):
+        """开启或者关闭虚拟交换
+        :param enable:
+        :return:
+        """
+        return 0, self.router.vsw_enable(enable)

@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "ether.h"
 #include "router.h"
+#include "ether.h"
 
 #include "../../../pywind/clib/timer.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -170,10 +171,19 @@ struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
     struct ixc_vsw_record *r;
     struct ixc_mbuf *result;
     struct ixc_ether_header *eth_header=(struct ixc_ether_header *)(m->data+m->offset);
+    unsigned char brd[]={
+        0xff,0xff,0xff,0xff,0xff,0xff
+    };
     char is_found;
     int rs;
 
     if(!vsw_table.enable) return m;
+
+    // 广播地址向VSWITCH发送一遍
+    if(!memcmp(eth_header->dst_hwaddr,brd,6)){
+        ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
+        return m;
+    }
 
     r=map_find(vsw_table.m,(char *)(eth_header->src_hwaddr),&is_found);
     
@@ -196,7 +206,61 @@ struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
 
 int ixc_vsw_send(void *data,size_t size)
 {
-    if(size<14) return -1;
+    struct ixc_ether_header *eth_header=(struct ixc_ether_header *)data;
+    struct ixc_mbuf *m;
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
+    struct ixc_vsw_record *r;
+    char is_found;
+    int rs;
+
+    unsigned char brd[]={
+        0xff,0xff,0xff,0xff,0xff,0xff
+    };
+
+    if(!vsw_table.enable){
+        STDERR("no enable vswitch\r\n");
+        return -1;
+    }
+
+    if(size<22) return -1;
+    // 检查MAC地址是否合法,源地址和目标地址一致那么就丢弃数据包
+    if(!memcmp(eth_header->src_hwaddr,eth_header->dst_hwaddr,6)) return -1;
+    
+    m=ixc_mbuf_get();
+    if(NULL==m){
+        STDERR("cannot get mbuf\r\n");
+        return -1;
+    }
+
+    m->begin=IXC_MBUF_BEGIN;
+    m->offset=IXC_MBUF_BEGIN;
+    m->tail=IXC_MBUF_BEGIN+size;
+    m->end=IXC_MBUF_BEGIN+size;
+    m->netif=netif;
+
+    memcpy(m->data+m->offset,data,size);
+
+    if(!memcmp(eth_header->dst_hwaddr,brd,6)){
+        ixc_ether_send2(m);
+        return 0;
+    }
+
+    r=map_find(vsw_table.m,(char *)(eth_header->src_hwaddr),&is_found);
+
+    // 记录存在那么直接发送
+    if(NULL!=r){
+        r->up_time=time(NULL);
+        ixc_ether_send2(m);
+        return 0;
+    }
+
+    rs=ixc_vsw_table_add(eth_header->src_hwaddr,IXC_VSW_FLG_FWD);
+    if(rs<0){
+        STDERR("cannot add to vswitch table\r\n");
+        ixc_mbuf_put(m);
+        return -1;
+    }
+    ixc_ether_send2(m);
 
     return 0;
 }
