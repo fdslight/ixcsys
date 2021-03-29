@@ -120,8 +120,14 @@ class service(dispatcher.dispatcher):
         self.__conn_fd = -1
         self.__enable = False
 
-        RPCClient.wait_processes(["router", "DNS", "sysadm", "init"])
+        RPCClient.wait_processes(["router", "DNS", "DHCP"])
 
+        while 1:
+            if not RPCClient.fn_call("router", "/runtime", "wan_ready_ok"):
+                time.sleep(10)
+            else:
+                break
+            ''''''
         self.load_configs()
 
         self.create_poll()

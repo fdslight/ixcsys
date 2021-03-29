@@ -22,9 +22,11 @@ class controller(rpc.controller):
         self.fobjs = {
             "get_all_consts": self.get_all_consts,
             "get_wan_ipaddr_info": self.get_wan_ipaddr_info,
+            "get_lan_ipaddr_info": self.get_lan_ipaddr_info,
             "add_route": self.add_route,
             "del_route": self.del_route,
-            "set_wan_ipaddr": self.set_wan_ipaddr
+            "set_wan_ipaddr": self.set_wan_ipaddr,
+            "wan_ready_ok": self.wan_ready_ok,
         }
 
     def get_all_consts(self):
@@ -65,7 +67,10 @@ class controller(rpc.controller):
         return r
 
     def get_wan_ipaddr_info(self, is_ipv6=False):
-        pass
+        return 0, self.router.netif_get_ip(router.IXC_NETIF_WAN, is_ipv6)
+
+    def get_lan_ipaddr_info(self, is_ipv6=False):
+        return 0, self.router.netif_get_ip(router.IXC_NETIF_LAN, is_ipv6)
 
     def check_ipaddr_args(self, ipaddr: str, prefix: int, is_ipv6=False):
         if is_ipv6 and not netutils.is_ipv6_address(ipaddr):
@@ -188,3 +193,6 @@ class controller(rpc.controller):
         is_enabled = self.router.pppoe_is_enabled()
 
         return 0, is_enabled
+
+    def wan_ready_ok(self):
+        return 0, self.router.wan_ready_ok()

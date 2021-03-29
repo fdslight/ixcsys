@@ -106,7 +106,7 @@ class service(dispatcher.dispatcher):
 
         # if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-        RPCClient.wait_processes(["init", "router", "sysadm"])
+        RPCClient.wait_processes(["router", "DNS"])
 
         self.load_dhcp_server_configs()
 
@@ -276,6 +276,9 @@ class service(dispatcher.dispatcher):
         if not ok: logging.print_error(msg)
 
         return ok
+
+    def set_nameservers(self, ns1: str, ns2: str, is_ipv6=False):
+        rs = RPCClient.fn_call("DNS", "/config", "set_nameservers", ns1, ns2, is_ipv6=is_ipv6)
 
     def set_default_route(self, gw: str, is_ipv6=False):
         if is_ipv6:

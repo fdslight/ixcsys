@@ -14,6 +14,11 @@ class proxy_client(udp_handler.udp_handler):
 
     def init_func(self, creator_fd, ns1: str, ns2: str, is_ipv6=False):
         self.__is_ipv6 = is_ipv6
+
+        # 避免类型错误报错
+        if not ns1: ns1 = ""
+        if not ns2: ns2 = ""
+
         self.__ns1 = ns1
         self.__ns2 = ns2
         self.__forward_port = -1
@@ -78,6 +83,9 @@ class proxy_client(udp_handler.udp_handler):
         return [self.__ns1, self.__ns2]
 
     def set_nameservers(self, ns1: str, ns2: str):
+        if not ns1: ns1 = ""
+        if not ns2: ns2 = ""
+
         self.__ns1 = ns1
         self.__ns2 = ns2
 

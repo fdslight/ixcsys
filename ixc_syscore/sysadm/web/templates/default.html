@@ -1,5 +1,42 @@
 <div class="ixc-menu-content">
-    <div class="col-6" style="margin: auto;">
-        <h4 style="text-align: center;">系统运行信息</h4>
+    <div class="ixc-empty"></div>
+    <div class="ixc-empty"></div>
+    <div class="col-6">
+        <h4>信息一览</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+    </div>
+    <div class="col-4">
+        <table class="table table-bordered"
+               style="letter-spacing: 0.1em;min-height: 20em;text-align: left;width: 100%;">
+            <tr>
+                <td>系统架构:</td>
+                <td>${self.V["cpu_arch"]}</td>
+            </tr>
+            <tr>
+                <td>CPU核心数:</td>
+                <td>${self.V["cpu_count"]}</td>
+            </tr>
+            <tr>
+                <td>版本:</td>
+                <td>${self.V["version"]}</td>
+            </tr>
+            <tr>
+                <td>上网方式:</td>
+                <td>${self.V["internet_type"]}</td>
+            </tr>
+            <tr>
+                <td>IP地址:</td>
+                <td>${self.V["wan_ip"]}/${self.V["wan_prefix"]}</td>
+            </tr>
+            <tr>
+                <td>DNS服务器1:</td>
+                <td>${self.V["nameservers"][0]}</td>
+            </tr>
+            <tr>
+                <td>DNS服务器2:</td>
+                <td>${self.V["nameservers"][1]}</td>
+            </tr>
+        </table>
     </div>
 </div>

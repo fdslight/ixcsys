@@ -54,7 +54,7 @@ def wait_proc(name: str):
         else:
             break
         ''''''
-    ''''''
+    time.sleep(3)
 
 
 def wait_processes(names: list):

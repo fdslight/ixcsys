@@ -407,6 +407,41 @@ router_netif_delete(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+
+/// 获取网卡IP地址
+static PyObject *
+router_netif_get_ip(PyObject *self,PyObject *args)
+{
+    int type,is_ipv6,prefix;
+    struct ixc_netif *netif;
+    char str_ip[512];
+
+    if(!PyArg_ParseTuple(args,"ip",&type,&is_ipv6)) return NULL;
+
+    netif=ixc_netif_get(type);
+    if(NULL==netif){
+        Py_RETURN_NONE;
+    }
+
+    if(is_ipv6 && !netif->isset_ip6){
+        Py_RETURN_NONE;
+    }
+
+    if(!is_ipv6 && !netif->isset_ip){
+        Py_RETURN_NONE;
+    }
+
+    if(is_ipv6){
+        inet_ntop(AF_INET6,netif->ip6addr,str_ip,512);
+        prefix=netif->ip6_prefix;
+    }else{
+        inet_ntop(AF_INET,netif->ipaddr,str_ip,512);
+        prefix=netif->ip_prefix;
+    }
+
+    return Py_BuildValue("(si)",str_ip,prefix);
+}
+
 /// 接收数据
 static PyObject *
 router_netif_rx_data(PyObject *self,PyObject *args)
@@ -823,6 +858,23 @@ router_clog_set(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 检查WAN是否准备妥当
+static PyObject *
+router_wan_ready_ok(PyObject *self,PyObject *args)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+
+    if(netif->isset_ip){
+        Py_RETURN_TRUE;
+    }
+
+    if(netif->isset_ip6 && ixc_pppoe_is_enabled()){
+        Py_RETURN_TRUE; 
+    }
+
+    Py_RETURN_FALSE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -840,6 +892,7 @@ static PyMethodDef routerMethods[]={
     //
     {"netif_create",(PyCFunction)router_netif_create,METH_VARARGS,"create tap device"},
     {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},
+    {"netif_get_ip",(PyCFunction)router_netif_get_ip,METH_VARARGS,"get netif ip address"},
     {"netif_rx_data",(PyCFunction)router_netif_rx_data,METH_VARARGS,"receive netif data"},
     {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
@@ -869,6 +922,9 @@ static PyMethodDef routerMethods[]={
     {"port_map_del",(PyCFunction)router_port_map_del,METH_VARARGS,"port map delete"},
     //
     {"clog_set",(PyCFunction)router_clog_set,METH_VARARGS,"set c language log path"},
+    //
+    {"wan_ready_ok",(PyCFunction)router_wan_ready_ok,METH_NOARGS,"check wan ready ok"},
+
     //
     {NULL,NULL,0,NULL}
 };

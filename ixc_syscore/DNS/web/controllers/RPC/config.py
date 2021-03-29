@@ -20,6 +20,7 @@ class controller(rpc.controller):
             "forward_dns_result": self.forward_dns_result,
             "enable": self.enable,
             "get_nameservers": self.get_nameservers,
+            "set_nameservers": self.set_nameservers,
             "save": self.save
         }
 
@@ -76,3 +77,6 @@ class controller(rpc.controller):
         :return:
         """
         return 0, self.__runtime.get_nameservers(is_ipv6=is_ipv6)
+
+    def set_nameservers(self, ns1: str, ns2: str, is_ipv6=False):
+        return 0, self.__runtime.set_nameservers(ns1, ns2, is_ipv6=is_ipv6)

@@ -105,7 +105,7 @@ class service(dispatcher.dispatcher):
         self.__cur_dns_id = 1
         self.__forward_result = False
 
-        RPCClient.wait_processes(["init", "router", "sysadm"])
+        RPCClient.wait_processes(["router", ])
 
         self.create_poll()
         self.start_dns()
@@ -282,9 +282,15 @@ class service(dispatcher.dispatcher):
 
     def get_nameservers(self, is_ipv6=False):
         if is_ipv6:
-            return self.get_handler(self.__dns_client).get_nameservers()
-        else:
             return self.get_handler(self.__dns_client6).get_nameservers()
+        else:
+            return self.get_handler(self.__dns_client).get_nameservers()
+
+    def set_nameservers(self, ns1: str, ns2: str, is_ipv6=False):
+        if is_ipv6:
+            self.get_handler(self.__dns_client6).set_nameservers(ns1, ns2)
+        else:
+            self.get_handler(self.__dns_client).set_nameservers(ns1, ns2)
 
     def forward_dns_result(self):
         self.__forward_result = True
@@ -297,6 +303,7 @@ class service(dispatcher.dispatcher):
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+
         if self.__dns_server > 0: self.delete_handler(self.__dns_server)
         if self.__dns_client > 0: self.delete_handler(self.__dns_client)
         if self.__dns_server6 > 0: self.delete_handler(self.__dns_server6)

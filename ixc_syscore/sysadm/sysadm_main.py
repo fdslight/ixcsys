@@ -120,7 +120,7 @@ class service(dispatcher.dispatcher):
 
         global_vars["ixcsys.sysadm"] = self
 
-        RPCClient.wait_processes(["init", "router"])
+        RPCClient.wait_processes(["router"])
 
         self.load_configs()
         self.create_poll()

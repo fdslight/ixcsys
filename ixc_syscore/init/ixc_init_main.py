@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal
+import sys, os, signal, json
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -61,16 +61,17 @@ class service(dispatcher.dispatcher):
     __debug = None
     __log_fd = None
     __logs = None
+    __log_count = None
+    __log_max = None
 
     def init_func(self, debug):
         global_vars["ixcsys.init"] = self
 
         self.__debug = debug
-        self.__logs = {
-            logging.LEVEL_INFO: {},
-            logging.LEVEL_ALERT: {},
-            logging.LEVEL_ERR: {}
-        }
+        self.__logs = []
+        self.__log_count = 0
+        self.__log_max = 100
+
         self.create_poll()
         self.start_scgi()
         self.log_start()
@@ -104,7 +105,6 @@ class service(dispatcher.dispatcher):
             logging.LEVEL_ALERT: "ALERT",
             logging.LEVEL_ERR: "ERROR"
         }
-        self.__debug = True
         if self.debug:
             fmt_msg = "\r\n\r\napplication:%s\r\nlevel:%s\r\n%s" % (name, level_map[level], message,)
             if level == logging.LEVEL_ERR:
@@ -112,15 +112,30 @@ class service(dispatcher.dispatcher):
             else:
                 sys.stderr.write(fmt_msg)
             return
-        o = self.__logs[level]
-        # if name not in o:
-        #    o[name] = []
-        # z = o[name]
-        # z.append(message)
+
+        o = {"level": level_map[level], "application": name, "message": message}
+        if self.__log_count > self.__log_max: self.__logs.pop(0)
+        self.__logs.append(o)
+
+    def save_log_to_file(self):
+        fpath = "%s/syslog.log" % os.getenv("IXC_MYAPP_TMP_DIR")
+        s = json.dumps(self.__logs)
+        with open(fpath, "wb") as f: f.write(s.encode())
+        f.close()
+
+    def get_log(self, from_file=False):
+        if not from_file: return self.__logs
+
+        fpath = "%s/syslog.log" % os.getenv("IXC_MYAPP_TMP_DIR")
+        with open(fpath, "rb") as f: byte_s = f.read()
+        f.close()
+        return json.loads(byte_s.decode())
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
         if self.__log_fd > 0: self.delete_handler(self.__log_fd)
+        # 保存日志到文件中
+        self.save_log_to_file()
 
 
 def main():

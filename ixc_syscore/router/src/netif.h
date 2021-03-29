@@ -31,6 +31,8 @@ struct ixc_netif{
     unsigned char ipaddr[4];
     unsigned char ip_mask[4];
     unsigned char ip_subnet[4];
+    int ip_prefix;
+
 
     unsigned char ip6addr[16];
     unsigned char ip6_mask[16];
@@ -40,8 +42,12 @@ struct ixc_netif{
     unsigned char ip6_local_link_addr[16];
     unsigned char ip6_local_link_mask[16];
     unsigned char ip6_local_link_subnet[16];
+    int ip6_prefix;
+
+    unsigned char pad1[2];
     //
     unsigned char hwaddr[6];
+    unsigned char pad2[2];
     // IPv6的默认路由器
     unsigned char ip6_default_router_hwaddr[6];
 };

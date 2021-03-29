@@ -49,6 +49,7 @@ class dhcp_client(object):
         self.__hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
         self.__dhcp_parser = dhcp.dhcp_parser()
         self.__dhcp_builder = dhcp.dhcp_builder()
+
         self.reset()
 
     def reset(self):
@@ -264,11 +265,16 @@ class dhcp_client(object):
 
                 ok = self.__runtime.set_wan_ip(s_ip, prefix, is_ipv6=False)
 
-                if self.__runtime.debug: print("IP address:", s_ip, s_mask)
+                if self.__runtime.debug:
+                    print("IP address:", s_ip, s_mask)
                 if self.__router:
                     s_gw = socket.inet_ntop(socket.AF_INET, self.__router)
                     if self.__runtime.debug: print("gateway:", s_gw)
                     ok = self.__runtime.set_default_route(s_gw, is_ipv6=False)
+                if self.__dnsserver:
+                    s_ns1 = socket.inet_ntop(socket.AF_INET, self.__dnsserver)
+                    if self.__runtime.debug: print("nameserver:", s_ns1)
+                    self.__runtime.set_nameservers(s_ns1, None, is_ipv6=False)
 
                 self.__dhcp_ip_conflict_check_ok = True
             else:
