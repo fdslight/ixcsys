@@ -171,16 +171,13 @@ struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
     struct ixc_vsw_record *r;
     struct ixc_mbuf *result;
     struct ixc_ether_header *eth_header=(struct ixc_ether_header *)(m->data+m->offset);
-    unsigned char brd[]={
-        0xff,0xff,0xff,0xff,0xff,0xff
-    };
     char is_found;
     int rs;
 
     if(!vsw_table.enable) return m;
 
-    // 广播地址向VSWITCH发送一遍
-    if(!memcmp(eth_header->dst_hwaddr,brd,6)){
+    // 多播地址向VSWITCH发送一遍
+    if(eth_header->dst_hwaddr[0] & 0x01==0x01){
         ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
         return m;
     }
