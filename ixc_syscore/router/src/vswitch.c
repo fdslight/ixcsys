@@ -195,6 +195,8 @@ struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
             ixc_mbuf_put(m);
             return NULL;
         }
+    }else{
+        r->flags=IXC_VSW_FLG_LOCAL;
     }
 
     r=map_find(vsw_table.m,(char *)(eth_header->dst_hwaddr),&is_found);
