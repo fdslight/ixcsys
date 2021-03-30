@@ -250,6 +250,7 @@ int ixc_vsw_send(void *data,size_t size)
     // 记录存在那么直接发送
     if(NULL!=r){
         r->up_time=time(NULL);
+        r->flags=IXC_VSW_FLG_FWD;
         ixc_ether_send2(m);
         return 0;
     }
