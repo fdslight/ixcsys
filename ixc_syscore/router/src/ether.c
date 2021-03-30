@@ -8,6 +8,7 @@
 #include "netif.h"
 #include "router.h"
 #include "pppoe.h"
+#include "route.h"
 
 #include "../../../pywind/clib/debug.h"
 
@@ -83,6 +84,10 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     // 此处检查目标MAC地址是否是本地地址,非本地MAC地址丢弃数据包(前提是IPv6直通未开启)
     if(!ixc_ether_is_self(netif,header->dst_hwaddr)){
         if(type!=0x86dd){
+            ixc_mbuf_put(m);
+            return;
+        }
+        if(!ixc_route_is_enabled_ipv6_pass()){
             ixc_mbuf_put(m);
             return;
         }
