@@ -28,5 +28,7 @@ int ixc_ether_send2(struct ixc_mbuf *m);
 int ixc_ether_get_multi_hwaddr_by_ip(unsigned char *ip,unsigned char *result);
 /// 通过IPv6地址获取多播地址
 int ixc_ether_get_multi_hwaddr_by_ipv6(unsigned char *ip6,unsigned char *result);
+/// 是否是自身的地址
+int ixc_ether_is_self(struct ixc_netif *netif,unsigned char *hwaddr);
 
 #endif
