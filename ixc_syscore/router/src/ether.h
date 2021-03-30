@@ -2,6 +2,7 @@
 #define IXC_ETHER_H
 
 #include "mbuf.h"
+#include "netif.h"
 
 #pragma pack(push)
 #pragma pack(1)
