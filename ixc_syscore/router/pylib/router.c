@@ -894,6 +894,18 @@ router_vsw_enable(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 打开或者关闭网络
+static PyObject *
+router_network_enable(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+
+    ixc_g_network_enable(enable);
+
+    Py_RETURN_NONE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -945,6 +957,8 @@ static PyMethodDef routerMethods[]={
     {"wan_ready_ok",(PyCFunction)router_wan_ready_ok,METH_NOARGS,"check wan ready ok"},
     //
     {"vsw_enable",(PyCFunction)router_vsw_enable,METH_VARARGS,"enable or disable vswitch"},
+    //
+    {"network_enable",(PyCFunction)router_network_enable,METH_VARARGS,"enable or disable network"},
 
     {NULL,NULL,0,NULL}
 };
