@@ -239,6 +239,7 @@ int ixc_vsw_send(void *data,size_t size)
     m->tail=IXC_MBUF_BEGIN+size;
     m->end=IXC_MBUF_BEGIN+size;
     m->netif=netif;
+    m->from=IXC_MBUF_FROM_LAN;
 
     memcpy(m->data+m->offset,data,size);
 
@@ -263,7 +264,7 @@ int ixc_vsw_send(void *data,size_t size)
         ixc_mbuf_put(m);
         return -1;
     }
-    ixc_ether_send2(m);
+    ixc_ether_handle(m);
 
     return 0;
 }
