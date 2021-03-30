@@ -166,7 +166,7 @@ static struct ixc_mbuf *ixc_vsw_handle_no_exists(struct ixc_mbuf *m,struct ixc_e
     return m;
 }
 
-struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
+void ixc_vsw_handle(struct ixc_mbuf *m)
 {
     struct ixc_vsw_record *r;
     struct ixc_mbuf *result;
@@ -174,12 +174,21 @@ struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
     char is_found;
     int rs;
 
-    if(!vsw_table.enable) return m;
+    if(!vsw_table.enable){
+        ixc_ether_handle(m);
+        return;
+    }
 
-    // 多播地址向VSWITCH发送一遍
-    if(eth_header->dst_hwaddr[0] & 0x01==0x01){
+    if(m->end-m->offset<14){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 多播地址本地和远程都发送一遍
+    if((eth_header->dst_hwaddr[0] & 0x01)==0x01){
         ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
-        return m;
+        ixc_ether_handle(m);
+        return;
     }
 
     r=map_find(vsw_table.m,(char *)(eth_header->src_hwaddr),&is_found);
@@ -190,7 +199,7 @@ struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
         if(rs<0){
             STDERR("cannot add to vswitch table\r\n");
             ixc_mbuf_put(m);
-            return NULL;
+            return;
         }
     }else{
         r->flags=IXC_VSW_FLG_LOCAL;
@@ -199,22 +208,19 @@ struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m)
     r=map_find(vsw_table.m,(char *)(eth_header->dst_hwaddr),&is_found);
     if(NULL==r) result=ixc_vsw_handle_no_exists(m,eth_header);
     else result=ixc_vsw_handle_exists(m,eth_header,r);
- 
-    return result;
+    
+    if(NULL!=result) ixc_ether_handle(result);
 }
 
 int ixc_vsw_send(void *data,size_t size)
 {
     struct ixc_ether_header *eth_header=(struct ixc_ether_header *)data;
-    struct ixc_mbuf *m;
+    struct ixc_mbuf *m,*m2;
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
     struct ixc_vsw_record *r;
     char is_found;
     int rs;
 
-    unsigned char brd[]={
-        0xff,0xff,0xff,0xff,0xff,0xff
-    };
 
     if(!vsw_table.enable){
         STDERR("no enable vswitch\r\n");
@@ -231,6 +237,7 @@ int ixc_vsw_send(void *data,size_t size)
         return -1;
     }
 
+    m->next=NULL;
     m->begin=IXC_MBUF_BEGIN;
     m->offset=IXC_MBUF_BEGIN;
     m->tail=IXC_MBUF_BEGIN+size;
@@ -240,8 +247,31 @@ int ixc_vsw_send(void *data,size_t size)
 
     memcpy(m->data+m->offset,data,size);
 
-    if(!memcmp(eth_header->dst_hwaddr,brd,6)){
+    // 如果是本机的地址的处理方式
+    if(!memcmp(eth_header->dst_hwaddr,netif->hwaddr,6)){
+        ixc_ether_handle(m);
+        return 0;
+    }
+
+    // 检查是否是多播地址
+    if((eth_header->dst_hwaddr[0] & 0x01)==0x01){
         ixc_ether_send2(m);
+        m2=ixc_mbuf_get();
+        if(NULL==m2){
+            STDERR("cannot get mbuf for multi broadcast\r\n");
+            return -1;
+        }
+
+        m2->next=NULL;
+        m2->begin=IXC_MBUF_BEGIN;
+        m2->offset=IXC_MBUF_BEGIN;
+        m2->tail=IXC_MBUF_BEGIN+size;
+        m2->end=IXC_MBUF_BEGIN+size;
+        m2->netif=netif;
+        m2->from=IXC_MBUF_FROM_LAN;
+
+        memcpy(m->data+m->offset,data,size);
+        ixc_ether_handle(m2);
         return 0;
     }
 

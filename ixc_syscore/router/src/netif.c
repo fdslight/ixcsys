@@ -12,6 +12,7 @@
 #include "route.h"
 #include "debug.h"
 #include "ip6.h"
+#include "vswitch.h"
 
 #include "../../../pywind/clib/netif/tuntap.h"
 #include "../../../pywind/clib/netif/hwinfo.h"
@@ -311,8 +312,12 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
         m->offset=m->begin;
         m->tail=m->offset+rsize;
         m->end=m->tail;
-
-        ixc_ether_handle(m);
+        
+        if(m->from==IXC_MBUF_FROM_LAN){
+            ixc_vsw_handle(m);
+        }else{
+            ixc_ether_handle(m);
+        }
     }
 
     return rs;

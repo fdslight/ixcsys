@@ -9,6 +9,7 @@
 #include "pppoe.h"
 #include "route.h"
 #include "addr_map.h"
+#include "global.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -62,6 +63,11 @@ static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
 
 static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
+    if(!ixc_g_network_is_enabled()){
+        ixc_mbuf_put(m);
+        return;
+    }
+
     ixc_route_handle(m);
 }
 

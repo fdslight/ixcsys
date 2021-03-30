@@ -77,18 +77,18 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     }
     
     if(!memcmp(header->src_hwaddr,header->dst_hwaddr,6)){
-        ixc_mbuf_put(m);
+        ixc_mbuf_put(mbuf);
         return;
     }
     
     // 此处检查目标MAC地址是否是本地地址,非本地MAC地址丢弃数据包(前提是IPv6直通未开启)
     if(!ixc_ether_is_self(netif,header->dst_hwaddr)){
         if(type!=0x86dd){
-            ixc_mbuf_put(m);
+            ixc_mbuf_put(mbuf);
             return;
         }
         if(!ixc_route_is_enabled_ipv6_pass()){
-            ixc_mbuf_put(m);
+            ixc_mbuf_put(mbuf);
             return;
         }
     }
@@ -200,7 +200,7 @@ int ixc_ether_get_multi_hwaddr_by_ipv6(unsigned char *ip6,unsigned char *result)
 int ixc_ether_is_self(struct ixc_netif *netif,unsigned char *hwaddr)
 {
     // 检查是否是多播地址
-    if(hwaddr[0] & 0x01 == 1) return 1;
+    if((hwaddr[0] & 0x01) == 1) return 1;
     if(!memcmp(hwaddr,netif->hwaddr,6)) return 1;
     
     return 0;

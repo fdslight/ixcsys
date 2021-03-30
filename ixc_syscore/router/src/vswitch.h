@@ -36,7 +36,7 @@ void ixc_vsw_uninit(void);
 int ixc_vsw_enable(int enable);
 /// 检查虚拟交换是否启用
 int ixc_vsw_is_enabled(void);
-struct ixc_mbuf *ixc_vsw_handle(struct ixc_mbuf *m);
+void ixc_vsw_handle(struct ixc_mbuf *m);
 /// 发送数据到虚拟交换机
 int ixc_vsw_send(void *data,size_t size);
 

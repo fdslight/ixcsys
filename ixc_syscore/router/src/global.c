@@ -4,6 +4,7 @@
 
 static unsigned char manage_addr[4];
 static unsigned char manage_addr6[16];
+static int g_network_enable=1;
 
 int ixc_g_init(void)
 {
@@ -31,4 +32,16 @@ int ixc_g_manage_addr_set(unsigned char *addr,int is_ipv6)
     else memcpy(manage_addr,addr,4);
 
     return 0;
+}
+
+int ixc_g_network_enable(int enable)
+{
+    g_network_enable=enable;
+    return 0;
+}
+
+inline
+int ixc_g_network_is_enabled(void)
+{
+    return g_network_enable;
 }
