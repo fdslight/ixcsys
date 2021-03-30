@@ -173,6 +173,7 @@ void ixc_vsw_handle(struct ixc_mbuf *m)
     struct ixc_ether_header *eth_header=(struct ixc_ether_header *)(m->data+m->offset);
     char is_found;
     int rs;
+    unsigned char all_zero[]={0x00,0x00,0x00,0x00,0x00,0x00};
 
     if(!vsw_table.enable){
         //DBG_FLAGS;
@@ -186,7 +187,7 @@ void ixc_vsw_handle(struct ixc_mbuf *m)
     }
 
     // 多播地址本地和远程都发送一遍
-    if((eth_header->dst_hwaddr[0] & 0x01)==0x01){
+    if((eth_header->dst_hwaddr[0] & 0x01)==0x01 || !memcmp(all_zero,eth_header->dst_hwaddr,6)){
         ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
         ixc_ether_handle(m);
         return;
@@ -221,6 +222,7 @@ int ixc_vsw_send(void *data,size_t size)
     struct ixc_vsw_record *r;
     char is_found;
     int rs;
+    unsigned char all_zero[]={0x00,0x00,0x00,0x00,0x00,0x00};
 
     if(!vsw_table.enable){
         STDERR("no enable vswitch\r\n");
@@ -254,7 +256,7 @@ int ixc_vsw_send(void *data,size_t size)
     }
 
     // 检查是否是多播地址
-    if((eth_header->dst_hwaddr[0] & 0x01)==0x01){
+    if((eth_header->dst_hwaddr[0] & 0x01)==0x01 || !memcmp(all_zero,eth_header->dst_hwaddr,6)){
         ixc_ether_send2(m);
         m2=ixc_mbuf_get();
         if(NULL==m2){

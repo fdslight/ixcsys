@@ -108,7 +108,6 @@ class service(dispatcher.dispatcher):
         self.__cur_dns_id = 1
         self.__forward_result = False
         self.__wan_ok = False
-        self.__up_time = time.time()
 
         RPCClient.wait_processes(["router", ])
 
@@ -331,7 +330,6 @@ class service(dispatcher.dispatcher):
         for _id in dels:
             del self.__id_wan2lan[_id]
 
-        self.__up_time = time.time()
 
     def add_ns_os_resolv(self):
         """加入nameserver到操作系统resolv中
@@ -353,7 +351,6 @@ class service(dispatcher.dispatcher):
             now = time.time()
             if now - self.__up_time < 10: return
             self.__wan_ok = RPCClient.fn_call("router", "/runtime", "wan_ready_ok")
-            self.__up_time = time.time()
         ''''''
 
 

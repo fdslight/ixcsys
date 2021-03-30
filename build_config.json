@@ -1,1 +1,1 @@
-{"debug": true, "c_includes": ["/opt/python39/include/python3.9"], "libs": [], "lib_dirs": []}
+{"debug": false, "c_includes": ["/opt/python39/include/python3.9"], "libs": [], "lib_dirs": []}

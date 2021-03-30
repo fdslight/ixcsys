@@ -160,12 +160,16 @@ class dhcp_server(object):
 
     def handle_dhcp_request(self, opts: list):
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
-        # 如果不存在那么直接DHCP请求
-        if s_client_hwaddr not in self.__tmp_alloc_addrs: return
+
+        # 如果不存在那么发送NAK直接告诉客户端重新发现
+        if s_client_hwaddr not in self.__tmp_alloc_addrs:
+            resp_opts = [(53, bytes([6]))]
+            self.dhcp_msg_send(resp_opts)
+            return
 
         client_id = self.get_dhcp_opt_value(opts, 61)
         request_ip = self.get_dhcp_opt_value(opts, 50)
-        #server_id = self.get_dhcp_opt_value(opts, 54)
+        # server_id = self.get_dhcp_opt_value(opts, 54)
         request_list = self.get_dhcp_opt_value(opts, 55)
 
         if not request_list: request_list = b""
@@ -173,7 +177,7 @@ class dhcp_server(object):
 
         if not request_ip or not client_id: return
         # 检查是否是本机器的DHCP请求
-        #if server_id != self.__my_ipaddr: return
+        # if server_id != self.__my_ipaddr: return
 
         resp_opts.append((53, bytes([5])))
         resp_opts += self.get_resp_opts_from_request_list(request_list)

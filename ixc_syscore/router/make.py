@@ -20,7 +20,6 @@ def build(base_dir, my_dir, cflags, debug=True):
         ]
 
     files += [
-        "%s/pylib/router.c" % my_dir
     ]
 
     if debug:
@@ -31,5 +30,9 @@ def build(base_dir, my_dir, cflags, debug=True):
     sys_build.do_compile(files, "%s/pylib/router.so" % my_dir, cflags, is_shared=True)
 
 
-def install(mydir, prefix):
-    pass
+def install(root_dir, install_root_dir: str, name: str):
+    path = "%s/%s" % (install_root_dir, name)
+    os.system("mkdir -p %s/%s" % (install_root_dir, name,))
+    os.system("cp -r %s/%s/* %s" % (root_dir, name, path))
+    os.system("rm -rf %s/src" % path)
+    os.system("rm %s/make.py" % path)

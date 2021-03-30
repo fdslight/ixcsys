@@ -22,10 +22,18 @@ __helper = """
     help                            show help
     build build_name [cflags]       build software
     build_all [cflags]              build all
-    install install_name prefix     install software
+    install install_name            install software name
     install_all prefix              install all
     show_builds                     show build names
 """
+
+INSTALL_PREFIX = "/opt/ixcsys"
+
+
+def __get_root_dir():
+    abspath = os.path.abspath(__file__)
+    root_dir = os.path.dirname(abspath)
+    return root_dir
 
 
 def __read_build_config():
@@ -113,12 +121,67 @@ def __build_all(args: list):
     for x in __builds: __build(x, args)
 
 
-def __install(name, args: list):
-    pass
+def __install(app_name: str):
+    root_dir = __get_root_dir()
+    prefix = INSTALL_PREFIX
+
+    name = "%s.make" % app_name.replace("/", ".")
+    try:
+        importlib.import_module(name)
+    except ImportError:
+        print("ERROR:not found build name %s make.py file" % app_name)
+        return
+    m = sys.modules[name]
+    try:
+        m.install(root_dir, prefix, app_name)
+    except:
+        print("cannot install for %s" % app_name)
+        return
+    if not os.path.isdir(prefix):
+        try:
+            os.mkdir(prefix)
+        except:
+            print("ERROR:cannot create directory %s for %s" % (prefix, app_name))
+            return
+        ''''''
+    ''''''
 
 
-def __install_all(args: list):
-    for x in __builds: __install(x, args)
+def __install_all():
+    root_dir = __get_root_dir()
+    prefix = INSTALL_PREFIX
+    for x in __builds: __install(x)
+
+    dirs = [
+        "pywind",
+        "ixc_syslib",
+        "ixc_configs_bak",
+        "ixc_apps",
+        "ixc_configs"
+    ]
+    for x in dirs:
+        d = "%s/%s" % (prefix, x)
+        if not os.path.isdir(d):
+            try:
+                os.mkdir(d)
+            except:
+                print("ERROR:cannot create directory %s" % d)
+                return
+            ''''''
+        if x == "ixc_configs":
+            # 不重写配置文件
+            os.system("cp -r -n %s/%s/* %s" % (root_dir, x, d))
+        else:
+            os.system("cp -r %s/%s/* %s" % (root_dir, x, d))
+
+    files = [
+        "ixc_cfg.py",
+        "ixc_main.py",
+        "version"
+    ]
+
+    for x in files:
+        os.system("cp %s/%s %s" % (root_dir, x, prefix))
 
 
 def main():
@@ -147,14 +210,14 @@ def main():
         return
 
     if action == "install":
-        if len(sys.argv) < 3:
+        if len(sys.argv) != 3:
             print(__helper)
             return
-        __install(sys.argv[2], sys.argv[3:])
+        __install(sys.argv[2])
         return
 
     if action == "install_all":
-        __install_all(sys.argv[2:])
+        __install_all()
         return
 
     if action == "show_builds":
