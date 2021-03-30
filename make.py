@@ -183,6 +183,8 @@ def __install_all():
     for x in files:
         os.system("cp %s/%s %s" % (root_dir, x, prefix))
 
+    print("install ixcsys OK,please enjoy it ^_^")
+
 
 def main():
     if len(sys.argv) < 2:
