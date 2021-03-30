@@ -82,8 +82,10 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     
     // 此处检查目标MAC地址是否是本地地址,非本地MAC地址丢弃数据包(前提是IPv6直通未开启)
     if(!ixc_ether_is_self(netif,header->dst_hwaddr)){
-        ixc_mbuf_put(m);
-        return;
+        if(type!=0x86dd){
+            ixc_mbuf_put(m);
+            return;
+        }
     }
 
     memcpy(mbuf->dst_hwaddr,header->dst_hwaddr,6);
