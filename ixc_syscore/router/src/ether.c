@@ -74,6 +74,8 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         ixc_mbuf_put(mbuf);
         return;
     }
+    
+    // 此处检查目标MAC地址是否是本地地址，广播和多播排除在外
 
     memcpy(mbuf->dst_hwaddr,header->dst_hwaddr,6);
     memcpy(mbuf->src_hwaddr,header->src_hwaddr,6);
