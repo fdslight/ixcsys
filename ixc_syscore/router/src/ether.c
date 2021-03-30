@@ -183,8 +183,6 @@ int ixc_ether_get_multi_hwaddr_by_ipv6(unsigned char *ip6,unsigned char *result)
 
 int ixc_ether_is_self(struct ixc_netif *netif,unsigned char *hwaddr)
 {
-    unsigned char brd[]={0xff,0xff,0xff,0xff,0xff,0xff};
-    if(!memcmp(hwaddr,brd,6)) return 1;
     // 检查是否是多播地址
     if(hwaddr[0] & 0x01 == 1) return 1;
     if(!memcmp(hwaddr,netif->hwaddr,6)) return 1;
