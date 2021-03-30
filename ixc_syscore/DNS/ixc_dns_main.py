@@ -58,7 +58,7 @@ def __start_service(debug):
         cls.release()
     except:
         cls.release()
-        logging.print_error()
+        logging.print_error(debug=debug)
 
     if os.path.isfile(PID_FILE): os.remove(PID_FILE)
     sys.exit(0)
@@ -86,6 +86,9 @@ class service(dispatcher.dispatcher):
     # 是否重定向DNS结果
     __forward_result = None
 
+    __wan_ok = None
+    __up_time = None
+
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
 
@@ -104,6 +107,8 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = -1
         self.__cur_dns_id = 1
         self.__forward_result = False
+        self.__wan_ok = False
+        self.__up_time = time.time()
 
         RPCClient.wait_processes(["router", ])
 
@@ -223,6 +228,8 @@ class service(dispatcher.dispatcher):
     def handle_msg_from_dnsclient(self, message: bytes, address: tuple, is_ipv6=False):
         """处理来自于DNS客户端的消息
         """
+        if not self.__wan_ok: return
+
         dns_id, = struct.unpack("!H", message[0:2])
         new_dns_id = self.get_dns_id()
 
@@ -341,6 +348,13 @@ class service(dispatcher.dispatcher):
 
     def myloop(self):
         self.auto_clean()
+
+        if not self.__wan_ok:
+            now = time.time()
+            if now - self.__up_time < 10: return
+            self.__wan_ok = RPCClient.fn_call("router", "/runtime", "wan_ready_ok")
+            self.__up_time = time.time()
+        ''''''
 
 
 def main():

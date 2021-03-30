@@ -29,7 +29,7 @@ def syslog_write(name: str, message: str, level=LEVEL_INFO):
     s.close()
 
 
-def print_error(text=""):
+def print_error(text="", debug=False):
     s1 = "<error time='%s'>" % time.strftime("%Y-%m-%d %H:%M:%S %Z")
     s2 = "</error>\r\n"
 
@@ -40,29 +40,31 @@ def print_error(text=""):
         text = "%s\r\n%s\r\n%s\r\n" % (s1, excpt, s2)
 
     app_name = os.getenv("IXC_MYAPP_NAME")
-    if not app_name:
+    if not app_name or debug:
         sys.stderr.write(text)
         sys.stderr.flush()
-    else:
-        syslog_write(app_name, text, level=LEVEL_ERR)
+        return
+    syslog_write(app_name, text, level=LEVEL_ERR)
 
 
-def print_info(text):
+def print_info(text, debug=False):
     app_name = os.getenv("IXC_MYAPP_NAME")
-    if not app_name:
+    if not app_name or debug:
         sys.stdout.write(text)
         sys.stdout.flush()
-    else:
-        syslog_write(app_name, text, level=LEVEL_INFO)
+        return
+
+    syslog_write(app_name, text, level=LEVEL_INFO)
 
 
-def print_alert(text):
+def print_alert(text,debug=False):
     app_name = os.getenv("IXC_MYAPP_NAME")
-    if not app_name:
+    if not app_name or debug:
         sys.stdout.write(text)
         sys.stdout.flush()
-    else:
-        syslog_write(app_name, text, level=LEVEL_ALERT)
+        return
+
+    syslog_write(app_name, text, level=LEVEL_ALERT)
 
 
 class stdout(io.StringIO):

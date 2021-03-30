@@ -138,7 +138,7 @@ class dhcp_server(object):
         # neg_ok 如果为True的时候那么表示DHCP协商成功
         self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
 
-        self.__dhcp_builder.set_boot(self.__hostname,self.__boot_file)
+        self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
         self.dhcp_msg_send(resp_opts)
 
     def dhcp_msg_send(self, resp_opts: list):
@@ -165,15 +165,15 @@ class dhcp_server(object):
 
         client_id = self.get_dhcp_opt_value(opts, 61)
         request_ip = self.get_dhcp_opt_value(opts, 50)
-        server_id = self.get_dhcp_opt_value(opts, 54)
+        #server_id = self.get_dhcp_opt_value(opts, 54)
         request_list = self.get_dhcp_opt_value(opts, 55)
 
         if not request_list: request_list = b""
         resp_opts = []
 
-        if not request_ip or not client_id or not server_id: return
+        if not request_ip or not client_id: return
         # 检查是否是本机器的DHCP请求
-        if server_id != self.__my_ipaddr: return
+        #if server_id != self.__my_ipaddr: return
 
         resp_opts.append((53, bytes([5])))
         resp_opts += self.get_resp_opts_from_request_list(request_list)

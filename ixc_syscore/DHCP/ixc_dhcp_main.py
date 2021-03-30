@@ -18,7 +18,6 @@ import ixc_syscore.DHCP.pylib.dhcp_client as dhcp_client
 import ixc_syscore.DHCP.pylib.dhcp_server as dhcp_server
 import ixc_syscore.DHCP.pylib.netpkt as netpkt
 
-import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
@@ -58,7 +57,7 @@ def __start_service(debug):
         cls.release()
     except:
         cls.release()
-        logging.print_error()
+        logging.print_error(debug=debug)
 
     if os.path.isfile(PID_FILE): os.remove(PID_FILE)
     sys.exit(0)

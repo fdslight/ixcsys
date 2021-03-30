@@ -99,13 +99,13 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
             return;
         }
     }
-
+    //DBG_FLAGS;
     // 如果网络关闭并且不是本机器发出的地址那么丢弃数据包
     if(!ixc_g_network_is_enabled() && memcmp(ixc_g_manage_addr_get(0),netif->ipaddr,4)){
         ixc_mbuf_put(m);
         return;
     }
-
+    //DBG_FLAGS;
     // 发送数据到route
     ixc_route_handle(m);
 }

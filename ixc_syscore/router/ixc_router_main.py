@@ -240,6 +240,8 @@ class service(dispatcher.dispatcher):
         cmds = [
             "ip link add name %s type bridge" % br_name,
             "ip link set dev %s up" % br_name,
+            #"echo 1 >/proc/sys/net/ipv6/conf/all/forwarding",
+            #"echo 1 > /proc/sys/net/ipv4/ip_forward"
         ]
 
         for cmd in cmds: os.system(cmd)

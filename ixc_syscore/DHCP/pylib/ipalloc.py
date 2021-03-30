@@ -95,7 +95,7 @@ class alloc(object):
 
     def get_ipaddr(self, hwaddr: str):
         if hwaddr:
-            if hwaddr in self.__bind: return self.__bind[hwaddr]["ip"]
+            if hwaddr in self.__bind: return self.__bind[hwaddr]
         if self.__is_ipv6:
             fa = socket.AF_INET6
         else:

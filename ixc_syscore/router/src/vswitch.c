@@ -175,6 +175,7 @@ void ixc_vsw_handle(struct ixc_mbuf *m)
     int rs;
 
     if(!vsw_table.enable){
+        //DBG_FLAGS;
         ixc_ether_handle(m);
         return;
     }
@@ -220,7 +221,6 @@ int ixc_vsw_send(void *data,size_t size)
     struct ixc_vsw_record *r;
     char is_found;
     int rs;
-
 
     if(!vsw_table.enable){
         STDERR("no enable vswitch\r\n");
