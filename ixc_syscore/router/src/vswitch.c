@@ -80,6 +80,7 @@ int ixc_vsw_init(void)
         return -1;
     }
 
+    vsw_table.m=m;
     vsw_is_initialized=1;
     return 0;
 }
@@ -193,6 +194,12 @@ void ixc_vsw_handle(struct ixc_mbuf *m)
         return;
     }
 
+    // 本机的处理方式
+    if(!memcmp(m->netif->hwaddr,eth_header->dst_hwaddr,6)){
+        ixc_ether_handle(m);
+        return;
+    }
+
     r=map_find(vsw_table.m,(char *)(eth_header->src_hwaddr),&is_found);
     
     // 源端MAC地址不存在那么添加记录
@@ -203,6 +210,7 @@ void ixc_vsw_handle(struct ixc_mbuf *m)
             ixc_mbuf_put(m);
             return;
         }
+        //IXC_PRINT_HWADDR("BBB------------------ ",eth_header->src_hwaddr);
     }else{
         r->flags=IXC_VSW_FLG_LOCAL;
     }
