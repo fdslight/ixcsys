@@ -22,6 +22,7 @@ __helper = """
     help                            show help
     build build_name [cflags]       build software
     build_all [cflags]              build all
+    gen_update                      generate update archive
     install install_name            install software name
     install_all prefix              install all
     show_builds                     show build names
@@ -186,13 +187,29 @@ def __install_all():
     print("install ixcsys OK,please enjoy it ^_^")
 
 
+def __gen_update_archive():
+    """生成更新归档,注意执行此函数需要先make install_all
+    :return:
+    """
+    if not os.path.isdir(INSTALL_PREFIX):
+        print("ERROR:not found install directory %s" % INSTALL_PREFIX)
+        return
+
+    cur_dir = BASE_DIR
+    os.chdir(INSTALL_PREFIX)
+    os.system("tar czf %s/ixcsys_update.tar.gz ./*" % os.path.dirname(__file__))
+    os.chdir(cur_dir)
+
+    print("generate update archive OK")
+
+
 def main():
     if len(sys.argv) < 2:
         print(__helper)
         return
 
     action = sys.argv[1]
-    if action not in ("help", "build", "build_all", "install", "install_all", "show_builds",):
+    if action not in ("help", "build", "build_all", "install", "install_all", "show_builds", "gen_update"):
         print(__helper)
         return
 
@@ -224,6 +241,10 @@ def main():
 
     if action == "show_builds":
         for s in __builds: print(s)
+        return
+
+    if action == "gen_update":
+        __gen_update_archive()
         return
 
 

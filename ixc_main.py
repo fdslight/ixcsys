@@ -119,8 +119,13 @@ def stop_main():
 
 
 class ixc_main_d(object):
+    __update_file_path = None
+
     def __init__(self):
+        self.__update_file_path = "/tmp/ixcsys_update.tar.gz"
         signal.signal(signal.SIGUSR1, self.sig_handle)
+        if self.have_update():
+            self.do_update()
         start_all()
 
     def sig_handle(self, signum, frame):
@@ -136,10 +141,37 @@ class ixc_main_d(object):
         """
         stop_all()
         time.sleep(30)
+        # 检查是否有更新,有更新那么执行更新
+        if self.have_update(): self.do_update()
         start_all()
 
     def loop(self):
         while 1: time.sleep(60)
+
+    def have_update(self):
+        """检查是否有更新
+        :return:
+        """
+        return os.path.isfile(self.__update_file_path)
+
+    def do_update(self):
+        d = "/tmp/ixcsys_update"
+
+        if not os.path.isdir(d): os.mkdir(d)
+
+        os.system("tar xf %s -C %s" % (self.__update_file_path, d))
+        os.chdir(d)
+
+        _list = os.listdir(".")
+
+        for x in _list:
+            if x == "ixc_configs":
+                os.system("cp -r -n ixc_configs %s" % sys_dir)
+            else:
+                os.system("cp -r %s %s" % (x, sys_dir))
+            """"""
+        os.system("rm -rf ./*")
+        os.remove(self.__update_file_path)
 
 
 def main():
