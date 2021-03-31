@@ -46,7 +46,7 @@ class dhcp(object):
         self.h_ops = 0
         self.xid = random.randint(1, 0xfffffffe)
         self.secs = 0
-        self.flags = 0
+        self.flags = 0x8000
 
         self.ciaddr = bytes(4)
         self.yiaddr = bytes(4)
@@ -221,5 +221,4 @@ class dhcp_builder(dhcp):
             raise ValueError("wrong server name length")
         filled = bytes(64 - len(byte_s))
 
-        self.sname=b"".join([byte_s,filled])
-
+        self.sname = b"".join([byte_s, filled])
