@@ -1,0 +1,12 @@
+[Unit]
+Description=ixcsys
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/ixcsys/ixc_start.sh
+ExecStop=/opt/ixcsys/ixc_stop.sh
+
+[Install]
+WantedBy=multi-user.target

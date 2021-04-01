@@ -178,11 +178,45 @@ def __install_all():
     files = [
         "ixc_cfg.py",
         "ixc_main.py",
-        "version"
+        "net_monitor.ini",
+        "version",
     ]
 
     for x in files:
-        os.system("cp %s/%s %s" % (root_dir, x, prefix))
+        if x == "net_monitor.ini":
+            os.system("cp -n %s/%s %s" % (root_dir, x, prefix))
+        else:
+            os.system("cp %s/%s %s" % (root_dir, x, prefix))
+
+    script_start_path = "%s/ixc_start.sh" % INSTALL_PREFIX
+    script_stop_path = "%s/ixc_stop.sh" % INSTALL_PREFIX
+
+    start_writes = [
+        "#!/bin/sh\n"
+        "%s %s/ixc_main.py systemd_start\n" % (sys.executable, INSTALL_PREFIX)
+    ]
+
+    stop_writes = [
+        "#!/bin/sh\n"
+        "%s %s/ixc_main.py stop\n" % (sys.executable, INSTALL_PREFIX)
+    ]
+
+    with open(script_start_path, "w") as f:
+        f.write("".join(start_writes))
+    f.close()
+
+    with open(script_stop_path, "w") as f:
+        f.write("".join(stop_writes))
+    f.close()
+
+    os.chmod(script_start_path, 0O755)
+    os.chmod(script_stop_path, 0O755)
+
+    # 加入到系统systemd服务
+    if os.path.isfile("/usr/lib/systemd/system/ixcsys.service"):
+        os.system("systemctl disable ixcsys")
+    os.system("cp ixcsys.service /usr/lib/systemd/system")
+    os.system("systemctl enable ixcsys")
 
     print("install ixcsys OK,please enjoy it ^_^")
 

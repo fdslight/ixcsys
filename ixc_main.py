@@ -32,7 +32,9 @@ def set_pub_env():
 
 
 def start_all():
-    for x in must_services: start(x, debug=False)
+    for x in must_services:
+        time.sleep(5)
+        start(x, debug=False)
 
 
 def stop_all():
@@ -73,11 +75,13 @@ def stop(uri: str):
 
 
 import pywind.lib.proc as proc
+import pywind.lib.netutils as netutil
+import pywind.lib.configfile as conf
 
 PID_PATH = "/tmp/ixcsys/ixcsys.pid"
 
 
-def start_main():
+def start_main(delay=0):
     if os.path.isfile(PID_PATH):
         print("the ixcsys process exists")
         return
@@ -92,6 +96,7 @@ def start_main():
     if pid != 0: sys.exit(0)
     proc.write_pid(PID_PATH, os.getpid())
 
+    if delay > 0: time.sleep(delay)
     cls = ixc_main_d()
     try:
         cls.loop()
@@ -120,18 +125,91 @@ def stop_main():
 
 class ixc_main_d(object):
     __update_file_path = None
+    __net_monitor_path = None
+    __net_monitor_up_time = None
+    __is_isset_rescue = None
+
+    def stop_os_NetworkManager(self):
+        """停止操作系统的网络管理器
+        :return:
+        """
+        os.system("systemctl stop NetworkManager")
+
+    def get_if_ipaddr(self, ifname: str):
+        """获取网卡IP地址
+        :param ifname:
+        :return:
+        """
+        cmd = "ip addr | grep %s | grep inet" % ifname
+        fd = os.popen(cmd)
+        s = fd.read()
+        fd.close()
+        s = s.strip()
+        _list = s.split(" ")
+        result = []
+        for x in _list:
+            if x: result.append(x)
+        if not result: return None
+        return netutil.parse_ip_with_prefix(result[1])
+
+    def monitor_sys_network(self):
+        """监控系统网络
+        :return:
+        """
+        config = conf.ini_parse_from_file(self.__net_monitor_path)
+        rescue_ifname = None
+
+        for ifname in config:
+            info = config[ifname]
+            ipaddr = info["ipaddr"]
+            is_rescued = bool(int(info.get("is_rescued", 0)))
+            if is_rescued: rescue_ifname = ifname
+            if_ipaddr = self.get_if_ipaddr(ifname)
+            if not if_ipaddr and not is_rescued:
+                os.system("ip link set %s up" % ifname)
+                os.system("ip addr add %s dev %s" % (ipaddr, ifname))
+        if not rescue_ifname:
+            self.__net_monitor_up_time = time.time()
+            return
+        # 如果是应急网卡首先检查是否被设置
+        if self.__is_isset_rescue: return
+
+        interval = time.time() - self.__net_monitor_up_time
+
+        if not self.__is_isset_rescue and interval < 30: return
+
+        if_ipaddr = self.get_if_ipaddr("ixclanbr")
+        if not if_ipaddr:
+            # 首先检查是否设置了IP地址
+            ip_info = self.get_if_ipaddr(rescue_ifname)
+            # 如果存在IP信息那么先删除
+            if ip_info:
+                os.system("ip addr del %s/%s dev %s" % (ip_info[0], ip_info[1], rescue_ifname))
+            os.system("ip link set %s up" % rescue_ifname)
+            cmd = "ip addr add %s dev %s" % (config[rescue_ifname]["ipaddr"], rescue_ifname)
+            os.system(cmd)
+        self.__is_isset_rescue = True
 
     def __init__(self):
         self.__update_file_path = "/tmp/ixcsys_update.tar.gz"
+        self.__net_monitor_path = "%s/net_monitor.ini" % sys_dir
+
+        self.__net_monitor_up_time = time.time()
+        self.__is_isset_rescue = False
+
         signal.signal(signal.SIGUSR1, self.sig_handle)
+        signal.signal(signal.SIGTERM, self.sig_handle)
         if self.have_update():
             self.do_update()
+        self.stop_os_NetworkManager()
+        time.sleep(5)
         start_all()
 
     def sig_handle(self, signum, frame):
         if signum == signal.SIGUSR1:
             self.restart()
             return
+        if signum == signal.SIGTERM: return
         stop_all()
         sys.exit(0)
 
@@ -140,13 +218,17 @@ class ixc_main_d(object):
         :return:
         """
         stop_all()
+        self.__is_isset_rescue = False
+        self.__net_monitor_up_time = time.time()
         time.sleep(30)
         # 检查是否有更新,有更新那么执行更新
         if self.have_update(): self.do_update()
         start_all()
 
     def loop(self):
-        while 1: time.sleep(60)
+        while 1:
+            self.monitor_sys_network()
+            time.sleep(30)
 
     def have_update(self):
         """检查是否有更新
@@ -167,8 +249,11 @@ class ixc_main_d(object):
         for x in _list:
             if x == "ixc_configs":
                 os.system("cp -r -n ixc_configs %s" % sys_dir)
-            else:
-                os.system("cp -r %s %s" % (x, sys_dir))
+                continue
+            if x == "net_monitor.ini":
+                os.system("cp -n net_monitor.ini" % sys_dir)
+                continue
+            os.system("cp -r %s %s" % (x, sys_dir))
             """"""
         os.system("rm -rf ./*")
         os.remove(self.__update_file_path)
@@ -197,8 +282,7 @@ def main():
         return
 
     if action == "systemd_start":
-        time.sleep(60)
-        start_main()
+        start_main(delay=30)
         return
 
     if not uri:

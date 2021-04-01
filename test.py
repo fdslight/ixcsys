@@ -3,6 +3,7 @@
 import ixc_syslib.pylib.RPCClient as RPCClient
 import socket, os, struct
 
+"""
 rand_key = os.urandom(16)
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind(("127.0.0.1", 0))
@@ -26,3 +27,14 @@ while 1:
     print(src_hwaddr, dst_hwaddr, hex(protocol))
 
 s.close()
+"""
+
+fd = os.popen("ip addr | grep ens13 | grep inet")
+s = fd.read()
+fd.close()
+s = s.strip()
+_list = s.split(" ")
+result = []
+for x in _list:
+    if x: result.append(x)
+print(result)
