@@ -299,6 +299,8 @@ int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len)
 
 int rpc_session_write_to_sent_buf(struct rpc_session *session,void *data,unsigned short size)
 {
+	//struct ev *ev=ev_get(session->fd);
+
 	return 0;
 }
 
