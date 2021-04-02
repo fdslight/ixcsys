@@ -7,14 +7,21 @@
 #include "../debug.h"
 
 static int ev_kqueue=0;
-static struct kevent ev_kqueue_changelist[EV_KQUEUE_EV_CHANGE_MAX];
-static struct kevent ev_kqueue_evlist[EV_KQUEUE_EV_CHANGE_MAX];
+static struct kevent ev_kqueue_changelist[EV_EV_MAX];
+static struct kevent ev_kqueue_evlist[EV_EV_MAX];
 /// 改变的事件数目
 static int ev_kqueue_change_count=0;
 
 static int ev_kqueue_add_read(struct ev *ev)
 {
-    struct kevent *kevent=&ev_kqueue_changelist[ev_kqueue_change_count];
+    struct kevent *kevent;
+
+    if(ev_kqueue_change_count==EV_EV_MAX){
+        STDERR("changelist too small\r\n");
+        return -1;
+    }
+
+    kevent=&ev_kqueue_changelist[ev_kqueue_change_count];
 
     kevent->ident=ev->fileno;
     kevent->filter=EVFILT_READ;
@@ -29,7 +36,14 @@ static int ev_kqueue_add_read(struct ev *ev)
 
 static int ev_kqueue_add_write(struct ev *ev)
 {
-    struct kevent *kevent=&ev_kqueue_changelist[ev_kqueue_change_count];
+    struct kevent *kevent;
+
+    if(ev_kqueue_change_count==EV_EV_MAX){
+        STDERR("changelist too small\r\n");
+        return -1;
+    }
+
+    kevent=&ev_kqueue_changelist[ev_kqueue_change_count];
 
     kevent->ident=ev->fileno;
     kevent->filter=EVFILT_WRITE;
@@ -43,8 +57,14 @@ static int ev_kqueue_add_write(struct ev *ev)
 
 static int ev_kqueue_del_read(struct ev *ev)
 {
-    struct kevent *kevent=&ev_kqueue_changelist[ev_kqueue_change_count];
+    struct kevent *kevent;
 
+    if(ev_kqueue_change_count==EV_EV_MAX){
+        STDERR("changelist too small\r\n");
+        return -1;
+    }
+
+    kevent=&ev_kqueue_changelist[ev_kqueue_change_count];
     kevent->ident=ev->fileno;
     kevent->filter=EVFILT_READ;
     kevent->flags=EV_ADD | EV_DELETE;
@@ -57,8 +77,14 @@ static int ev_kqueue_del_read(struct ev *ev)
 
 static int ev_kqueue_del_write(struct ev *ev)
 {
-    struct kevent *kevent=&ev_kqueue_changelist[ev_kqueue_change_count];
+    struct kevent *kevent;
 
+    if(ev_kqueue_change_count==EV_EV_MAX){
+        STDERR("changelist too small\r\n");
+        return -1;
+    }
+
+    kevent=&ev_kqueue_changelist[ev_kqueue_change_count];
     kevent->ident=ev->fileno;
     kevent->filter=EVFILT_WRITE;
     kevent->flags=EV_ADD | EV_DELETE;
@@ -102,7 +128,7 @@ static int ev_kqueue_ioloop(struct ev_set *ev_set)
     timespec.tv_sec=ev_set->wait_timeout;
     timespec.tv_nsec=0;
 
-    rs=kevent(ev_kqueue,ev_kqueue_changelist,ev_kqueue_change_count,ev_kqueue_evlist,EV_KQUEUE_EV_CHANGE_MAX,&timespec);
+    rs=kevent(ev_kqueue,ev_kqueue_changelist,ev_kqueue_change_count,ev_kqueue_evlist,EV_EV_MAX,&timespec);
     ev_kqueue_handle_events(ev_set,ev_kqueue_evlist,rs);
     ev_kqueue_change_count=0;
 

@@ -3,15 +3,15 @@
 #include "../ev/ev.h"
 #include "../ev/rpc.h"
 
-static struct ev_set ev_set;
-
+static struct ev_set ixc_ev_set;
 
 int main(int argc,char *arv[])
 {
-    int rs=ev_set_init(&ev_set,1);
-    rs=rpc_create(&ev_set,"127.0.0.1",8889,0);
+    int rs=ev_set_init(&ixc_ev_set,1);
+    rs=rpc_create(&ixc_ev_set,"127.0.0.1",1999,0);
 
-    printf("%d\r\n",rs);
+    rs=ev_loop(&ixc_ev_set);
+
     
     return 0;
 }

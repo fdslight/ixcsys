@@ -2,6 +2,9 @@
 #ifndef RPC_H
 #define RPC_H
 
+#include<sys/types.h>
+#include<sys/socket.h>
+
 #include "ev.h"
 
 /// RPC最大数据大小,请不要修改这个值
@@ -43,6 +46,7 @@ struct rpc_session{
 	/// 接收缓冲区
 	unsigned char recv_buf[0x10000];
 	unsigned char sent_buf[0x10000];
+	char address[256];
 	/// 是否处理完毕
 	int handle_ok;
 	/// 接收缓冲区结束位置
@@ -51,6 +55,7 @@ struct rpc_session{
 	int sent_buf_begin;
 	int sent_buf_end;
 	int fd;
+	unsigned short port;
 };
 
 /// RPC函数信息
@@ -78,7 +83,7 @@ void rpc_fn_unreg(struct rpc *rpc,const char *name);
 void rpc_fn_call(struct rpc *rpc,const char *name,void *arg,unsigned short arg_size);
 
 /// 创建RPC会话
-struct rpc_session *rpc_session_create(struct rpc *rpc);
+int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len);
 /// 发送数据到RPC缓冲区
 int rpc_session_write_to_sent_buf(struct rpc_session *session,void *data,unsigned short size);
 /// 检查是否发送完毕

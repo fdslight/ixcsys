@@ -1,5 +1,6 @@
 #include<string.h>
 #include<time.h>
+#include<fcntl.h>
 
 #include "ev.h"
 #include "ev_select.h"
@@ -184,5 +185,32 @@ int ev_timeout_set(struct ev_set *ev_set,struct ev *ev,time_t timeout)
 	ev->tdata=tdata;
 	ev->up_time=time(NULL);
 	
+	return 0;
+}
+
+struct ev *ev_get(struct ev_set *ev_set,int fileno)
+{
+	struct ev *ev=NULL;
+	char is_found;
+
+	ev=map_find(ev_set->m,(char *)(&fileno),&is_found);
+	
+	return ev;
+}
+
+int ev_setnonblocking(int fd)
+{
+	int flags;
+	flags=fcntl(fd,F_GETFL);
+	if(flags<0){
+		STDERR("fcntl call error for fd %d\r\n",fd);
+		return -1;
+	}
+
+	flags=flags | O_NONBLOCK;
+	if(fcntl(fd,F_SETFL,flags)<0){
+		STDERR("cannot set nonblocking for fd %d\r\n",fd);
+		return -1;
+	}
 	return 0;
 }

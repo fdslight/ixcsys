@@ -37,7 +37,7 @@ static void ev_select_init_events(void *data)
 {
 	struct ev *ev=data;
 	int fd_max=0;
-	
+
 	if(ev->is_added_read && !FD_ISSET(ev->fileno,&ev_select_rset)){
 		FD_SET(ev->fileno,&ev_select_rset);
 	}
@@ -85,7 +85,7 @@ static int ev_select_ioloop(struct ev_set *ev_set)
 
 	timeval.tv_sec=ev_set->wait_timeout;
 	timeval.tv_usec=0;
-	
+
 	rs=select(ev_select.fd_max+1,&ev_select_rset,&ev_select_wset,NULL,&timeval);
 	
 	if(rs<0){

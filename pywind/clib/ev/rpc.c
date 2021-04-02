@@ -4,6 +4,7 @@
 #include<sys/types.h>
 #include<sys/socket.h>
 #include<unistd.h>
+#include<errno.h>
 
 #include "rpc.h"
 #include "ev.h"
@@ -28,12 +29,22 @@ static struct rpc_fn_info *rpc_fn_info_get(struct rpc *rpc,const char *name)
 
 static int rpc_accept(struct ev *ev)
 {
+	int rs;
+	struct sockaddr sockaddr;
+	socklen_t addrlen;
+
+	while(1){
+		rs=accept(rpc.fileno,&sockaddr,&addrlen);
+		if(rs<0) break;
+		rpc_session_create(rs,&sockaddr,addrlen);
+	}
+
 	return 0;
 }
 
 int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6)
 {
-	int listenfd=-1;
+	int listenfd=-1,rs;
 	struct sockaddr_in in_addr;
 	struct sockaddr_in6 in6_addr;
 	char buf[256];
@@ -59,9 +70,29 @@ int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port
 
 	if(is_ipv6){
 	}else{
-		bind(listenfd,(struct sockaddr *)&in_addr,sizeof(struct in_addr));
+		rs=bind(listenfd,(struct sockaddr *)&in_addr,sizeof(struct sockaddr));
 	}
-	listen(listenfd,10);
+
+	if(rs<0){
+		STDERR("cannot bind address %s %d errno:%d\r\n",listen_addr,port,errno);
+		close(listenfd);
+		return -1;
+	}
+	
+	rs=listen(listenfd,10);
+	if(rs<0){
+		STDERR("cannot listen address %s %d errno:%d\r\n",listen_addr,port,errno);
+		close(listenfd);
+		return -1;
+	}
+
+	rs=ev_setnonblocking(listenfd);
+	if(rs<0){
+		close(listenfd);
+		STDERR("cannot set nonblocking\r\n");
+		return -1;
+	}
+
 	bzero(&rpc,sizeof(struct rpc));
 
 	rpc.is_ipv6=is_ipv6;
@@ -76,6 +107,8 @@ int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port
 	}
 
 	EV_INIT_SET(rpc.ev,rpc_accept,NULL,NULL,NULL,NULL);
+	
+	DBG("create rpc OK\r\n");
 
 	return ev_modify(ev_set,rpc.ev,EV_READABLE);
 }
@@ -145,12 +178,79 @@ void rpc_fn_call(struct rpc *rpc,const char *name,void *arg,unsigned short arg_s
 		return;
 	}
 	resp.is_error=info->fn(arg,arg_size,message,&msize);
-
+	
 }
 
-struct rpc_session *rpc_session_create(struct rpc *rpc)
+static int rpc_session_readable_fn(struct ev *ev)
 {
-	return NULL;
+	for(int n=0;n<10;n++){
+
+	}
+
+	return 0;
+}
+
+static int rpc_session_writable_fn(struct ev *ev)
+{
+	DBG_FLAGS;
+	return 0;
+}
+
+static int rpc_session_timeout_fn(struct ev *ev)
+{
+	DBG_FLAGS;
+	return 0;
+}
+
+static int rpc_session_del_fn(struct ev *ev)
+{
+	DBG_FLAGS;
+	return 0;
+}
+
+int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len)
+{
+	struct rpc_session *session=malloc(sizeof(struct rpc_session));
+	int rs;
+	struct ev *ev;
+
+	if(NULL==session){
+		close(fd);
+		STDERR("cannot create session for fd %d\r\n",fd);
+		return -1;
+	}
+
+	if(ev_setnonblocking(fd)<0){
+		close(fd);
+		STDERR("cannot set nonblocking\r\n");
+		free(session);
+		return -1;
+	}
+
+	bzero(session,sizeof(struct rpc_session));
+	session->fd=fd;
+
+	ev=ev_create(rpc.ev_set,fd);
+
+	if(NULL==ev){
+		free(session);
+		close(fd);
+		STDERR("cannot create event for fd %d\r\n",fd);
+		return -1;
+	}
+
+	EV_INIT_SET(ev,rpc_session_readable_fn,rpc_session_writable_fn,rpc_session_timeout_fn,rpc_session_del_fn,ev);
+	rs=ev_modify(rpc.ev_set,ev,EV_READABLE);
+
+	if(rs<0){
+		ev_delete(rpc.ev_set,ev);
+		free(session);
+		close(fd);
+		STDERR("cannot add to readablefor fd %d\r\n",fd);
+		return -1;
+	}
+
+	return 0;
 }
 
 int rpc_session_write_to_sent_buf(struct rpc_session *session,void *data,unsigned short size)

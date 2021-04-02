@@ -29,12 +29,7 @@ while 1:
 s.close()
 """
 
-fd = os.popen("ip addr | grep ens13 | grep inet")
-s = fd.read()
-fd.close()
-s = s.strip()
-_list = s.split(" ")
-result = []
-for x in _list:
-    if x: result.append(x)
-print(result)
+s = socket.socket()
+s.connect(("127.0.0.1", 1999))
+s.send(b"hello")
+s.close()

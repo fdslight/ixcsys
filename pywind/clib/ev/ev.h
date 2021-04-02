@@ -14,8 +14,8 @@
 #endif
 
 /// Kqueue的最大该表长度
-#ifndef EV_KQUEUE_EV_CHANGE_MAX
-#define EV_KQUEUE_EV_CHANGE_MAX 1024
+#ifndef EV_EV_MAX
+#define EV_EV_MAX 1024
 #endif
 
 struct ev;
@@ -106,6 +106,9 @@ int ev_modify(struct ev_set *ev_set,struct ev *ev,int ev_no);
 int ev_loop(struct ev_set *ev_set);
 /// 设置超时事件超时时间
 int ev_timeout_set(struct ev_set *ev_set,struct ev *ev,time_t timeout);
-
+/// 获取事件对象
+struct ev *ev_get(struct ev_set *ev_set,int fileno);
+/// 设置为非阻塞模式
+int ev_setnonblocking(int fd);
 
 #endif
