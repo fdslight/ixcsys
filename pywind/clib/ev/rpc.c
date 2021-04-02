@@ -1,5 +1,5 @@
 
-#include<apra/inet.h>
+#include<arpa/inet.h>
 #include<string.h>
 
 #include "rpc.h"
@@ -23,7 +23,49 @@ static struct rpc_fn_info *rpc_fn_info_get(struct rpc *rpc,const char *name)
 
 struct rpc *rpc_create(const char *listen_addr,unsigned short port,int is_ipv6,int is_nonblocking)
 {
-	return 0;
+	int listenfd=-1;
+	struct sockaddr_in in_addr;
+	struct sockaddr_in6 in6_addr;
+	char buf[256];
+	struct rpc *rpc;
+	
+	if(is_ipv6) listenfd=socket(AF_INET6,SOCK_STREAM,0);
+	else listenfd=socket(AF_INET,SOCK_STREAM,0);
+
+	if(listenfd<0){
+		STDERR("cannot create listen fileno\r\n");
+		return -1;
+	}
+
+	memset(&in_addr,'0',sizeof(struct sockaddr_in));
+	memset(&in6_addr,'0',sizeof(struct sockaddr_in6));
+
+	in_addr.sin_family=AF_INET;
+	
+	if(is_ipv6) inet_pton(AF_INET6,listen_addr,buf);
+	else inet_pton(AF_INET,listen_addr,buf);
+
+	memcpy(&(in_addr.sin_addr.s_addr),buf,4);
+	in_addr.sin_port=htons(port);
+
+	if(is_ipv6){
+	}else{
+		bind(listenfd,(struct sockaddr *)&in_addr,sizeof(struct in_addr));
+	}
+	listen(listenfd,10);
+
+	rpc=malloc(sizeof(struct rpc));
+	if(NULL==rpc){
+		close(listenfd);
+		STDERR("cannot malloc struct rpc\r\n");
+		return NULL;
+	}
+	bzero(rpc,sizeof(struct rpc));
+
+	rpc->is_ipv6=is_ipv6;
+	rpc->fileno=listenfd;
+
+	return rpc;
 }
 
 int rpc_fn_reg(struct rpc *rpc,const char *name,rpc_fn_call_t fn)
@@ -40,7 +82,7 @@ int rpc_fn_reg(struct rpc *rpc,const char *name,rpc_fn_call_t fn)
 
 	info=malloc(sizeof(struct rpc_fn_info));
 	if(NULL==info){
-		STDERR("cannot reg rpc function %s,no memory for malloc struct rpc_fn_info\r\n");
+		STDERR("cannot reg rpc function %s,no memory for malloc struct rpc_fn_info\r\n",name);
 		return -3;
 	}
 	bzero(info,sizeof(struct rpc_fn_info));
@@ -90,12 +132,13 @@ void rpc_fn_call(struct rpc *rpc,const char *name,void *arg,unsigned short arg_s
 		sprintf(message,"cannot found function %s",func_name);
 		return;
 	}
-	resp->is_error=info->fn(arg,arg_size,message,&msize);
+	resp.is_error=info->fn(arg,arg_size,message,&msize);
 
 }
 
 struct rpc_session *rpc_session_create(struct rpc *rpc)
 {
+	return NULL;
 }
 
 int rpc_session_write_to_sent_buf(struct rpc_session *session,void *data,unsigned short size)

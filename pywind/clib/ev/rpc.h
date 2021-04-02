@@ -2,6 +2,8 @@
 #ifndef RPC_H
 #define RPC_H
 
+#include "ev.h"
+
 /// RPC最大数据大小,请不要修改这个值
 #define RPC_DATA_MAX 0xfd02
 /// RPC请求数据结构体
@@ -10,8 +12,8 @@ struct rpc_req{
 	unsigned short tot_len;
 	char pad[6];
 	// 函数名
-	char func_name[0xff];
-	unsigned char arg_data[RPC_ARG_MAX];
+	char func_name[256];
+	unsigned char arg_data[RPC_DATA_MAX];
 };
 
 /// RPC故障码定义
@@ -35,12 +37,12 @@ struct rpc_resp{
 };
 
 /// RPC函数调用回调函数
-typedef int (*rpc_fn_call_t)(struct rpc_req *q,void *,unsigned short);
+typedef int (*rpc_fn_call_t)(void *,unsigned short,void *,unsigned short *);
 
 struct rpc_session{
 	/// 接收缓冲区
-	unsigned char recv_buf[0xffff];
-	unsigned char sent_buf[0xffff];
+	unsigned char recv_buf[0x10000];
+	unsigned char sent_buf[0x10000];
 	/// 是否处理完毕
 	int handle_ok;
 	/// 接收缓冲区结束位置
@@ -60,7 +62,9 @@ struct rpc_fn_info{
 
 struct rpc{
 	struct rpc_fn_info *fn_head;
+	struct ev *ev;
 	int fileno;
+	int is_ipv6;
 };
 
 /// 创建RPC对象

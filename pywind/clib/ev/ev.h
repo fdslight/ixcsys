@@ -8,6 +8,14 @@
 #define EV_READABLE 1
 #define EV_WRITABLE 2
 
+/// 最大超时时间
+#ifndef EV_TIMEOUT_MAX
+#define EV_TIMEOUT_MAX 30
+#endif
+
+struct ev;
+struct ev_set;
+
 /// 事件函数回调
 // 返回0表示继续执行,非0表示发生错误
 typedef int (*ev_fn_cb_t)(struct ev *);
@@ -17,6 +25,11 @@ typedef int (*ev_ioloop_fn_cb_t)(struct ev_set *);
 /// 修改事件处理函数
 typedef int (*ev_modify_fn_t)(struct ev *);
 
+/// 事件创建函数
+typedef int (*ev_create_fn_t)(struct ev *);
+/// 事件删除回调函数
+typedef void (*ev_delete_fn_t)(struct ev *);
+
 struct ev{
 	struct ev *next;
 	struct time_data *tdata;
@@ -25,6 +38,7 @@ struct ev{
 	ev_fn_cb_t readable_fn;
 	ev_fn_cb_t writable_fn;
 	ev_fn_cb_t timeout_fn;
+	ev_fn_cb_t del_fn;
 	
 	// 加入事件回调
 	ev_modify_fn_t add_read_ev_fn;
@@ -44,12 +58,28 @@ struct ev{
 	int is_deleted;
 };
 
+#define EV_INIT_SET(ev,_readable_fn,_writable_fn,_timeout_fn,_add_read_ev_fn,_add_write_ev_fn,_del_read_ev_fn,_del_write_ev_fn,_del_fn,_data) \
+(ev)->data=_data;\
+(ev)->readable_fn=_readable_fn;\
+(ev)->writable_fn=_writable_fn;\
+(ev)->timeout_fn=_timeout_fn;\
+(ev)->add_read_ev_fn=_add_read_ev_fn;\
+(ev)->add_write_ev_fn=_add_write_ev_fn;\
+(ev)->del_read_ev_fn=_del_read_ev_fn;\
+(ev)->del_fn=_del_fn;\
+(ev)->del_write_ev_fn=_del_write_ev_fn
+
 /// 事件集合
 struct ev_set{
-	struct ev *ev_head;
 	struct map *m;
+	struct time_wheel *time_wheel;
+	// 需要删除的头部
+	struct ev *del_head;
 	
+	ev_create_fn_t ev_create_fn;
+	ev_delete_fn_t ev_delete_fn;
 	ev_ioloop_fn_cb_t ioloop_fn;
+
 	void *data;
 
 	time_t wait_timeout;
@@ -67,9 +97,9 @@ int ev_set_init(struct ev_set *ev_set,int force_select,ev_ioloop_fn_cb_t ioloop_
 void ev_set_uninit(struct ev_set *ev_set);
 
 /// 创建EV
-int ev_create(struct ev_set *ev_set,struct ev **ev);
+struct ev *ev_create(struct ev_set *ev_set,int fileno);
 /// 删除事件
-void ev_delete(struct ev_set *ev_set,int fileno);
+void ev_delete(struct ev_set *ev_set,struct ev *ev);
 /// 修改事件
 int ev_modify(struct ev *ev,int fileno,int ev_no);
 /// 事件循环
