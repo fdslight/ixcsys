@@ -63,12 +63,13 @@ struct rpc_fn_info{
 struct rpc{
 	struct rpc_fn_info *fn_head;
 	struct ev *ev;
+	struct ev_set *ev_set;
 	int fileno;
 	int is_ipv6;
 };
 
 /// 创建RPC对象
-struct rpc *rpc_create(const char *listen_addr,unsigned short port,int is_ipv6,int is_nonblocking);
+int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6,int is_nonblocking);
 /// 注册函数
 int rpc_fn_reg(struct rpc *rpc,const char *name,rpc_fn_call_t fn);
 /// 取消函数注册

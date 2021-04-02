@@ -1,10 +1,15 @@
 
 #include<arpa/inet.h>
 #include<string.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<unistd.h>
 
 #include "rpc.h"
 #include "ev.h"
 #include "../debug.h"
+
+static struct rpc rpc;
 
 static struct rpc_fn_info *rpc_fn_info_get(struct rpc *rpc,const char *name)
 {
@@ -21,13 +26,17 @@ static struct rpc_fn_info *rpc_fn_info_get(struct rpc *rpc,const char *name)
 	return result;
 }
 
-struct rpc *rpc_create(const char *listen_addr,unsigned short port,int is_ipv6,int is_nonblocking)
+static int rpc_accept(struct ev *ev)
+{
+	return 0;
+}
+
+int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6,int is_nonblocking)
 {
 	int listenfd=-1;
 	struct sockaddr_in in_addr;
 	struct sockaddr_in6 in6_addr;
 	char buf[256];
-	struct rpc *rpc;
 	
 	if(is_ipv6) listenfd=socket(AF_INET6,SOCK_STREAM,0);
 	else listenfd=socket(AF_INET,SOCK_STREAM,0);
@@ -53,19 +62,22 @@ struct rpc *rpc_create(const char *listen_addr,unsigned short port,int is_ipv6,i
 		bind(listenfd,(struct sockaddr *)&in_addr,sizeof(struct in_addr));
 	}
 	listen(listenfd,10);
+	bzero(&rpc,sizeof(struct rpc));
 
-	rpc=malloc(sizeof(struct rpc));
-	if(NULL==rpc){
+	rpc.is_ipv6=is_ipv6;
+	rpc.fileno=listenfd;
+	rpc.ev_set=ev_set;
+
+	rpc.ev=ev_create(ev_set,rpc.fileno);
+	if(NULL==rpc.ev){
+		STDERR("cannot create ev for RPC\r\n");
 		close(listenfd);
-		STDERR("cannot malloc struct rpc\r\n");
-		return NULL;
+		return -1;
 	}
-	bzero(rpc,sizeof(struct rpc));
 
-	rpc->is_ipv6=is_ipv6;
-	rpc->fileno=listenfd;
+	EV_INIT_SET(rpc.ev,rpc_accept,NULL,NULL,NULL,NULL);
 
-	return rpc;
+	return ev_modify(ev_set,rpc.ev,EV_READABLE);
 }
 
 int rpc_fn_reg(struct rpc *rpc,const char *name,rpc_fn_call_t fn)

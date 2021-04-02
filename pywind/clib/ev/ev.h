@@ -40,13 +40,6 @@ struct ev{
 	ev_fn_cb_t timeout_fn;
 	ev_fn_cb_t del_fn;
 	
-	// 加入事件回调
-	ev_modify_fn_t add_read_ev_fn;
-	ev_modify_fn_t add_write_ev_fn;
-	// 删除事件回调
-	ev_modify_fn_t del_read_ev_fn;
-	ev_modify_fn_t del_write_ev_fn;
-	
 	time_t up_time;
 	
 	/// 是否已经加入读或者写事件
@@ -58,16 +51,12 @@ struct ev{
 	int is_deleted;
 };
 
-#define EV_INIT_SET(ev,_readable_fn,_writable_fn,_timeout_fn,_add_read_ev_fn,_add_write_ev_fn,_del_read_ev_fn,_del_write_ev_fn,_del_fn,_data) \
+#define EV_INIT_SET(ev,_readable_fn,_writable_fn,_timeout_fn,_del_fn,_data) \
 (ev)->data=_data;\
 (ev)->readable_fn=_readable_fn;\
 (ev)->writable_fn=_writable_fn;\
 (ev)->timeout_fn=_timeout_fn;\
-(ev)->add_read_ev_fn=_add_read_ev_fn;\
-(ev)->add_write_ev_fn=_add_write_ev_fn;\
-(ev)->del_read_ev_fn=_del_read_ev_fn;\
-(ev)->del_fn=_del_fn;\
-(ev)->del_write_ev_fn=_del_write_ev_fn
+(ev)->del_fn=_del_fn
 
 /// 事件集合
 struct ev_set{
@@ -79,7 +68,13 @@ struct ev_set{
 	ev_create_fn_t ev_create_fn;
 	ev_delete_fn_t ev_delete_fn;
 	ev_ioloop_fn_cb_t ioloop_fn;
-
+	// 加入事件回调
+	ev_modify_fn_t add_read_ev_fn;
+	ev_modify_fn_t add_write_ev_fn;
+	// 删除事件回调
+	ev_modify_fn_t del_read_ev_fn;
+	ev_modify_fn_t del_write_ev_fn;
+	
 	void *data;
 
 	time_t wait_timeout;
@@ -101,7 +96,7 @@ struct ev *ev_create(struct ev_set *ev_set,int fileno);
 /// 删除事件
 void ev_delete(struct ev_set *ev_set,struct ev *ev);
 /// 修改事件
-int ev_modify(struct ev *ev,int fileno,int ev_no);
+int ev_modify(struct ev_set *ev_set,struct ev *ev,int ev_no);
 /// 事件循环
 int ev_loop(struct ev_set *ev_set);
 /// 设置超时事件超时时间

@@ -126,43 +126,16 @@ void ev_delete(struct ev_set *ev_set,struct ev *ev)
 	ev->is_deleted=1;
 }
 
-int ev_modify(struct ev *ev,int fileno,int ev_no)
+int ev_modify(struct ev_set *ev_set,struct ev *ev,int ev_no)
 {
 	int is_readable=ev_no & EV_READABLE;
 	int is_writable=ev_no & EV_WRITABLE;
 	
-	if(is_readable && !ev->is_added_read) {
-		if(NULL==ev->add_read_ev_fn){
-			STDERR("please set add_read_ev_fn for fileno %d\r\n",ev->fileno);
-		}else{
-			ev->add_read_ev_fn(ev);
-		}	
-	}
+	if(is_readable && !ev->is_added_read)  ev_set->add_read_ev_fn(ev);
+	if(is_writable && !ev->is_added_write) ev_set->add_write_ev_fn(ev);
+	if(!is_readable && ev->is_added_read) ev_set->del_read_ev_fn(ev);
+	if(!is_writable && ev->is_added_write) ev_set->del_write_ev_fn(ev);
 
-	if(is_writable && !ev->is_added_write) {
-		if(NULL==ev->add_write_ev_fn){
-			STDERR("please set add_write_ev_fn for fileno %d\r\n",ev->fileno);
-		}else{
-			ev->add_write_ev_fn(ev);
-		}
-	}
-
-	if(!is_readable && ev->is_added_read) {
-		if(NULL==ev->del_read_ev_fn){
-			STDERR("please set del_read_ev_fn for fileno %d\r\n",ev->fileno);		
-		}else{
-			ev->del_read_ev_fn(ev);
-		}
-	}
-
-	if(!is_writable && ev->is_added_write) {
-		if(NULL!=ev->del_write_ev_fn){
-			STDERR("please set del_write_ev_fn for fileno %d\r\n",ev->fileno);
-		}else{
-			ev->del_write_ev_fn(ev);
-		}
-	}
-	
 	return 0;
 }
 

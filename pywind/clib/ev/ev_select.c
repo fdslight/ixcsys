@@ -101,11 +101,6 @@ static int ev_select_ioloop(struct ev_set *ev_set)
 
 static int ev_select_create(struct ev *ev)
 {
-	ev->add_read_ev_fn=ev_select_add_read;
-	ev->add_write_ev_fn=ev_select_add_write;
-	ev->del_read_ev_fn=ev_select_add_read;
-	ev->del_write_ev_fn=ev_select_del_write;
-
 	return 0;
 }
 
@@ -125,6 +120,11 @@ int ev_select_init(struct ev_set *ev_set)
 	ev_set->ev_create_fn=ev_select_create;
 	ev_set->ev_delete_fn=ev_select_delete;
 	ev_set->ioloop_fn=ev_select_ioloop;
+	
+	ev_set->add_read_ev_fn=ev_select_add_read;
+	ev_set->add_write_ev_fn=ev_select_add_write;
+	ev_set->del_read_ev_fn=ev_select_add_read;
+	ev_set->del_write_ev_fn=ev_select_del_write;
 	
 	return 0;
 }
