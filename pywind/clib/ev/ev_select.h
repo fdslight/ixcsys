@@ -4,6 +4,7 @@
 #include "ev.h"
 
 struct ev_select{
+	struct ev_set *ev_set;
 	int fd_max;
 };
 

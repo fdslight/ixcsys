@@ -1,4 +1,5 @@
 #include<sys/select.h>
+#include<errno.h>
 
 #include "ev.h"
 #include "ev_select.h"
@@ -60,9 +61,11 @@ static void ev_select_ev_handle(void *data)
 	if(FD_ISSET(ev->fileno,&ev_select_wset)) is_writable=1;
 	
 	if(is_readable && !ev->is_deleted){
+		ev->readable_fn(ev);
 	}
 	
 	if(is_writable && !ev->is_deleted){
+		ev->writable_fn(ev);
 	}
 }
 
@@ -89,7 +92,6 @@ static int ev_select_ioloop(struct ev_set *ev_set)
 			return -1;
 		}
 		
-		
 		map_each(ev_set->m,ev_select_ev_handle);
 	}
 
@@ -102,6 +104,8 @@ int ev_select_init(struct ev_set *ev_set)
 	
 	FD_ZERO(&ev_select_rset);
 	FD_ZERO(&ev_select_wset);
+
+	ev_select.ev_set=ev_set;
 	
 	return 0;
 }
