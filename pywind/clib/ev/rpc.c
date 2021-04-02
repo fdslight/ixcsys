@@ -162,29 +162,71 @@ void rpc_fn_unreg(struct rpc *rpc,const char *name)
 
 void rpc_fn_call(struct rpc *rpc,const char *name,void *arg,unsigned short arg_size)
 {
-	char func_name[512];
 	char message[RPC_DATA_MAX];
 	unsigned short msize;
 	struct rpc_fn_info *info;
 	struct rpc_resp resp;
 
-	bzero(func_name,512);
-	strcpy(func_name,name);
-
-	info=rpc_fn_info_get(rpc,func_name);
+	info=rpc_fn_info_get(rpc,name);
 	// 未找到函数的处理方式
 	if(NULL==info){
-		sprintf(message,"cannot found function %s",func_name);
+		sprintf(message,"cannot found function %s",name);
 		return;
 	}
 	resp.is_error=info->fn(arg,arg_size,message,&msize);
-	
+}
+
+/// 解析RPC请求
+static int rpc_session_parse_rpc_req(struct ev *ev,struct rpc_session *session)
+{
+	struct rpc_req *req=(struct rpc_req *)(session->recv_buf);
+	unsigned short tot_len;
+	char func_name[512];
+
+	// 缓冲区收到的数据必须等于大于2个字节
+	if(session->recv_buf_end<2) return 0;
+
+	tot_len=ntohs(req->tot_len);
+	// 正常情况下tot len会比收到的数据大
+	if(tot_len<session->recv_buf_end) return -1;
+
+	bzero(func_name,512);
+	memcpy(func_name,req->func_name,256);
+
+	// 调用函数执行并返回结果
+	rpc_fn_call(&rpc,func_name,req->arg_data,tot_len-264);
+
+
+	return 0;
 }
 
 static int rpc_session_readable_fn(struct ev *ev)
 {
-	for(int n=0;n<10;n++){
+	ssize_t recv_size;
+	int rs;
+	struct rpc_session *session=ev->data;
 
+	for(int n=0;n<10;n++){
+		recv_size=recv(ev->fileno,&session->recv_buf[session->recv_buf_end],0xffff-session->recv_buf_end,0);
+		// 如果接收到数据为0说明对端已经关闭连接
+		if(0==recv_size){
+			ev_delete(rpc.ev_set,ev);
+			break;
+		}
+		if(recv_size>0){
+			session->recv_buf_end+=recv_size;
+			rs=rpc_session_parse_rpc_req(ev,session);
+			if(rs<0){
+				ev_delete(rpc.ev_set,ev);
+				break;
+			}
+		}
+		if(EAGAIN!=errno){
+			ev_delete(rpc.ev_set,ev);
+			break;
+		}else{
+			break;
+		}
 	}
 
 	return 0;
@@ -239,7 +281,7 @@ int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len)
 		return -1;
 	}
 
-	EV_INIT_SET(ev,rpc_session_readable_fn,rpc_session_writable_fn,rpc_session_timeout_fn,rpc_session_del_fn,ev);
+	EV_INIT_SET(ev,rpc_session_readable_fn,rpc_session_writable_fn,rpc_session_timeout_fn,rpc_session_del_fn,session);
 	rs=ev_modify(rpc.ev_set,ev,EV_READABLE);
 
 	if(rs<0){
