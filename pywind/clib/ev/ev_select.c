@@ -5,6 +5,8 @@
 #include "ev.h"
 #include "ev_select.h"
 
+#include "../debug.h"
+
 /// 读集合
 static fd_set ev_select_rset;
 /// 写集合
@@ -76,11 +78,13 @@ static void ev_select_ev_handle(void *data)
 static int ev_select_ioloop(struct ev_set *ev_set)
 {
 	struct timeval timeval;
-	int fd_max=0;
 	int rs;
 	
 	// 遍历映射重新生成rset与wset
 	map_each(ev_set->m,ev_select_init_events);
+
+	timeval.tv_sec=ev_set->wait_timeout;
+	timeval.tv_usec=0;
 	
 	rs=select(ev_select.fd_max+1,&ev_select_rset,&ev_select_wset,NULL,&timeval);
 	
@@ -123,7 +127,7 @@ int ev_select_init(struct ev_set *ev_set)
 	
 	ev_set->add_read_ev_fn=ev_select_add_read;
 	ev_set->add_write_ev_fn=ev_select_add_write;
-	ev_set->del_read_ev_fn=ev_select_add_read;
+	ev_set->del_read_ev_fn=ev_select_del_read;
 	ev_set->del_write_ev_fn=ev_select_del_write;
 	
 	return 0;

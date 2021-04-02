@@ -25,7 +25,7 @@ static void ev_timeout_cb(void *data)
 	}
 }
 
-int ev_set_init(struct ev_set *ev_set,int force_select,ev_ioloop_fn_cb_t ioloop_fn)
+int ev_set_init(struct ev_set *ev_set,int force_select)
 {
 	struct map *m;
 	struct time_wheel *time_wheel;
@@ -66,7 +66,6 @@ int ev_set_init(struct ev_set *ev_set,int force_select,ev_ioloop_fn_cb_t ioloop_
 	}
 
 	ev_set->time_wheel=time_wheel;
-	ev_set->ioloop_fn=ioloop_fn;
 	ev_set->m=m;
 	ev_set->wait_timeout=10;
 	ev_set->is_select=force_select;
@@ -82,7 +81,8 @@ void ev_set_uninit(struct ev_set *ev_set)
 	// 释放扩展事件模型资源
 	if(ev_set->is_select) ev_select_uninit(ev_set);
 	else ev_ext_uninit(ev_set);
-	
+
+	time_wheel_release(ev_set->time_wheel);
 }
 
 struct ev *ev_create(struct ev_set *ev_set,int fileno)
@@ -131,10 +131,22 @@ int ev_modify(struct ev_set *ev_set,struct ev *ev,int ev_no)
 	int is_readable=ev_no & EV_READABLE;
 	int is_writable=ev_no & EV_WRITABLE;
 	
-	if(is_readable && !ev->is_added_read)  ev_set->add_read_ev_fn(ev);
-	if(is_writable && !ev->is_added_write) ev_set->add_write_ev_fn(ev);
-	if(!is_readable && ev->is_added_read) ev_set->del_read_ev_fn(ev);
-	if(!is_writable && ev->is_added_write) ev_set->del_write_ev_fn(ev);
+	if(is_readable && !ev->is_added_read) {
+		ev_set->add_read_ev_fn(ev);
+		ev->is_added_read=1;
+	}
+	if(is_writable && !ev->is_added_write) {
+		ev_set->add_write_ev_fn(ev);
+		ev->is_added_write=1;
+	}
+	if(!is_readable && ev->is_added_read) {
+		ev_set->del_read_ev_fn(ev);
+		ev->is_added_read=0;
+	}
+	if(!is_writable && ev->is_added_write) {
+		ev_set->del_write_ev_fn(ev);
+		ev->is_added_write=0;
+	}
 
 	return 0;
 }

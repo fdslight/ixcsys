@@ -69,7 +69,7 @@ struct rpc{
 };
 
 /// 创建RPC对象
-int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6,int is_nonblocking);
+int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6);
 /// 注册函数
 int rpc_fn_reg(struct rpc *rpc,const char *name,rpc_fn_call_t fn);
 /// 取消函数注册

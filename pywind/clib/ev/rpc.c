@@ -31,7 +31,7 @@ static int rpc_accept(struct ev *ev)
 	return 0;
 }
 
-int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6,int is_nonblocking)
+int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6)
 {
 	int listenfd=-1;
 	struct sockaddr_in in_addr;

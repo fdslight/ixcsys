@@ -13,6 +13,11 @@
 #define EV_TIMEOUT_MAX 30
 #endif
 
+/// Kqueue的最大该表长度
+#ifndef EV_KQUEUE_EV_CHANGE_MAX
+#define EV_KQUEUE_EV_CHANGE_MAX 1024
+#endif
+
 struct ev;
 struct ev_set;
 
@@ -88,7 +93,7 @@ struct ev_set{
 
 /// 事件集合初始化
 // force_select 如果非0表示强制使用select事件模型,否则根据操作系统选择
-int ev_set_init(struct ev_set *ev_set,int force_select,ev_ioloop_fn_cb_t ioloop_fn);
+int ev_set_init(struct ev_set *ev_set,int force_select);
 void ev_set_uninit(struct ev_set *ev_set);
 
 /// 创建EV
