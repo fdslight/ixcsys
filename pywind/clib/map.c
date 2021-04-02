@@ -285,7 +285,6 @@ void map_each(struct map *m,map_each_func_t fn)
 		//DBG("%d\r\n",node->is_data_node);
 		if(node->is_data_node && NULL!=fn) fn(node->data);
 		node=node->list_next;
-		
 	}
 }
 

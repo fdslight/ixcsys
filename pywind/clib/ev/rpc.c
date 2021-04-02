@@ -44,7 +44,7 @@ static int rpc_accept(struct ev *ev)
 
 int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6)
 {
-	int listenfd=-1,rs;
+	int listenfd=-1,rs=0;
 	struct sockaddr_in in_addr;
 	struct sockaddr_in6 in6_addr;
 	char buf[256];
@@ -205,6 +205,8 @@ static int rpc_session_readable_fn(struct ev *ev)
 	ssize_t recv_size;
 	int rs;
 	struct rpc_session *session=ev->data;
+
+	DBG_FLAGS;
 
 	for(int n=0;n<10;n++){
 		recv_size=recv(ev->fileno,&session->recv_buf[session->recv_buf_end],0xffff-session->recv_buf_end,0);
