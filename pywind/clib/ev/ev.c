@@ -175,6 +175,8 @@ int ev_loop(struct ev_set *ev_set)
 	struct ev *ev,*t;
 
 	while(1){
+		if(NULL!=ev_set->myloop_fn) ev_set->myloop_fn();
+		
 		rs=ev_set->ioloop_fn(ev_set);
 		time_wheel_handle(ev_set->time_wheel);
 

@@ -42,6 +42,9 @@ typedef void (*ev_delete_fn_t)(struct ev *);
 /// 事件遍历回调函数
 typedef void (*ev_each_fn_t)(struct ev *);
 
+/// 定义自己的循环
+typedef void (*ev_myloop_fn_t)(void);
+
 struct ev{
 	struct ev *prev;
 	struct ev *next;
@@ -90,6 +93,8 @@ struct ev_set{
 	// 删除事件回调
 	ev_modify_fn_t del_read_ev_fn;
 	ev_modify_fn_t del_write_ev_fn;
+
+	ev_myloop_fn_t myloop_fn;
 	
 	void *data;
 

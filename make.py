@@ -63,6 +63,14 @@ def __read_build_config():
     return o
 
 
+def build_config_args(insert_s: str, _list: list):
+    results = []
+    for s in _list:
+        results.append("%s %s" % (insert_s,s))
+
+    return " ".join(results)
+
+
 def __build(build_name, args: list):
     if build_name not in __builds:
         print("ERROR:not found build name %s" % build_name)
@@ -85,17 +93,17 @@ def __build(build_name, args: list):
     m = sys.modules[name]
 
     if c_includes:
-        include = "-I %s " % " ".join(c_includes)
+        include = build_config_args("-I",c_includes)
     else:
         include = ""
 
     if libdirs:
-        libdir = "-L %s ".join(libdirs)
+        libdir = build_config_args("-L",libdirs)
     else:
         libdir = ""
 
     if libs:
-        lib = "-l%s ".join(libs)
+        lib = build_config_args("-l",libs)
     else:
         lib = ""
 

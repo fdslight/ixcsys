@@ -1,6 +1,7 @@
 #include<unistd.h>
 
 #include<sys/epoll.h>
+#include<errno.h>
 
 #include "ev.h"
 #include "ev_ext.h"
@@ -17,7 +18,7 @@ static int ev_epoll_add_read(struct ev *ev)
     epoll_event.data.fd=ev->fileno;
     epoll_event.events=EPOLLIN;
 
-    return epoll_ctl(ev_epoll_fileno,EPOLL_CTL_ADD,ev->fileno,&epoll_event);
+    return epoll_ctl(ev_epoll_fileno,EPOLL_CTL_MOD,ev->fileno,&epoll_event);
 }
 
 static int ev_epoll_add_write(struct ev *ev)
@@ -27,7 +28,7 @@ static int ev_epoll_add_write(struct ev *ev)
     epoll_event.data.fd=ev->fileno;
     epoll_event.events=EPOLLOUT;
 
-    return epoll_ctl(ev_epoll_fileno,EPOLL_CTL_ADD,ev->fileno,&epoll_event);
+    return epoll_ctl(ev_epoll_fileno,EPOLL_CTL_MOD,ev->fileno,&epoll_event);
 }
 
 static int ev_epoll_del_read(struct ev *ev)
@@ -64,16 +65,19 @@ static void ev_epoll_handle_events(struct ev_set *ev_set,int nfds)
         writable=event->events & EPOLLOUT;
 
         ev=ev_get(ev_set,fd);
+
         if(NULL==ev){
             STDERR("cannot get ev for fileno %d\r\n",fd);
             continue;
         }
 
-        if(readable && !ev->is_deleted){
+        DBG("%d %d %d\r\n",ev->fileno,readable,writable);
+
+        if(readable && !ev->is_deleted && NULL!=ev->readable_fn){
             ev->readable_fn(ev);
         }
 
-        if(writable && !ev->is_deleted){
+        if(writable && !ev->is_deleted && NULL!=ev->writable_fn){
             ev->writable_fn(ev);
         }
 
@@ -92,11 +96,22 @@ static int ev_epoll_ioloop(struct ev_set *ev_set)
 
 static int ev_epoll_create(struct ev *ev)
 {
-	return 0;
+    struct epoll_event epoll_event;
+    
+    epoll_event.data.fd=ev->fileno;
+    epoll_event.events=0;
+
+    return epoll_ctl(ev_epoll_fileno,EPOLL_CTL_ADD,ev->fileno,&epoll_event);
 }
 
 static void ev_epoll_delete(struct ev *ev)
 {
+    struct epoll_event epoll_event;
+    
+    epoll_event.data.fd=ev->fileno;
+    epoll_event.events=0;
+
+    epoll_ctl(ev_epoll_fileno,EPOLL_CTL_DEL,ev->fileno,&epoll_event);
 }
 
 int ev_ext_init(struct ev_set *ev_set)

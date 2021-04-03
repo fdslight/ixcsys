@@ -5,6 +5,7 @@
 #include "netif.h"
 #include "router.h"
 #include "global.h"
+#include "npfwd.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
@@ -66,7 +67,8 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
         ixc_qos_add(m);
         return;
     }
-    ixc_router_send(netif->type,ipproto,IXC_FLAG_SRC_FILTER,m->data+m->offset,m->tail-m->offset);
+    //ixc_router_send(netif->type,ipproto,IXC_FLAG_SRC_FILTER,m->data+m->offset,m->tail-m->offset);
+    ixc_npfwd_send_raw(m,ipproto,IXC_FLAG_SRC_FILTER);
 }
 
 int ixc_src_filter_init(void)

@@ -12,6 +12,7 @@
 #include "ipunfrag.h"
 #include "debug.h"
 #include "global.h"
+#include "npfwd.h"
 
 #include "../../../pywind/clib/netutils.h"
 
@@ -58,8 +59,9 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
         // 检查是DHCP client报文并且开启DHCP的那么处理DHCP报文
         if(ntohs(udphdr->dst_port)==68 && ntohs(udphdr->src_port)==67){
-            ixc_router_send(IXC_NETIF_WAN,0,IXC_FLAG_DHCP_CLIENT,m->data+m->begin,m->end-m->begin);
-            ixc_mbuf_put(m);
+            //ixc_router_send(IXC_NETIF_WAN,0,IXC_FLAG_DHCP_CLIENT,m->data+m->begin,m->end-m->begin);
+            //ixc_mbuf_put(m);
+            ixc_npfwd_send_raw(m,17,IXC_FLAG_DHCP_CLIENT);
             return;
         }
     }
@@ -94,8 +96,9 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
         // 检查是DHCP server报文并且开启DHCP的那么处理DHCP报文
         if(ntohs(udphdr->dst_port)==67 && ntohs(udphdr->src_port)==68){
-            ixc_router_send(IXC_NETIF_LAN,0,IXC_FLAG_DHCP_SERVER,m->data+m->begin,m->end-m->begin);
-            ixc_mbuf_put(m);
+            //ixc_router_send(IXC_NETIF_LAN,0,IXC_FLAG_DHCP_SERVER,m->data+m->begin,m->end-m->begin);
+            //ixc_mbuf_put(m);
+            ixc_npfwd_send_raw(m,17,IXC_FLAG_DHCP_SERVER);
             return;
         }
     }

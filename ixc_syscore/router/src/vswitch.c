@@ -6,6 +6,7 @@
 #include "ether.h"
 #include "router.h"
 #include "ether.h"
+#include "npfwd.h"
 
 #include "../../../pywind/clib/timer.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -152,8 +153,9 @@ static struct ixc_mbuf *ixc_vsw_handle_exists(struct ixc_mbuf *m,struct ixc_ethe
     // 如果是本地数据包那么直接返回
     if(IXC_VSW_FLG_LOCAL==r->flags) return m;
     
-    ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
-    ixc_mbuf_put(m);
+    //ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
+    //ixc_mbuf_put(m);
+    ixc_npfwd_send_raw(m,0,IXC_FLAG_VSWITCH);
 
     return NULL;
 }
@@ -162,7 +164,8 @@ static struct ixc_mbuf *ixc_vsw_handle_exists(struct ixc_mbuf *m,struct ixc_ethe
 static struct ixc_mbuf *ixc_vsw_handle_no_exists(struct ixc_mbuf *m,struct ixc_ether_header *header)
 {
     // 首先转发一遍数据包到应用空间
-    ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
+    //ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
+    ixc_npfwd_send_raw(m,0,IXC_FLAG_VSWITCH);
     
     return m;
 }

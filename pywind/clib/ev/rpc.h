@@ -42,6 +42,9 @@ struct rpc_resp{
 /// RPC函数调用回调函数
 typedef int (*rpc_fn_call_t)(void *,unsigned short,void *,unsigned short *);
 
+/// 函数调佣类型
+typedef int (*rpc_fn_req_t)(const char *,void *,unsigned short,void *,unsigned short *);
+
 struct rpc_session{
 	/// 接收缓冲区
 	unsigned char recv_buf[0x10000];
@@ -69,27 +72,19 @@ struct rpc{
 	struct rpc_fn_info *fn_head;
 	struct ev *ev;
 	struct ev_set *ev_set;
+	// 如果设置了请求,那么系统将不会自动查找函数,需要用户自己编写自动查找函数
+	rpc_fn_req_t fn_req;
 	int fileno;
 	int is_ipv6;
+	
 };
 
 /// 创建RPC对象
-int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6);
+int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6,rpc_fn_req_t fn_req);
 /// 注册函数
 int rpc_fn_reg(const char *name,rpc_fn_call_t fn);
 /// 取消函数注册
 void rpc_fn_unreg(const char *name);
-/// 调用函数
-int rpc_fn_call(const char *name,void *arg,unsigned short arg_size,void *result,unsigned short *res_size);
-
-/// 创建RPC会话
-int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len);
-/// 发送数据到RPC缓冲区
-int rpc_session_write_to_sent_buf(struct rpc_session *session,void *data,unsigned short size);
-/// 检查是否发送完毕
-int rpc_session_send_ok(struct rpc_session *session);
-/// 删除RPC会话
-void rpc_session_del(struct rpc_session *session);
 /// 删除RPC对象
 void rpc_delete(void);
 

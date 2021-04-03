@@ -14,6 +14,7 @@
 #include "ip6.h"
 #include "vswitch.h"
 
+#include "../../../pywind/clib/ev/ev.h"
 #include "../../../pywind/clib/netif/tuntap.h"
 #include "../../../pywind/clib/netif/hwinfo.h"
 #include "../../../pywind/clib/netutils.h"
@@ -46,6 +47,7 @@ void ixc_netif_uninit(void)
 int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
 {
     struct ixc_netif *netif=NULL;
+    struct ev *ev;
     int fd=-1;
 
     if(if_idx<0 || if_idx>IXC_NETIF_MAX){

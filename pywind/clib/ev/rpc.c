@@ -12,6 +12,8 @@
 
 static struct rpc rpc;
 
+static int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len);
+
 static struct rpc_fn_info *rpc_fn_info_get(const char *name)
 {
 	struct rpc_fn_info *result=NULL,*t=rpc.fn_head;
@@ -42,7 +44,26 @@ static int rpc_accept(struct ev *ev)
 	return 0;
 }
 
-int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6)
+static int rpc_fn_req(const char *name,void *arg,unsigned short arg_size,void *result,unsigned short *res_size)
+{
+	struct rpc_fn_info *info;
+	char *s=result;
+
+	*s='\0';
+
+	info=rpc_fn_info_get(name);
+
+	if(NULL==info){
+		sprintf(s,"not found function %s",name);
+		*res_size=strlen(s);
+		
+		return RPC_ERR_FN_NOT_FOUND;
+	}
+
+	return info->fn(arg,arg_size,result,res_size);
+}
+
+int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6,rpc_fn_req_t fn_req)
 {
 	int listenfd=-1,rs=0;
 	struct sockaddr_in in_addr;
@@ -98,6 +119,8 @@ int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port
 	rpc.is_ipv6=is_ipv6;
 	rpc.fileno=listenfd;
 	rpc.ev_set=ev_set;
+	if(NULL!=fn_req) rpc.fn_req=fn_req;
+	else rpc.fn_req=rpc_fn_req;
 
 	rpc.ev=ev_create(ev_set,rpc.fileno);
 	if(NULL==rpc.ev){
@@ -160,24 +183,6 @@ void rpc_fn_unreg(const char *name)
 	}
 }
 
-int rpc_fn_call(const char *name,void *arg,unsigned short arg_size,void *result,unsigned short *res_size)
-{
-	struct rpc_fn_info *info;
-	char *s=result;
-
-	*s='\0';
-
-	info=rpc_fn_info_get(name);
-
-	if(NULL==info){
-		sprintf(s,"not found function %s",name);
-		*res_size=strlen(s);
-		
-		return RPC_ERR_FN_NOT_FOUND;
-	}
-
-	return info->fn(arg,arg_size,result,res_size);
-}
 
 /// 解析RPC请求
 static int rpc_session_parse_rpc_req(struct ev *ev,struct rpc_session *session)
@@ -205,7 +210,7 @@ static int rpc_session_parse_rpc_req(struct ev *ev,struct rpc_session *session)
 	memcpy(func_name,req->func_name,256);
 
 	// 调用函数执行并返回结果
-	err_code=rpc_fn_call(func_name,req->arg_data,tot_len-264,&(resp->message),&res_size);
+	err_code=rpc.fn_req(func_name,req->arg_data,tot_len-264,&(resp->message),&res_size);
 	// 此处发送响应
 	resp->is_error=htonl(err_code);
 	resp->tot_len=htons(res_size+16);
@@ -303,7 +308,7 @@ static int rpc_session_del_fn(struct ev *ev)
 	return 0;
 }
 
-int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len)
+static int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len)
 {
 	struct rpc_session *session=malloc(sizeof(struct rpc_session));
 	int rs;
@@ -350,23 +355,13 @@ int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len)
 	return 0;
 }
 
-int rpc_session_write_to_sent_buf(struct rpc_session *session,void *data,unsigned short size)
-{
-	//struct ev *ev=ev_get(session->fd);
-
-	return 0;
-}
-
-int rpc_session_send_ok(struct rpc_session *session)
-{
-	if(session->sent_buf_begin==session->sent_buf_end) return 1;
-	return 0;
-}
-
-void rpc_session_del(struct rpc_session *session)
-{
-}
-
 void rpc_delete(void)
 {
+	struct rpc_fn_info *info=rpc.fn_head,*t;
+
+	while(NULL!=info){
+		t=info->next;
+		free(info);
+		info=t;
+	}
 }

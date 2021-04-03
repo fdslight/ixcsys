@@ -13,6 +13,7 @@
 #include "icmp.h"
 #include "addr_map.h"
 #include "ip6sec.h"
+#include "npfwd.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
@@ -420,9 +421,10 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
         // 如果没有网卡,那么发送到其他应用
         if(NULL==r->netif){
             IXC_PRINT_IP6("Send to app for ipv6 address ",header->dst_addr);
-            ixc_router_send(netif->type,header->next_header,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
+            //ixc_router_send(netif->type,header->next_header,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
             // 这里丢弃数据包,避免内存泄漏
-            ixc_mbuf_put(m);
+            //ixc_mbuf_put(m);
+            ixc_npfwd_send_raw(m,header->next_header,IXC_FLAG_ROUTE_FWD);
             return;
         }else{
             netif=r->netif;
@@ -511,9 +513,10 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果没有网卡,那么发送到其他应用
     if(NULL==r->netif){
-        ixc_router_send(netif->type,iphdr->protocol,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
+        //ixc_router_send(netif->type,iphdr->protocol,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
         // 这里丢弃数据包,避免内存泄漏
-        ixc_mbuf_put(m);
+        //ixc_mbuf_put(m);
+        ixc_npfwd_send_raw(m,iphdr->protocol,IXC_FLAG_ROUTE_FWD);
         return;
     }
 
