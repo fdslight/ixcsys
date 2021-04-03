@@ -114,14 +114,23 @@ struct ev *ev_create(struct ev_set *ev_set,int fileno)
 		return NULL;
 	}
 
+	if(NULL!=ev_set->ev_head) ev_set->ev_head->prev=ev;
+	
+	ev->next=ev_set->ev_head;
+	ev_set->ev_head=ev;
+
 	return ev;
 }
 
 void ev_delete(struct ev_set *ev_set,struct ev *ev)
 {
-	ev_set->ev_delete_fn(ev);
-	
+	if(NULL!=ev->next) ev->next->prev=ev->prev;
+	if(NULL!=ev->prev) ev->prev->next=ev->next;
+	else ev_set->ev_head=ev->next;
+
 	ev->next=NULL;
+	ev->prev=NULL;
+	
 	ev->next=ev_set->del_head;
 	ev_set->del_head=ev;
 	ev->is_deleted=1;
@@ -138,6 +147,7 @@ int ev_modify(struct ev_set *ev_set,struct ev *ev,int ev_no)
 	}
 	if(is_writable && !ev->is_added_write) {
 		ev_set->add_write_ev_fn(ev);
+		DBG_FLAGS;
 		ev->is_added_write=1;
 	}
 	if(!is_readable && ev->is_added_read) {
@@ -158,11 +168,13 @@ int ev_loop(struct ev_set *ev_set)
 	struct ev *ev,*t;
 
 	while(1){
+		time_wheel_handle(ev_set->time_wheel);
 		rs=ev_set->ioloop_fn(ev_set);
 		ev=ev_set->del_head;
 		// 此处删除要删除的ev
 		while(NULL!=ev){
 			t=ev->next;
+			ev_set->ev_delete_fn(ev);
 			free(ev);
 			ev=t;
 		}
@@ -213,4 +225,14 @@ int ev_setnonblocking(int fd)
 		return -1;
 	}
 	return 0;
+}
+
+void ev_each(struct ev_set *ev_set,ev_each_fn_t fn)
+{
+	struct ev *ev=ev_set->ev_head;
+
+	while(NULL!=ev){
+		fn(ev);
+		ev=ev->next;
+	}
 }

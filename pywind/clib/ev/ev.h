@@ -34,9 +34,13 @@ typedef int (*ev_modify_fn_t)(struct ev *);
 typedef int (*ev_create_fn_t)(struct ev *);
 /// 事件删除回调函数
 typedef void (*ev_delete_fn_t)(struct ev *);
+/// 事件遍历回调函数
+typedef void (*ev_each_fn_t)(struct ev *);
 
 struct ev{
+	struct ev *prev;
 	struct ev *next;
+	
 	struct time_data *tdata;
 	void *data;
 
@@ -69,6 +73,8 @@ struct ev_set{
 	struct time_wheel *time_wheel;
 	// 需要删除的头部
 	struct ev *del_head;
+	// 事件集合
+	struct ev *ev_head;
 	
 	ev_create_fn_t ev_create_fn;
 	ev_delete_fn_t ev_delete_fn;
@@ -110,5 +116,7 @@ int ev_timeout_set(struct ev_set *ev_set,struct ev *ev,time_t timeout);
 struct ev *ev_get(struct ev_set *ev_set,int fileno);
 /// 设置为非阻塞模式
 int ev_setnonblocking(int fd);
+/// 遍历事件
+void ev_each(struct ev_set *ev_set,ev_each_fn_t fn);
 
 #endif

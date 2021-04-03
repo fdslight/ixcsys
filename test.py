@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import ixc_syslib.pylib.RPCClient as RPCClient
-import socket, os, struct
+import socket, os, struct,time
 
 """
 rand_key = os.urandom(16)
@@ -31,5 +31,6 @@ s.close()
 
 s = socket.socket()
 s.connect(("127.0.0.1", 1999))
-s.send(b"hello")
+s.send(os.urandom(1024))
+print(s.recv(4096))
 s.close()

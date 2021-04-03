@@ -34,7 +34,7 @@ enum{
 struct rpc_resp{
 	// 总体数据长度
 	unsigned short tot_len;
-	char pad[6];
+	char pad[10];
 	int is_error;
 	unsigned char message[RPC_DATA_MAX];
 };
@@ -76,11 +76,11 @@ struct rpc{
 /// 创建RPC对象
 int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6);
 /// 注册函数
-int rpc_fn_reg(struct rpc *rpc,const char *name,rpc_fn_call_t fn);
+int rpc_fn_reg(const char *name,rpc_fn_call_t fn);
 /// 取消函数注册
-void rpc_fn_unreg(struct rpc *rpc,const char *name);
+void rpc_fn_unreg(const char *name);
 /// 调用函数
-void rpc_fn_call(struct rpc *rpc,const char *name,void *arg,unsigned short arg_size);
+int rpc_fn_call(const char *name,void *arg,unsigned short arg_size,void *result,unsigned short *res_size);
 
 /// 创建RPC会话
 int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len);
@@ -89,8 +89,8 @@ int rpc_session_write_to_sent_buf(struct rpc_session *session,void *data,unsigne
 /// 检查是否发送完毕
 int rpc_session_send_ok(struct rpc_session *session);
 /// 删除RPC会话
-void rpc_session_del(struct rpc *rpc,struct rpc_session *session);
+void rpc_session_del(struct rpc_session *session);
 /// 删除RPC对象
-void rpc_delete(struct rpc *rpc);
+void rpc_delete(void);
 
 #endif

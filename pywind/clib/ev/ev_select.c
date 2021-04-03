@@ -33,11 +33,8 @@ static int ev_select_del_write(struct ev *ev)
 	return 0;
 }
 
-static void ev_select_init_events(void *data)
+static void ev_select_init_events(struct ev *ev)
 {
-	struct ev *ev=data;
-	int fd_max=0;
-
 	if(ev->is_added_read && !FD_ISSET(ev->fileno,&ev_select_rset)){
 		FD_SET(ev->fileno,&ev_select_rset);
 	}
@@ -54,13 +51,11 @@ static void ev_select_init_events(void *data)
 		FD_CLR(ev->fileno,&ev_select_wset);
 	}
 
-	if(ev->fileno>fd_max) fd_max=ev->fileno;
-	ev_select.fd_max=fd_max;
+	if(ev->fileno>ev_select.fd_max) ev_select.fd_max=ev->fileno;
 }
 
-static void ev_select_ev_handle(void *data)
+static void ev_select_ev_handle(struct ev *ev)
 {
-	struct ev *ev=data;
 	int is_readable=0,is_writable=0;
 	
 	if(FD_ISSET(ev->fileno,&ev_select_rset)) is_readable=1;
@@ -80,8 +75,10 @@ static int ev_select_ioloop(struct ev_set *ev_set)
 	struct timeval timeval;
 	int rs;
 	
+	// 这里需要重置文件最大描述符
+	ev_select.fd_max=0;
 	// 遍历映射重新生成rset与wset
-	map_each(ev_set->m,ev_select_init_events);
+	ev_each(ev_set,ev_select_init_events);
 
 	timeval.tv_sec=ev_set->wait_timeout;
 	timeval.tv_usec=0;
@@ -90,15 +87,21 @@ static int ev_select_ioloop(struct ev_set *ev_set)
 	
 	if(rs<0){
 		switch(errno){
-			case EINVAL:
+			case EBADF:
+				STDERR("wrong file descriptor\r\n");
+				break;
+			case EFAULT:
+				STDERR("wrong arguments\r\n");
+			case EINTR:
 				break;
 			default:
+				STDERR("select event error\r\n");
 				break;
 		}
 		return -1;
 	}
 	// 处理发生的事件
-	map_each(ev_set->m,ev_select_ev_handle);
+	ev_each(ev_set,ev_select_ev_handle);
 
 	return 0;
 }

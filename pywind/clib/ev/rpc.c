@@ -12,9 +12,9 @@
 
 static struct rpc rpc;
 
-static struct rpc_fn_info *rpc_fn_info_get(struct rpc *rpc,const char *name)
+static struct rpc_fn_info *rpc_fn_info_get(const char *name)
 {
-	struct rpc_fn_info *result=NULL,*t=rpc->fn_head;
+	struct rpc_fn_info *result=NULL,*t=rpc.fn_head;
 	while(NULL!=t){
 		if(strcmp(name,t->func_name)){
 			t=t->next;
@@ -108,14 +108,14 @@ int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port
 
 	EV_INIT_SET(rpc.ev,rpc_accept,NULL,NULL,NULL,NULL);
 	
-	DBG("create rpc OK\r\n");
+	rs=ev_modify(ev_set,rpc.ev,EV_READABLE);
 
-	return ev_modify(ev_set,rpc.ev,EV_READABLE);
+	return rs;
 }
 
-int rpc_fn_reg(struct rpc *rpc,const char *name,rpc_fn_call_t fn)
+int rpc_fn_reg(const char *name,rpc_fn_call_t fn)
 {
-	struct rpc_fn_info *info=rpc_fn_info_get(rpc,name);
+	struct rpc_fn_info *info=rpc_fn_info_get(name);
 	if(NULL==info){
 		STDERR("cannot reg rpc function %s,it is exists\r\n",name);
 		return -1;
@@ -133,19 +133,19 @@ int rpc_fn_reg(struct rpc *rpc,const char *name,rpc_fn_call_t fn)
 	bzero(info,sizeof(struct rpc_fn_info));
 	strcpy(info->func_name,name);
 	info->fn=fn;
-	info->next=rpc->fn_head;
-	rpc->fn_head=info;
+	info->next=rpc.fn_head;
+	rpc.fn_head=info;
 	
 	return 0;
 }
 
-void rpc_fn_unreg(struct rpc *rpc,const char *name)
+void rpc_fn_unreg(const char *name)
 {
-	struct rpc_fn_info *info=rpc_fn_info_get(rpc,name);
-	struct rpc_fn_info *t=rpc->fn_head;
+	struct rpc_fn_info *info=rpc_fn_info_get(name);
+	struct rpc_fn_info *t=rpc.fn_head;
 	if(NULL==info) return;
-	if(rpc->fn_head==info){
-		rpc->fn_head=info->next;
+	if(rpc.fn_head==info){
+		rpc.fn_head=info->next;
 		free(info);
 		return;
 	}
@@ -160,28 +160,33 @@ void rpc_fn_unreg(struct rpc *rpc,const char *name)
 	}
 }
 
-void rpc_fn_call(struct rpc *rpc,const char *name,void *arg,unsigned short arg_size)
+int rpc_fn_call(const char *name,void *arg,unsigned short arg_size,void *result,unsigned short *res_size)
 {
-	char message[RPC_DATA_MAX];
-	unsigned short msize;
 	struct rpc_fn_info *info;
-	struct rpc_resp resp;
+	char *s=result;
 
-	info=rpc_fn_info_get(rpc,name);
-	// 未找到函数的处理方式
+	*s='\0';
+
+	info=rpc_fn_info_get(name);
+
 	if(NULL==info){
-		sprintf(message,"cannot found function %s",name);
-		return;
+		sprintf(s,"not found function %s",name);
+		*res_size=strlen(s);
+		
+		return RPC_ERR_FN_NOT_FOUND;
 	}
-	resp.is_error=info->fn(arg,arg_size,message,&msize);
+
+	return info->fn(arg,arg_size,result,res_size);
 }
 
 /// 解析RPC请求
 static int rpc_session_parse_rpc_req(struct ev *ev,struct rpc_session *session)
 {
 	struct rpc_req *req=(struct rpc_req *)(session->recv_buf);
-	unsigned short tot_len;
+	unsigned short tot_len,res_size;
 	char func_name[512];
+	struct rpc_resp *resp=(struct rpc_resp *)(session->sent_buf);
+	int err_code;
 
 	// 缓冲区收到的数据必须等于大于2个字节
 	if(session->recv_buf_end<2) return 0;
@@ -189,13 +194,23 @@ static int rpc_session_parse_rpc_req(struct ev *ev,struct rpc_session *session)
 	tot_len=ntohs(req->tot_len);
 	// 正常情况下tot len会比收到的数据大
 	if(tot_len<session->recv_buf_end) return -1;
+	//if(tot_len>session->recv_buf_end) return 0;
+
+	session->sent_buf_end=0;
+	session->sent_buf_begin=0;
 
 	bzero(func_name,512);
 	memcpy(func_name,req->func_name,256);
 
 	// 调用函数执行并返回结果
-	rpc_fn_call(&rpc,func_name,req->arg_data,tot_len-264);
+	err_code=rpc_fn_call(func_name,req->arg_data,tot_len-264,&(resp->message),&res_size);
+	// 此处发送响应
+	resp->is_error=htonl(err_code);
+	resp->tot_len=htons(res_size+16);
 
+	session->sent_buf_end=res_size+16;
+
+	ev_modify(rpc.ev_set,ev,EV_WRITABLE);
 
 	return 0;
 }
@@ -205,8 +220,6 @@ static int rpc_session_readable_fn(struct ev *ev)
 	ssize_t recv_size;
 	int rs;
 	struct rpc_session *session=ev->data;
-
-	DBG_FLAGS;
 
 	for(int n=0;n<10;n++){
 		recv_size=recv(ev->fileno,&session->recv_buf[session->recv_buf_end],0xffff-session->recv_buf_end,0);
@@ -227,6 +240,7 @@ static int rpc_session_readable_fn(struct ev *ev)
 			ev_delete(rpc.ev_set,ev);
 			break;
 		}else{
+			ev_delete(rpc.ev_set,ev);
 			break;
 		}
 	}
@@ -243,12 +257,20 @@ static int rpc_session_writable_fn(struct ev *ev)
 static int rpc_session_timeout_fn(struct ev *ev)
 {
 	DBG_FLAGS;
+	ev_delete(rpc.ev_set,ev);
+
 	return 0;
 }
 
 static int rpc_session_del_fn(struct ev *ev)
 {
+	struct rpc_session *session=ev->data;
+
 	DBG_FLAGS;
+
+	close(session->fd);
+	free(session);
+
 	return 0;
 }
 
@@ -283,13 +305,15 @@ int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len)
 		return -1;
 	}
 
+	if(ev_timeout_set(rpc.ev_set,ev,10)<0){
+		STDERR("cannot set timeout for fd %d\r\n",fd);
+	}
+
 	EV_INIT_SET(ev,rpc_session_readable_fn,rpc_session_writable_fn,rpc_session_timeout_fn,rpc_session_del_fn,session);
 	rs=ev_modify(rpc.ev_set,ev,EV_READABLE);
 
 	if(rs<0){
 		ev_delete(rpc.ev_set,ev);
-		free(session);
-		close(fd);
 		STDERR("cannot add to readablefor fd %d\r\n",fd);
 		return -1;
 	}
@@ -310,10 +334,10 @@ int rpc_session_send_ok(struct rpc_session *session)
 	return 0;
 }
 
-void rpc_session_del(struct rpc *rpc,struct rpc_session *session)
+void rpc_session_del(struct rpc_session *session)
 {
 }
 
-void rpc_delete(struct rpc *rpc)
+void rpc_delete(void)
 {
 }
