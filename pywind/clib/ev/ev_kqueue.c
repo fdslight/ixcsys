@@ -15,7 +15,7 @@ static int ev_kqueue_change_count=0;
 static int ev_kqueue_add_read(struct ev *ev)
 {
     struct kevent *kevent;
-
+    
     if(ev_kqueue_change_count==EV_EV_MAX){
         STDERR("changelist too small\r\n");
         return -1;
@@ -52,6 +52,8 @@ static int ev_kqueue_add_write(struct ev *ev)
     kevent->data=0;
     kevent->udata=ev;
 
+    ev_kqueue_change_count++;
+   
     return 0;
 }
 
@@ -72,6 +74,8 @@ static int ev_kqueue_del_read(struct ev *ev)
     kevent->data=0;
     kevent->udata=ev;
 
+    ev_kqueue_change_count++;
+ 
     return 0;
 }
 
@@ -92,6 +96,8 @@ static int ev_kqueue_del_write(struct ev *ev)
     kevent->data=0;
     kevent->udata=ev;
 
+    ev_kqueue_change_count++;
+    
     return 0;
 }
 
@@ -102,6 +108,8 @@ static void ev_kqueue_handle_events(struct ev_set *ev_set,struct kevent *events,
     struct ev *ev;
     short filter;
 
+    ev_kqueue_change_count=0;
+
     for(int n=0;n<nevents;n++){
         kevent=&(events[n]);
         //ident=kevent->ident;
@@ -109,12 +117,13 @@ static void ev_kqueue_handle_events(struct ev_set *ev_set,struct kevent *events,
         filter=kevent->filter;
 
         readable=filter & EVFILT_READ;
-        writable=filter & EVFILT_WRITE;   
+        writable=filter & EVFILT_WRITE;
 
-        if(readable && !ev->is_deleted){
+        if(readable && !ev->is_deleted && NULL!=ev->readable_fn){
             ev->readable_fn(ev);
         }
-        if(writable && !ev->is_deleted){
+
+        if(writable && !ev->is_deleted && NULL!=ev->writable_fn){
             ev->writable_fn(ev);
         }
     }
@@ -127,10 +136,9 @@ static int ev_kqueue_ioloop(struct ev_set *ev_set)
 
     timespec.tv_sec=ev_set->wait_timeout;
     timespec.tv_nsec=0;
-
     rs=kevent(ev_kqueue,ev_kqueue_changelist,ev_kqueue_change_count,ev_kqueue_evlist,EV_EV_MAX,&timespec);
+
     ev_kqueue_handle_events(ev_set,ev_kqueue_evlist,rs);
-    ev_kqueue_change_count=0;
 
     return 0;
 }

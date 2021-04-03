@@ -61,11 +61,11 @@ static void ev_select_ev_handle(struct ev *ev)
 	if(FD_ISSET(ev->fileno,&ev_select_rset)) is_readable=1;
 	if(FD_ISSET(ev->fileno,&ev_select_wset)) is_writable=1;
 	
-	if(is_readable && !ev->is_deleted){
+	if(is_readable && !ev->is_deleted && NULL!=ev->readable_fn){
 		ev->readable_fn(ev);
 	}
 	
-	if(is_writable && !ev->is_deleted){
+	if(is_writable && !ev->is_deleted && NULL!=ev->writable_fn){
 		ev->writable_fn(ev);
 	}
 }
@@ -113,6 +113,7 @@ static int ev_select_create(struct ev *ev)
 
 static void ev_select_delete(struct ev *ev)
 {
+
 }
 
 int ev_select_init(struct ev_set *ev_set)

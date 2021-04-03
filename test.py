@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import ixc_syslib.pylib.RPCClient as RPCClient
-import socket, os, struct,time
+import socket, os, struct, time
 
 """
 rand_key = os.urandom(16)
@@ -29,8 +29,8 @@ while 1:
 s.close()
 """
 
-s = socket.socket()
-s.connect(("127.0.0.1", 1999))
-s.send(os.urandom(1024))
-print(s.recv(4096))
-s.close()
+import pywind.lib.crpc as crpc
+
+rpc = crpc.RPCBase()
+rpc.send_rpc_request("my_name",b"")
+print(rpc.recv_rpc_response())

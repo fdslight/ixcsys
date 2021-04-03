@@ -8,7 +8,7 @@
 #include "ev.h"
 
 /// RPC最大数据大小,请不要修改这个值
-#define RPC_DATA_MAX 0xfd02
+#define RPC_DATA_MAX 0x10000
 /// RPC请求数据结构体
 struct rpc_req{
 	// 总体数据长度,包括函数名和命名空间

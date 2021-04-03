@@ -13,17 +13,19 @@ static void ev_del_cb(void *data)
 {
 	struct ev *ev=data;
 	ev->del_fn(ev);
+	free(ev);
 }
 
 static void ev_timeout_cb(void *data)
 {
 	struct ev *ev=data;
-
+	ev->tdata=NULL;
+	
 	if(NULL==ev->timeout_fn){
 		STDERR("not set timeout_fn for fileno %d\r\n",ev->fileno);
-	}else{
-		ev->timeout_fn(ev);
+		return;
 	}
+	if(!ev->is_deleted) ev->timeout_fn(ev);
 }
 
 int ev_set_init(struct ev_set *ev_set,int force_select)
@@ -124,6 +126,12 @@ struct ev *ev_create(struct ev_set *ev_set,int fileno)
 
 void ev_delete(struct ev_set *ev_set,struct ev *ev)
 {
+	struct time_data *tdata=ev->tdata;
+
+	if(NULL!=tdata) tdata->is_deleted=1;
+
+	ev_set->ev_delete_fn(ev);
+
 	if(NULL!=ev->next) ev->next->prev=ev->prev;
 	if(NULL!=ev->prev) ev->prev->next=ev->next;
 	else ev_set->ev_head=ev->next;
@@ -136,25 +144,24 @@ void ev_delete(struct ev_set *ev_set,struct ev *ev)
 	ev->is_deleted=1;
 }
 
-int ev_modify(struct ev_set *ev_set,struct ev *ev,int ev_no)
+int ev_modify(struct ev_set *ev_set,struct ev *ev,int ev_no,int ev_ctl)
 {
 	int is_readable=ev_no & EV_READABLE;
 	int is_writable=ev_no & EV_WRITABLE;
 	
-	if(is_readable && !ev->is_added_read) {
+	if(is_readable && !ev->is_added_read && ev_ctl==EV_CTL_ADD) {
 		ev_set->add_read_ev_fn(ev);
 		ev->is_added_read=1;
 	}
-	if(is_writable && !ev->is_added_write) {
+	if(is_writable && !ev->is_added_write && ev_ctl==EV_CTL_ADD) {
 		ev_set->add_write_ev_fn(ev);
-		DBG_FLAGS;
 		ev->is_added_write=1;
 	}
-	if(!is_readable && ev->is_added_read) {
+	if(is_readable && ev->is_added_read && ev_ctl==EV_CTL_DEL) {
 		ev_set->del_read_ev_fn(ev);
 		ev->is_added_read=0;
 	}
-	if(!is_writable && ev->is_added_write) {
+	if(is_writable && ev->is_added_write && ev_ctl==EV_CTL_DEL) {
 		ev_set->del_write_ev_fn(ev);
 		ev->is_added_write=0;
 	}
@@ -168,17 +175,19 @@ int ev_loop(struct ev_set *ev_set)
 	struct ev *ev,*t;
 
 	while(1){
-		time_wheel_handle(ev_set->time_wheel);
 		rs=ev_set->ioloop_fn(ev_set);
+		time_wheel_handle(ev_set->time_wheel);
+
 		ev=ev_set->del_head;
 		// 此处删除要删除的ev
 		while(NULL!=ev){
 			t=ev->next;
-			ev_set->ev_delete_fn(ev);
-			free(ev);
+			map_del(ev_set->m,(char *)(&ev->fileno),ev_del_cb);
 			ev=t;
 		}
+		//DBG_FLAGS;
 		ev_set->del_head=NULL;
+		//DBG_FLAGS;
 		if(rs<0) break;
 	}
 

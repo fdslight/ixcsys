@@ -108,7 +108,7 @@ int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port
 
 	EV_INIT_SET(rpc.ev,rpc_accept,NULL,NULL,NULL,NULL);
 	
-	rs=ev_modify(ev_set,rpc.ev,EV_READABLE);
+	rs=ev_modify(ev_set,rpc.ev,EV_READABLE,EV_CTL_ADD);
 
 	return rs;
 }
@@ -194,7 +194,9 @@ static int rpc_session_parse_rpc_req(struct ev *ev,struct rpc_session *session)
 	tot_len=ntohs(req->tot_len);
 	// 正常情况下tot len会比收到的数据大
 	if(tot_len<session->recv_buf_end) return -1;
-	//if(tot_len>session->recv_buf_end) return 0;
+	// tot len的最小长度
+	if(tot_len<264) return -1;
+	if(tot_len>session->recv_buf_end) return 0;
 
 	session->sent_buf_end=0;
 	session->sent_buf_begin=0;
@@ -209,8 +211,8 @@ static int rpc_session_parse_rpc_req(struct ev *ev,struct rpc_session *session)
 	resp->tot_len=htons(res_size+16);
 
 	session->sent_buf_end=res_size+16;
-
-	ev_modify(rpc.ev_set,ev,EV_WRITABLE);
+	ev_modify(rpc.ev_set,ev,EV_WRITABLE,EV_CTL_ADD);
+	ev->up_time=time(NULL);
 
 	return 0;
 }
@@ -232,17 +234,18 @@ static int rpc_session_readable_fn(struct ev *ev)
 			session->recv_buf_end+=recv_size;
 			rs=rpc_session_parse_rpc_req(ev,session);
 			if(rs<0){
+				DBG("wrong RPC request\r\n");
 				ev_delete(rpc.ev_set,ev);
 				break;
 			}
-		}
-		if(EAGAIN!=errno){
-			ev_delete(rpc.ev_set,ev);
-			break;
-		}else{
-			ev_delete(rpc.ev_set,ev);
 			break;
 		}
+		if(EAGAIN==errno) break;
+
+		DBG("recv rpc data wrong from fd %d errno %d\r\n",ev->fileno,errno);
+		ev_delete(rpc.ev_set,ev);
+		break;
+		
 	}
 
 	return 0;
@@ -250,13 +253,39 @@ static int rpc_session_readable_fn(struct ev *ev)
 
 static int rpc_session_writable_fn(struct ev *ev)
 {
-	DBG_FLAGS;
+	ssize_t sent_size;
+	struct rpc_session *session=ev->data;
+
+	while(1){
+		sent_size=send(ev->fileno,session->sent_buf+session->sent_buf_begin,session->sent_buf_end-session->sent_buf_begin,0);
+		if(sent_size>=0){
+			session->sent_buf_begin+=sent_size;
+			// 数据已经被发送完毕那么重置
+			if(session->sent_buf_begin==session->sent_buf_end){
+				session->sent_buf_begin=0;
+				session->sent_buf_end=0;
+				ev_modify(rpc.ev_set,ev,EV_WRITABLE,EV_CTL_DEL);
+				break;
+			}
+			continue;
+		}
+
+		if(EAGAIN==errno) break;
+		ev_delete(rpc.ev_set,ev);
+	}
+
 	return 0;
 }
 
 static int rpc_session_timeout_fn(struct ev *ev)
 {
-	DBG_FLAGS;
+	time_t now=time(NULL);
+	
+	if(now-ev->up_time<10){
+		ev_timeout_set(rpc.ev_set,ev,10);
+		return 0;
+	}
+
 	ev_delete(rpc.ev_set,ev);
 
 	return 0;
@@ -310,7 +339,7 @@ int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len)
 	}
 
 	EV_INIT_SET(ev,rpc_session_readable_fn,rpc_session_writable_fn,rpc_session_timeout_fn,rpc_session_del_fn,session);
-	rs=ev_modify(rpc.ev_set,ev,EV_READABLE);
+	rs=ev_modify(rpc.ev_set,ev,EV_READABLE,EV_CTL_ADD);
 
 	if(rs<0){
 		ev_delete(rpc.ev_set,ev);

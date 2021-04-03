@@ -8,6 +8,11 @@
 #define EV_READABLE 1
 #define EV_WRITABLE 2
 
+/// 加入事件
+#define EV_CTL_ADD 1
+/// 删除事件
+#define EV_CTL_DEL 2
+
 /// 最大超时时间
 #ifndef EV_TIMEOUT_MAX
 #define EV_TIMEOUT_MAX 30
@@ -107,7 +112,7 @@ struct ev *ev_create(struct ev_set *ev_set,int fileno);
 /// 删除事件
 void ev_delete(struct ev_set *ev_set,struct ev *ev);
 /// 修改事件
-int ev_modify(struct ev_set *ev_set,struct ev *ev,int ev_no);
+int ev_modify(struct ev_set *ev_set,struct ev *ev,int ev_no,int ev_ctl);
 /// 事件循环
 int ev_loop(struct ev_set *ev_set);
 /// 设置超时事件超时时间
