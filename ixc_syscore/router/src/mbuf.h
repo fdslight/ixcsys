@@ -66,5 +66,7 @@ void ixc_mbuf_uninit(void);
 
 struct ixc_mbuf *ixc_mbuf_get(void);
 void ixc_mbuf_put(struct ixc_mbuf *m);
+/// 克隆mbuf
+struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m);
 
 #endif

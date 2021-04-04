@@ -31,96 +31,10 @@ typedef struct{
     PyObject_HEAD
 }routerObject;
 
-static PyObject *router_sent_cb=NULL;
-static PyObject *router_write_ev_tell_cb=NULL;
-static PyObject *router_pppoe_session_packet_recv_cb=NULL;
-static PyObject *router_tell_cb=NULL;
-
-int ixc_router_send(unsigned char if_type,unsigned char ipproto,unsigned char flags,void *buf,size_t size)
-{
-    PyObject *arglist,*result;
-    if(NULL==router_sent_cb) return -1;
-
-    arglist=Py_BuildValue("(bbby#)",if_type,ipproto,flags,buf,size);
-    result=PyObject_CallObject(router_sent_cb,arglist);
- 
-    Py_XDECREF(arglist);
-    Py_XDECREF(result);
-
-    return 0;
-}
-
-int ixc_router_write_ev_tell(int fd,int flags)
-{
-    PyObject *arglist,*result;
-    if(NULL==router_write_ev_tell_cb) return -1;
-
-    arglist=Py_BuildValue("(ii)",fd,flags);
-    result=PyObject_CallObject(router_write_ev_tell_cb,arglist);
-
-    Py_XDECREF(arglist);
-    Py_XDECREF(result);
-
-    return 0;
-}
-
-int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,void *data)
-{
-    PyObject *arglist,*result;
-
-    if(NULL==router_pppoe_session_packet_recv_cb){
-        STDERR("no set python pppoe session recv function\r\n");
-        return -1;
-    }
-
-    arglist=Py_BuildValue("(Hy#)",protocol,data,length);
-    result=PyObject_CallObject(router_pppoe_session_packet_recv_cb,arglist);
-
-    Py_XDECREF(arglist);
-    Py_XDECREF(result);
-
-    return 0;
-}
-
-int ixc_router_tell(const char *content)
-{
-    PyObject *arglist,*result;
-
-    if(NULL==router_tell_cb){
-        STDERR("no set python tell function\r\n");
-        return -1;
-    }
-    
-    arglist=Py_BuildValue("(s)",content);
-    result=PyObject_CallObject(router_tell_cb,arglist);
-
-    Py_XDECREF(arglist);
-    Py_XDECREF(result);
-
-    return 0;  
-}
-
-static void ixc_segfault_handle(int signum)
-{
-    void *bufs[4096];
-    char **strs;
-    int nptrs;
-
-    nptrs=backtrace(bufs,4096);
-    strs=backtrace_symbols(bufs,nptrs);
-    if(NULL==strs) return;
-
-    for(int n=0;n<nptrs;n++){
-        fprintf(stderr,"%s\r\n",strs[n]);
-    }
-    free(strs);
-    exit(EXIT_FAILURE);
-}
-
 static void
 router_dealloc(routerObject *self)
 {
-    ixc_mbuf_uninit();
+    
 }
 
 static PyObject *
@@ -131,231 +45,13 @@ router_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self=(routerObject *)type->tp_alloc(type,0);
     if(NULL==self) return NULL;
 
-    rs=sysloop_init();
-    if(rs<0){
-        STDERR("cannot init sysloop\r\n");
-        return NULL;
-    }
-
-    rs=ixc_g_init();
-    if(rs<0){
-        STDERR("cannot init global\r\n");
-        return NULL;
-    }
-
-    rs=ixc_vsw_init();
-    if(rs<0){
-        STDERR("cannot init vswitch\r\n");
-        return NULL;
-    }
-
-    rs=ixc_mbuf_init(512);
-    if(rs<0){
-        STDERR("cannot init mbuf\r\n");
-        return NULL;
-    }
-
-    rs=ixc_port_map_init();
-    if(rs<0){
-        STDERR("cannot init port_map\r\n");
-        return NULL;
-    }
-
-    rs=ixc_ip6sec_init();
-    if(rs<0){
-        STDERR("cannot init ip6sec\r\n");
-        return NULL;
-    }
-
-    rs=ixc_nat_init();
-    if(rs<0){
-        STDERR("cannot init nat\r\n");
-        return NULL;
-    }
-
-    rs=ixc_netif_init();
-    if(rs<0){
-        STDERR("cannot init netif\r\n");
-        return NULL;
-    }
-
-    rs=ixc_addr_map_init();
-    if(rs<0){
-        STDERR("cannot init addr map\r\n");
-        return NULL;
-    }
-
-    rs=ixc_qos_init();
-    if(rs<0){
-        STDERR("cannot init qos\r\n");
-        return NULL;
-    }
-
-    rs=ixc_route_init();
-    if(rs<0){
-        STDERR("cannot init route\r\n");
-        return NULL;
-    }
-
-    rs=ixc_src_filter_init();
-    if(rs<0){
-        STDERR("cannot init P2P\r\n");
-        return NULL;
-    }
-
-    rs=ixc_pppoe_init();
-    if(rs<0){
-        STDERR("cannot init pppoe\r\n");
-        return NULL;
-    }
-
-    rs=ixc_ip6_init();
-    if(rs<0){
-        STDERR("cannot init ICMPv6\r\n");
-        return NULL;
-    }
-
-    rs=ixc_ipunfrag_init();
-    if(rs<0){
-        STDERR("cannot init ipunfrag\r\n");
-        return NULL;
-    }
-
-    signal(SIGSEGV,ixc_segfault_handle);
-
     return (PyObject *)self;
 }
 
 static int
 router_init(routerObject *self,PyObject *args,PyObject *kwds)
 {
-    PyObject *fn_sent,*fn_w;
-
-    if(!PyArg_ParseTuple(args,"OO",&fn_sent,&fn_w)) return -1;
-    if(!PyCallable_Check(fn_sent)){
-        PyErr_SetString(PyExc_TypeError,"packet recevice  must be callable");
-        return -1;
-    }
-    if(!PyCallable_Check(fn_w)){
-        PyErr_SetString(PyExc_TypeError,"write event set  must be callable");
-        return -1;
-    }
-
-    Py_XDECREF(router_sent_cb);
-    Py_XDECREF(router_write_ev_tell_cb);
-
-    router_sent_cb=fn_sent;
-    router_write_ev_tell_cb=fn_w;
-
-    Py_INCREF(router_sent_cb);
-    Py_INCREF(router_write_ev_tell_cb);
-
     return 0;
-}
-
-
-/// 设置PPPoE包接收函数
-static PyObject *
-router_set_pppoe_session_packet_recv_fn(PyObject *self,PyObject *args)
-{
-    PyObject *fn;
-
-    if(!PyArg_ParseTuple(args,"O",&fn)) return NULL;
-    if(!PyCallable_Check(fn)){
-        PyErr_SetString(PyExc_TypeError,"the argument must be callable");
-        return NULL;
-    }
-
-    Py_XDECREF(router_pppoe_session_packet_recv_cb);
-
-    router_pppoe_session_packet_recv_cb=fn;
-    Py_INCREF(router_pppoe_session_packet_recv_cb);
-
-    Py_RETURN_NONE;
-}
-
-/// 设置告知函数
-static PyObject *
-router_set_tell_fn(PyObject *self,PyObject *args)
-{
-    PyObject *fn;
-
-    if(!PyArg_ParseTuple(args,"O",&fn)) return NULL;
-    if(!PyCallable_Check(fn)){
-        PyErr_SetString(PyExc_TypeError,"the argument must be callable");
-        return NULL;
-    }
-
-    Py_XDECREF(router_tell_cb);
-
-    router_tell_cb=fn;
-    Py_INCREF(router_tell_cb);
-
-    Py_RETURN_NONE;
-}
-
-/// 发送网络数据包
-static PyObject *
-router_send_netpkt(PyObject *self,PyObject *args)
-{
-    char *sent_data;
-    Py_ssize_t size;
-    unsigned char flags;
-    unsigned char if_type;
-    unsigned char ipproto;
-
-    struct ixc_mbuf *m;
-    struct ixc_netif *netif=NULL;
-
-    if(!PyArg_ParseTuple(args,"bbby#",&if_type,&ipproto,&flags,&sent_data,&size)) return NULL;
-
-    if(0==ipproto){
-        netif=ixc_netif_get(if_type);
-        if(NULL==netif){
-            Py_RETURN_FALSE;
-        }
-    }
-
-    if(IXC_FLAG_VSWITCH==flags){
-        if(ixc_vsw_send(sent_data,size)<0){
-            Py_RETURN_FALSE;
-        }
-        Py_RETURN_TRUE;
-    }
-
-    m=ixc_mbuf_get();
-    if(NULL==m){
-        STDERR("cannot get mbuf for send\r\n");
-        Py_RETURN_FALSE;
-    }
-
-    m->netif=netif;
-    m->from=IXC_MBUF_FROM_WAN;
-    m->begin=IXC_MBUF_BEGIN;
-    m->offset=m->begin;
-    m->tail=m->begin+size;
-    m->end=m->tail;
-
-    memcpy(m->data+m->begin,sent_data,size);
-
-    if(0!=ipproto){
-        ixc_ip_send(m);
-    }else{
-        ixc_ether_send2(m);
-    }
-
-    Py_RETURN_TRUE;
-}
-
-/// 是否需要等待,如果有需要待发送的数据包等内容,那么就不能等待
-static PyObject *
-router_iowait(PyObject *self,PyObject *args)
-{
-    if(ixc_qos_have_data()){
-        Py_RETURN_FALSE;
-    }
-    
-    Py_RETURN_TRUE;
 }
 
 static PyObject *
@@ -368,52 +64,6 @@ router_qos_udp_udplite_first(PyObject *self,PyObject *args)
 
     Py_RETURN_NONE;
 }
-
-static PyObject *
-router_myloop(PyObject *self,PyObject *args)
-{
-    sysloop_do();
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-router_netif_create(PyObject *self,PyObject *args)
-{
-    const char *name;
-    char res_devname[512];
-    int fd,if_idx;
-
-    if(!PyArg_ParseTuple(args,"si",&name,&if_idx)) return NULL;
-    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
-        PyErr_SetString(PyExc_ValueError,"wrong if index value");
-        return NULL;
-    }
-    if(ixc_netif_is_used(if_idx)){
-        PyErr_SetString(PyExc_SystemError,"netif is used\r\n");
-        return NULL;  
-    }
-
-    fd=ixc_netif_create(name,res_devname,if_idx);
-
-    return Py_BuildValue("is",fd,res_devname);
-}
-
-static PyObject *
-router_netif_delete(PyObject *self,PyObject *args)
-{
-    int if_idx;
-    if(!PyArg_ParseTuple(args,"i",&if_idx)) return NULL;
-
-    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
-        PyErr_SetString(PyExc_ValueError,"wrong if index value");
-        return NULL;
-    }
-
-    ixc_netif_delete(if_idx);
-
-    Py_RETURN_NONE;
-}
-
 
 /// 获取网卡IP地址
 static PyObject *
@@ -447,62 +97,6 @@ router_netif_get_ip(PyObject *self,PyObject *args)
     }
 
     return Py_BuildValue("(si)",str_ip,prefix);
-}
-
-/// 接收数据
-static PyObject *
-router_netif_rx_data(PyObject *self,PyObject *args)
-{
-    int if_idx,rs;
-    struct ixc_netif *netif;
-    if(!PyArg_ParseTuple(args,"i",&if_idx)) return NULL;
-
-    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
-        PyErr_SetString(PyExc_ValueError,"wrong if index value");
-        return NULL;
-    }
-
-    if(!ixc_netif_is_used(if_idx)){
-        PyErr_SetString(PyExc_SystemError,"netif is not used\r\n");
-        return NULL;  
-    }
-
-    netif=ixc_netif_get(if_idx);
-    rs=ixc_netif_rx_data(netif);
-
-    if(rs<0){
-        Py_RETURN_FALSE;
-    }
-
-    Py_RETURN_TRUE;
-}
-
-/// 发送数据
-static PyObject *
-router_netif_tx_data(PyObject *self,PyObject *args)
-{
-    int if_idx,rs;
-    struct ixc_netif *netif;
-    if(!PyArg_ParseTuple(args,"i",&if_idx)) return NULL;
-
-    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
-        PyErr_SetString(PyExc_ValueError,"wrong if index value");
-        return NULL;
-    }
-
-    if(!ixc_netif_is_used(if_idx)){
-        PyErr_SetString(PyExc_SystemError,"netif is not used\r\n");
-        return NULL;  
-    }
-
-    netif=ixc_netif_get(if_idx);
-    rs=ixc_netif_tx_data(netif);
-
-    if(rs<0){
-        Py_RETURN_FALSE;
-    }
-    
-    Py_RETURN_TRUE;
 }
 
 /// 设置网卡IP地址
@@ -911,21 +505,9 @@ static PyMemberDef router_members[]={
 };
 
 static PyMethodDef routerMethods[]={
-    {"set_pppoe_session_packet_recv_fn",(PyCFunction)router_set_pppoe_session_packet_recv_fn,METH_VARARGS,"set PPPoE session packet recv function"},
-    {"set_tell_fn",(PyCFunction)router_set_tell_fn,METH_VARARGS,"set tell function"},
-    {"send_netpkt",(PyCFunction)router_send_netpkt,METH_VARARGS,"send network packet to protocol statck"},
-    //
-    {"iowait",(PyCFunction)router_iowait,METH_VARARGS,"tell if wait"},
     //
     {"qos_udp_udplite_first_enable",(PyCFunction)router_qos_udp_udplite_first,METH_VARARGS,"set udp or udplite first"},
     //
-    {"myloop",(PyCFunction)router_myloop,METH_VARARGS,"loop call"},
-    //
-    {"netif_create",(PyCFunction)router_netif_create,METH_VARARGS,"create tap device"},
-    {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},
-    {"netif_get_ip",(PyCFunction)router_netif_get_ip,METH_VARARGS,"get netif ip address"},
-    {"netif_rx_data",(PyCFunction)router_netif_rx_data,METH_VARARGS,"receive netif data"},
-    {"netif_tx_data",(PyCFunction)router_netif_tx_data,METH_VARARGS,"send netif data"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
     //
@@ -985,7 +567,7 @@ static struct PyModuleDef routerModule={
     routerMethods
 };
 
-PyMODINIT_FUNC
+static PyObject *
 PyInit_router(void){
     PyObject *m;
 

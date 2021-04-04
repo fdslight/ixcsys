@@ -3,6 +3,8 @@
 
 #include "mbuf.h"
 
+#include "../../../pywind/clib/ev/ev.h"
+
 #define IXC_NETIF_READ_NUM 16
 #define IXC_NETIF_MAX 2
 
@@ -52,7 +54,7 @@ struct ixc_netif{
     unsigned char ip6_default_router_hwaddr[6];
 };
 
-int ixc_netif_init(void);
+int ixc_netif_init(struct ev_set *ev_set);
 void ixc_netif_uninit(void);
 
 int ixc_netif_create(const char *devname,char res_devname[],int if_idx);

@@ -17,7 +17,16 @@ struct ixc_npfwd_info{
 
 /// 数据头部格式
 struct ixc_npfwd_header{
+    // key
     unsigned char key[16];
+    // 要发送的网卡接口类型
+    unsigned char if_type;
+    // 填充字段
+    unsigned char pad;
+    // IP协议
+    unsigned char ipproto;
+    // 标志
+    unsigned char flags;
 };
 
 struct ixc_npfwd{
@@ -33,6 +42,6 @@ void ixc_npfwd_uninit(void);
 int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char flags);
 
 /// 设置重定向
-int ixc_npfwd_set_forward(unsigned char *key,unsigned short port);
+int ixc_npfwd_set_forward(unsigned char *key,unsigned short port,int flags);
 
 #endif

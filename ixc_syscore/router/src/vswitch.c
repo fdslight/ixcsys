@@ -192,7 +192,9 @@ void ixc_vsw_handle(struct ixc_mbuf *m)
 
     // 多播地址本地和远程都发送一遍
     if((eth_header->dst_hwaddr[0] & 0x01)==0x01 || !memcmp(all_zero,eth_header->dst_hwaddr,6)){
-        ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
+        result=ixc_mbuf_clone(m);
+        if(NULL!=result) ixc_npfwd_send_raw(result,0,IXC_FLAG_VSWITCH);
+        //ixc_router_send(m->netif->type,0,IXC_FLAG_VSWITCH,m->data+m->offset,m->tail-m->offset);
         ixc_ether_handle(m);
         return;
     }
@@ -228,12 +230,8 @@ void ixc_vsw_handle(struct ixc_mbuf *m)
 int ixc_vsw_send(void *data,size_t size)
 {
     struct ixc_ether_header *eth_header=(struct ixc_ether_header *)data;
-    struct ixc_mbuf *m,*m2;
+    struct ixc_mbuf *m;
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
-    struct ixc_vsw_record *r;
-    char is_found;
-    int rs;
-    unsigned char all_zero[]={0x00,0x00,0x00,0x00,0x00,0x00};
 
     if(!vsw_table.enable){
         STDERR("no enable vswitch\r\n");
@@ -260,7 +258,24 @@ int ixc_vsw_send(void *data,size_t size)
 
     memcpy(m->data+m->offset,data,size);
 
-    // 如果是本机的地址的处理方式
+    return ixc_vsw_send2(m);
+}
+
+int ixc_vsw_send2(struct ixc_mbuf *m)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
+    struct ixc_ether_header *eth_header=(struct ixc_ether_header *)(m->data+m->offset);
+    struct ixc_mbuf *m2;
+    struct ixc_vsw_record *r;
+    char is_found;
+    unsigned char all_zero[]={0x00,0x00,0x00,0x00,0x00,0x00};
+    int rs;
+
+    if(!vsw_table.enable){
+        STDERR("no enable vswitch\r\n");
+        return -1;
+    }
+
     if(!memcmp(eth_header->dst_hwaddr,netif->hwaddr,6)){
         ixc_ether_handle(m);
         return 0;
@@ -269,21 +284,11 @@ int ixc_vsw_send(void *data,size_t size)
     // 检查是否是多播地址
     if((eth_header->dst_hwaddr[0] & 0x01)==0x01 || !memcmp(all_zero,eth_header->dst_hwaddr,6)){
         ixc_ether_send2(m);
-        m2=ixc_mbuf_get();
+        m2=ixc_mbuf_clone(m);
         if(NULL==m2){
             STDERR("cannot get mbuf for multi broadcast\r\n");
             return -1;
         }
-
-        m2->next=NULL;
-        m2->begin=IXC_MBUF_BEGIN;
-        m2->offset=IXC_MBUF_BEGIN;
-        m2->tail=IXC_MBUF_BEGIN+size;
-        m2->end=IXC_MBUF_BEGIN+size;
-        m2->netif=netif;
-        m2->from=IXC_MBUF_FROM_LAN;
-
-        memcpy(m->data+m->offset,data,size);
         ixc_ether_handle(m2);
         return 0;
     }

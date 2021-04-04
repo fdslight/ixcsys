@@ -146,6 +146,8 @@ static int ixc_start_python(void)
     py_helper_instance=cls;
 
     Py_XDECREF(pfunc);
+    // 把C扩展模块加入到Python模块表中
+    //PyImport_AppendInittab("router",&PyInit_router);
 
     return 0;
 }
@@ -205,7 +207,7 @@ static void ixc_start(int debug)
         return;
     }
 
-    rs=ixc_netif_init();
+    rs=ixc_netif_init(&ixc_ev_set);
     if(rs<0){
         STDERR("cannot init netif\r\n");
         return;

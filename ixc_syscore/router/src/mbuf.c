@@ -1,6 +1,7 @@
 #include<stdlib.h>
 #include<signal.h>
 #include<unistd.h>
+#include<string.h>
 
 #include "mbuf.h"
 #include "../../../pywind/clib/debug.h"
@@ -111,4 +112,37 @@ void ixc_mbuf_put(struct ixc_mbuf *m)
     m->next=NULL;
     m->next=ixc_mbuf_empty_head;
     ixc_mbuf_empty_head=m;
+}
+
+struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m)
+{
+    struct ixc_mbuf *new_mbuf;
+
+    if(NULL==m) return NULL;
+    new_mbuf=ixc_mbuf_get();
+    if(NULL==new_mbuf){
+        STDERR("cannot get mbuf for clone\r\n");
+        return NULL;
+    }
+
+    new_mbuf->next=NULL;
+    new_mbuf->netif=m->netif;
+    new_mbuf->priv_data=m->priv_data;
+    new_mbuf->priv_flags=m->priv_flags;
+    new_mbuf->is_ipv6=m->is_ipv6;
+    new_mbuf->from=m->from;
+    new_mbuf->begin=m->begin;
+    new_mbuf->offset=m->offset;
+    new_mbuf->tail=m->tail;
+    new_mbuf->end=m->tail;
+    new_mbuf->passthrough=m->passthrough;
+    new_mbuf->link_proto=m->link_proto;
+
+    memcpy(new_mbuf->next_host,m->next_host,16);
+    memcpy(new_mbuf->dst_hwaddr,m->dst_hwaddr,6);
+    memcpy(new_mbuf->src_hwaddr,m->src_hwaddr,6);
+
+    memcpy(new_mbuf->data+new_mbuf->begin,m->data+m->begin,m->end-m->begin);
+
+    return new_mbuf;
 }

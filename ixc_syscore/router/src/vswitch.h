@@ -39,5 +39,6 @@ int ixc_vsw_is_enabled(void);
 void ixc_vsw_handle(struct ixc_mbuf *m);
 /// 发送数据到虚拟交换机
 int ixc_vsw_send(void *data,size_t size);
+int ixc_vsw_send2(struct ixc_mbuf *m);
 
 #endif

@@ -13,6 +13,7 @@
 #include "debug.h"
 #include "ip6.h"
 #include "vswitch.h"
+#include "debug.h"
 
 #include "../../../pywind/clib/ev/ev.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -20,10 +21,43 @@
 #include "../../../pywind/clib/netutils.h"
 
 static struct ixc_netif netif_objs[IXC_NETIF_MAX];
+static struct ev_set *netif_ev_set;
 static int netif_is_initialized=0;
 
-int ixc_netif_init(void)
+static int ixc_netif_readable_fn(struct ev *ev)
 {
+    struct ixc_netif *netif=ev->data;
+
+    ixc_netif_rx_data(netif);
+
+    return 0;
+}
+
+static int ixc_netif_writable_fn(struct ev *ev)
+{
+    struct ixc_netif *netif=ev->data;
+
+    ixc_netif_tx_data(netif);
+
+    return 0;
+}
+
+static int ixc_netif_timeout_fn(struct ev *ev)
+{
+    return 0;
+}
+
+static int ixc_netif_del_fn(struct ev *ev)
+{
+    struct ixc_netif *netif=ev->data;
+    ixc_netif_delete(netif->type);
+
+    return 0;
+}
+
+int ixc_netif_init(struct ev_set *ev_set)
+{
+    netif_ev_set=ev_set;
     bzero(&netif_objs,sizeof(struct ixc_netif)*IXC_NETIF_MAX);
 
     netif_is_initialized=1;
@@ -48,7 +82,7 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
 {
     struct ixc_netif *netif=NULL;
     struct ev *ev;
-    int fd=-1;
+    int fd=-1,rs;
 
     if(if_idx<0 || if_idx>IXC_NETIF_MAX){
         STDERR("wrong if index value\r\n");
@@ -78,6 +112,22 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
 
     tapdev_set_nonblocking(fd);
     strcpy(netif->devname,res_devname);
+
+    ev=ev_create(netif_ev_set,fd);
+    if(NULL==ev){
+        tapdev_close(fd,res_devname);
+        STDERR("cannot ev for netif %s\r\n",res_devname);
+        return -1;
+    }
+
+    EV_INIT_SET(ev,ixc_netif_readable_fn,ixc_netif_writable_fn,ixc_netif_timeout_fn,ixc_netif_del_fn,netif);
+	rs=ev_modify(netif_ev_set,ev,EV_READABLE,EV_CTL_ADD);
+
+	if(rs<0){
+		ev_delete(netif_ev_set,ev);
+		STDERR("cannot add to readablefor fd %d\r\n",fd);
+		return -1;
+	}
 
     netif->is_used=1;
     netif->fd=fd;
@@ -218,12 +268,7 @@ int ixc_netif_send(struct ixc_mbuf *m)
     }
 
     netif->sent_last=m;
-
-    // 没有告知写入事件的告知需要加入写入事件
-    if(!netif->write_flags){
-        ixc_router_write_ev_tell(netif->fd,1);
-        netif->write_flags=1;
-    }
+    ixc_netif_tx_data(netif);
 
     return 0;
 }
@@ -231,6 +276,7 @@ int ixc_netif_send(struct ixc_mbuf *m)
 int ixc_netif_tx_data(struct ixc_netif *netif)
 {
     struct ixc_mbuf *m;
+    struct ev *ev=ev_get(netif_ev_set,netif->fd);
     ssize_t wsize;
     int rs=0;
 
@@ -261,11 +307,10 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
         ixc_mbuf_put(m);
     }
 
-    if(rs>=0 && NULL==netif->sent_first) {
-        netif->write_flags=0;
-        // 告知取消写入事件
-        ixc_router_write_ev_tell(netif->fd,0);
-    }
+    // 加入到写入事件
+    if(rs>=0 && NULL!=netif->sent_first) ev_modify(netif_ev_set,ev,EV_WRITABLE,EV_CTL_ADD);
+    // 如果没有数据可写那么删除写事件
+    if(NULL==netif->sent_first) ev_modify(netif_ev_set,ev,EV_WRITABLE,EV_CTL_DEL);
 
     return rs;
 }
