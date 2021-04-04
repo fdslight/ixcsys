@@ -29,6 +29,24 @@ class controller(app_handler.handler):
             "application/octet-stream", byte_data
         )
 
+    def handle_rpc_request(self, fname: str, *args, **kwargs):
+        fn = self.fobjs[fname]
+        try:
+            is_err, message = fn(*args, **kwargs)
+        except NameError:
+            self.send_rpc_response(RPCClient.ERR_NOT_FOUND_METHOD, "not found RPC function %s" % fname)
+            return
+        except TypeError:
+            logging.print_error()
+            self.send_rpc_response(RPCClient.ERR_ARGS, "Wrong argument or return value for function %s" % fname)
+            return
+        except:
+            logging.print_error()
+            self.send_rpc_response(RPCClient.ERR_SYS, "system error for RPC request %s" % fname)
+            return
+
+        self.send_rpc_response(is_err, message)
+
     def handle(self):
         raw_data = self.request.get_raw_body()
         rpc_request = pickle.loads(raw_data)
@@ -55,23 +73,7 @@ class controller(app_handler.handler):
         if fname not in self.fobjs:
             self.send_rpc_response(RPCClient.ERR_NOT_FOUND_METHOD, "not found RPC function %s" % fname)
             return
-
-        fn = self.fobjs[fname]
-        try:
-            is_err, message = fn(*args, **kwargs)
-        except NameError:
-            self.send_rpc_response(RPCClient.ERR_NOT_FOUND_METHOD, "not found RPC function %s" % fname)
-            return
-        except TypeError:
-            logging.print_error()
-            self.send_rpc_response(RPCClient.ERR_ARGS, "Wrong argument or return value for function %s" % fname)
-            return
-        except:
-            logging.print_error()
-            self.send_rpc_response(RPCClient.ERR_SYS, "system error for RPC request %s" % fname)
-            return
-
-        self.send_rpc_response(is_err, message)
+        self.handle_rpc_request(fname, *args, **kwargs)
 
     def rpc_init(self):
         """RPC初始化函数,该函数用于注册函数目的

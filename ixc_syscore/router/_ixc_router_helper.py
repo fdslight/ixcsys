@@ -1,29 +1,58 @@
-# coding=iso-8859-1
 # !/usr/bin/env python3
 import pickle, os, socket, sys
 
 import router
 
-import ixc_syslib.pylib.logging as logging
 import ixc_syscore.router.pylib.pppoe as pppoe
 
+import ixc_syslib.pylib.RPCClient as RPC
 import pywind.lib.netutils as netutils
 import pywind.lib.configfile as conf
 
+
 class rpc(object):
     __fn_objects = None
+    __helper = None
 
     def __init__(self, _helper):
+        self.__helper = _helper
+
         self.__fn_objects = {
-            "netif_set_ip": None,
-            "netif_get_ip": None,
-            "route_add": self.route_add,
-            "route_del": None,
+            "get_all_consts": None,
+            "get_wan_ipaddr_info": None,
+            "get_lan_ipaddr_info": None,
+            "add_route": None,
+            "del_route": None,
+            "set_wan_ipaddr": None,
+            "wan_ready_ok": None,
+            "vsw_enable": None,
 
+            "set_fwd_port": None,
+            "unset_fwd_port": None,
+
+            "wan_config_get": self.wan_config_get,
+            "lan_config_get": self.lan_config_get,
+            "manage_addr_get": self.manage_addr_get,
+            "wan_hwaddr_set": self.wan_hwaddr_set,
+            "wan_addr_set": self.wan_addr_set,
+            "cur_internet_type_get": self.cur_internet_type_get,
+            "internet_type_set": self.internet_type_set,
+            "dhcp_positive_heartbeat_set": self.dhcp_positive_heartbeat_set,
+            "lan_ipv6_pass_enable": self.lan_ipv6_pass_enable,
+            "lan_static_ipv6_enable": self.lan_static_ipv6_enable,
+            "lan_static_ipv6_set": self.lan_static_ipv6_set,
+            "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
+            "pppoe_set": self.pppoe_set,
+            "router_config_get": self.router_config_get,
+            "qos_set_udp_udplite_first": self.qos_set_udp_udplite_first,
+            "port_map_add": self.port_map_add,
+            "port_map_del": self.port_map_del,
+            "port_map_configs_get": self.port_map_configs_get,
+            "src_filter_set_ip": self.src_filter_set_ip,
+            "src_filter_enable": self.src_filter_enable,
+            "src_filter_set_protocols": self.src_filter_set_protocols,
+            "config_save": self.save
         }
-
-    def route_add(self):
-        return
 
     def call(self, fn_name: str, *args, **kwargs):
         """????
@@ -34,6 +63,400 @@ class rpc(object):
         fn = self.__fn_objects[fn_name]
 
         return fn(*args, **kwargs)
+
+    def get_all_consts(self):
+        """获取所有转发数据包的flags
+        :return:
+        """
+        values = {
+            "IXC_FLAG_DHCP_CLIENT": router.IXC_FLAG_DHCP_CLIENT,
+            "IXC_FLAG_DHCP_SERVER": router.IXC_FLAG_DHCP_SERVER,
+            "IXC_FLAG_ARP": router.IXC_FLAG_ARP,
+            "IXC_FLAG_VSWITCH": router.IXC_FLAG_VSWITCH,
+            "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
+            "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
+            "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
+            "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
+        }
+
+        return 0, values
+
+    def get_wan_hwaddr(self):
+        """获取WAN硬件地址
+        :return:
+        """
+        wan_configs = self.__helper.wan_configs
+        public = wan_configs["public"]
+
+        return 0, (public["phy_ifname"], public["hwaddr"],)
+
+    def get_gw_hwaddr(self):
+        """获取LAN硬件地址
+        :return:
+        """
+        if_config = self.__helper.lan_configs["if_config"]
+        return 0, (if_config["phy_ifname"], if_config["hwaddr"],)
+
+    def get_wan_ipaddr_info(self, is_ipv6=False):
+        return 0, self.__helper.router.netif_get_ip(router.IXC_NETIF_WAN, is_ipv6)
+
+    def get_lan_ipaddr_info(self, is_ipv6=False):
+        return 0, self.__helper.router.netif_get_ip(router.IXC_NETIF_LAN, is_ipv6)
+
+    def check_ipaddr_args(self, ipaddr: str, prefix: int, is_ipv6=False):
+        if is_ipv6 and not netutils.is_ipv6_address(ipaddr):
+            return False, "wrong IPv6 address format"
+        if not is_ipv6 and not netutils.is_ipv4_address(ipaddr):
+            return False, "wrong IP address format"
+        try:
+            prefix = int(prefix)
+        except ValueError:
+            return False, "wrong prefix value %s" % prefix
+
+        if prefix < 0:
+            return False, "wrong prefix value %d" % prefix
+        if is_ipv6 and prefix > 128:
+            return False, "wrong IPv6 prefix value %d" % prefix
+        if not is_ipv6 and prefix > 32:
+            return False, "wrong IP prefix value %d" % prefix
+
+        return True, ""
+
+    def set_gw_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
+        """设置网关的IP地址
+        """
+        prefix = int(prefix)
+        check_ok, err_msg = self.check_ipaddr_args(ipaddr, prefix, is_ipv6=is_ipv6)
+        if not check_ok:
+            return 0, (check_ok, err_msg,)
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+        byte_ip = socket.inet_pton(fa, ipaddr)
+        set_ok = self.__helper.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, is_ipv6)
+
+        return 0, (set_ok, "")
+
+    def set_manage_ipaddr(self, ipaddr: str, is_ipv6=False, is_local=False):
+        """设置管理地址
+        """
+        self.__helper.set_manage_ipaddr(ipaddr, is_ipv6=is_ipv6, is_local=is_local)
+        return 0, None
+
+    def get_manage_ipaddr(self):
+        """获取管理地址
+        """
+        ipaddr = self.__helper.get_manage_addr()
+
+        return 0, ipaddr
+
+    def get_lan_configs(self):
+        return 0, self.__helper.lan_configs
+
+    def get_wan_configs(self):
+        return 0, self.__helper.wan_configs
+
+    def set_wan_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
+        """设置WAN口的IP地址
+        """
+        check_ok, err_msg = self.check_ipaddr_args(ipaddr, int(prefix), is_ipv6=is_ipv6)
+        if not check_ok:
+            return 0, (check_ok, err_msg,)
+
+        if self.__helper.router.pppoe_is_enabled():
+            return 0, (False, "PPPoE is enabled,cannot set wan IP or IPv6 address")
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+        byte_ip = socket.inet_pton(fa, ipaddr)
+        set_ok = self.__helper.router.netif_set_ip(router.IXC_NETIF_WAN, byte_ip, prefix, is_ipv6)
+
+        return 0, (set_ok, "")
+
+    def add_route(self, subnet: str, prefix: int, gw: str, is_ipv6=False):
+        if is_ipv6 and (not netutils.is_ipv6_address(subnet) or not netutils.is_ipv6_address(gw)):
+            return 0, (False, "Wrong subnet or gateway address format for IPv6")
+
+        if not is_ipv6 and (not netutils.is_ipv4_address(subnet) or not netutils.is_ipv4_address(gw)):
+            return 0, (False, "Wrong subnet or gateway address format for IP")
+
+        if prefix < 0:
+            return 0, (False, "Wrong prefix value %d" % prefix)
+
+        if is_ipv6 and prefix > 128:
+            return 0, (False, "Wrong prefix value %d" % prefix)
+
+        if not is_ipv6 and prefix > 32:
+            return 0, (False, "Wrong prefix value %d" % prefix)
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+
+        byte_subnet = socket.inet_pton(fa, subnet)
+        byte_gw = socket.inet_pton(fa, gw)
+
+        rs = self.__helper.router.route_add(byte_subnet, prefix, byte_gw, is_ipv6)
+
+        return 0, (rs, "")
+
+    def del_route(self, subnet: str, prefix: int, is_ipv6=False):
+        ok, mesg = self.check_ipaddr_args(subnet, prefix, is_ipv6=is_ipv6)
+
+        if not ok: return 0, (ok, mesg)
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+
+        byte_subnet = socket.inet_pton(fa, subnet)
+        self.__helper.router.route_del(byte_subnet, prefix, is_ipv6)
+
+        return 0, (True, "")
+
+    def pppoe_is_enabled(self):
+        is_enabled = self.__helper.router.pppoe_is_enabled()
+
+        return 0, is_enabled
+
+    def wan_ready_ok(self):
+        return 0, self.__helper.router.wan_ready_ok()
+
+    def vsw_enable(self, enable: bool):
+        """开启或者关闭虚拟交换
+        :param enable:
+        :return:
+        """
+        return 0, self.__helper.router.vsw_enable(enable)
+
+    def set_fwd_port(self, flags: int, _id: bytes, fwd_port: int):
+        if not isinstance(_id, bytes):
+            return 0, (False, "Wrong _id data type")
+        if len(_id) != 16:
+            return 0, (False, "Wrong _id length")
+        try:
+            fwd_port = int(fwd_port)
+        except ValueError:
+            return 0, (False, "Wrong fwd_port data type")
+
+        if fwd_port > 0xfffe or fwd_port < 1:
+            return 0, (False, "Wrong fwd_port value")
+
+        pfwd = self.__helper.get_fwd_instance()
+        b = pfwd.set_fwd_port(flags, _id, fwd_port)
+
+        return 0, (b, "")
+
+    def unset_fwd_port(self, flags: int):
+        pfwd = self.__helper.get_fwd_instance()
+        pfwd.unset_fwd_port(flags)
+        return 0, None
+
+    def wan_config_get(self):
+        return 0, self.__helper.wan_configs
+
+    def lan_config_get(self):
+        return 0, self.__helper.lan_configs
+
+    def manage_addr_get(self):
+        lan_configs = self.__helper.lan_configs
+
+        return 0, lan_configs["if_config"]["manage_addr"]
+
+    def wan_hwaddr_set(self, hwaddr: str):
+        if not netutils.is_hwaddr(hwaddr):
+            return RPC.ERR_ARGS, "wrong hwaddr format"
+
+        configs = self.__helper.wan_configs
+        configs["public"]["hwaddr"] = hwaddr
+
+        return 0, None
+
+    def cur_internet_type_get(self):
+        """获取当前internet上网方式
+        """
+        wan_configs = self.__helper.wan_configs
+        public = wan_configs["public"]
+
+        return 0, public["internet_type"]
+
+    def pppoe_set(self, username: str, passwd: str, heartbeat=False):
+        if not username or not passwd:
+            return RPC.ERR_ARGS, "empty username or password"
+        configs = self.__helper.wan_configs
+        pppoe = configs["pppoe"]
+
+        pppoe["user"] = username
+        pppoe["passwd"] = passwd
+
+        if heartbeat:
+            pppoe["heartbeat"] = 1
+        else:
+            pppoe["heartbeat"] = 0
+
+        return 0, None
+
+    def internet_type_set(self, _type: str):
+        types = (
+            "pppoe", "dhcp", "static-ip",
+        )
+        if _type not in types:
+            return RPC.ERR_ARGS, "wrong internet type value,there is pppoe,dhcp or static-ip"
+
+        public = self.__helper.wan_configs["public"]
+        public["internet_type"] = _type
+
+        return 0, None
+
+    def wan_addr_set(self, ip: str, mask: str, gw: str):
+        if not netutils.is_ipv4_address(ip) or not netutils.is_mask(mask) or not netutils.is_ipv4_address(gw):
+            return RPC.ERR_ARGS, "wrong argument value format"
+
+        prefix = netutils.mask_to_prefix(mask, is_ipv6=False)
+        if not netutils.is_same_network(ip, gw, prefix, is_ipv6=False):
+            return RPC.ERR_ARGS, "wrong argument value"
+
+        ipv4 = self.__helper.wan_configs["ipv4"]
+        ipv4["address"] = ip
+        ipv4["mask"] = mask
+        ipv4["default_gw"] = gw
+
+        return 0, None
+
+    def lan_static_ipv6_set(self, subnet: str, prefix: int):
+        if not netutils.is_ipv6_address(subnet):
+            return RPC.ERR_ARGS, "wrong IPv6 addres value"
+        try:
+            int(prefix)
+        except ValueError:
+            return RPC.ERR_ARGS, "wrong prefix value type"
+
+        prefix = int(prefix)
+        if prefix < 48 or prefix > 64:
+            return RPC.ERR_ARGS, "prefix value must be 48 to 64"
+
+        configs = self.__helper.lan_configs["if_config"]
+        configs["ip6_addr"] = "%s/%s" % (subnet, prefix,)
+
+        return 0, None
+
+    def lan_static_ipv6_enable(self, enable: bool):
+        """是否开启静态IPv6地址
+        """
+        configs = self.__helper.lan_configs["if_config"]
+        if enable:
+            configs["enable_static_ipv6"] = 1
+        else:
+            configs["enable_static_ipv6"] = 0
+
+        return 0, None
+
+    def lan_ipv6_pass_enable(self, enable: bool):
+        configs = self.__helper.lan_configs["if_config"]
+        if enable:
+            configs["enable_ipv6_pass"] = 1
+        else:
+            configs["enable_ipv6_pass"] = 0
+
+        return 0, None
+
+    def lan_ipv6_security_enable(self, enable: bool):
+        configs = self.__helper.lan_configs["if_config"]
+        if enable:
+            configs["enable_ipv6_security"] = 1
+        else:
+            configs["enable_ipv6_security"] = 0
+
+        return 0, None
+
+    def dhcp_positive_heartbeat_set(self, positive_heartbeat=False):
+        dhcp = self.__helper.wan_configs["dhcp"]
+        if positive_heartbeat:
+            dhcp["positive_heartbeat"] = 1
+        else:
+            dhcp["positive_heartbeat"] = 0
+
+        return 0, None
+
+    def router_config_get(self):
+        configs = self.__helper.router_configs
+
+        return 0, configs
+
+    def qos_set_udp_udplite_first(self, enable: bool):
+        configs = self.__helper.router_configs["qos"]
+        if enable:
+            configs["udp_udplite_first"] = 1
+        else:
+            configs["udp_udplite_first"] = 0
+        self.__helper.router.qos_udp_udplite_first_enable(enable)
+
+        return 0, None
+
+    def save(self):
+        self.__helper.save_wan_configs()
+        self.__helper.save_lan_configs()
+        self.__helper.save_router_configs()
+        return 0, None
+
+    def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
+        """端口映射添加
+        :param protocol:
+        :param port:
+        :param address:
+        :param alias_name:映射名
+        :return:
+        """
+        if protocol not in (6, 17, 136,):
+            return RPC.ERR_ARGS, "wrong protocol number value %s" % protocol
+        if not netutils.is_port_number(port):
+            return RPC.ERR_ARGS, "wrong port number value %s" % port
+
+        if not netutils.is_ipv4_address(address):
+            return RPC.ERR_ARGS, "wrong address value %s" % address
+
+        return 0, self.__helper.port_map_add(protocol, port, address, alias_name)
+
+    def port_map_del(self, protocol: int, port: int):
+        if protocol not in (6, 17, 136,):
+            return RPC.ERR_ARGS, "wrong protocol number value %s" % protocol
+        if not netutils.is_port_number(port):
+            return RPC.ERR_ARGS, "wrong port number value %s" % port
+
+        return 0, self.__helper.port_map_del(protocol, port)
+
+    def port_map_configs_get(self):
+        return 0, self.__helper.port_map_configs
+
+    def src_filter_set_ip(self, ip: str, prefix: int, is_ipv6=False):
+        if is_ipv6:
+            byte_addr = socket.inet_pton(socket.AF_INET6, ip)
+        else:
+            byte_addr = socket.inet_pton(socket.AF_INET, ip)
+
+        return 0, self.__helper.router.src_filter_set_ip(byte_addr, prefix, is_ipv6);
+
+    def src_filter_enable(self, enable: bool):
+        return 0, self.__helper.router.src_filter_enable(enable)
+
+    def src_filter_set_protocols(self, protocol: str):
+        seq = list(bytes(0xff))
+        if protocol == "UDP" or protocol == "ALL":
+            seq[17] = 1
+        if protocol == "TCP" or protocol == "ALL":
+            seq[6] = 1
+        if protocol == "UDPLite" or protocol == "ALL":
+            seq[136] = 1
+
+        byte_data = bytes(seq)
+
+        return 0, self.__helper.router.src_filter_set_protocols(byte_data)
 
 
 class helper(object):
@@ -367,7 +790,7 @@ class helper(object):
         self.__wan_configs = {}
         self.__is_linux = sys.platform.startswith("linux")
 
-        # ????FreeBSD?????if_tap.ko??
+        # FreeBSDif_tap.ko
         if not self.is_linux:
             fd = os.popen("kldstat")
             s = fd.read()
@@ -376,13 +799,13 @@ class helper(object):
             if p < 0: os.system("kldload if_tap")
 
         self.start_lan()
-        # ??start_wan????
         self.start_wan()
 
-        # self.set_router()
+        self.set_router()
 
-        # self.load_port_map_configs()
-        # self.reset_port_map()
+        self.load_port_map_configs()
+        self.reset_port_map()
+
 
     @property
     def router(self):

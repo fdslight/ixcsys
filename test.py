@@ -31,6 +31,6 @@ s.close()
 
 import pywind.lib.crpc as crpc
 
-rpc = crpc.RPCBase("/tmp//ixcsys/router/rpc.sock")
+rpc = crpc.RPCClient("/tmp//ixcsys/router/rpc.sock")
 rpc.send_rpc_request("my_name",b"")
 print(rpc.recv_rpc_response())

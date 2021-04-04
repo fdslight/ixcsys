@@ -1,44 +1,33 @@
 #!/usr/bin/env python3
 
-import ixc_syslib.web.controllers.rpc_controller as rpc
+import pickle
 
+import pywind.lib.crpc as crpc
+import ixc_syslib.web.controllers.rpc_controller as rpc
+import ixc_syslib.pylib.RPCClient as RPCClient
 from pywind.global_vars import global_vars
 
 
 class controller(rpc.controller):
     __runtime = None
 
-    @property
-    def router(self):
-        return global_vars["ixcsys.router"]
-
     def rpc_init(self):
         self.__runtime = global_vars["ixcsys.runtime"]
 
         self.fobjs = {
-            "set_fwd_port": self.set_fwd_port,
-            "unset_fwd_port": self.unset_fwd_port
         }
 
-    def set_fwd_port(self, flags: int, _id: bytes, fwd_port: int):
-        if not isinstance(_id, bytes):
-            return 0, (False, "Wrong _id data type")
-        if len(_id) != 16:
-            return 0, (False, "Wrong _id length")
+    def handle_rpc_request(self, fname: str, *args, **kwargs):
+        client = crpc.RPCClient(self.__runtime.rpc_sock_path)
+
+        dic = {
+            "args": args,
+            "kwargs": kwargs
+        }
+
         try:
-            fwd_port = int(fwd_port)
-        except ValueError:
-            return 0, (False, "Wrong fwd_port data type")
-
-        if fwd_port > 0xfffe or fwd_port < 1:
-            return 0, (False, "Wrong fwd_port value")
-
-        pfwd = self.__runtime.get_fwd_instance()
-        b = pfwd.set_fwd_port(flags, _id, fwd_port)
-
-        return 0, (b, "")
-
-    def unset_fwd_port(self, flags: int):
-        pfwd = self.__runtime.get_fwd_instance()
-        pfwd.unset_fwd_port(flags)
-        return 0, None
+            is_error, msg = client.send_rpc_request(fname, pickle.dumps(dic))
+        except crpc.RPCError:
+            self.send_rpc_response(RPCClient.ERR_SYS, "system error for function %s" % fname)
+            return
+        self.send_rpc_response(is_error, msg)

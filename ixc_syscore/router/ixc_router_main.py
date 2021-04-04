@@ -57,15 +57,10 @@ def __start_service(debug):
 
 
 class service(dispatcher.dispatcher):
-    __router = None
     __debug = None
 
     __is_linux = None
     __scgi_fd = None
-
-    @property
-    def router(self):
-        return self.__router
 
     @property
     def is_linux(self):
@@ -94,7 +89,6 @@ class service(dispatcher.dispatcher):
 
     def init_func(self, debug):
         self.__debug = debug
-        self.__wan_configs = {}
         self.__scgi_fd = -1
 
         RPC.wait_proc("init")
@@ -105,14 +99,15 @@ class service(dispatcher.dispatcher):
             sys.stdout = logging.stdout()
             sys.stderr = logging.stderr()
 
-            temp_dir = os.getenv("IXC_MYAPP_TMP_DIR")
-
         self.create_poll()
 
-        global_vars["ixcsys.router"] = self.__router
         global_vars["ixcsys.runtime"] = self
 
         self.start_scgi()
+
+    @property
+    def rpc_sock_path(self):
+        return "/tmp/ixcsys/router/rpc.sock"
 
 
 def main():

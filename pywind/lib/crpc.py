@@ -10,12 +10,12 @@ class RPCError(Exception):
     pass
 
 
-class RPCBase(object):
+class RPCClient(object):
     __s = None
     __timeout = None
     __reader = None
 
-    def __init__(self, path:str):
+    def __init__(self, path: str):
         self.__reader = reader.reader()
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__s = s
