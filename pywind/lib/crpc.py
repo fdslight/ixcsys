@@ -11,22 +11,15 @@ class RPCError(Exception):
 
 
 class RPCBase(object):
-    __is_ipv6 = None
     __s = None
     __timeout = None
     __reader = None
 
-    def __init__(self, server=("127.0.0.1", 1999), is_ipv6=False):
+    def __init__(self, path:str):
         self.__reader = reader.reader()
-        self.__is_ipv6 = is_ipv6
-        if is_ipv6:
-            fa = socket.AF_INET6
-        else:
-            fa = socket.AF_INET
-
-        s = socket.socket(fa, socket.SOCK_STREAM)
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__s = s
-        self.__s.connect(server)
+        self.__s.connect(path)
         self.__timeout = 3
 
     def send_rpc_request(self, func_name: str, arg_data: bytes):

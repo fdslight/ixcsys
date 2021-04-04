@@ -74,13 +74,12 @@ struct rpc{
 	struct ev_set *ev_set;
 	// 如果设置了请求,那么系统将不会自动查找函数,需要用户自己编写自动查找函数
 	rpc_fn_req_t fn_req;
-	int fileno;
-	int is_ipv6;
-	
+	char path[1024];
+	int fileno;	
 };
 
 /// 创建RPC对象
-int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6,rpc_fn_req_t fn_req);
+int rpc_create(struct ev_set *ev_set,const char *path,rpc_fn_req_t fn_req);
 /// 注册函数
 int rpc_fn_reg(const char *name,rpc_fn_call_t fn);
 /// 取消函数注册

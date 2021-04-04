@@ -5,6 +5,8 @@
 #include<sys/socket.h>
 #include<unistd.h>
 #include<errno.h>
+#include<sys/un.h>
+#include<stddef.h>
 
 #include "rpc.h"
 #include "ev.h"
@@ -63,46 +65,37 @@ static int rpc_fn_req(const char *name,void *arg,unsigned short arg_size,void *r
 	return info->fn(arg,arg_size,result,res_size);
 }
 
-int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port,int is_ipv6,rpc_fn_req_t fn_req)
+int rpc_create(struct ev_set *ev_set,const char *path,rpc_fn_req_t fn_req)
 {
-	int listenfd=-1,rs=0;
-	struct sockaddr_in in_addr;
-	struct sockaddr_in6 in6_addr;
-	char buf[256];
+	int listenfd=-1,rs=0,size;
+	struct sockaddr_un un;
 	
-	if(is_ipv6) listenfd=socket(AF_INET6,SOCK_STREAM,0);
-	else listenfd=socket(AF_INET,SOCK_STREAM,0);
+	listenfd=socket(AF_UNIX,SOCK_STREAM,0);
 
 	if(listenfd<0){
 		STDERR("cannot create listen fileno\r\n");
 		return -1;
 	}
 
-	memset(&in_addr,'0',sizeof(struct sockaddr_in));
-	memset(&in6_addr,'0',sizeof(struct sockaddr_in6));
+	bzero(&un,sizeof(struct sockaddr_in));
 
-	in_addr.sin_family=AF_INET;
+	un.sun_family=AF_UNIX;
+	strcpy(un.sun_path,path);
+
+	size=offsetof(struct sockaddr_un,sun_path)+strlen(un.sun_path);
+
+	rs=bind(listenfd,(struct sockaddr *)&un,size);
 	
-	if(is_ipv6) inet_pton(AF_INET6,listen_addr,buf);
-	else inet_pton(AF_INET,listen_addr,buf);
-
-	memcpy(&(in_addr.sin_addr.s_addr),buf,4);
-	in_addr.sin_port=htons(port);
-
-	if(is_ipv6){
-	}else{
-		rs=bind(listenfd,(struct sockaddr *)&in_addr,sizeof(struct sockaddr));
-	}
-
 	if(rs<0){
-		STDERR("cannot bind address %s %d errno:%d\r\n",listen_addr,port,errno);
+		STDERR("cannot bind address %s errno:%d\r\n",path,errno);
 		close(listenfd);
 		return -1;
 	}
 	
 	rs=listen(listenfd,10);
+
 	if(rs<0){
-		STDERR("cannot listen address %s %d errno:%d\r\n",listen_addr,port,errno);
+		STDERR("cannot listen address %s errno:%d\r\n",path,errno);
 		close(listenfd);
 		return -1;
 	}
@@ -116,9 +109,10 @@ int rpc_create(struct ev_set *ev_set,const char *listen_addr,unsigned short port
 
 	bzero(&rpc,sizeof(struct rpc));
 
-	rpc.is_ipv6=is_ipv6;
 	rpc.fileno=listenfd;
 	rpc.ev_set=ev_set;
+	strcpy(rpc.path,path);
+
 	if(NULL!=fn_req) rpc.fn_req=fn_req;
 	else rpc.fn_req=rpc_fn_req;
 
@@ -300,8 +294,6 @@ static int rpc_session_del_fn(struct ev *ev)
 {
 	struct rpc_session *session=ev->data;
 
-	DBG_FLAGS;
-
 	close(session->fd);
 	free(session);
 
@@ -364,4 +356,8 @@ void rpc_delete(void)
 		free(info);
 		info=t;
 	}
+
+	close(rpc.fileno);
+
+	if(!access(rpc.path,F_OK)) remove(rpc.path);
 }

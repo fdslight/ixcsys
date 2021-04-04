@@ -3,6 +3,7 @@
 #include<stdlib.h>
 #include<execinfo.h>
 #include<libgen.h>
+#include<time.h>
 
 #define  PY_SSIZE_T_CLEAN
 #include<Python.h>
@@ -39,27 +40,19 @@
 static char pid_path[1024];
 /// 运行目录
 static char run_dir[1024];
+/// RPC共享路径
+static char rpc_path[1024];
 
 static PyObject *py_helper_module=NULL;
 static PyObject *py_helper_instance=NULL;
 
 static struct ev_set ixc_ev_set;
+///循环更新事件
+static time_t loop_time_up=0;
 
 typedef struct{
     PyObject_HEAD
 }routerObject;
-
-/// 发送PPPoE数据包到Python
-int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,void *data)
-{
-    return 0;
-}
-
-/// 通知函数
-int ixc_router_tell(const char *content)
-{
-    return 0;
-}
 
 static void
 router_dealloc(routerObject *self)
@@ -90,6 +83,44 @@ router_qos_udp_udplite_first(PyObject *self,PyObject *args)
     if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
 
     ixc_qos_udp_udplite_first(enable);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_netif_create(PyObject *self,PyObject *args)
+{
+    const char *name;
+    char res_devname[512];
+    int fd,if_idx;
+
+    if(!PyArg_ParseTuple(args,"si",&name,&if_idx)) return NULL;
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
+    if(ixc_netif_is_used(if_idx)){
+        PyErr_SetString(PyExc_SystemError,"netif is used\r\n");
+        return NULL;  
+    }
+
+    fd=ixc_netif_create(name,res_devname,if_idx);
+
+    return Py_BuildValue("is",fd,res_devname);
+}
+
+static PyObject *
+router_netif_delete(PyObject *self,PyObject *args)
+{
+    int if_idx;
+    if(!PyArg_ParseTuple(args,"i",&if_idx)) return NULL;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
+
+    ixc_netif_delete(if_idx);
 
     Py_RETURN_NONE;
 }
@@ -537,6 +568,8 @@ static PyMethodDef routerMethods[]={
     //
     {"qos_udp_udplite_first_enable",(PyCFunction)router_qos_udp_udplite_first,METH_VARARGS,"set udp or udplite first"},
     //
+    {"netif_create",(PyCFunction)router_netif_create,METH_VARARGS,"create tap device"},
+    {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},
     {"netif_get_ip",(PyCFunction)router_netif_get_ip,METH_VARARGS,"get netif ip address"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
@@ -627,6 +660,100 @@ PyInit_router(void){
     return m;
 }
 
+/// 发送PPPoE数据包到Python
+int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,void *data)
+{
+    PyObject *pfunc,*result,*args;
+
+    pfunc=PyObject_GetAttrString(py_helper_instance,"pppoe_session_handle");
+    if(NULL==pfunc){
+        DBG("cannot found python function pppoe_session_handle\r\n");
+        return -1;
+    }
+
+    args=Py_BuildValue("(iy#)",protocol,data,length);
+    result=PyObject_CallObject(pfunc, args);
+
+    if(NULL==result){
+        PyErr_Print();
+    }
+
+    Py_XDECREF(pfunc);
+    Py_XDECREF(args);
+    Py_XDECREF(result);
+
+    return 0;
+}
+
+/// 通知函数
+int ixc_router_tell(const char *content)
+{
+    PyObject *pfunc,*result,*args;
+
+    pfunc=PyObject_GetAttrString(py_helper_instance,"tell");
+    if(NULL==pfunc){
+        DBG("cannot found python function tell\r\n");
+        return -1;
+    }
+
+    args=Py_BuildValue("(s)",content);
+    result=PyObject_CallObject(pfunc, args);
+
+    if(NULL==result){
+        PyErr_Print();
+    }
+
+    Py_XDECREF(pfunc);
+    Py_XDECREF(args);
+    Py_XDECREF(result);
+
+    return 0;
+}
+
+static void ixc_python_loop(void)
+{
+    PyObject *pfunc,*result;
+
+    pfunc=PyObject_GetAttrString(py_helper_instance,"loop");
+    if(NULL==pfunc){
+        DBG("cannot found python function tell\r\n");
+        return;
+    }
+
+    result=PyObject_CallObject(pfunc, NULL);
+
+    if(NULL==result){
+        PyErr_Print();
+    }
+
+    Py_XDECREF(pfunc);
+    Py_XDECREF(result);
+
+    return;
+}
+
+static void ixc_python_release(void)
+{
+    PyObject *pfunc,*result;
+
+    pfunc=PyObject_GetAttrString(py_helper_instance,"release");
+    if(NULL==pfunc){
+        DBG("cannot found python function release\r\n");
+        return;
+    }
+
+    result=PyObject_CallObject(pfunc, NULL);
+
+    if(NULL==result){
+        PyErr_Print();
+    }
+
+    Py_XDECREF(pfunc);
+    Py_XDECREF(result);
+
+    return;
+}
+
 static void ixc_segfault_info()
 {
     void *bufs[4096];
@@ -646,8 +773,14 @@ static void ixc_segfault_info()
 
 static void ixc_stop_from_sig(void)
 {
-
+    ixc_python_release();
     Py_Finalize();
+
+    //ev_set_uninit(&ixc_ev_set);
+    rpc_delete();
+    ixc_netif_uninit();
+
+    exit(EXIT_SUCCESS);
 }
 
 static void ixc_signal_handle(int signum)
@@ -701,12 +834,14 @@ static void ixc_set_run_env(char *argv[])
     realpath(argv[0],run_dir);
     dirname(run_dir);
 
+    strcpy(rpc_path,"/tmp/ixcsys/router/rpc.sock");
+
     Py_SetProgramName(program);
 }
 
-static int ixc_start_python(void)
+static int ixc_start_python(int debug)
 {
-    PyObject *py_module=NULL,*cls,*args,*pfunc;
+    PyObject *py_module=NULL,*cls,*v,*args,*pfunc;
     char py_module_dir[2048];
 
     sprintf(py_module_dir,"%s/../../",run_dir);
@@ -716,31 +851,45 @@ static int ixc_start_python(void)
    
     py_add_path(py_module_dir);
 
-
     // 加载Python路由助手模块
     py_module=py_module_load("ixc_syscore.router._ixc_router_helper");
     //PyErr_Print();
 
     if(NULL==py_module){
+        PyErr_Print();
         STDERR("cannot load python route_helper module\r\n");
         return -1;
     }
 
+    v=PyBool_FromLong(debug);
+    args=Py_BuildValue("(N)",v);
+
     pfunc=PyObject_GetAttrString(py_module,"helper");
-    cls=PyObject_CallObject(pfunc, NULL);
+    cls=PyObject_CallObject(pfunc, args);
 
     py_helper_module=py_module;
     py_helper_instance=cls;
 
     Py_XDECREF(pfunc);
-
+    Py_XDECREF(args);
+    Py_XDECREF(v);
 
     return 0;
+}
+
+static void ixc_myloop(void)
+{
+    time_t now=time(NULL);
+    if(now-loop_time_up<30) return;
+    // 每隔30s调用一次python循环
+    ixc_python_loop();
 }
 
 static void ixc_start(int debug)
 {
     int rs;
+
+    loop_time_up=time(NULL);
 
     signal(SIGSEGV,ixc_signal_handle);
     signal(SIGINT,ixc_signal_handle);
@@ -750,6 +899,8 @@ static void ixc_start(int debug)
         STDERR("cannot init event\r\n");
         return;
     }
+
+    ixc_ev_set.myloop_fn=ixc_myloop;
 
     rs=sysloop_init();
     if(rs<0){
@@ -790,12 +941,6 @@ static void ixc_start(int debug)
     rs=ixc_nat_init();
     if(rs<0){
         STDERR("cannot init nat\r\n");
-        return;
-    }
-
-    rs=ixc_netif_init(&ixc_ev_set);
-    if(rs<0){
-        STDERR("cannot init netif\r\n");
         return;
     }
 
@@ -841,13 +986,26 @@ static void ixc_start(int debug)
         return;
     }
 
-    rs=rpc_create(&ixc_ev_set,"127.0.0.1",1999,0,ixc_rpc_fn_req);
+    rs=rpc_create(&ixc_ev_set,rpc_path,ixc_rpc_fn_req);
     if(rs<0){
         STDERR("cannot create rpc\r\n");
         return;
     }
 
-    ixc_start_python();
+    rs=ixc_netif_init(&ixc_ev_set);
+    if(rs<0){
+        STDERR("cannot init netif\r\n");
+        return;
+    }
+
+   rs=ixc_start_python(debug);
+   if(rs<0){
+       ixc_netif_uninit();
+       STDERR("cannot start python\r\n");
+       return;
+   }
+
+   ev_loop(&ixc_ev_set);
 }
 
 static void ixc_stop(void)
@@ -887,6 +1045,7 @@ int main(int argc,char *argv[])
     }
 
     if(!strcmp(argv[1],"stop")){
+        ixc_stop();
         return 0;
     }
 

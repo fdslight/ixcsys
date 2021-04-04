@@ -36,9 +36,9 @@ def build(base_dir, my_dir, cflags, debug=True):
         ]
 
     if debug:
-        cflags += " -D DEBUG -rdynamic"
+        cflags += " -D DEBUG"
     else:
-        cflags += " -O2 -rdynamic -Wall"
+        cflags += " -O2 -Wall"
 
     # sys_build.do_compile(files, "%s/pylib/router.so" % my_dir, cflags, is_shared=True)
     sys_build.do_compile(files, "%s/ixc_router_core" % my_dir, cflags)

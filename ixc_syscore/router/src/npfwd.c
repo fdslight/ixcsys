@@ -2,6 +2,7 @@
 #include<unistd.h>
 #include<string.h>
 #include<errno.h>
+#include<sys/un.h>
 
 #include "npfwd.h"
 #include "router.h"
@@ -112,10 +113,15 @@ static void ixc_npfwd_tx_data(void)
     struct ixc_mbuf *m=npfwd_mbuf_first,*t;
     struct ixc_npfwd_header *header;
     struct ixc_npfwd_info *info;
-    struct sockaddr sent_addr;
+    struct sockaddr_in sent_addr;
     struct ev *ev;
     ssize_t sent_size;
     socklen_t tolen;
+
+    // 常量提前赋值,加快速度
+    sent_addr.sin_family=AF_INET;
+    sent_addr.sin_addr.s_addr=inet_addr("127.0.0.1");
+    tolen=sizeof(struct sockaddr_in);
 
     while(1){
         if(NULL==m) break;
@@ -142,7 +148,9 @@ static void ixc_npfwd_tx_data(void)
         m->begin+=20;
         m->offset+=20;
 
-        sent_size=sendto(npfwd.fileno,m->data+m->offset,m->tail-m->offset,0,&sent_addr,tolen);
+        sent_addr.sin_port=info->port;
+
+        sent_size=sendto(npfwd.fileno,m->data+m->offset,m->tail-m->offset,0,(struct sockaddr *)&sent_addr,tolen);
         if(sent_size<0){
             if(EAGAIN==errno){
                 npfwd_mbuf_first=m;

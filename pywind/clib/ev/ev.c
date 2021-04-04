@@ -12,7 +12,7 @@
 static void ev_del_cb(void *data)
 {
 	struct ev *ev=data;
-	ev->del_fn(ev);
+	if(NULL!=ev->del_fn) ev->del_fn(ev);
 	free(ev);
 }
 

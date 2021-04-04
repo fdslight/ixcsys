@@ -4,7 +4,7 @@ import time, random
 
 import ixc_syscore.router.pylib.ncp as ncp
 import ixc_syscore.router.pylib.lcp as lcp
-import ixc_syscore.router.pylib.router as router
+import router
 
 
 class IPv6CP(ncp.NCP):

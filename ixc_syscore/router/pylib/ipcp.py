@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import random, socket, time
 
+import router
 import ixc_syscore.router.pylib.ncp as ncp
 import ixc_syscore.router.pylib.lcp as lcp
-
-import ixc_syscore.router.pylib.router as router
 
 import ixc_syslib.pylib.logging as logging
 

@@ -28,7 +28,6 @@ class pppoe(object):
         self.__pap = pap.PAP(self)
         self.__ipcp = ipcp.IPCP(self)
         self.__ipv6cp = ipv6cp.IPv6CP(self)
-        self.__runtime.router.set_pppoe_session_packet_recv_fn(self.handle_packet_from_ns)
 
     @property
     def debug(self):

@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-${IXC_PYTHON} ${IXC_MYAPP_DIR}/ixc_router_main.py debug
+${IXC_PYTHON} ${IXC_MYAPP_DIR}/ixc_router_core debug

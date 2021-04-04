@@ -87,8 +87,9 @@ static void ev_epoll_handle_events(struct ev_set *ev_set,int nfds)
 
 static int ev_epoll_ioloop(struct ev_set *ev_set)
 {
-    int nfds=epoll_wait(ev_epoll_fileno,ev_epoll_events,EV_EV_MAX,ev_set->wait_timeout);
-
+    // 注意epoll的超时事件为毫秒,换算成秒要乘以1000
+    int nfds=epoll_wait(ev_epoll_fileno,ev_epoll_events,EV_EV_MAX,ev_set->wait_timeout*1000);
+    
     ev_epoll_handle_events(ev_set,nfds);
 
     return 0;
