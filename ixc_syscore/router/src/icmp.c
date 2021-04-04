@@ -32,3 +32,20 @@ void ixc_icmp_handle_self(struct ixc_mbuf *m)
 
     ixc_ip_send(m);
 }
+
+void ixc_icmp_send(unsigned char *saddr,unsigned char *daddr,struct netutil_icmphdr *icmphdr,void *data,size_t data_size)
+{
+    struct ixc_mbuf *m=ixc_mbuf_get();
+    struct netutil_iphdr *header;
+
+    if(NULL==m){
+        STDERR("cannot get mbuf for icmp send\r\n");
+        return;
+    }
+
+    // 此处初始化头部
+    header=(struct netutil_iphdr *)(m->data+m->offset);
+    header->ver_and_ihl=0x45;
+
+    ixc_mbuf_put(m);
+}
