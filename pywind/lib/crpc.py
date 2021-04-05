@@ -2,7 +2,7 @@
 """与系统内部的C RPC进行通讯
 """
 
-import socket, struct, time
+import socket, struct, time, pickle
 import pywind.lib.reader as reader
 
 
@@ -16,8 +16,9 @@ class RPCClient(object):
     __reader = None
 
     def __init__(self, path: str):
-        self.__reader = reader.reader()
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+        self.__reader = reader.reader()
         self.__s = s
         self.__s.connect(path)
         self.__timeout = 3
@@ -42,6 +43,15 @@ class RPCClient(object):
                 raise RPCError("rpc connection error from send")
             sent_data = sent_data[sent_size:]
 
+    def fn_call(self, fname: str, *args, **kwargs):
+        dic = {
+            "args": args,
+            "kwargs": kwargs
+        }
+        self.send_rpc_request(fname, pickle.dumps(dic))
+
+        return self.recv_rpc_response()
+
     def set_timeout(self, timeout: int):
         self.__timeout = timeout
 
@@ -62,6 +72,8 @@ class RPCClient(object):
             try:
                 recv_data = self.__s.recv(4096)
             except:
+                raise RPCError("rpc connection error from recv")
+            if not recv_data:
                 raise RPCError("rpc connection error from recv")
             self.__reader._putvalue(recv_data)
             if self.__reader.size() < 16 and not parsed_header: continue

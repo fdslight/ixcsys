@@ -30,6 +30,15 @@ class controller(app_handler.handler):
         )
 
     def handle_rpc_request(self, fname: str, *args, **kwargs):
+        # 检查函数对象集合是否是字典对象
+        if not isinstance(self.fobjs, dict):
+            self.send_rpc_response(RPCClient.ERR_PROTO, "function object set must be dict object %s")
+            return
+
+        if fname not in self.fobjs:
+            self.send_rpc_response(RPCClient.ERR_NOT_FOUND_METHOD, "not found RPC function %s" % fname)
+            return
+
         fn = self.fobjs[fname]
         try:
             is_err, message = fn(*args, **kwargs)
@@ -64,15 +73,6 @@ class controller(app_handler.handler):
             return
 
         self.rpc_init()
-
-        # 检查函数对象集合是否是字典对象
-        if not isinstance(self.fobjs, dict):
-            self.send_rpc_response(RPCClient.ERR_PROTO, "function object set must be dict object %s")
-            return
-
-        if fname not in self.fobjs:
-            self.send_rpc_response(RPCClient.ERR_NOT_FOUND_METHOD, "not found RPC function %s" % fname)
-            return
         self.handle_rpc_request(fname, *args, **kwargs)
 
     def rpc_init(self):

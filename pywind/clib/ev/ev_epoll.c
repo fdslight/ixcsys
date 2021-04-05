@@ -71,8 +71,6 @@ static void ev_epoll_handle_events(struct ev_set *ev_set,int nfds)
             continue;
         }
 
-        DBG("%d %d %d\r\n",ev->fileno,readable,writable);
-
         if(readable && !ev->is_deleted && NULL!=ev->readable_fn){
             ev->readable_fn(ev);
         }

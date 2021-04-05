@@ -805,7 +805,9 @@ static int ixc_rpc_fn_req(const char *name,void *arg,unsigned short arg_size,voi
     args=Py_BuildValue("(sy#)",name,arg,arg_size);
 
     pfunc=PyObject_GetAttrString(py_helper_instance,"rpc_fn_call");
+    DBG_FLAGS;
     res=PyObject_CallObject(pfunc, args);
+    DBG_FLAGS;
 
     if(NULL==res){
         Py_XDECREF(pfunc);

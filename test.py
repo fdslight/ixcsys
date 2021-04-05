@@ -29,8 +29,6 @@ while 1:
 s.close()
 """
 
-import pywind.lib.crpc as crpc
+message = RPCClient.fn_call("router", "/config", "wan_config_get")
 
-rpc = crpc.RPCClient("/tmp//ixcsys/router/rpc.sock")
-rpc.send_rpc_request("my_name",b"")
-print(rpc.recv_rpc_response())
+print(message)

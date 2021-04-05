@@ -55,14 +55,15 @@ class rpc(object):
         }
 
     def call(self, fn_name: str, *args, **kwargs):
-        """????
+        """调用函数
         """
         if fn_name not in self.__fn_objects:
             return 0, pickle.dumps("not found function %s" % fn_name)
-
         fn = self.__fn_objects[fn_name]
 
-        return fn(*args, **kwargs)
+        is_error, msg = fn(*args, **kwargs)
+
+        return is_error, pickle.dumps(msg)
 
     def get_all_consts(self):
         """获取所有转发数据包的flags
@@ -480,14 +481,13 @@ class helper(object):
     __is_linux = None
     __scgi_fd = None
 
-    __pfwd_fd = None
-
     __pppoe = None
     __pppoe_enable = None
     __pppoe_user = None
     __pppoe_passwd = None
 
     __conf_dir = None
+    __rpc_instance = None
 
     def load_lan_configs(self):
         path = "%s/lan.ini" % self.__conf_dir
@@ -789,6 +789,7 @@ class helper(object):
 
         self.__wan_configs = {}
         self.__is_linux = sys.platform.startswith("linux")
+        self.__rpc_instance = rpc(self)
 
         # FreeBSDif_tap.ko
         if not self.is_linux:
@@ -806,13 +807,12 @@ class helper(object):
         self.load_port_map_configs()
         self.reset_port_map()
 
-
     @property
     def router(self):
         return self.__router
 
     def pppoe_session_handle(self, protocol: int, byte_data: bytes):
-        """?????C???PPPoE????
+        """
         """
         self.__pppoe.handle_packet_from_ns(protocol, byte_data)
 
@@ -825,13 +825,29 @@ class helper(object):
         return self.__pppoe_passwd
 
     def rpc_fn_call(self, name: str, arg_data: bytes):
-        """C?????????RPC
+        """
         :return (is_error,byte_message)
         """
-        return 0, b"hello,world"
+        dic = pickle.loads(arg_data)
+        if not isinstance(dic, dict):
+            return RPC.ERR_SYS, "wrong RPC request procotol"
+
+        if "args" not in dic:
+            return RPC.ERR_SYS, "wrong RPC request procotol"
+
+        if "kwargs" not in dic:
+            return RPC.ERR_SYS, "wrong RPC request procotol"
+
+        args = dic["args"]
+        kwargs = dic["kwargs"]
+
+        if not isinstance(args, tuple) or (not isinstance(kwargs, dict)):
+            return RPC.ERR_SYS, "wrong RPC request procotol"
+
+        return self.__rpc_instance.call(name, *args, **kwargs)
 
     def tell(self, cmd: str, *args):
-        """C???Python?????
+        """
         """
         if cmd == "lcp_start":
             if self.__pppoe: self.__pppoe.start_lcp()
@@ -839,6 +855,6 @@ class helper(object):
             if self.__pppoe: self.__pppoe.stop_lcp()
 
     def loop(self):
-        """C???????????????
+        """
         """
         self.__pppoe.loop()
