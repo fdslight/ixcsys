@@ -62,6 +62,29 @@ class service(dispatcher.dispatcher):
     __is_linux = None
     __scgi_fd = None
 
+    def clear_os_route(self, is_ipv6=False):
+        """清除系统的路由表
+        """
+        if is_ipv6:
+            fdst = os.popen("ip -6 route")
+        else:
+            fdst = os.popen("ip route")
+
+        __list = []
+        for line in fdst:
+            line = line.replace("\n", "")
+            line = line.replace("\r", "")
+            p = line.find("dev")
+            if p < 1: continue
+            __list.append(line[0:p].strip())
+
+        for x in __list:
+            if is_ipv6:
+                cmd = "ip -6 route del %s" % x
+            else:
+                cmd = "ip route del %s" % x
+            os.system(cmd)
+
     @property
     def is_linux(self):
         return self.__is_linux
@@ -75,7 +98,10 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__scgi_fd)
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
-        #os.system("%s/ixc_router_core stop" % os.getenv("IXC_MYAPP_DIR"))
+        self.clear_os_route()
+        self.clear_os_route(is_ipv6=True)
+
+        os.system("%s/ixc_router_core stop" % os.getenv("IXC_MYAPP_DIR"))
         self.__scgi_fd = -1
 
     def start_scgi(self):
@@ -94,6 +120,7 @@ class service(dispatcher.dispatcher):
         RPC.wait_proc("init")
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+        os.system("%s/ixc_router_core start" % os.getenv("IXC_MYAPP_DIR"))
 
         if not self.debug:
             sys.stdout = logging.stdout()

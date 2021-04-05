@@ -10,9 +10,19 @@ class widget(ui_widget.widget):
             "os_type": sys.platform,
             "arch": platform.machine(),
             "cpu_count": os.cpu_count(),
-            "ixcsys_version": "1.0.0-b1"
+            "ixcsys_version": self.read_version()
         }
         return sys_info
+
+    def read_version(self):
+        fpath = "%s/version" % self.sys_dir
+        if not os.path.isfile(fpath):
+            return "unkown"
+
+        with open(fpath, "r") as f: s = f.read()
+        f.close()
+
+        return s
 
     def handle(self, *args, **kwargs):
         uri = "default.html"
@@ -30,7 +40,7 @@ class widget(ui_widget.widget):
         dic["nameservers"] = nameservers
         dic["nameservers6"] = nameservers6
 
-        wan_ipinfo = RPC.fn_call("router", "/runtime", "get_wan_ipaddr_info", is_ipv6=False)
+        wan_ipinfo = RPC.fn_call("router", "/config", "get_wan_ipaddr_info", is_ipv6=False)
 
         if not wan_ipinfo:
             dic["wan_ip"] = ""

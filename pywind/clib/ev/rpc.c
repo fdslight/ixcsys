@@ -35,13 +35,15 @@ static struct rpc_fn_info *rpc_fn_info_get(const char *name)
 static int rpc_accept(struct ev *ev)
 {
 	int rs;
-	struct sockaddr sockaddr;
-	socklen_t addrlen;
+	struct sockaddr_un un;
+	socklen_t addrlen=sizeof(struct sockaddr_un);
 
 	while(1){
-		rs=accept(rpc.fileno,&sockaddr,&addrlen);
+		rs=accept(rpc.fileno,(struct sockaddr *)&un,&addrlen);
+		//DBG_FLAGS;
 		if(rs<0) break;
-		rpc_session_create(rs,&sockaddr,addrlen);
+		//DBG_FLAGS;
+		rpc_session_create(rs,(struct sockaddr *)&un,addrlen);
 	}
 
 	return 0;
@@ -78,7 +80,7 @@ int rpc_create(struct ev_set *ev_set,const char *path,rpc_fn_req_t fn_req)
 		return -1;
 	}
 
-	bzero(&un,sizeof(struct sockaddr_in));
+	bzero(&un,sizeof(struct sockaddr_un));
 
 	un.sun_family=AF_UNIX;
 	strcpy(un.sun_path,path);
@@ -339,6 +341,8 @@ static int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_le
 
 	if(ev_timeout_set(rpc.ev_set,ev,10)<0){
 		STDERR("cannot set timeout for fd %d\r\n",fd);
+		ev_delete(rpc.ev_set,ev);
+		return -1;
 	}
 
 	EV_INIT_SET(ev,rpc_session_readable_fn,rpc_session_writable_fn,rpc_session_timeout_fn,rpc_session_del_fn,session);

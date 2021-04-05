@@ -240,6 +240,10 @@ class controller(app_handler.handler):
         """
         return os.getenv("IXC_MYAPP_RELATIVE_DIR")
 
+    @property
+    def sys_dir(self):
+        return os.getenv("IXC_SYS_DIR")
+
     def set_lang(self, lang: str):
         """设置语言
         :param lang:

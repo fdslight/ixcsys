@@ -2,6 +2,7 @@
 """UI部分组件类
 """
 
+
 class widget(object):
     __request = None
     __request_handler = None
@@ -41,6 +42,10 @@ class widget(object):
         """应用目录
         """
         return self.__request_handler.app_dir
+
+    @property
+    def sys_dir(self):
+        return self.__request_handler.sys_dir
 
     def LA(self, s: str):
         """语言翻译

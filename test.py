@@ -29,10 +29,15 @@ while 1:
 
 s.close()
 """
-
+"""
 client = croc.RPCClient("/tmp/ixcsys/router/rpc.sock")
 client.fn_call("hello")
+"""
+"""
+message = RPCClient.fn_call("router", "/config", "wan_config_get")
 
-# message = RPCClient.fn_call("router", "/config", "wan_config_get")
+print(message)
+"""
 
-# print(message)
+
+

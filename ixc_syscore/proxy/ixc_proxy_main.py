@@ -123,7 +123,7 @@ class service(dispatcher.dispatcher):
         RPCClient.wait_processes(["router", "DNS", "DHCP"])
 
         while 1:
-            if not RPCClient.fn_call("router", "/runtime", "wan_ready_ok"):
+            if not RPCClient.fn_call("router", "/config", "wan_ready_ok"):
                 time.sleep(10)
             else:
                 break
@@ -428,7 +428,8 @@ class service(dispatcher.dispatcher):
                 p = message[9]
             else:
                 p = message[6]
-            self.get_handler(self.__fwd_fd).send_msg(0, p, self.__consts["IXC_FLAG_ROUTE_FWD"], message)
+            self.get_handler(self.__fwd_fd).send_msg(self.__consts["IXC_NETIF_LAN"], p,
+                                                     self.__consts["IXC_FLAG_ROUTE_FWD"], message)
             return
         if len(message) < 8: return
         dns_id = struct.unpack("!H", message[0:2])
@@ -494,17 +495,17 @@ class service(dispatcher.dispatcher):
     def set_forward(self):
         self.__dns_fd = self.create_handler(-1, dns_proxy.dns_proxy)
         self.__rand_key = os.urandom(16)
-        consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
+        consts = RPCClient.fn_call("router", "/config", "get_all_consts")
         self.__fwd_fd = self.create_handler(-1, netpkt.netpkt_handler)
         port = self.get_handler(self.__fwd_fd).get_sock_port()
         self.get_handler(self.__fwd_fd).set_message_auth(self.__rand_key)
 
-        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_ROUTE_FWD"])
-        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_SRC_FILTER"])
+        RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_ROUTE_FWD"])
+        RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_SRC_FILTER"])
 
-        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_SRC_FILTER"],
+        ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_SRC_FILTER"],
                                         self.__rand_key, port)
-        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_ROUTE_FWD"],
+        ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_ROUTE_FWD"],
                                         self.__rand_key, port)
 
         RPCClient.fn_call("DNS", "/rule", "set_forward", self.get_handler(self.__dns_fd).get_port())
@@ -645,9 +646,9 @@ class service(dispatcher.dispatcher):
 
         # 调用RPC加入路由
         if is_ipv6:
-            RPCClient.fn_call("router", "/runtime", "add_route", host, prefix, "::", is_ipv6=is_ipv6)
+            RPCClient.fn_call("router", "/config", "add_route", host, prefix, "::", is_ipv6=is_ipv6)
         else:
-            RPCClient.fn_call("router", "/runtime", "add_route", host, prefix, "0.0.0.0", is_ipv6=is_ipv6)
+            RPCClient.fn_call("router", "/config", "add_route", host, prefix, "0.0.0.0", is_ipv6=is_ipv6)
 
         if not is_dynamic:
             name = "%s/%s" % (host, prefix,)
@@ -689,7 +690,7 @@ class service(dispatcher.dispatcher):
             if not prefix: prefix = 32
 
         # 此处调用RPC删除路由
-        RPCClient.fn_call("router", "/runtime", "del_route", host, prefix, is_ipv6=is_ipv6)
+        RPCClient.fn_call("router", "/config", "del_route", host, prefix, is_ipv6=is_ipv6)
 
         if is_dynamic:
             self.__route_timer.drop(host)

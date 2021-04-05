@@ -16,7 +16,7 @@ struct ixc_npfwd_info{
 };
 
 #pragma pack(push)
-#pragma pack(1)
+#pragma pack(4)
 /// 数据头部格式
 struct ixc_npfwd_header{
     // key

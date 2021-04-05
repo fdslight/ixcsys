@@ -21,7 +21,7 @@ class RPCClient(object):
         self.__reader = reader.reader()
         self.__s = s
         self.__s.connect(path)
-        self.__timeout = 5
+        self.__timeout = 3
 
     def send_rpc_request(self, func_name: str, arg_data: bytes):
         byte_fn_name = func_name.encode("iso-8859-1")
@@ -70,10 +70,7 @@ class RPCClient(object):
             now = time.time()
             if now - begin > self.__timeout:
                 raise RPCError("response timeout")
-            try:
-                recv_data = self.__s.recv(4096)
-            except:
-                recv_data = ""
+            recv_data = self.__s.recv(4096)
             self.__reader._putvalue(recv_data)
             if self.__reader.size() < 16 and not parsed_header: continue
             if not parsed_header:
