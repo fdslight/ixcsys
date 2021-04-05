@@ -964,7 +964,9 @@ static void ixc_myloop(void)
         ixc_ev_set.wait_timeout=10;
     }
     if(now-loop_time_up<30) return;
+
     // 每隔30s调用一次python循环
+    loop_time_up=now;
     ixc_python_loop();
 }
 
