@@ -16,7 +16,6 @@ def remove_file(files: list, filename: str):
 
 def build(base_dir, my_dir, cflags, debug=True):
     files = sys_build.get_c_files("%s/src" % my_dir)
-    #files = remove_file(files, "router.c")
     files += sys_build.get_c_files("%s/pywind/clib/ev" % base_dir)
 
     if platform.system().lower() == "linux":
@@ -38,7 +37,7 @@ def build(base_dir, my_dir, cflags, debug=True):
     if debug:
         cflags += " -D DEBUG"
     else:
-        cflags += " -O2 -Wall"
+        cflags += " -O3 -Wall"
 
     # sys_build.do_compile(files, "%s/pylib/router.so" % my_dir, cflags, is_shared=True)
     sys_build.do_compile(files, "%s/ixc_router_core" % my_dir, cflags)

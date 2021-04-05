@@ -27,6 +27,7 @@
 #include "port_map.h"
 #include "global.h"
 #include "vswitch.h"
+#include "npfwd.h"
 
 
 #include "../../../pywind/clib/pycall.h"
@@ -37,11 +38,11 @@
 #include "../../../pywind/clib/sysloop.h"
 
 /// 进程文件路径
-static char pid_path[1024];
+static char pid_path[4096];
 /// 运行目录
-static char run_dir[1024];
+static char run_dir[4096];
 /// RPC共享路径
-static char rpc_path[1024];
+static char rpc_path[4096];
 
 static PyObject *py_helper_module=NULL;
 static PyObject *py_helper_instance=NULL;
@@ -560,6 +561,40 @@ router_network_enable(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 设置重定向
+static PyObject *
+router_netpkt_forward_set(PyObject *self,PyObject *args)
+{
+    unsigned char *key;
+    Py_ssize_t key_size;
+    unsigned short port;
+    int flags,rs;
+
+    if(!PyArg_ParseTuple(args,"y#Hi",&key,&key_size,&port,&flags)) return NULL;
+
+    if(key_size!=16){
+        Py_RETURN_FALSE;
+    }
+
+    rs=ixc_npfwd_set_forward(key,port,flags);
+    if(rs<0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_netpkt_forward_disable(PyObject *self,PyObject *args)
+{
+    int flags;
+    if(!PyArg_ParseTuple(args,"i",&flags)) return NULL;
+
+    ixc_npfwd_disable(flags);
+
+    Py_RETURN_NONE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -604,6 +639,9 @@ static PyMethodDef routerMethods[]={
     {"vsw_enable",(PyCFunction)router_vsw_enable,METH_VARARGS,"enable or disable vswitch"},
     //
     {"network_enable",(PyCFunction)router_network_enable,METH_VARARGS,"enable or disable network"},
+    //
+    {"netpkt_forward_set",(PyCFunction)router_netpkt_forward_set,METH_VARARGS,"set network packet forward"},
+    {"netpkt_forward_disable",(PyCFunction)router_netpkt_forward_disable,METH_VARARGS,"disable network packet forward"},
 
     {NULL,NULL,0,NULL}
 };
@@ -660,6 +698,8 @@ PyInit_router(void){
     return m;
 }
 
+static void ixc_exit(void);
+
 /// 发送PPPoE数据包到Python
 int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,void *data)
 {
@@ -710,6 +750,11 @@ int ixc_router_tell(const char *content)
     return 0;
 }
 
+void ixc_router_exit(void)
+{
+    ixc_exit();
+}
+
 static void ixc_python_loop(void)
 {
     PyObject *pfunc,*result;
@@ -732,6 +777,7 @@ static void ixc_python_loop(void)
     return;
 }
 
+
 static void ixc_python_release(void)
 {
     PyObject *pfunc,*result;
@@ -750,8 +796,6 @@ static void ixc_python_release(void)
 
     Py_XDECREF(pfunc);
     Py_XDECREF(result);
-
-    return;
 }
 
 static void ixc_segfault_info()
@@ -771,15 +815,17 @@ static void ixc_segfault_info()
     exit(EXIT_FAILURE);
 }
 
-static void ixc_stop_from_sig(void)
+static void ixc_exit(void)
 {
-    ixc_python_release();
-    Py_Finalize();
-
+    if(NULL!=py_helper_instance){
+        ixc_python_release();
+        Py_Finalize();
+    }
     //ev_set_uninit(&ixc_ev_set);
     rpc_delete();
+    ixc_npfwd_uninit();
     ixc_netif_uninit();
-
+    
     exit(EXIT_SUCCESS);
 }
 
@@ -787,7 +833,7 @@ static void ixc_signal_handle(int signum)
 {
     switch(signum){
         case SIGINT:
-            ixc_stop_from_sig();
+            ixc_exit();
             break;
         case SIGSEGV:
             ixc_segfault_info();
@@ -805,9 +851,9 @@ static int ixc_rpc_fn_req(const char *name,void *arg,unsigned short arg_size,voi
     args=Py_BuildValue("(sy#)",name,arg,arg_size);
 
     pfunc=PyObject_GetAttrString(py_helper_instance,"rpc_fn_call");
-    DBG_FLAGS;
+    //DBG_FLAGS;
     res=PyObject_CallObject(pfunc, args);
-    DBG_FLAGS;
+    //DBG_FLAGS;
 
     if(NULL==res){
         Py_XDECREF(pfunc);
@@ -833,7 +879,12 @@ static void ixc_set_run_env(char *argv[])
     wchar_t *program = Py_DecodeLocale(argv[0], NULL);
 
     strcpy(pid_path,"/tmp/ixcsys/router/router_core.pid");
-    realpath(argv[0],run_dir);
+
+    if(realpath(argv[0],run_dir)==NULL){
+        STDERR("cannot get run path\r\n");
+        exit(EXIT_FAILURE);
+    }
+    
     dirname(run_dir);
 
     strcpy(rpc_path,"/tmp/ixcsys/router/rpc.sock");
@@ -841,10 +892,10 @@ static void ixc_set_run_env(char *argv[])
     Py_SetProgramName(program);
 }
 
-static int ixc_start_python(int debug)
+static int ixc_init_python(int debug)
 {
     PyObject *py_module=NULL,*cls,*v,*args,*pfunc;
-    char py_module_dir[2048];
+    char py_module_dir[8192];
 
     sprintf(py_module_dir,"%s/../../",run_dir);
     
@@ -879,9 +930,39 @@ static int ixc_start_python(int debug)
     return 0;
 }
 
+static int ixc_start_python(void)
+{
+    PyObject *pfunc,*result;
+
+    pfunc=PyObject_GetAttrString(py_helper_instance,"start");
+    if(NULL==pfunc){
+        DBG("cannot found python function start\r\n");
+        return -1;
+    }
+
+    result=PyObject_CallObject(pfunc, NULL);
+
+    if(NULL==result){
+        PyErr_Print();
+        return -1;
+    }
+
+    Py_XDECREF(pfunc);
+    Py_XDECREF(result);
+
+    return 0;
+}
+
 static void ixc_myloop(void)
 {
     time_t now=time(NULL);
+    sysloop_do();
+    
+    if(ixc_qos_have_data()){
+        ixc_ev_set.wait_timeout=0;
+    }else{
+        ixc_ev_set.wait_timeout=10;
+    }
     if(now-loop_time_up<30) return;
     // 每隔30s调用一次python循环
     ixc_python_loop();
@@ -891,10 +972,28 @@ static void ixc_start(int debug)
 {
     int rs;
 
+    if(!access(pid_path,F_OK)){
+        STDERR("process ixc_router_core exists\r\n");
+        return;
+    }
+
     loop_time_up=time(NULL);
 
     signal(SIGSEGV,ixc_signal_handle);
     signal(SIGINT,ixc_signal_handle);
+
+    // 注意这里需要最初初始化以便检查环境
+    rs=ixc_init_python(debug);
+    if(rs<0){
+        STDERR("cannot init python helper instance\r\n");
+        return;
+    }
+
+    if(rs<0){
+       ixc_netif_uninit();
+       STDERR("cannot start python\r\n");
+       return;
+    }
 
     rs=ev_set_init(&ixc_ev_set,0);
     if(rs<0){
@@ -988,11 +1087,6 @@ static void ixc_start(int debug)
         return;
     }
 
-    rs=rpc_create(&ixc_ev_set,rpc_path,ixc_rpc_fn_req);
-    if(rs<0){
-        STDERR("cannot create rpc\r\n");
-        return;
-    }
 
     rs=ixc_netif_init(&ixc_ev_set);
     if(rs<0){
@@ -1000,14 +1094,26 @@ static void ixc_start(int debug)
         return;
     }
 
-   rs=ixc_start_python(debug);
-   if(rs<0){
-       ixc_netif_uninit();
-       STDERR("cannot start python\r\n");
-       return;
-   }
+    rs=ixc_npfwd_init(&ixc_ev_set);
+    if(rs<0){
+        STDERR("cannot init npfwd\r\n");
+        return;
+    }
+  
+    rs=rpc_create(&ixc_ev_set,rpc_path,ixc_rpc_fn_req);
+    if(rs<0){
+        STDERR("cannot create rpc\r\n");
+        return;
+    }
+  
+    if(ixc_start_python()<0){
+        STDERR("cannot start python helper\r\n");
+        return;
+    }
 
-   ev_loop(&ixc_ev_set);
+    if(!debug) pfile_write(pid_path,getpid());
+    
+    ev_loop(&ixc_ev_set);
 }
 
 static void ixc_stop(void)
@@ -1015,7 +1121,8 @@ static void ixc_stop(void)
     pid_t pid=pfile_read(pid_path);
 
     if(pid<0) return;
-    
+    if(!access(pid_path,F_OK)) remove(pid_path);
+
     kill(pid,SIGINT);
 }
 

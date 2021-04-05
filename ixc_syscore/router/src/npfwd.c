@@ -18,6 +18,7 @@ static struct ixc_npfwd_info npfwd_info[IXC_NPFWD_INFO_MAX];
 
 static struct ixc_mbuf *npfwd_mbuf_first=NULL;
 static struct ixc_mbuf *npfwd_mbuf_last=NULL;
+static int npfwd_is_initialized=0;
 
 static void ixc_npfwd_rx_data(int fd)
 {
@@ -35,21 +36,25 @@ static void ixc_npfwd_rx_data(int fd)
             STDERR("cannot get mbuf\r\n");
             break;
         }
+
         recv_size=recvfrom(fd,m->data+IXC_MBUF_BEGIN,IXC_MBUF_DATA_MAX_SIZE-IXC_MBUF_BEGIN,0,&from,&fromlen);
+
         if(recv_size<0){
             ixc_mbuf_put(m);
             break;
         }
 
+        //DBG_FLAGS;
         // 检查是否满足最小长度要求
-        if(fromlen<sizeof(struct ixc_npfwd_header)){
+        if(recv_size<sizeof(struct ixc_npfwd_header)){
             ixc_mbuf_put(m);
             continue;
         }
 
+        //DBG_FLAGS;
         m->begin=IXC_MBUF_BEGIN;
         m->offset=IXC_MBUF_BEGIN;
-        m->tail=IXC_MBUF_BEGIN+fromlen;
+        m->tail=IXC_MBUF_BEGIN+recv_size;
         m->end=m->tail;
 
         header=(struct ixc_npfwd_header *)(m->data+m->offset);
@@ -58,6 +63,7 @@ static void ixc_npfwd_rx_data(int fd)
             continue;
         }
 
+        //DBG_FLAGS;
         info=&(npfwd_info[header->flags]);
 
         // 如果未使用那么直接丢弃数据包
@@ -65,13 +71,14 @@ static void ixc_npfwd_rx_data(int fd)
             ixc_mbuf_put(m);
             continue;
         }
-        
+        //DBG_FLAGS;
         // 验证key是否一致
         if(memcmp(header->key,info->key,16)){
             ixc_mbuf_put(m);
             continue;
         }
 
+        //DBG_FLAGS;
         // 找不到网卡直接丢弃数据包
         netif=ixc_netif_get(header->if_type);
         if(NULL==netif){
@@ -79,28 +86,36 @@ static void ixc_npfwd_rx_data(int fd)
             continue;
         }
 
+        //DBG_FLAGS;
         m->begin=m->offset=m->begin+20;
 
         m->netif=netif;
 
         switch(header->flags){
             case IXC_FLAG_ARP:
+                //DBG_FLAGS;
                 ixc_ether_send2(m);
                 break;
             case IXC_FLAG_DHCP_CLIENT:
+                //DBG_FLAGS;
                 ixc_ether_send2(m);
                 break;
             case IXC_FLAG_DHCP_SERVER:
+                //DBG_FLAGS;
                 ixc_ether_send2(m);
                 break;
             case IXC_FLAG_VSWITCH:
+                //DBG_FLAGS;
                 break;
             case IXC_FLAG_SRC_FILTER:
+                //DBG_FLAGS;
                 break;
             case IXC_FLAG_ROUTE_FWD:
+                //DBG_FLAGS;
                 ixc_ip_send(m);
                 break;
             default:
+                //DBG_FLAGS;
                 ixc_mbuf_put(m);
                 break;
         }
@@ -117,18 +132,22 @@ static void ixc_npfwd_tx_data(void)
     struct ev *ev;
     ssize_t sent_size;
     socklen_t tolen;
+    unsigned char buf[16];
+
+    inet_pton(AF_INET,"127.0.0.1",buf);
+    memcpy(&(sent_addr.sin_addr.s_addr),buf,4);
 
     // 常量提前赋值,加快速度
     sent_addr.sin_family=AF_INET;
-    sent_addr.sin_addr.s_addr=inet_addr("127.0.0.1");
     tolen=sizeof(struct sockaddr_in);
 
     while(1){
         if(NULL==m) break;
 
-        header=(struct ixc_npfwd_header *)(m->data+m->offset);
+        header=(struct ixc_npfwd_header *)(m->data+m->begin);
         info=&(npfwd_info[header->flags]);
-
+        
+        //DBG("%d\r\n",header->flags);
         // 如果转发已经关闭那么丢弃数据包
         if(!info->is_used){
             t=m->next;
@@ -137,6 +156,7 @@ static void ixc_npfwd_tx_data(void)
             continue;
         }
 
+        //DBG_FLAGS;
         // 检查key是否已经发生变更,发生变更那么丢弃数据包
         if(memcmp(info->key,header->key,16)){
             t=m->next;
@@ -145,12 +165,9 @@ static void ixc_npfwd_tx_data(void)
             continue;
         }
 
-        m->begin+=20;
-        m->offset+=20;
-
         sent_addr.sin_port=info->port;
 
-        sent_size=sendto(npfwd.fileno,m->data+m->offset,m->tail-m->offset,0,(struct sockaddr *)&sent_addr,tolen);
+        sent_size=sendto(npfwd.fileno,m->data+m->begin,m->end-m->begin,0,(struct sockaddr *)&sent_addr,tolen);
         if(sent_size<0){
             if(EAGAIN==errno){
                 npfwd_mbuf_first=m;
@@ -201,6 +218,7 @@ static int ixc_npfwd_timeout_fn(struct ev *ev)
 
 static int ixc_npfwd_del_fn(struct ev *ev)
 {
+    close(ev->fileno);
     return 0;
 }
 
@@ -223,11 +241,11 @@ int ixc_npfwd_init(struct ev_set *ev_set)
     memset(&in_addr,'0',sizeof(struct sockaddr_in));
 
     in_addr.sin_family=AF_INET;
+    inet_pton(AF_INET,"127.0.0.1",buf);
 
     memcpy(&(in_addr.sin_addr.s_addr),buf,4);
 	in_addr.sin_port=htons(8964);
 
-    inet_pton(AF_INET,"127.0.0.1",buf);
     rs=bind(listenfd,(struct sockaddr *)&in_addr,sizeof(struct sockaddr));
 
     if(rs<0){
@@ -268,12 +286,18 @@ int ixc_npfwd_init(struct ev_set *ev_set)
 		return -1;
 	}
 
+    npfwd_is_initialized=1;
+    npfwd.ev=ev;
+
     return 0;
 }
 
 void ixc_npfwd_uninit(void)
 {
+    if(!npfwd_is_initialized) return;
 
+    ev_delete(npfwd.ev_set,npfwd.ev);
+    npfwd_is_initialized=0;
 }
 
 int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char flags)
@@ -295,7 +319,10 @@ int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char fl
         return -3;
     }
 
-    header=(struct ixc_npfwd_header *)(m->data+m->offset-20);
+    m->begin=m->begin-20;
+    m->offset=m->begin;
+
+    header=(struct ixc_npfwd_header *)(m->data+m->begin);
     
     // 复制key
     memcpy(header->key,info->key,16);
@@ -331,11 +358,22 @@ int ixc_npfwd_set_forward(unsigned char *key,unsigned short port,int flags)
         return -2;
     }
 
+    //DBG("%d\r\n",flags);
     info=&(npfwd_info[flags]);
 
     memcpy(info->key,key,16);
     // 直接转换为网络序,避免发送再多转换一次
     info->port=htons(port);
+    info->is_used=1;
 
     return 0;
+}
+
+void ixc_npfwd_disable(int flags)
+{
+    struct ixc_npfwd_info *info;
+    if(flags>=IXC_NPFWD_INFO_MAX) return;
+
+    info=&(npfwd_info[flags]);
+    info->is_used=0;
 }

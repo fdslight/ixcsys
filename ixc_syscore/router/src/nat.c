@@ -458,7 +458,7 @@ static void ixc_nat_timeout_cb(void *data)
 
 static void ixc_nat_sysloop_cb(struct sysloop *lp)
 {
-    DBG_FLAGS;
+    //DBG_FLAGS;
     // 执行时间函数,定期检查NAT会话是否过期
     time_wheel_handle(&nat_time_wheel);
 }

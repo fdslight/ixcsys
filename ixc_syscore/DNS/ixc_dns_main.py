@@ -162,8 +162,8 @@ class service(dispatcher.dispatcher):
 
         return dns_id
 
-    def set_route(self, subnet: str, prefix: int, is_ipv6=False):
-        RPCClient.fn_call("router", "/runtime", "add_route", subnet, prefix, None, is_ipv6=is_ipv6)
+    #def set_route(self, subnet: str, prefix: int, is_ipv6=False):
+    #    RPCClient.fn_call("router", "/config", "add_route", subnet, prefix, None, is_ipv6=is_ipv6)
 
     def send_to_dnsserver(self, message: bytes, is_ipv6=False):
         """发送到DNS服务器
@@ -350,7 +350,7 @@ class service(dispatcher.dispatcher):
         if not self.__wan_ok:
             now = time.time()
             if now - self.__up_time < 10: return
-            self.__wan_ok = RPCClient.fn_call("router", "/runtime", "wan_ready_ok")
+            self.__wan_ok = RPCClient.fn_call("router", "/config", "wan_ready_ok")
         ''''''
 
 

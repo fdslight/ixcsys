@@ -38,7 +38,7 @@ static void ixc_ipunfrag_timeout_cb(void *data)
 
 static void ixc_ipunfrag_sysloop_cb(struct sysloop *loop)
 {
-    DBG_FLAGS;
+    //DBG_FLAGS;
     time_wheel_handle(&ipunfrag_time_wheel);
 }
 

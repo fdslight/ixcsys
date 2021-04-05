@@ -111,6 +111,7 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
     }
 
     header=(struct netutil_ip6hdr *)(mbuf->data+mbuf->offset);
+    mbuf->end=mbuf->tail=mbuf->offset+ntohs(header->payload_len);
     mbuf->is_ipv6=1;
 
     if(IXC_NETIF_WAN==netif->type){

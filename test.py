@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import ixc_syslib.pylib.RPCClient as RPCClient
+import pywind.lib.crpc as croc
 import socket, os, struct, time
 
 """
@@ -29,6 +30,9 @@ while 1:
 s.close()
 """
 
-message = RPCClient.fn_call("router", "/config", "wan_config_get")
+client = croc.RPCClient("/tmp/ixcsys/router/rpc.sock")
+client.fn_call("hello")
 
-print(message)
+# message = RPCClient.fn_call("router", "/config", "wan_config_get")
+
+# print(message)

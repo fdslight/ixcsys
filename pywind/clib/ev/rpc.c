@@ -13,6 +13,7 @@
 #include "../debug.h"
 
 static struct rpc rpc;
+static int rpc_is_initialized=0;
 
 static int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len);
 
@@ -126,6 +127,9 @@ int rpc_create(struct ev_set *ev_set,const char *path,rpc_fn_req_t fn_req)
 	EV_INIT_SET(rpc.ev,rpc_accept,NULL,NULL,NULL,NULL);
 	
 	rs=ev_modify(ev_set,rpc.ev,EV_READABLE,EV_CTL_ADD);
+	rpc_is_initialized=1;
+
+	DBG("rpc create OK\r\n");
 
 	return rs;
 }
@@ -221,6 +225,8 @@ static int rpc_session_readable_fn(struct ev *ev)
 	ssize_t recv_size;
 	int rs;
 	struct rpc_session *session=ev->data;
+
+	//DBG_FLAGS;
 
 	for(int n=0;n<10;n++){
 		recv_size=recv(ev->fileno,&session->recv_buf[session->recv_buf_end],0xffff-session->recv_buf_end,0);
@@ -344,12 +350,16 @@ static int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_le
 		return -1;
 	}
 
+	DBG("create rpc session OK\r\n");
+
 	return 0;
 }
 
 void rpc_delete(void)
 {
 	struct rpc_fn_info *info=rpc.fn_head,*t;
+
+	if(!rpc_is_initialized) return;
 
 	while(NULL!=info){
 		t=info->next;
@@ -360,4 +370,5 @@ void rpc_delete(void)
 	close(rpc.fileno);
 
 	if(!access(rpc.path,F_OK)) remove(rpc.path);
+	rpc_is_initialized=0;
 }

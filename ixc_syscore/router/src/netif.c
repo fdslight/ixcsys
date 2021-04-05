@@ -106,7 +106,11 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     strcpy(res_devname,devname);
     fd=tapdev_create(res_devname);
 
-    if(fd<0) return -1;
+    if(fd<0){
+        STDERR("ERROR:cannot create tap device %s\r\n",res_devname);
+        ixc_router_exit();
+        return -1;
+    }
 
     tapdev_up(res_devname);
 

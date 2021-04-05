@@ -132,8 +132,8 @@ class service(dispatcher.dispatcher):
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
         consts = self.__router_consts
 
-        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"])
-        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"],
+        RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"])
+        ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"],
                                         self.__rand_key, port)
 
         wan_config = RPCClient.fn_call("router", "/config", "wan_config_get")
@@ -161,8 +161,8 @@ class service(dispatcher.dispatcher):
             subnet, int(prefix)
         )
 
-        RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", consts["IXC_FLAG_DHCP_SERVER"])
-        ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", consts["IXC_FLAG_DHCP_SERVER"],
+        RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_DHCP_SERVER"])
+        ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_DHCP_SERVER"],
                                         self.__rand_key, port)
         if not ok: raise SystemError(message)
 
@@ -173,7 +173,7 @@ class service(dispatcher.dispatcher):
         if self.debug: print("start DHCP")
 
         self.get_handler(self.__dhcp_fd).set_message_auth(self.__rand_key)
-        consts = RPCClient.fn_call("router", "/runtime", "get_all_consts")
+        consts = RPCClient.fn_call("router", "/config", "get_all_consts")
         self.__router_consts = consts
 
         lan_configs = RPCClient.fn_call("router", "/config", "lan_config_get")
@@ -270,7 +270,7 @@ class service(dispatcher.dispatcher):
     def set_wan_ip(self, ip: str, prefix: int, is_ipv6=False):
         """设置WAN口的IP地址
         """
-        rs = RPCClient.fn_call("router", "/runtime", "set_wan_ipaddr", ip, prefix, is_ipv6=is_ipv6)
+        rs = RPCClient.fn_call("router", "/config", "set_wan_ipaddr", ip, prefix, is_ipv6=is_ipv6)
         ok, msg = rs
         if not ok: logging.print_error(msg)
 
@@ -282,12 +282,12 @@ class service(dispatcher.dispatcher):
     def set_default_route(self, gw: str, is_ipv6=False):
         if is_ipv6:
             # 首先删除默认路由
-            RPCClient.fn_call("router", "/runtime", "del_route", "::", 0, is_ipv6=True)
-            rs = RPCClient.fn_call("router", "/runtime", "add_route", "::", 0, gw, is_ipv6=True)
+            RPCClient.fn_call("router", "/config", "del_route", "::", 0, is_ipv6=True)
+            rs = RPCClient.fn_call("router", "/config", "add_route", "::", 0, gw, is_ipv6=True)
         else:
             # 首先删除默认路由
-            RPCClient.fn_call("router", "/runtime", "del_route", "0.0.0.0", 0, is_ipv6=False)
-            rs = RPCClient.fn_call("router", "/runtime", "add_route", "0.0.0.0", 0, gw, is_ipv6=False)
+            RPCClient.fn_call("router", "/config", "del_route", "0.0.0.0", 0, is_ipv6=False)
+            rs = RPCClient.fn_call("router", "/config", "add_route", "0.0.0.0", 0, gw, is_ipv6=False)
 
         ok, msg = rs
         if not ok: logging.print_error(msg)

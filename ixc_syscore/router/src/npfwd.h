@@ -15,6 +15,8 @@ struct ixc_npfwd_info{
     unsigned short port;
 };
 
+#pragma pack(push)
+#pragma pack(1)
 /// 数据头部格式
 struct ixc_npfwd_header{
     // key
@@ -28,9 +30,11 @@ struct ixc_npfwd_header{
     // 标志
     unsigned char flags;
 };
+#pragma pack(pop)
 
 struct ixc_npfwd{
     struct ev_set *ev_set;
+    struct ev *ev;
     int fileno;
 };
 
@@ -43,5 +47,7 @@ int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char fl
 
 /// 设置重定向
 int ixc_npfwd_set_forward(unsigned char *key,unsigned short port,int flags);
+/// 取消重定向
+void ixc_npfwd_disable(int flags);
 
 #endif

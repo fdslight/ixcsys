@@ -21,4 +21,6 @@ int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,
 /// 通知函数
 int ixc_router_tell(const char *content);
 
+void ixc_router_exit(void);
+
 #endif

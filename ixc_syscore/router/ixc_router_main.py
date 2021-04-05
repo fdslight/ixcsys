@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal
+import sys, os, signal, time
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -75,7 +75,7 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__scgi_fd)
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
-
+        #os.system("%s/ixc_router_core stop" % os.getenv("IXC_MYAPP_DIR"))
         self.__scgi_fd = -1
 
     def start_scgi(self):

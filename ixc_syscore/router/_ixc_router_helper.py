@@ -18,17 +18,17 @@ class rpc(object):
         self.__helper = _helper
 
         self.__fn_objects = {
-            "get_all_consts": None,
-            "get_wan_ipaddr_info": None,
-            "get_lan_ipaddr_info": None,
-            "add_route": None,
-            "del_route": None,
-            "set_wan_ipaddr": None,
-            "wan_ready_ok": None,
-            "vsw_enable": None,
+            "get_all_consts": self.get_all_consts,
+            "get_wan_ipaddr_info": self.get_wan_ipaddr_info,
+            "get_lan_ipaddr_info": self.get_lan_ipaddr_info,
+            "add_route": self.add_route,
+            "del_route": self.del_route,
+            "set_wan_ipaddr": self.set_wan_ipaddr,
+            "wan_ready_ok": self.wan_ready_ok,
+            "vsw_enable": self.vsw_enable,
 
-            "set_fwd_port": None,
-            "unset_fwd_port": None,
+            "set_fwd_port": self.set_fwd_port,
+            "unset_fwd_port": self.unset_fwd_port,
 
             "wan_config_get": self.wan_config_get,
             "lan_config_get": self.lan_config_get,
@@ -249,14 +249,21 @@ class rpc(object):
         if fwd_port > 0xfffe or fwd_port < 1:
             return 0, (False, "Wrong fwd_port value")
 
-        pfwd = self.__helper.get_fwd_instance()
-        b = pfwd.set_fwd_port(flags, _id, fwd_port)
+        try:
+            flags = int(flags)
+        except ValueError:
+            return RPC.ERR_ARGS, "wrong flags value type"
 
-        return 0, (b, "")
+        rs = self.__helper.router.netpkt_forward_set(_id, fwd_port, flags)
+
+        return 0, (rs, "")
 
     def unset_fwd_port(self, flags: int):
-        pfwd = self.__helper.get_fwd_instance()
-        pfwd.unset_fwd_port(flags)
+        try:
+            flags = int(flags)
+        except ValueError:
+            return RPC.ERR_ARGS, "wrong argument type"
+        self.__helper.router.netpkt_forward_disable(flags)
         return 0, None
 
     def wan_config_get(self):
@@ -577,7 +584,6 @@ class helper(object):
             os.system("ip link set %s down" % self.__WAN_NAME)
             os.system("ip link set %s down" % self.__LAN_BR_NAME)
             os.system("ip link set %s down" % self.__WAN_BR_NAME)
-
             os.system("ip link del %s" % self.__LAN_BR_NAME)
             os.system("ip link del %s" % self.__WAN_BR_NAME)
         else:
@@ -712,7 +718,6 @@ class helper(object):
             return
 
         if internet_type.lower() != "static-ip": return
-        # WAN???????
 
         ip_addr = ipv4["address"]
         mask = ipv4["mask"]
@@ -742,7 +747,7 @@ class helper(object):
         return self.lan_configs["if_config"]["manage_addr"]
 
     def set_router(self):
-        """????????
+        """
         :return:
         """
         self.load_router_configs()
@@ -799,6 +804,7 @@ class helper(object):
             p = s.find("if_tap.ko")
             if p < 0: os.system("kldload if_tap")
 
+    def start(self):
         self.start_lan()
         self.start_wan()
 

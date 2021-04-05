@@ -18,5 +18,6 @@ class controller(rpc.controller):
     def handle_rpc_request(self, fname: str, *args, **kwargs):
         client = crpc.RPCClient(self.__runtime.rpc_sock_path)
         is_error, msg = client.fn_call(fname, *args, **kwargs)
+        client.close()
 
         self.send_rpc_response(is_error, pickle.loads(msg))
