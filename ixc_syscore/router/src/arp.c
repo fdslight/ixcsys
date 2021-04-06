@@ -15,11 +15,9 @@ static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     struct ixc_netif *netif=mbuf->netif;
     //unsigned char brd[]={0xff,0xff,0xff,0xff,0xff,0xff};
     
-    // 检查是否是本机的IP地址,不是本机的IP地址那么转发给其它应用
+    // 检查是否是本机的IP地址,不是本机的IP地址那么丢弃ARP请求
     if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
-        //ixc_router_send(netif->type,0,IXC_FLAG_ARP,mbuf->data+mbuf->begin,mbuf->end-mbuf->begin);
-        //ixc_mbuf_put(mbuf);
-        ixc_npfwd_send_raw(mbuf,0,IXC_FLAG_ARP);
+        ixc_mbuf_put(mbuf);
         return;
     }
 
@@ -45,11 +43,17 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     struct ixc_netif *netif=mbuf->netif;
     struct ixc_addr_map_record *r;
 
-    if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
-        DBG_FLAGS;
+    // 硬件地址是本机的地址拷贝数据到DHCP CLIENT和DHCP SERVER
+    if(!memcmp(arp->dst_hwaddr,netif->hwaddr,6)){
         //ixc_router_send(netif->type,0,IXC_FLAG_ARP,mbuf->data+mbuf->begin,mbuf->end-mbuf->begin);
         //ixc_mbuf_put(mbuf);
-        ixc_npfwd_send_raw(mbuf,0,IXC_FLAG_ARP);
+        ixc_npfwd_send_raw(ixc_mbuf_clone(mbuf),0,IXC_FLAG_DHCP_CLIENT);
+        ixc_npfwd_send_raw(ixc_mbuf_clone(mbuf),0,IXC_FLAG_DHCP_SERVER);
+    }
+
+    // 不是本机的IP地址那么丢弃数据包
+    if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
+        ixc_mbuf_put(mbuf);
         return;
     }
 

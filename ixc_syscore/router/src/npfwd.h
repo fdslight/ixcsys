@@ -12,6 +12,7 @@
 struct ixc_npfwd_info{
     unsigned char key[16];
     int is_used;
+    unsigned char pad[2];
     unsigned short port;
 };
 

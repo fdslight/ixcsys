@@ -331,6 +331,8 @@ int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char fl
     header->ipproto=ipproto;
     header->flags=flags;
 
+
+
     if(NULL==npfwd_mbuf_first){
         npfwd_mbuf_first=m;
     }else{

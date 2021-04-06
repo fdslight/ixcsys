@@ -126,12 +126,9 @@ class alloc(object):
             return None
         return addr
 
-
 """
 cls = alloc("192.168.1.8", "192.168.1.128", "192.168.1.0", 24)
-cls.bind_ipaddr("xxxxx", "192.168.1.127", 100)
-for x in range(129):
-    rs = cls.get_ipaddr("xxxxx")
-    if not rs: continue
-    print(rs)
+ipaddr = cls.get_ipaddr("aa")
+ipaddr2 = cls.get_ipaddr("bb")
+print(ipaddr,ipaddr2)
 """
