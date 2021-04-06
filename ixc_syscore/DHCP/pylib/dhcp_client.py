@@ -32,7 +32,7 @@ class dhcp_client(object):
     __lease_time = None
 
     __router = None
-    __dnsserver = None
+    __dnsservers = None
     __subnet_mask = None
     __broadcast_addr = None
 
@@ -49,6 +49,7 @@ class dhcp_client(object):
         self.__hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
         self.__dhcp_parser = dhcp.dhcp_parser()
         self.__dhcp_builder = dhcp.dhcp_builder()
+        self.__dnsservers = []
 
         self.reset()
 
@@ -96,17 +97,25 @@ class dhcp_client(object):
         if not subnet_mask: return
         if len(subnet_mask) != 4: return
 
+        # 一些DHCP Server可能不提供广播地址
         broadcast_addr = self.get_dhcp_opt_value(options, 28)
-        if not broadcast_addr: return
-        if len(broadcast_addr) != 4: return
+        if broadcast_addr:
+            if len(broadcast_addr) != 4: return
 
         dnsserver = self.get_dhcp_opt_value(options, 6)
-        if dnsserver and len(dnsserver) != 4: return
+
         if dnsserver:
-            self.__dnsserver = dnsserver
+            # 域名服务器必须是4的倍数
+            if len(dnsserver) % 4 != 0: return
+            while 1:
+                if not dnsserver: break
+                str_addr = socket.inet_ntop(socket.AF_INET, dnsserver[0:4])
+                self.__dnsservers.append(str_addr)
+                dnsserver = dnsserver[4:]
 
         router = self.get_dhcp_opt_value(options, 3)
-        if router and len(router) != 4: return
+        if router:
+            if len(router) != 4: return
 
         self.__cur_step = 4
         self.__my_ipaddr = self.__dhcp_parser.yiaddr
@@ -271,10 +280,15 @@ class dhcp_client(object):
                     s_gw = socket.inet_ntop(socket.AF_INET, self.__router)
                     if self.__runtime.debug: print("gateway:", s_gw)
                     ok = self.__runtime.set_default_route(s_gw, is_ipv6=False)
-                if self.__dnsserver:
-                    s_ns1 = socket.inet_ntop(socket.AF_INET, self.__dnsserver)
-                    if self.__runtime.debug: print("nameserver:", s_ns1)
-                    self.__runtime.set_nameservers(s_ns1, None, is_ipv6=False)
+                if self.__dnsservers:
+                    s_ns1 = self.__dnsservers[0]
+                    if self.__runtime.debug: print("nameserver1:", s_ns1)
+                    if len(self.__dnsservers) > 1:
+                        s_ns2 = self.__dnsservers[1]
+                        if self.__runtime.debug: print("nameserver2:", s_ns2)
+                    else:
+                        s_ns2 = None
+                    self.__runtime.set_nameservers(s_ns1, s_ns2, is_ipv6=False)
 
                 self.__dhcp_ip_conflict_check_ok = True
             else:
@@ -305,9 +319,8 @@ class dhcp_client(object):
     def router_addr_get(self):
         return socket.inet_ntoa(self.__router)
 
-    def dnsserver_addr_get(self):
-        if self.__dnsserver: return socket.inet_ntoa(self.__dnsserver)
-        return None
+    def dnsservers_addr_get(self):
+        return self.__dnsservers
 
     @property
     def dhcp_ok(self):

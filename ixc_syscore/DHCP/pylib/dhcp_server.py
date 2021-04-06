@@ -100,14 +100,20 @@ class dhcp_server(object):
                 resp_opts.append((code, self.__mask_bytes,))
             if code == 6 and self.__dns_bytes:
                 resp_opts.append((code, self.__dns_bytes))
-            if code == 54:
-                resp_opts.append((code, self.__my_ipaddr))
+            #if code == 54:
+            #    resp_opts.append((code, self.__my_ipaddr))
             if code == 3:
                 resp_opts.append((code, self.__my_ipaddr))
             if code in self.__dhcp_options:
                 resp_opts.append((code, self.__dhcp_options[code]))
             ''''''
+
+        resp_opts.append((54, self.__my_ipaddr))
         resp_opts.append((51, struct.pack("!I", self.__TIMEOUT)))
+        resp_opts.append((58, struct.pack("!I", int(self.__TIMEOUT * 0.5))))
+        resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
+
+
         return resp_opts
 
     def handle_dhcp_discover_req(self, opts: list):
@@ -127,26 +133,32 @@ class dhcp_server(object):
         if not ipaddr: return
         if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
 
+        client_id = self.get_dhcp_opt_value(opts, 61)
+
         self.__alloc.bind_ipaddr(s_client_hwaddr, ipaddr)
 
         your_byte_ipaddr = socket.inet_pton(socket.AF_INET, ipaddr)
         self.__dhcp_builder.yiaddr = your_byte_ipaddr
 
         resp_opts.append((53, bytes([2])))
+        if client_id:
+            resp_opts.append((61, client_id))
+
         resp_opts += self.get_resp_opts_from_request_list(request_list)
 
         # neg_ok 如果为True的时候那么表示DHCP协商成功
         self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
 
+        self.__dhcp_builder.flags = self.__dhcp_parser.flags
         self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
         self.dhcp_msg_send(resp_opts)
 
     def dhcp_msg_send(self, resp_opts: list):
         flags = self.__dhcp_parser.flags & 0x8000
         if flags > 0:
-            dst_hwaddr = self.__client_hwaddr
-        else:
             dst_hwaddr = bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+        else:
+            dst_hwaddr = self.__client_hwaddr
 
         self.__dhcp_builder.xid = self.__dhcp_parser.xid
         self.__dhcp_builder.op = 2
