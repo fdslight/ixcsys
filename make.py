@@ -66,7 +66,7 @@ def __read_build_config():
 def build_config_args(insert_s: str, _list: list):
     results = []
     for s in _list:
-        results.append("%s %s" % (insert_s,s))
+        results.append("%s %s" % (insert_s, s))
 
     return " ".join(results)
 
@@ -93,17 +93,17 @@ def __build(build_name, args: list):
     m = sys.modules[name]
 
     if c_includes:
-        include = build_config_args("-I",c_includes)
+        include = build_config_args("-I", c_includes)
     else:
         include = ""
 
     if libdirs:
-        libdir = build_config_args("-L",libdirs)
+        libdir = build_config_args("-L", libdirs)
     else:
         libdir = ""
 
     if libs:
-        lib = build_config_args("-l",libs)
+        lib = build_config_args("-l", libs)
     else:
         lib = ""
 
@@ -195,36 +195,6 @@ def __install_all():
             os.system("cp -n %s/%s %s" % (root_dir, x, prefix))
         else:
             os.system("cp %s/%s %s" % (root_dir, x, prefix))
-
-    script_start_path = "%s/ixc_start.sh" % INSTALL_PREFIX
-    script_stop_path = "%s/ixc_stop.sh" % INSTALL_PREFIX
-
-    start_writes = [
-        "#!/bin/sh\n"
-        "%s %s/ixc_main.py systemd_start\n" % (sys.executable, INSTALL_PREFIX)
-    ]
-
-    stop_writes = [
-        "#!/bin/sh\n"
-        "%s %s/ixc_main.py stop\n" % (sys.executable, INSTALL_PREFIX)
-    ]
-
-    with open(script_start_path, "w") as f:
-        f.write("".join(start_writes))
-    f.close()
-
-    with open(script_stop_path, "w") as f:
-        f.write("".join(stop_writes))
-    f.close()
-
-    os.chmod(script_start_path, 0O755)
-    os.chmod(script_stop_path, 0O755)
-
-    # 加入到系统systemd服务
-    if os.path.isfile("/usr/lib/systemd/system/ixcsys.service"):
-        os.system("systemctl disable ixcsys")
-    os.system("cp ixcsys.service /usr/lib/systemd/system")
-    os.system("systemctl enable ixcsys")
 
     print("install ixcsys OK,please enjoy it ^_^")
 

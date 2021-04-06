@@ -98,8 +98,6 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__scgi_fd)
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
-        self.clear_os_route()
-        self.clear_os_route(is_ipv6=True)
 
         os.system("%s/ixc_router_core stop" % os.getenv("IXC_MYAPP_DIR"))
         self.__scgi_fd = -1
@@ -118,6 +116,9 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = -1
 
         RPC.wait_proc("init")
+        
+        self.clear_os_route()
+        self.clear_os_route(is_ipv6=True)
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
         os.system("%s/ixc_router_core start" % os.getenv("IXC_MYAPP_DIR"))

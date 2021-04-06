@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import ixc_syslib.pylib.RPCClient as RPCClient
-import pywind.lib.crpc as croc
+import pywind.lib.crpc as crpc
 import socket, os, struct, time
 
 """
@@ -40,4 +40,4 @@ print(message)
 """
 
 
-
+RPCClient.fn_call("proxy", "/config", "conn_cfg_update", {})
