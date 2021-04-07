@@ -517,8 +517,9 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         //ixc_router_send(netif->type,iphdr->protocol,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
         // 这里丢弃数据包,避免内存泄漏
         //ixc_mbuf_put(m);
-        IXC_PRINT_IP("redirect ip packet to ",iphdr->dst_addr);
+        IXC_PRINT_IP("redirect ip packet for dst ",iphdr->dst_addr);
         m->begin=m->offset;
+        m->end=m->tail;
         ixc_npfwd_send_raw(m,iphdr->protocol,IXC_FLAG_ROUTE_FWD);
         return;
     }

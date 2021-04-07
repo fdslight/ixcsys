@@ -122,7 +122,8 @@ class alloc(object):
         rs = netutils.is_subnet(addr, self.__prefix, self.__subnet)
 
         if not rs:
-            self.__cur_byte_addr = self.__end_addr
+            # 重置一次,查找合适的IP地址
+            self.__cur_byte_addr = self.__begin_addr
             return None
         return addr
 

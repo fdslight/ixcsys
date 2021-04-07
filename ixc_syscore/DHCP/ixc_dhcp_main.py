@@ -323,6 +323,7 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__scgi_fd)
         self.__scgi_fd = -1
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+        if self.__dhcp_server: self.__dhcp_server.save_dhcp_cache()
 
 
 def main():

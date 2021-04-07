@@ -663,6 +663,7 @@ class helper(object):
         if self.is_linux:
             os.system("ip -4 addr add %s/%s dev %s" % (manage_addr, prefix, self.__LAN_BR_NAME))
             os.system("ip -4 route add default via %s" % lan_addr)
+            #os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
 
         # IPv6?????
         enable_static_ipv6 = bool(int(lan_ifconfig["enable_static_ipv6"]))
