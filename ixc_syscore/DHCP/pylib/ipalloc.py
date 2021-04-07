@@ -126,6 +126,13 @@ class alloc(object):
             return None
         return addr
 
+    @property
+    def bind(self):
+        """获取绑定
+        """
+        return self.__bind
+
+
 """
 cls = alloc("192.168.1.8", "192.168.1.128", "192.168.1.0", 24)
 ipaddr = cls.get_ipaddr("aa")

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import ixc_syslib.pylib.RPCClient as RPCClient
-import pywind.lib.crpc as crpc
-import socket, os, struct, time
 
 """
 rand_key = os.urandom(16)
@@ -38,6 +36,3 @@ message = RPCClient.fn_call("router", "/config", "wan_config_get")
 
 print(message)
 """
-
-
-RPCClient.fn_call("proxy", "/config", "conn_cfg_update", {})

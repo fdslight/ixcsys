@@ -141,7 +141,7 @@ int ixc_ip_send(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
     int ip_ver= (header->ver_and_ihl & 0xf0) >> 4;
-    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
+    struct ixc_netif *netif=m->netif;
 
     if(NULL==netif){
         ixc_mbuf_put(m);

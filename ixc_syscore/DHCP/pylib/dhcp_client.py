@@ -361,9 +361,9 @@ class dhcp_client(object):
             self.reset()
             return
 
-            # 如果开启积极心跳,那么就30s续约一次
+            # 如果开启积极心跳,那么就60s续约一次
         if self.__runtime.positive_dhcp_client_request:
-            timeout = 30
+            timeout = 60
         else:
             timeout = int(self.__lease_time / 2)
 

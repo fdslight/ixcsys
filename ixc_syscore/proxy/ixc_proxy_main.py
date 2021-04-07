@@ -120,7 +120,7 @@ class service(dispatcher.dispatcher):
         self.__conn_fd = -1
         self.__enable = False
 
-        RPCClient.wait_processes(["router", "DNS", "DHCP"])
+        RPCClient.wait_processes(["router", "DNS", ])
 
         while 1:
             if not RPCClient.fn_call("router", "/config", "wan_ready_ok"):
@@ -585,7 +585,6 @@ class service(dispatcher.dispatcher):
 
         enable_ipv6 = bool(int(self.__configs["connection"]["enable_ipv6"]))
         resolver = dns.resolver.Resolver()
-        resolver.nameservers = ["180.76.76.76"]
 
         try:
             if enable_ipv6:

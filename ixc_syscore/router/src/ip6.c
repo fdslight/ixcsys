@@ -126,7 +126,7 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
     struct netutil_ip6hdr *header;
     struct ixc_netif *netif=NULL;
 
-    netif=ixc_netif_get(IXC_NETIF_LAN);
+    //netif=ixc_netif_get(IXC_NETIF_LAN);
 
     if(NULL==netif){
         ixc_mbuf_put(mbuf);

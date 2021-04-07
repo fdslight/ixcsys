@@ -121,6 +121,10 @@ class service(dispatcher.dispatcher):
         conf.save_to_ini(self.__dhcp_server_configs, self.__dhcp_server_conf_path)
 
     @property
+    def conf_dir(self):
+        return os.getenv("IXC_MYAPP_CONF_DIR")
+
+    @property
     def server_configs(self):
         return self.__dhcp_server_configs
 
@@ -165,6 +169,7 @@ class service(dispatcher.dispatcher):
         ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_DHCP_SERVER"],
                                         self.__rand_key, port)
         if not ok: raise SystemError(message)
+        self.__dhcp_server.load_dhcp_cache()
 
     def start_dhcp(self):
         self.__dhcp_fd = self.create_handler(-1, dhcp.dhcp_service)

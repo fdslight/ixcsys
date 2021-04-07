@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket, struct, time
+import socket, struct, time, pickle, os
 
 import pywind.lib.netutils as netutils
 
@@ -33,6 +33,9 @@ class dhcp_server(object):
 
     __boot_file = None
 
+    __addr_begin = None
+    __addr_finish = None
+
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
         self.__runtime = runtime
@@ -51,6 +54,11 @@ class dhcp_server(object):
 
         self.__dhcp_parser = dhcp.dhcp_parser()
         self.__dhcp_builder = dhcp.dhcp_builder()
+
+        self.__addr_begin = addr_begin
+        self.__addr_finish = addr_finish
+
+        self.load_dhcp_cache()
 
     def get_dhcp_opt_value(self, options: list, code: int):
         rs = None
@@ -100,7 +108,7 @@ class dhcp_server(object):
                 resp_opts.append((code, self.__mask_bytes,))
             if code == 6 and self.__dns_bytes:
                 resp_opts.append((code, self.__dns_bytes))
-            #if code == 54:
+            # if code == 54:
             #    resp_opts.append((code, self.__my_ipaddr))
             if code == 3:
                 resp_opts.append((code, self.__my_ipaddr))
@@ -112,7 +120,6 @@ class dhcp_server(object):
         resp_opts.append((51, struct.pack("!I", self.__TIMEOUT)))
         resp_opts.append((58, struct.pack("!I", int(self.__TIMEOUT * 0.5))))
         resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
-
 
         return resp_opts
 
@@ -134,8 +141,6 @@ class dhcp_server(object):
         if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
 
         client_id = self.get_dhcp_opt_value(opts, 61)
-
-        self.__alloc.bind_ipaddr(s_client_hwaddr, ipaddr)
 
         your_byte_ipaddr = socket.inet_pton(socket.AF_INET, ipaddr)
         self.__dhcp_builder.yiaddr = your_byte_ipaddr
@@ -202,7 +207,9 @@ class dhcp_server(object):
         # 更新时间
         o["time"] = time.time()
 
+        self.__alloc.bind_ipaddr(s_client_hwaddr, o["ip"])
         self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
+
         self.dhcp_msg_send(resp_opts)
 
     def handle_dhcp_decline(self, opts: list):
@@ -276,6 +283,59 @@ class dhcp_server(object):
     @property
     def debug(self):
         return self.__runtime.debug
+
+    def save_dhcp_cache(self):
+        """保存DHCP保存,尽量避免地址错乱
+        """
+        path = "%s/dhcp_server.cache" % self.__runtime.conf_dir
+        cache = {
+            "my_ipaddr": self.__my_ipaddr,
+            "addr_begin": self.__addr_begin,
+            "addr_finish": self.__addr_finish,
+            "bind": self.__alloc.bind
+        }
+
+        byte_data = pickle.dumps(cache)
+        with open(path, "wb") as f: f.write(byte_data)
+        f.close()
+
+    def load_dhcp_cache(self):
+        """加载DHCP缓存
+        """
+        path = "%s/dhcp_server.cache" % self.__runtime.conf_dir
+        if not os.path.isfile(path): return
+
+        with open(path, "rb") as f:
+            byte_data = f.read()
+        f.close()
+
+        try:
+            cache = pickle.loads(byte_data)
+        except:
+            return
+        if not isinstance(cache, dict): return
+
+        # 检查是否发生改变
+        is_changed = False
+        try:
+            my_ipaddr = cache["my_ipaddr"]
+            addr_begin = cache["addr_begin"]
+            addr_finish = cache["addr_finish"]
+            bind = cache["bind"]
+        except KeyError:
+            return
+
+        if my_ipaddr != self.__my_ipaddr:
+            is_changed = True
+
+        if addr_begin != self.__addr_begin:
+            is_changed = True
+        if addr_finish != self.__addr_finish:
+            is_changed = True
+        if is_changed: return
+
+        for hwaddr in bind:
+            self.__alloc.bind_ipaddr(hwaddr, bind[hwaddr])
 
     def loop(self):
         t = time.time()
