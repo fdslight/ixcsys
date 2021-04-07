@@ -36,3 +36,13 @@ message = RPCClient.fn_call("router", "/config", "wan_config_get")
 
 print(message)
 """
+
+import dns.resolver
+
+cls = dns.resolver.Resolver()
+cls.nameservers = ["192.168.11.254"]
+
+rs = cls.query("www.google.com","A")
+
+for x in rs:
+    print(x)
