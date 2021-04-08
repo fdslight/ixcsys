@@ -48,9 +48,6 @@ class alloc(object):
     # 当前地址
     __cur_byte_addr = None
 
-    # 不可用的地址映射记录
-    __unable_addr_map = None
-
     __prefix = None
     __is_ipv6 = None
     __subnet = None
@@ -67,7 +64,6 @@ class alloc(object):
         self.__begin_addr = socket.inet_pton(fa, addr_begin)
         self.__end_addr = socket.inet_pton(fa, addr_end)
         self.__cur_byte_addr = self.__begin_addr
-        self.__unable_addr_map = {}
         self.__prefix = prefix
         self.__is_ipv6 = is_ipv6
         self.__subnet = subnet
@@ -78,20 +74,11 @@ class alloc(object):
         :param ipaddr,IP地址
         """
         self.__bind[hwaddr] = ipaddr
-        self.__unable_addr_map[ipaddr] = None
 
     def unbind_ipaddr(self, hwaddr: str):
         if hwaddr not in self.__bind: return
         ipaddr = self.__bind[hwaddr]
         self.__empty_ipaddrs.append(ipaddr)
-
-    def set_ip_status(self, hwaddr: str, avaliable: bool):
-        """设置IP地址状态
-        """
-        if not avaliable:
-            self.__unable_addr_map[hwaddr] = None
-            return
-        if hwaddr in self.__unable_addr_map: del self.__unable_addr_map[hwaddr]
 
     def get_ipaddr(self, hwaddr: str):
         if hwaddr:
@@ -109,7 +96,7 @@ class alloc(object):
         while 1:
             if self.__cur_byte_addr == self.__end_addr: return None
             addr = socket.inet_ntop(fa, self.__cur_byte_addr)
-            if addr in self.__unable_addr_map:
+            if addr in self.__bind:
                 byte_addr = ipaddr_plus_plus(self.__cur_byte_addr)
                 self.__cur_byte_addr = byte_addr
                 continue

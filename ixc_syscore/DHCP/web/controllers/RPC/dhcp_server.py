@@ -16,6 +16,9 @@ class controller(rpc.controller):
             "boot_file_set": self.boot_file_set,
             "alloc_addr_range_set": self.alloc_addr_range_set,
             "save": self.save,
+            "add_dhcp_bind": self.add_dhcp_bind,
+            "del_dhcp_bind": self.del_dhcp_bind,
+            "get_ip_bind_configs": self.get_ip_bind_configs,
         }
 
     def get_configs(self):
@@ -41,7 +44,34 @@ class controller(rpc.controller):
 
         return 0, True
 
+    def get_ip_bind_configs(self):
+        return 0, self.dhcp.dhcp_ip_bind
+
     def save(self):
         self.dhcp.save_dhcp_server_configs()
 
         return 0, None
+
+    def add_dhcp_bind(self, alias_name: str, hwaddr: str, ipaddr: str):
+        configs = self.dhcp.dhcp_ip_bind
+        configs[alias_name] = {"hwaddr": hwaddr, "address": ipaddr}
+
+        self.dhcp.save_ip_bind_configs()
+
+        return 0, True
+
+    def del_dhcp_bind(self, ipaddr: str):
+        configs = self.dhcp.dhcp_ip_bind
+        alias_name = None
+
+        for k in configs:
+            o = configs[k]
+            if o["address"] != ipaddr: continue
+            alias_name = k
+            break
+
+        if not alias_name: return 0, False
+        del configs[alias_name]
+        self.dhcp.save_ip_bind_configs()
+
+        return 0, True

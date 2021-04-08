@@ -36,11 +36,14 @@ class dhcp_server(object):
     __addr_begin = None
     __addr_finish = None
 
+    __ip_binds = None
+
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
         self.__runtime = runtime
         self.__dhcp_options = {}
         self.__tmp_alloc_addrs = {}
+        self.__ip_binds = {}
 
         self.__mask_bytes = socket.inet_pton(socket.AF_INET, netutils.ip_prefix_convert(prefix))
         self.__route_bytes = socket.inet_pton(socket.AF_INET, my_ipaddr)
@@ -220,8 +223,9 @@ class dhcp_server(object):
 
         if s_client_hwaddr in self.__tmp_alloc_addrs:
             del self.__tmp_alloc_addrs[s_client_hwaddr]
-        self.__alloc.unbind_ipaddr(s_client_hwaddr)
-        self.__alloc.set_ip_status(s_client_hwaddr, False)
+
+        if s_client_hwaddr not in self.__ip_binds:
+            self.__alloc.unbind_ipaddr(s_client_hwaddr)
 
     def handle_dhcp_release(self, opts: list):
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
@@ -234,7 +238,8 @@ class dhcp_server(object):
 
         if not request_ip or not client_id or not server_id: return
 
-        self.__alloc.unbind_ipaddr(s_client_hwaddr)
+        if s_client_hwaddr not in self.__ip_binds:
+            self.__alloc.unbind_ipaddr(s_client_hwaddr)
         del self.__tmp_alloc_addrs[s_client_hwaddr]
 
     def handle_dhcp_msg(self, msg: bytes):
@@ -334,8 +339,19 @@ class dhcp_server(object):
             is_changed = True
         if is_changed: return
 
+        ip_bind = self.__runtime.dhcp_ip_bind
+        binds = {}
+        for name in ip_bind:
+            info = ip_bind[name]
+            hwaddr = info["hwaddr"]
+            address = info["address"]
+            binds[hwaddr] = address
+
         for hwaddr in bind:
+            if hwaddr not in binds: self.__tmp_alloc_addrs[hwaddr] = {"time": time.time(), "ip": bind[hwaddr],
+                                                                      "neg_ok": False}
             self.__alloc.bind_ipaddr(hwaddr, bind[hwaddr])
+        self.__ip_binds = binds
 
     def loop(self):
         t = time.time()
@@ -347,7 +363,7 @@ class dhcp_server(object):
             neg_ok = o["neg_ok"]
             # 大于1s那么就回收地址
             deleted = False
-            if t - old_t > 10 and not neg_ok:
+            if t - old_t > 600 and not neg_ok:
                 deleted = True
                 self.__alloc.unbind_ipaddr(hwaddr)
             if neg_ok and t - old_t >= self.__TIMEOUT:

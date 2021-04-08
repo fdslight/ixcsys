@@ -78,9 +78,11 @@ class service(dispatcher.dispatcher):
     __router_consts = None
 
     __dhcp_server_conf_path = None
+    __dhcp_ip_bind_path = None
 
     __dhcp_client_configs = None
     __dhcp_server_configs = None
+    __dhcp_ip_bind = None
 
     __server_port = None
     __rand_key = None
@@ -98,8 +100,10 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = -1
         self.__dhcp_fd = -1
         self.__rand_key = os.urandom(16)
+        self.__dhcp_ip_bind = {}
 
         self.__dhcp_server_conf_path = "%s/dhcp_server.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__dhcp_ip_bind_path = "%s/ip_bind.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         global_vars["ixcsys.DHCP"] = self
 
@@ -108,6 +112,7 @@ class service(dispatcher.dispatcher):
         RPCClient.wait_processes(["router", "DNS"])
 
         self.load_dhcp_server_configs()
+        self.load_dhcp_server_ip_bind()
 
         self.create_poll()
 
@@ -117,8 +122,14 @@ class service(dispatcher.dispatcher):
     def load_dhcp_server_configs(self):
         self.__dhcp_server_configs = conf.ini_parse_from_file(self.__dhcp_server_conf_path)
 
+    def load_dhcp_server_ip_bind(self):
+        self.__dhcp_ip_bind = conf.ini_parse_from_file(self.__dhcp_ip_bind_path)
+
     def save_dhcp_server_configs(self):
         conf.save_to_ini(self.__dhcp_server_configs, self.__dhcp_server_conf_path)
+
+    def save_ip_bind_configs(self):
+        conf.save_to_ini(self.__dhcp_ip_bind, self.__dhcp_ip_bind_path)
 
     @property
     def conf_dir(self):
@@ -239,6 +250,10 @@ class service(dispatcher.dispatcher):
         conf_pub = self.__dhcp_server_configs["public"]
         enable = bool(int(conf_pub["enable"]))
         return enable
+
+    @property
+    def dhcp_ip_bind(self):
+        return self.__dhcp_ip_bind
 
     @property
     def server(self):
