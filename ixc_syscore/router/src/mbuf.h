@@ -21,6 +21,8 @@ struct ixc_mbuf{
 #define IXC_MBUF_FROM_LAN 0
     // 流量来自于WAN网卡
 #define IXC_MBUF_FROM_WAN 1
+    // 来自于应用程序
+#define IXC_MBUF_FROM_APP 2
     int from;
     // 开始位置
 #define IXC_MBUF_BEGIN 512

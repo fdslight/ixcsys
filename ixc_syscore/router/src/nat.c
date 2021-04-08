@@ -172,18 +172,15 @@ static void ixc_nat_id_put(struct ixc_nat_id_set *id_set,struct ixc_nat_id *id)
 
 static void ixc_nat_del_cb(void *data)
 {
-    DBG_FLAGS;
     struct ixc_nat_session *s=data;
     struct ixc_nat_id_set *id_set=NULL;
     struct time_data *tdata=s->tdata;
 
     s->refcnt-=1;
     
-    DBG_FLAGS;
     // 引用计数不为0那么直接返回
     if(s->refcnt!=0) return;
 
-    DBG_FLAGS;
     switch(s->protocol){
         case 1:
             id_set=&(nat.icmp_set);
@@ -214,9 +211,9 @@ static void ixc_nat_del_cb(void *data)
 
 static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 {
-    struct netutil_iphdr *iphdr;
+    struct netutil_iphdr *iphdr,*tmp_iphdr;
     unsigned char addr[4];
-    int hdr_len=0;
+    int hdr_len=0,tmp_hdr_len,length,is_not_icmp_echo_reply=0;
     char key[7],tmp[7],is_found;
     struct ixc_nat_session *session;
     unsigned short offset,frag_off;
@@ -234,6 +231,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     struct time_data *tdata;
 
     iphdr=(struct netutil_iphdr *)(m->data+m->offset);
+    tmp_iphdr=iphdr;
     hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
 
     frag_off=ntohs(iphdr->frag_info);
@@ -252,9 +250,38 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     // 对ICMP进行特殊处理,ICMP只支持echo request和echo reply
     if(1==iphdr->protocol){
         icmphdr=(struct netutil_icmphdr *)(m->data+m->offset+hdr_len);
-        if(8!=icmphdr->type && 0!=icmphdr->type){
-            ixc_mbuf_put(m);
-            return NULL;
+        if(is_src){
+            // LAN出去只支持echo request以及echo reply
+            if(8!=icmphdr->type && 0!=icmphdr->type){
+                ixc_mbuf_put(m);
+                return NULL;
+            }
+        }else{
+            // 处理WAN的非ICMP echo relay数据包
+            if(8!=icmphdr->type &&  0!=icmphdr->type){
+                if(icmphdr->type!=3 && icmphdr->type!=11 && icmphdr->type!=12 && icmphdr->type!=4){
+                    ixc_mbuf_put(m);
+                    return NULL;
+                }
+
+                length=m->tail-m->offset-hdr_len;
+                // 检查长度是否合法
+                if(length<36){
+                    ixc_mbuf_put(m);
+                    return NULL;
+                }
+
+                iphdr=(struct netutil_iphdr *)(m->data+m->offset+hdr_len+8);
+                tmp_hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
+
+                if(tmp_hdr_len+8!=length){
+                    ixc_mbuf_put(m);
+                    return NULL;
+                }
+                // 此处重新修改长度
+                hdr_len=tmp_hdr_len+hdr_len+8;
+                is_not_icmp_echo_reply=1;
+            }
         }
     }
 
@@ -368,9 +395,12 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     }
 
     if(!is_src){
+        iphdr=tmp_iphdr;
         rewrite_ip_addr(iphdr,session->addr,is_src);
-        csum=csum_calc_incre(*id_ptr,session->lan_id,*csum_ptr);
-        *id_ptr=session->lan_id;
+        if(!is_not_icmp_echo_reply){
+            csum=csum_calc_incre(*id_ptr,session->lan_id,*csum_ptr);
+            *id_ptr=session->lan_id;
+        }
     }else {
         rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
         csum=csum_calc_incre(*id_ptr,session->wan_id,*csum_ptr);
@@ -427,7 +457,7 @@ static void ixc_nat_timeout_cb(void *data)
     struct time_data *tdata=NULL;
     time_t now_time=time(NULL);
 
-    DBG_FLAGS;
+    //DBG_FLAGS;
 
     //session->tdata=NULL;
 
@@ -439,12 +469,12 @@ static void ixc_nat_timeout_cb(void *data)
         return;
     }
     
-    DBG_FLAGS;
+    //DBG_FLAGS;
     // 处理未超时的情况
     tdata=time_wheel_add(&nat_time_wheel,session,10);
 
     if(NULL!=tdata){
-        DBG_FLAGS;
+        //DBG_FLAGS;
         tdata->data=session;
         session->tdata=tdata;
         return;

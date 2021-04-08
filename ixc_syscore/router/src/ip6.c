@@ -124,9 +124,8 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
 int ixc_ip6_send(struct ixc_mbuf *mbuf)
 {
     struct netutil_ip6hdr *header;
-    struct ixc_netif *netif=NULL;
-
-    //netif=ixc_netif_get(IXC_NETIF_LAN);
+    // 强制为LAN网卡
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);;
 
     if(NULL==netif){
         ixc_mbuf_put(mbuf);
@@ -147,6 +146,7 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
     mbuf->is_ipv6=1;
     mbuf->netif=netif;
     mbuf->link_proto=0x86dd;
+    mbuf->from=IXC_MBUF_FROM_APP;
 
     // 和LAN网口地址不在同一个网段那么丢弃数据包
     if(!ixc_netif_is_subnet(netif,header->dst_addr,1,0)){

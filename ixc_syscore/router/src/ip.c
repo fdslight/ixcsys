@@ -141,7 +141,8 @@ int ixc_ip_send(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
     int ip_ver= (header->ver_and_ihl & 0xf0) >> 4;
-    struct ixc_netif *netif=m->netif;
+    // 强制LAN网卡
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
 
     if(NULL==netif){
         ixc_mbuf_put(m);
@@ -166,9 +167,11 @@ int ixc_ip_send(struct ixc_mbuf *m)
         ixc_mbuf_put(m);
         return -1;
     }
+    
     m->is_ipv6=0;
     m->netif=netif;
     m->link_proto=0x0800;
+    m->from=IXC_MBUF_FROM_APP;
 
     // 不是内网网段直接丢弃数据包
     if(!ixc_netif_is_subnet(m->netif,header->dst_addr,0,0)){

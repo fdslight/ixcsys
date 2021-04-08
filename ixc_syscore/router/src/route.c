@@ -497,6 +497,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     // 如果ttl为1那么发送ICMP报文告知
     if(iphdr->ttl<=1){
+        ixc_icmp_send_time_ex_msg(netif->ipaddr,iphdr->src_addr,0,iphdr,28);
         ixc_mbuf_put(m);
         return;
     }

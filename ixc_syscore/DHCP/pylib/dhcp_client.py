@@ -357,7 +357,7 @@ class dhcp_client(object):
         v = t - self.__up_time
 
         # 如果发送了renew并且未回复那么重置
-        if self.__is_sent_renew and v > 30:
+        if self.__is_sent_renew and v > 60:
             self.reset()
             return
 
