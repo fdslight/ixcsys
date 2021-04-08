@@ -132,13 +132,7 @@ class dhcp_server(object):
         resp_opts = []
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
 
-        # 如果已经分配过的地址那么直接分配
-        if s_client_hwaddr in self.__tmp_alloc_addrs:
-            o = self.__tmp_alloc_addrs[s_client_hwaddr]
-            o["time"] = time.time()
-            ipaddr = o["ip"]
-        else:
-            ipaddr = self.__alloc.get_ipaddr(s_client_hwaddr)
+        ipaddr = self.__alloc.get_ipaddr(s_client_hwaddr)
 
         if not ipaddr: return
         if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
@@ -223,6 +217,7 @@ class dhcp_server(object):
 
         if s_client_hwaddr in self.__tmp_alloc_addrs:
             del self.__tmp_alloc_addrs[s_client_hwaddr]
+        self.__alloc.unbind_ipaddr(s_client_hwaddr)
 
     def handle_dhcp_release(self, opts: list):
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)

@@ -37,8 +37,6 @@ def ipaddr_plus_plus(byte_addr: bytes):
 
 
 class alloc(object):
-    __empty_ipaddrs = None
-
     # IP 地址与MAC地址的绑定
     __bind = None
 
@@ -54,7 +52,6 @@ class alloc(object):
 
     def __init__(self, addr_begin: str, addr_end: str, subnet: str, prefix: int, is_ipv6=False):
         self.__bind = {}
-        self.__empty_ipaddrs = []
 
         if is_ipv6:
             fa = socket.AF_INET6
@@ -78,7 +75,7 @@ class alloc(object):
     def unbind_ipaddr(self, hwaddr: str):
         if hwaddr not in self.__bind: return
         ipaddr = self.__bind[hwaddr]
-        self.__empty_ipaddrs.append(ipaddr)
+        del self.__bind[hwaddr]
 
     def get_ipaddr(self, hwaddr: str):
         if hwaddr:
@@ -88,13 +85,11 @@ class alloc(object):
         else:
             fa = socket.AF_INET
 
-        if self.__empty_ipaddrs:
-            ipaddr = self.__empty_ipaddrs.pop(0)
-            return ipaddr
-
         rs_addr = None
         while 1:
-            if self.__cur_byte_addr == self.__end_addr: return None
+            if self.__cur_byte_addr == self.__end_addr:
+                self.__cur_byte_addr = self.__begin_addr
+                return None
             addr = socket.inet_ntop(fa, self.__cur_byte_addr)
             if addr in self.__bind:
                 byte_addr = ipaddr_plus_plus(self.__cur_byte_addr)
@@ -122,8 +117,10 @@ class alloc(object):
 
 
 """
-cls = alloc("192.168.1.8", "192.168.1.128", "192.168.1.0", 24)
+cls = alloc("192.168.11.64", "192.168.11.128", "192.168.11.0", 24)
 ipaddr = cls.get_ipaddr("aa")
 ipaddr2 = cls.get_ipaddr("bb")
-print(ipaddr,ipaddr2)
+ipadd3 = cls.get_ipaddr("cc")
+
+print(ipaddr, ipaddr2, ipadd3)
 """
