@@ -176,7 +176,7 @@ class dhcp_client(object):
             # DHCP msg type
             (53, struct.pack("b", 1)),
             # client id
-            (61, self.__hwaddr,),
+            (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (12, self.__hostname.encode()),
             # parameter request list
             (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
@@ -215,7 +215,7 @@ class dhcp_client(object):
             (53, struct.pack("!B", 3)),
             (54, self.__dhcp_server_id),
             (12, self.__hostname.encode()),
-            (61, self.__hwaddr,),
+            (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
             (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
         ]
@@ -244,7 +244,7 @@ class dhcp_client(object):
             (53, struct.pack("!B", 4)),
             (54, self.__dhcp_server_id),
             (12, self.__hostname.encode()),
-            (61, self.__hwaddr,),
+            (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
             (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
         ]
