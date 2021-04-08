@@ -224,9 +224,6 @@ class dhcp_server(object):
         if s_client_hwaddr in self.__tmp_alloc_addrs:
             del self.__tmp_alloc_addrs[s_client_hwaddr]
 
-        if s_client_hwaddr not in self.__ip_binds:
-            self.__alloc.unbind_ipaddr(s_client_hwaddr)
-
     def handle_dhcp_release(self, opts: list):
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
         # 如果不存在那么直接DHCP请求
