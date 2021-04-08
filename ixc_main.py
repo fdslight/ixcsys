@@ -158,12 +158,6 @@ class ixc_main_d(object):
 
         for service in services:
             if service not in sys_services: continue
-            cmd = """systemctl status %s | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1""" % service
-            fdst = os.popen(cmd)
-            s = fdst.read()
-            fdst.close()
-            s = s.strip()
-            if s != "running": continue
             os.system("systemctl stop %s" % service)
 
     def get_if_ipaddr(self, ifname: str):
