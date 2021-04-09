@@ -407,11 +407,10 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             icmphdr=(struct netutil_icmphdr *)(m->data+m->offset+hdr_len);
 
             rewrite_ip_addr(iphdr,session->addr,1);
-        
+            
             icmphdr->checksum=0;
             csum=csum_calc((unsigned short *)(m->data+m->offset+hdr_len),length-hdr_len);
             icmphdr->checksum=csum;
-
         }
 
         iphdr=tmp_iphdr;
