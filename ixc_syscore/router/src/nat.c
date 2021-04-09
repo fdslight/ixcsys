@@ -257,13 +257,14 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
                 return NULL;
             }
         }else{
+            //DBG_FLAGS;
             // 处理WAN的非ICMP echo relay数据包
             if(8!=icmphdr->type &&  0!=icmphdr->type){
                 if(icmphdr->type!=3 && icmphdr->type!=11 && icmphdr->type!=12 && icmphdr->type!=4){
                     ixc_mbuf_put(m);
                     return NULL;
                 }
-
+                //DBG_FLAGS;
                 length=m->tail-m->offset-hdr_len;
                 // 检查长度是否合法
                 if(length<36){
@@ -271,16 +272,18 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
                     return NULL;
                 }
 
+                
                 iphdr=(struct netutil_iphdr *)(m->data+m->offset+hdr_len+8);
                 tmp_hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
-
-                if(tmp_hdr_len+8!=length){
+            
+                if(tmp_hdr_len+8>length){
                     ixc_mbuf_put(m);
                     return NULL;
                 }
                 // 此处重新修改长度
-                hdr_len=tmp_hdr_len+hdr_len+8;
+                hdr_len=hdr_len+8+tmp_hdr_len;
                 is_not_icmp_echo_reply=1;
+                //DBG("protocol %d\r\n",iphdr->protocol);
             }
         }
     }
@@ -295,15 +298,18 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         case 6:
             tcphdr=(struct netutil_tcphdr *)(m->data+m->offset+hdr_len);
             csum_ptr=&tcphdr->csum;
-            id_ptr=is_src?&(tcphdr->src_port):&(tcphdr->dst_port);
+            if(!is_not_icmp_echo_reply) id_ptr=is_src?&(tcphdr->src_port):&(tcphdr->dst_port);
+            else id_ptr=is_src?&(tcphdr->dst_port):&(tcphdr->src_port);
             id_set=&(nat.tcp_set);
             break;
         case 17:
         case 136:
             udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
             csum_ptr=&(udphdr->checksum);
-            id_ptr=is_src?&(udphdr->src_port):&(udphdr->dst_port);
+            if(!is_not_icmp_echo_reply) id_ptr=is_src?&(udphdr->src_port):&(udphdr->dst_port);
+            else id_ptr=is_src?&(udphdr->dst_port):&(udphdr->src_port);
             id_set=&(nat.udp_set);
+            //DBG("%d\r\n",htons(*id_ptr));
             break;
         // 不支持的协议直接丢弃数据包
         default:
@@ -322,7 +328,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     // WAN口找不到的那么直接丢弃数据包
     if(NULL==session && !is_src){
         ixc_mbuf_put(m);
-        //DBG_FLAGS;
+        //DBG("%d\r\n  AA",ntohs(*id_ptr));
         return NULL;
     }
 
@@ -391,12 +397,26 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
         session->protocol=iphdr->protocol;
 
-        memcpy(session->addr,iphdr->src_addr,4);
+        memcpy(session->addr,iphdr->src_addr,4);        
     }
 
     if(!is_src){
+        if(is_not_icmp_echo_reply) {
+            hdr_len=(tmp_iphdr->ver_and_ihl & 0x0f)*4;
+            length=ntohs(tmp_iphdr->tot_len);
+            icmphdr=(struct netutil_icmphdr *)(m->data+m->offset+hdr_len);
+
+            rewrite_ip_addr(iphdr,session->addr,1);
+        
+            icmphdr->checksum=0;
+            csum=csum_calc((unsigned short *)(m->data+m->offset+hdr_len),length-hdr_len);
+            icmphdr->checksum=csum;
+
+        }
+
         iphdr=tmp_iphdr;
         rewrite_ip_addr(iphdr,session->addr,is_src);
+
         if(!is_not_icmp_echo_reply){
             csum=csum_calc_incre(*id_ptr,session->lan_id,*csum_ptr);
             *id_ptr=session->lan_id;

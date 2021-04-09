@@ -43,7 +43,7 @@ static void ixc_addr_map_timeout_cb(void *data)
     struct time_data *tdata=r->tdata;
     time_t now_time=time(NULL);
 
-    DBG_FLAGS;
+    //DBG_FLAGS;
 
     // 超时释放内存
     if(now_time - r->up_time >= IXC_ADDR_MAP_TIMEOUT){
