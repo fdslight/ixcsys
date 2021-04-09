@@ -64,8 +64,8 @@ void ixc_icmp_send(unsigned char *saddr,unsigned char *daddr,struct netutil_icmp
     bzero(header,20);
 
     header->ver_and_ihl=0x45;
-    header->tos=0;
-    header->tot_len=htons(data_size+20);
+    header->tos=0x01;
+    header->tot_len=htons(data_size+28);
     header->id= rand() & 0xffff;
     header->frag_info=0;
     header->ttl=64;
@@ -90,13 +90,13 @@ void ixc_icmp_send(unsigned char *saddr,unsigned char *daddr,struct netutil_icmp
     }
 
     icmphdr2->checksum=0;
-    csum=csum_calc((unsigned short *)icmphdr2,8);
+    csum=csum_calc((unsigned short *)icmphdr2,data_size+8);
     icmphdr2->checksum=csum;
 
     m->tail=m->offset+28+data_size;
     m->end=m->tail;
 
-    DBG("%d\r\n",m->end-m->begin);
+    //DBG("%d\r\n",m->end-m->begin);
 
     ixc_ip_send(m);
 }
