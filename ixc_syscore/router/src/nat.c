@@ -427,7 +427,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         session->up_time=time(NULL);
     }
 
-    *csum_ptr=csum;
+    if(!is_not_icmp_echo_reply) *csum_ptr=csum;
 
     return m;
 }
