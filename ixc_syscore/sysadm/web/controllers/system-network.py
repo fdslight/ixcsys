@@ -22,7 +22,7 @@ class controller(base_controller.BaseController):
             return
 
         RPC.fn_call("router", "/config", "wan_hwaddr_set", hwaddr)
-        RPC.fn_call("router", "/config", "save")
+        RPC.fn_call("router", "/config", "config_save")
         self.json_resp(False, "")
 
     def handle_lan_submit(self):
