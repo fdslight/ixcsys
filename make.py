@@ -130,8 +130,10 @@ def __build_all(args: list):
     for x in __builds: __build(x, args)
 
 
-def __install(app_name: str):
+def __install(app_name: str, prefix=None):
     root_dir = __get_root_dir()
+    if not prefix:
+        prefix = INSTALL_PREFIX
     prefix = INSTALL_PREFIX
 
     name = "%s.make" % app_name.replace("/", ".")
@@ -156,9 +158,10 @@ def __install(app_name: str):
     ''''''
 
 
-def __install_all():
+def __install_all(prefix=None):
     root_dir = __get_root_dir()
-    prefix = INSTALL_PREFIX
+    if not prefix:
+        prefix = INSTALL_PREFIX
     for x in __builds: __install(x)
 
     dirs = [
@@ -202,20 +205,20 @@ def __gen_update_archive():
     :return:
     """
     # 生成一个临时安装目录
-    INSTALL_PREFIX = "/tmp/ixc_update_temp"
-    if not os.path.isdir(INSTALL_PREFIX): os.mkdir(INSTALL_PREFIX)
+    prefix = "/tmp/ixc_update_temp"
+    if not os.path.isdir(prefix): os.mkdir(prefix)
     __install_all()
 
-    if not os.path.isdir(INSTALL_PREFIX):
-        print("ERROR:not found install directory %s" % INSTALL_PREFIX)
+    if not os.path.isdir(prefix):
+        print("ERROR:not found install directory %s" % prefix)
         return
 
     cur_dir = BASE_DIR
-    os.chdir(INSTALL_PREFIX)
+    os.chdir(prefix)
     os.system("tar czf %s/ixcsys_update.tar.gz ./*" % os.path.dirname(__file__))
     os.chdir(cur_dir)
 
-    os.system("rm -rf %s" % INSTALL_PREFIX)
+    os.system("rm -rf %s" % prefix)
 
     print("generate update archive OK")
 
