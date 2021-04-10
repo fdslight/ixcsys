@@ -21,7 +21,7 @@ class dhcp_server(object):
 
     __alloc = None
 
-    __TIMEOUT = 1800
+    __TIMEOUT = 7200
 
     __mask_bytes = None
     __route_bytes = None
