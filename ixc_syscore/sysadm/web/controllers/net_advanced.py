@@ -17,6 +17,6 @@ class controller(base_controller.BaseController):
             enable_qos_udp_udplite_first = True
 
         RPC.fn_call("router", "/config", "qos_set_udp_udplite_first", enable_qos_udp_udplite_first)
-        RPC.fn_call("router", "/config", "save")
+        RPC.fn_call("router", "/config", "config_save")
 
         self.json_resp(False, {})
