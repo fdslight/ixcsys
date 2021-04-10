@@ -154,7 +154,7 @@ class dhcp_server(object):
                                                    "conflict_check_ok": True}
         self.__tmp_alloc_addrs_reverse[ipaddr] = s_client_hwaddr
 
-        self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, is_server=True)
+        self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, dst_addr=your_byte_ipaddr, is_server=True)
 
         self.__dhcp_builder.flags = self.__dhcp_parser.flags
         self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
