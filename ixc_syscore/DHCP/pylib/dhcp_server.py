@@ -149,9 +149,7 @@ class dhcp_server(object):
             resp_opts.append((61, client_id))
 
         resp_opts += self.get_resp_opts_from_request_list(request_list)
-        # 这里默认地址设置为不冲突,需要发送ARP检测
-        self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False,
-                                                   "conflict_check_ok": True}
+        self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
         self.__tmp_alloc_addrs_reverse[ipaddr] = s_client_hwaddr
 
         self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, dst_addr=your_byte_ipaddr, is_server=True)
@@ -187,7 +185,8 @@ class dhcp_server(object):
             self.dhcp_msg_send(resp_opts)
             return
         o = self.__tmp_alloc_addrs[s_client_hwaddr]
-        if now - o["time"] < 5 or not o["conflict_check_ok"]: return
+        # 5秒钟时间用于冲突检测
+        if now - o["time"] < 5: return
 
         client_id = self.get_dhcp_opt_value(opts, 61)
         request_ip = self.get_dhcp_opt_value(opts, 50)
