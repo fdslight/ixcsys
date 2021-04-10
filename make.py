@@ -207,7 +207,7 @@ def __gen_update_archive():
     # 生成一个临时安装目录
     prefix = "/tmp/ixc_update_temp"
     if not os.path.isdir(prefix): os.mkdir(prefix)
-    __install_all()
+    __install_all(prefix=prefix)
 
     if not os.path.isdir(prefix):
         print("ERROR:not found install directory %s" % prefix)
