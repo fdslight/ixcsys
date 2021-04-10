@@ -219,7 +219,7 @@ def __gen_update_archive():
 
     os.system("rm -rf %s" % prefix)
 
-    print("generate update archive OK")
+    print("generate update archive /tmp/ixcsys_update.tar.gz OK")
 
 
 def main():
