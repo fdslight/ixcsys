@@ -148,9 +148,6 @@ class dhcp_server(object):
 
         resp_opts += self.get_resp_opts_from_request_list(request_list)
 
-        # neg_ok 如果为True的时候那么表示DHCP协商成功
-        self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
-
         self.__dhcp_builder.flags = self.__dhcp_parser.flags
         self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
         self.dhcp_msg_send(resp_opts)
@@ -198,6 +195,8 @@ class dhcp_server(object):
 
         self.__dhcp_builder.yiaddr = request_ip
 
+        str_ip = socket.inet_ntop(socket.AF_INET, request_ip)
+        self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": str_ip, "neg_ok": True}
         # 设置DHCP协商成功
         o = self.__tmp_alloc_addrs[s_client_hwaddr]
         o["neg_ok"] = True
@@ -270,7 +269,6 @@ class dhcp_server(object):
         if dst_hwaddr != brd or dst_hwaddr != self.__hwaddr: return
 
         op, _dst_hwaddr, _src_hwaddr, src_ipaddr, dst_ipaddr = arp_info
-        if _dst_hwaddr != self.__hwaddr: return
 
     def set_timeout(self, timeout: int):
         """设置DHCP IP超时时间
