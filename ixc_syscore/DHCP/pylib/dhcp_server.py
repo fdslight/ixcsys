@@ -30,6 +30,7 @@ class dhcp_server(object):
     __dhcp_options = None
 
     __tmp_alloc_addrs = None
+    __tmp_alloc_addrs_reverse = None
 
     __boot_file = None
 
@@ -43,6 +44,7 @@ class dhcp_server(object):
         self.__runtime = runtime
         self.__dhcp_options = {}
         self.__tmp_alloc_addrs = {}
+        self.__tmp_alloc_addrs_reverse = {}
         self.__ip_binds = {}
 
         self.__mask_bytes = socket.inet_pton(socket.AF_INET, netutils.ip_prefix_convert(prefix))
@@ -147,6 +149,12 @@ class dhcp_server(object):
             resp_opts.append((61, client_id))
 
         resp_opts += self.get_resp_opts_from_request_list(request_list)
+        # 这里默认地址设置为不冲突,需要发送ARP检测
+        self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False,
+                                                   "conflict_check_ok": True}
+        self.__tmp_alloc_addrs_reverse[ipaddr] = s_client_hwaddr
+
+        self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, is_server=True)
 
         self.__dhcp_builder.flags = self.__dhcp_parser.flags
         self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
@@ -171,12 +179,15 @@ class dhcp_server(object):
 
     def handle_dhcp_request(self, opts: list):
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
+        now = time.time()
 
         # 如果不存在那么发送NAK直接告诉客户端重新发现
         if s_client_hwaddr not in self.__tmp_alloc_addrs:
             resp_opts = [(53, bytes([6]))]
             self.dhcp_msg_send(resp_opts)
             return
+        o = self.__tmp_alloc_addrs[s_client_hwaddr]
+        if now - o["time"] < 5 or not o["conflict_check_ok"]: return
 
         client_id = self.get_dhcp_opt_value(opts, 61)
         request_ip = self.get_dhcp_opt_value(opts, 50)
@@ -195,10 +206,7 @@ class dhcp_server(object):
 
         self.__dhcp_builder.yiaddr = request_ip
 
-        str_ip = socket.inet_ntop(socket.AF_INET, request_ip)
-        self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": str_ip, "neg_ok": True}
         # 设置DHCP协商成功
-        o = self.__tmp_alloc_addrs[s_client_hwaddr]
         o["neg_ok"] = True
         # 更新时间
         o["time"] = time.time()
@@ -214,8 +222,12 @@ class dhcp_server(object):
         request_ip = self.get_dhcp_opt_value(opts, 50)
         if not request_ip: return
 
-        if s_client_hwaddr in self.__tmp_alloc_addrs:
-            del self.__tmp_alloc_addrs[s_client_hwaddr]
+        if s_client_hwaddr not in self.__tmp_alloc_addrs: return
+        ip_addr = self.__tmp_alloc_addrs[s_client_hwaddr]["ip"]
+
+        del self.__tmp_alloc_addrs[s_client_hwaddr]
+        del self.__tmp_alloc_addrs_reverse[ip_addr]
+
         self.__alloc.unbind_ipaddr(s_client_hwaddr)
 
     def handle_dhcp_release(self, opts: list):
@@ -231,7 +243,10 @@ class dhcp_server(object):
 
         if s_client_hwaddr not in self.__ip_binds:
             self.__alloc.unbind_ipaddr(s_client_hwaddr)
+        ip_addr = self.__tmp_alloc_addrs[s_client_hwaddr]["ip"]
+
         del self.__tmp_alloc_addrs[s_client_hwaddr]
+        del self.__tmp_alloc_addrs_reverse[ip_addr]
 
     def handle_dhcp_msg(self, msg: bytes):
         try:
@@ -267,8 +282,19 @@ class dhcp_server(object):
         # 只允许广播和发送到本机器的ARP数据包
         brd = bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
         if dst_hwaddr != brd or dst_hwaddr != self.__hwaddr: return
-
         op, _dst_hwaddr, _src_hwaddr, src_ipaddr, dst_ipaddr = arp_info
+        if op != 2: return
+        s_ip = socket.inet_ntop(socket.AF_INET, src_ipaddr)
+        # 如果IP地址冲突那么删除分配
+        conflict = True
+        hwaddr = None
+
+        if s_ip in self.__tmp_alloc_addrs_reverse:
+            hwaddr = self.__tmp_alloc_addrs_reverse[s_ip]
+
+        if conflict:
+            del self.__tmp_alloc_addrs[hwaddr]
+            del self.__tmp_alloc_addrs_reverse[s_ip]
 
     def set_timeout(self, timeout: int):
         """设置DHCP IP超时时间
@@ -338,8 +364,10 @@ class dhcp_server(object):
             binds[hwaddr] = address
 
         for hwaddr in bind:
-            if hwaddr not in binds: self.__tmp_alloc_addrs[hwaddr] = {"time": time.time(), "ip": bind[hwaddr],
-                                                                      "neg_ok": False}
+            if hwaddr not in binds:
+                self.__tmp_alloc_addrs[hwaddr] = {"time": time.time(), "ip": bind[hwaddr],
+                                                  "neg_ok": False}
+                self.__tmp_alloc_addrs[bind[hwaddr]] = hwaddr
             self.__alloc.bind_ipaddr(hwaddr, bind[hwaddr])
         self.__ip_binds = binds
 
@@ -353,7 +381,7 @@ class dhcp_server(object):
             neg_ok = o["neg_ok"]
             # 大于1s那么就回收地址
             deleted = False
-            if t - old_t > 600 and not neg_ok:
+            if t - old_t > 10 and not neg_ok:
                 deleted = True
                 self.__alloc.unbind_ipaddr(hwaddr)
             if neg_ok and t - old_t >= self.__TIMEOUT:
@@ -361,4 +389,7 @@ class dhcp_server(object):
                 self.__alloc.unbind_ipaddr(hwaddr)
             if deleted: dels.append(hwaddr)
             if deleted and self.debug: print("DHCP Free:%s for %s" % (o["ip"], hwaddr))
-        for hwaddr in dels: del self.__tmp_alloc_addrs[hwaddr]
+        for hwaddr in dels:
+            ip = self.__tmp_alloc_addrs_reverse[hwaddr]["ip"]
+            del self.__tmp_alloc_addrs[hwaddr]
+            del self.__tmp_alloc_addrs_reverse[ip]
