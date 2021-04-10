@@ -196,13 +196,16 @@ def __install_all():
         else:
             os.system("cp %s/%s %s" % (root_dir, x, prefix))
 
-    print("install ixcsys OK,please enjoy it ^_^")
-
 
 def __gen_update_archive():
     """生成更新归档,注意执行此函数需要先make install_all
     :return:
     """
+    # 生成一个临时安装目录
+    INSTALL_PREFIX = "/tmp/ixc_update_temp"
+    if not os.path.isdir(INSTALL_PREFIX): os.mkdir(INSTALL_PREFIX)
+    __install_all()
+
     if not os.path.isdir(INSTALL_PREFIX):
         print("ERROR:not found install directory %s" % INSTALL_PREFIX)
         return
@@ -211,6 +214,8 @@ def __gen_update_archive():
     os.chdir(INSTALL_PREFIX)
     os.system("tar czf %s/ixcsys_update.tar.gz ./*" % os.path.dirname(__file__))
     os.chdir(cur_dir)
+
+    os.system("rm -rf %s" % INSTALL_PREFIX)
 
     print("generate update archive OK")
 
