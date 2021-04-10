@@ -402,12 +402,16 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
     if(!is_src){
         if(is_not_icmp_echo_reply) {
+            // 重写ICMP非echo relay携带的IP数据
             hdr_len=(tmp_iphdr->ver_and_ihl & 0x0f)*4;
             length=ntohs(tmp_iphdr->tot_len);
             icmphdr=(struct netutil_icmphdr *)(m->data+m->offset+hdr_len);
 
             rewrite_ip_addr(iphdr,session->addr,1);
             
+            csum=csum_calc_incre(*id_ptr,session->lan_id,*csum_ptr);
+            *id_ptr=session->lan_id;
+
             icmphdr->checksum=0;
             csum=csum_calc((unsigned short *)(m->data+m->offset+hdr_len),length-hdr_len);
             icmphdr->checksum=csum;
@@ -420,6 +424,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             csum=csum_calc_incre(*id_ptr,session->lan_id,*csum_ptr);
             *id_ptr=session->lan_id;
         }
+
     }else {
         rewrite_ip_addr(iphdr,netif->ipaddr,is_src);
         csum=csum_calc_incre(*id_ptr,session->wan_id,*csum_ptr);
