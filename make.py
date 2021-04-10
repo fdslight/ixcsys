@@ -134,7 +134,6 @@ def __install(app_name: str, prefix=None):
     root_dir = __get_root_dir()
     if not prefix:
         prefix = INSTALL_PREFIX
-    prefix = INSTALL_PREFIX
 
     name = "%s.make" % app_name.replace("/", ".")
     try:
@@ -162,7 +161,7 @@ def __install_all(prefix=None):
     root_dir = __get_root_dir()
     if not prefix:
         prefix = INSTALL_PREFIX
-    for x in __builds: __install(x)
+    for x in __builds: __install(x,prefix=prefix)
 
     dirs = [
         "pywind",
