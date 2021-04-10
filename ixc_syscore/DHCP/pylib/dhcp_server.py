@@ -390,6 +390,6 @@ class dhcp_server(object):
             if deleted: dels.append(hwaddr)
             if deleted and self.debug: print("DHCP Free:%s for %s" % (o["ip"], hwaddr))
         for hwaddr in dels:
-            ip = self.__tmp_alloc_addrs_reverse[hwaddr]["ip"]
+            ip = self.__tmp_alloc_addrs[hwaddr]["ip"]
             del self.__tmp_alloc_addrs[hwaddr]
             del self.__tmp_alloc_addrs_reverse[ip]
