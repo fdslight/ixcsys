@@ -214,7 +214,7 @@ def __gen_update_archive():
 
     cur_dir = BASE_DIR
     os.chdir(prefix)
-    os.system("tar czf %s/ixcsys_update.tar.gz ./*" % os.path.dirname(__file__))
+    os.system("tar czf /tmp/ixcsys_update.tar.gz ./*")
     os.chdir(cur_dir)
 
     os.system("rm -rf %s" % prefix)
