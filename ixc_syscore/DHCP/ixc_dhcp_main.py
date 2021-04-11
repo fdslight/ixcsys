@@ -122,7 +122,7 @@ class service(dispatcher.dispatcher):
     def load_dhcp_server_configs(self):
         self.__dhcp_server_configs = conf.ini_parse_from_file(self.__dhcp_server_conf_path)
         if "lease_time" not in self.__dhcp_server_configs["public"]:
-            self.__dhcp_server_configs["public"]["lease_time"] = 7200
+            self.__dhcp_server_configs["public"]["lease_time"] = 600
 
     def load_dhcp_server_ip_bind(self):
         self.__dhcp_ip_bind = conf.ini_parse_from_file(self.__dhcp_ip_bind_path)
