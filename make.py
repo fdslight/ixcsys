@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys, importlib, json
+import os, sys, importlib, json, hashlib
 
 BASE_DIR = os.path.dirname(sys.argv[0])
 
@@ -197,6 +197,8 @@ def __gen_update_archive():
     """生成更新归档,注意执行此函数需要先make install_all
     :return:
     """
+    update_file = "/tmp/ixcsys_update.tar.gz"
+    update_check_file = "/tmp/ixcsys_update_check.md5"
     # 生成一个临时安装目录
     prefix = "/tmp/ixc_update_temp"
     if not os.path.isdir(prefix): os.mkdir(prefix)
@@ -208,10 +210,25 @@ def __gen_update_archive():
 
     cur_dir = BASE_DIR
     os.chdir(prefix)
-    os.system("tar czf /tmp/ixcsys_update.tar.gz ./*")
+    os.system("tar czf %s ./*" % update_file)
     os.chdir(cur_dir)
 
     os.system("rm -rf %s" % prefix)
+
+    if not os.path.isfile(update_file):
+        print("ERROR:cannot generate %s" % update_file)
+    # 计算文件MD5
+    md5 = hashlib.md5()
+    fdst = open(update_file, "rb")
+    while 1:
+        read = fdst.read(8192)
+        if not read: break
+        md5.update(read)
+    fdst.close()
+
+    fdst = open(update_check_file, "wb")
+    fdst.write(md5.digest())
+    fdst.close()
 
     print("generate update archive /tmp/ixcsys_update.tar.gz OK")
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, signal, time, traceback
+import os, sys, signal, time, traceback, hashlib
 
 sys_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -125,6 +125,7 @@ def stop_main():
 
 class ixc_main_d(object):
     __update_file_path = None
+    __update_check_file = None
     __net_monitor_path = None
     __net_monitor_up_time = None
     __is_isset_rescue = None
@@ -217,6 +218,7 @@ class ixc_main_d(object):
 
     def __init__(self):
         self.__update_file_path = "/tmp/ixcsys_update.tar.gz"
+        self.__update_check_file = "/tmp/ixcsys_update_check.md5"
         self.__net_monitor_path = "%s/net_monitor.ini" % sys_dir
 
         self.__net_monitor_up_time = time.time()
@@ -265,6 +267,27 @@ class ixc_main_d(object):
         d = "/tmp/ixcsys_update"
 
         if not os.path.isdir(d): os.mkdir(d)
+
+        # MD5校验文件不存在那么禁止更新
+        if not os.path.isfile(self.__update_check_file):
+            print("UPDATE ERROR:not found update_check_file")
+            return
+
+        fdst = open(self.__update_check_file, "rb")
+        file_md5 = fdst.read()
+        fdst.close()
+
+        md5 = hashlib.md5()
+        fdst = open(self.__update_file_path, "rb")
+        while 1:
+            read = fdst.read(8192)
+            if not read: break
+            md5.update(read)
+        fdst.close()
+
+        if md5.digest() != file_md5:
+            print("UPDATE ERROR:wrong update file md5")
+            return
 
         os.system("tar xf %s -C %s" % (self.__update_file_path, d))
         os.chdir(d)
