@@ -40,20 +40,9 @@ def __get_root_dir():
 
 def __read_build_config():
     fpath = "build_config.json"
-
     if not os.path.isfile(fpath):
-        o = {
-            "debug": True,
-            "c_includes": [
-                ""
-            ],
-            "libs": [
-            ],
-            "lib_dirs": [
-
-            ]
-        }
-        return o
+        print("ERROR:not found build configure file %s" % fpath)
+        sys.exit(-1)
 
     with open(fpath, "r") as f:
         s = f.read()
@@ -234,7 +223,7 @@ def main():
 
     action = sys.argv[1]
     if action not in (
-    "help", "build", "build_all", "install", "install_all", "show_builds", "gen_update", "rescue_install"):
+            "help", "build", "build_all", "install", "install_all", "show_builds", "gen_update", "rescue_install"):
         print(__helper)
         return
 
