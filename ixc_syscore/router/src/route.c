@@ -68,6 +68,7 @@ static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
 
     p=t;
     t=*head;
+    old=t;
 
     // 首先检查是否比第一个大
     if(prefix>t->prefix){
