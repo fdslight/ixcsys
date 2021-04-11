@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.controllers.rpc_controller as rpc
 from pywind.global_vars import global_vars
 
@@ -19,6 +20,7 @@ class controller(rpc.controller):
             "add_dhcp_bind": self.add_dhcp_bind,
             "del_dhcp_bind": self.del_dhcp_bind,
             "get_ip_bind_configs": self.get_ip_bind_configs,
+            "lease_time_set": self.lease_time_set,
         }
 
     def get_configs(self):
@@ -75,3 +77,15 @@ class controller(rpc.controller):
         self.dhcp.save_ip_bind_configs()
 
         return 0, True
+
+    def lease_time_set(self, timeout: int):
+        try:
+            timeout = int(timeout)
+        except ValueError:
+            return RPCClient.ERR_ARGS, "wrong timeout value type"
+
+        if timeout < 600 or timeout > 86400:
+            return RPCClient.ERR_ARGS, "wrong argument value range"
+
+        self.dhcp.server_configs["public"]["lease_time"] = timeout
+        return 0, None
