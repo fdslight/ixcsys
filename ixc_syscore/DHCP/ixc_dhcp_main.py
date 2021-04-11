@@ -164,6 +164,7 @@ class service(dispatcher.dispatcher):
 
         addr_begin = public["range_begin"]
         addr_end = public["range_end"]
+        lease_time = int(self.__dhcp_server_configs["public"]["lease_time"])
 
         if_config = self.__router_lan_configs["if_config"]
         gw_addr = if_config["ip_addr"]
@@ -182,7 +183,9 @@ class service(dispatcher.dispatcher):
         ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_DHCP_SERVER"],
                                         self.__rand_key, port)
         if not ok: raise SystemError(message)
+
         self.__dhcp_server.load_dhcp_cache()
+        self.__dhcp_server.set_timeout(lease_time)
 
     def start_dhcp(self):
         self.__dhcp_fd = self.create_handler(-1, dhcp.dhcp_service)

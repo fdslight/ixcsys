@@ -119,7 +119,7 @@ class service(dispatcher.dispatcher):
             return
 
         if not self.debug:
-            self.__errlog_fdst = open("%s/error.log" % os.getenv("IXC_MYAPP_TMP_DIR"), "a")
+            self.__errlog_fdst = open("/var/log/ixcsys_error.log", "a")
 
         if not self.debug and level == logging.LEVEL_ERR:
             self.write_err_log(name, message)
@@ -137,7 +137,7 @@ class service(dispatcher.dispatcher):
         self.__errlog_fdst.flush()
 
     def save_log_to_file(self):
-        fpath = "%s/syslog.log" % os.getenv("IXC_MYAPP_TMP_DIR")
+        fpath = "/var/log/ixcsys_syslog.log"
         s = json.dumps(self.__logs)
         with open(fpath, "wb") as f: f.write(s.encode())
         f.close()
@@ -145,7 +145,7 @@ class service(dispatcher.dispatcher):
     def get_log(self, from_file=False):
         if not from_file: return self.__logs
 
-        fpath = "%s/syslog.log" % os.getenv("IXC_MYAPP_TMP_DIR")
+        fpath = "/var/log/ixcsys_syslog.log"
         with open(fpath, "rb") as f: byte_s = f.read()
         f.close()
         return json.loads(byte_s.decode())

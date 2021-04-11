@@ -5,15 +5,6 @@ import ixc_syslib.pylib.RPCClient as RPC
 
 
 class widget(ui_widget.widget):
-    def get_system_info(self):
-        sys_info = {
-            "os_type": sys.platform,
-            "arch": platform.machine(),
-            "cpu_count": os.cpu_count(),
-            "ixcsys_version": self.read_version()
-        }
-        return sys_info
-
     def read_version(self):
         fpath = "%s/version" % self.sys_dir
         if not os.path.isfile(fpath):
@@ -51,6 +42,6 @@ class widget(ui_widget.widget):
 
         dic["cpu_arch"] = platform.machine()
         dic["cpu_count"] = os.cpu_count()
-        dic["version"] = "1.0.0"
+        dic["version"] = self.read_version()
 
         return True, uri, dic

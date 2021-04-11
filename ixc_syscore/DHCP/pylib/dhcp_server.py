@@ -185,8 +185,9 @@ class dhcp_server(object):
             self.dhcp_msg_send(resp_opts)
             return
         o = self.__tmp_alloc_addrs[s_client_hwaddr]
-        # 5秒钟时间用于冲突检测
-        if now - o["time"] < 5: return
+
+        # 在分配IP地址前5秒钟时间用于冲突检测
+        if now - o["time"] < 5 and not o["neg_ok"]: return
 
         client_id = self.get_dhcp_opt_value(opts, 61)
         request_ip = self.get_dhcp_opt_value(opts, 50)
@@ -285,11 +286,13 @@ class dhcp_server(object):
         if op != 2: return
         s_ip = socket.inet_ntop(socket.AF_INET, src_ipaddr)
         # 如果IP地址冲突那么删除分配
-        conflict = True
+        conflict = False
         hwaddr = None
 
         if s_ip in self.__tmp_alloc_addrs_reverse:
             hwaddr = self.__tmp_alloc_addrs_reverse[s_ip]
+            neg_ok = self.__tmp_alloc_addrs[hwaddr]["neg_ok"]
+            if not neg_ok: conflict = True
 
         if conflict:
             del self.__tmp_alloc_addrs[hwaddr]
@@ -382,12 +385,13 @@ class dhcp_server(object):
             deleted = False
             if t - old_t > 10 and not neg_ok:
                 deleted = True
-                self.__alloc.unbind_ipaddr(hwaddr)
             if neg_ok and t - old_t >= self.__TIMEOUT:
                 deleted = True
-                self.__alloc.unbind_ipaddr(hwaddr)
+                # 未静态绑定的IP地址删除绑定
+                if hwaddr not in self.__ip_binds: self.__alloc.unbind_ipaddr(hwaddr)
             if deleted: dels.append(hwaddr)
             if deleted and self.debug: print("DHCP Free:%s for %s" % (o["ip"], hwaddr))
+
         for hwaddr in dels:
             ip = self.__tmp_alloc_addrs[hwaddr]["ip"]
             del self.__tmp_alloc_addrs[hwaddr]
