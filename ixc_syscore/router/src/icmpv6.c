@@ -365,6 +365,7 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         if(memcmp(r->hwaddr,opt->hwaddr,6)) memcpy(r->hwaddr,opt->hwaddr,6);
             
         r->up_time=time(NULL);
+        r->is_changed=0;
         return;
     }
 

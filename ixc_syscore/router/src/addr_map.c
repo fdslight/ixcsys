@@ -167,6 +167,7 @@ int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hw
 
     r->netif=netif;
     r->tdata=tdata;
+    r->is_changed=0;
     tdata->data=r;
 
     if(is_ipv6) memcpy(r->address,ip,16);
@@ -214,7 +215,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
    
     r=ixc_addr_map_get(m->next_host,1);
     // 找到记录那么直接发送
-    if(r){
+    if(r || r->is_changed){
         memcpy(m->dst_hwaddr,r->hwaddr,6);
         r->up_time=time(NULL);
         ixc_ether_send(m,1);
@@ -238,7 +239,7 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
     // 查找网关记录是否存在,如果不存在那么就发送ARP请求
     r=ixc_addr_map_get(m->next_host,0);
     
-    if(NULL==r){
+    if(NULL==r || r->is_changed){
         ixc_arp_send(netif,brd,m->next_host,IXC_ARP_OP_REQ);
         ixc_mbuf_put(m);
         return;
@@ -263,4 +264,15 @@ void ixc_addr_map_handle(struct ixc_mbuf *m)
 
     if(m->is_ipv6) ixc_addr_map_handle_for_ipv6(m);
     else ixc_addr_map_handle_for_ip(m);
+}
+
+int ixc_addr_map_check(unsigned char *ip,unsigned char *hwaddr,int is_ipv6)
+{
+    struct ixc_addr_map_record *r=ixc_addr_map_get(ip,is_ipv6);
+    if(NULL==r) return 0;
+
+    // 如果地址发生改变那么设置标志
+    if(memcmp(hwaddr,r->hwaddr,6)) r->is_changed=1;
+
+    return 0;
 }

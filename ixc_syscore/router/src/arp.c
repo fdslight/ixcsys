@@ -78,6 +78,7 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 
     memcpy(r->hwaddr,arp->src_hwaddr,6);
     r->up_time=time(NULL);
+    r->is_changed=0;
 }
 
 int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op)
