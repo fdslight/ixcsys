@@ -276,7 +276,7 @@ class ixc_main_d(object):
                 os.system("cp -r -n ixc_configs %s" % sys_dir)
                 continue
             if x == "net_monitor.ini":
-                os.system("cp -n net_monitor.ini" % sys_dir)
+                os.system("cp -n net_monitor.ini %s" % sys_dir)
                 continue
             os.system("cp -r %s %s" % (x, sys_dir))
             """"""

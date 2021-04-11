@@ -32,7 +32,7 @@ int msk_calc(unsigned char prefix,int is_ipv6,unsigned char *res)
 {
     unsigned char a,b,constant=0xff;
     unsigned char tables[]={
-        0,128,192,224,240,248,252,254
+        0,128,192,224,240,248,252,254,255
     };
 
     if(is_ipv6 && prefix>128) return -1;
@@ -49,7 +49,7 @@ int msk_calc(unsigned char prefix,int is_ipv6,unsigned char *res)
         res[n]=constant;
     }
     
-    if(!b) res[a]=tables[b];
+    if(b) res[a]=tables[b];
 
     return 0;
 }

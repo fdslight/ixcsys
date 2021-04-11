@@ -123,7 +123,8 @@ class service(dispatcher.dispatcher):
         RPCClient.wait_processes(["router", "DNS", ])
 
         while 1:
-            if not RPCClient.fn_call("router", "/config", "wan_ready_ok"):
+            rs=RPCClient.fn_call("router", "/config", "wan_ready_ok")
+            if not rs:
                 time.sleep(10)
             else:
                 break

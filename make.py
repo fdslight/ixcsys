@@ -25,6 +25,7 @@ __helper = """
     gen_update                      generate update archive
     install install_name            install software name
     install_all prefix              install all
+    rescue_install                  only replace ixc_main.py for update
     show_builds                     show build names
 """
 
@@ -161,7 +162,7 @@ def __install_all(prefix=None):
     root_dir = __get_root_dir()
     if not prefix:
         prefix = INSTALL_PREFIX
-    for x in __builds: __install(x,prefix=prefix)
+    for x in __builds: __install(x, prefix=prefix)
 
     dirs = [
         "pywind",
@@ -199,6 +200,10 @@ def __install_all(prefix=None):
             os.system("cp %s/%s %s" % (root_dir, x, prefix))
 
 
+def __rescue_install():
+    os.system("cp ixc_main.py %s" % INSTALL_PREFIX)
+
+
 def __gen_update_archive():
     """生成更新归档,注意执行此函数需要先make install_all
     :return:
@@ -228,7 +233,8 @@ def main():
         return
 
     action = sys.argv[1]
-    if action not in ("help", "build", "build_all", "install", "install_all", "show_builds", "gen_update"):
+    if action not in (
+    "help", "build", "build_all", "install", "install_all", "show_builds", "gen_update", "rescue_install"):
         print(__helper)
         return
 
@@ -264,6 +270,10 @@ def main():
 
     if action == "gen_update":
         __gen_update_archive()
+        return
+
+    if action == "resuce_install":
+        __rescue_install()
         return
 
 

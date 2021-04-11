@@ -23,7 +23,7 @@ static int route_is_initialized=0;
 
 static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
 {
-    struct ixc_route_prefix *p=NULL,*t,**head;
+    struct ixc_route_prefix *p=NULL,*t,**head,*old;
 
     if(is_ipv6){
         t=route.ip6_pre_head;
@@ -78,12 +78,13 @@ static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
 
     while(NULL!=t){
         if(prefix < t->prefix){
-            p->next=t->next;
-            t->next=p;
-            break;
+            old=t;
         }
         t=t->next;
     }
+
+    p->next=old->next;
+    old->next=p;
 
     return 0;
 }
@@ -299,10 +300,16 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
     int idx=is_ipv6?16:4;
     struct map *m=is_ipv6?route.ip6_rt:route.ip_rt;
     char is_found;
+    //unsigned char *t;
 
     while(NULL!=p){
+        
         //DBG_FLAGS;
         subnet_calc_with_msk(ip,p->mask,is_ipv6,(unsigned char *)key);
+        //t=(unsigned char *)key;
+        //IXC_PRINT_IP("-- ",t);
+        //IXC_PRINT_IP("mask ",p->mask);
+        //DBG("prefix %d\r\n",p->prefix);
         key[idx]=p->prefix;
         r=map_find(m,key,&is_found);
 
@@ -493,7 +500,8 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 
-    //IXC_PRINT_IP("route found for dest ip",iphdr->dst_addr);
+    IXC_PRINT_IP("route found for dest ip",iphdr->dst_addr);
+    //IXC_PRINT_IP("macth route ",r->subnet);
 
     // 如果ttl为1那么发送ICMP报文告知
     if(iphdr->ttl<=1){

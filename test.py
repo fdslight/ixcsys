@@ -37,12 +37,6 @@ message = RPCClient.fn_call("router", "/config", "wan_config_get")
 print(message)
 """
 
-import dns.resolver
+import pywind.lib.netutils as netutils
 
-cls = dns.resolver.Resolver()
-cls.nameservers = ["192.168.11.254"]
-
-rs = cls.query("www.google.com","A")
-
-for x in rs:
-    print(x)
+print(netutils.calc_subnet("91.108.56.0",22))
