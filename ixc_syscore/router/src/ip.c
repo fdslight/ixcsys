@@ -130,6 +130,8 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     mbuf->tail=mbuf->offset+tot_len;
     mbuf->end=mbuf->tail;
 
+    ixc_addr_map_check(header->src_addr,mbuf->src_hwaddr,0);
+
     if(IXC_NETIF_WAN==netif->type){
         ixc_ip_handle_from_wan(mbuf,header);
     }else{
