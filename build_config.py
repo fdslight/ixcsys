@@ -26,7 +26,9 @@ def get_shared_object_fname(fpath: str, prefix: str):
     for x in _list:
         path = "%s/%s" % (fpath, x)
         if not os.path.isfile(path): continue
-        if x[-3:] != ".so": continue
+        if x[0:3] != "lib": continue
+        p = x.find(".so")
+        if p < 4: continue
         p = x.find(prefix)
         if p != 0: continue
         result = x
