@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, json
+import sys, os, signal, json, time
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -63,6 +63,7 @@ class service(dispatcher.dispatcher):
     __logs = None
     __log_count = None
     __log_max = None
+    __errlog_fdst = None
 
     def init_func(self, debug):
         global_vars["ixcsys.init"] = self
@@ -71,6 +72,7 @@ class service(dispatcher.dispatcher):
         self.__logs = []
         self.__log_count = 0
         self.__log_max = 100
+        self.__errlog_fd = None
 
         self.create_poll()
         self.start_scgi()
@@ -105,6 +107,9 @@ class service(dispatcher.dispatcher):
             logging.LEVEL_ALERT: "ALERT",
             logging.LEVEL_ERR: "ERROR"
         }
+
+        if level not in level_map: return
+
         if self.debug:
             fmt_msg = "\r\n\r\napplication:%s\r\nlevel:%s\r\n%s" % (name, level_map[level], message,)
             if level == logging.LEVEL_ERR:
@@ -113,9 +118,22 @@ class service(dispatcher.dispatcher):
                 sys.stderr.write(fmt_msg)
             return
 
+        if not self.debug:
+            self.__errlog_fdst = open("%s/error.log" % os.getenv("IXC_MYAPP_TMP_DIR"))
+
+        if not self.debug and level == logging.LEVEL_ERR:
+            self.write_err_log(name, message)
+
         o = {"level": level_map[level], "application": name, "message": message}
         if self.__log_count > self.__log_max: self.__logs.pop(0)
         self.__logs.append(o)
+
+    def write_err_log(self, name: str, message: str):
+        s1 = time.strftime("%Y-%m-%d %H:%M:%S %Z")
+        w = "%s\r\napplication:%s\r\nmessage:\r\n%s\r\n" % (s1, name, message)
+
+        self.__errlog_fdst.write(w)
+        self.__errlog_fdst.flush()
 
     def save_log_to_file(self):
         fpath = "%s/syslog.log" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -133,8 +151,10 @@ class service(dispatcher.dispatcher):
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+
         if self.__log_fd > 0: self.delete_handler(self.__log_fd)
-        # 保存日志到文件中
+        if self.__errlog_fdst: self.__errlog_fdst.close()
+
         self.save_log_to_file()
 
 
