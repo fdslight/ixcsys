@@ -65,6 +65,9 @@ class service(dispatcher.dispatcher):
     __log_max = None
     __errlog_fdst = None
 
+    __errlog_path = None
+    __syslog_path = None
+
     def init_func(self, debug):
         global_vars["ixcsys.init"] = self
 
@@ -73,6 +76,9 @@ class service(dispatcher.dispatcher):
         self.__log_count = 0
         self.__log_max = 100
         self.__errlog_fd = None
+
+        self.__errlog_path = "/var/log/ixcsys_error.log"
+        self.__syslog_path = "/var/log/ixcsys_syslog.log"
 
         self.create_poll()
         self.start_scgi()
@@ -119,7 +125,7 @@ class service(dispatcher.dispatcher):
             return
 
         if not self.debug:
-            self.__errlog_fdst = open("/var/log/ixcsys_error.log", "a")
+            self.__errlog_fdst = open(self.__errlog_path, "a")
 
         if not self.debug and level == logging.LEVEL_ERR:
             self.write_err_log(name, message)
@@ -137,18 +143,25 @@ class service(dispatcher.dispatcher):
         self.__errlog_fdst.flush()
 
     def save_log_to_file(self):
-        fpath = "/var/log/ixcsys_syslog.log"
+        fpath = self.__syslog_path
         s = json.dumps(self.__logs)
         with open(fpath, "wb") as f: f.write(s.encode())
         f.close()
 
-    def get_log(self, from_file=False):
+    def get_syslog(self, from_file=False):
         if not from_file: return self.__logs
 
-        fpath = "/var/log/ixcsys_syslog.log"
+        fpath = self.__syslog_path
         with open(fpath, "rb") as f: byte_s = f.read()
         f.close()
         return json.loads(byte_s.decode())
+
+    def get_errlog(self):
+        with open(self.__errlog_path, "r") as f:
+            s = f.read()
+        f.close()
+
+        return s
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))

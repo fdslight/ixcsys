@@ -12,4 +12,12 @@ class controller(rpc.controller):
         self.__runtime = global_vars["ixcsys.init"]
 
         self.fobjs = {
+            "syslog_get": self.syslog_get,
+            "errlog_get": self.errlog_get,
         }
+
+    def syslog_get(self):
+        return 0, self.__runtime.get_syslog()
+
+    def errlog_get(self):
+        return 0, self.__runtime.get_errlog()

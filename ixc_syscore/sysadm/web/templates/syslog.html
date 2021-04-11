@@ -1,0 +1,15 @@
+<div id="ixc-syslog-view" class="ixc-menu-content">
+    <h6>错误日志</h6>
+    <pre>
+        ${self.V["error"]}
+    </pre>
+    <h6>一般日志</h6>
+
+    <pre>
+        <%
+        for dic in self.V["syslog"]:
+            s="\r\napplication:%s\r\nmessage:%s\r\n" % (dic["application"],dic["message"])
+            self.show(s)
+        %>
+    </pre>
+</div>
