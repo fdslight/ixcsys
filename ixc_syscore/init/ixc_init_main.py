@@ -123,6 +123,7 @@ class service(dispatcher.dispatcher):
 
         if not self.debug and level == logging.LEVEL_ERR:
             self.write_err_log(name, message)
+            return
 
         o = {"level": level_map[level], "application": name, "message": message}
         if self.__log_count > self.__log_max: self.__logs.pop(0)
