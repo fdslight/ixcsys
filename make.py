@@ -261,7 +261,7 @@ def main():
         __gen_update_archive()
         return
 
-    if action == "resuce_install":
+    if action == "rescue_install":
         __rescue_install()
         return
 
