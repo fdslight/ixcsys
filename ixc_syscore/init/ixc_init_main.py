@@ -119,7 +119,7 @@ class service(dispatcher.dispatcher):
             return
 
         if not self.debug:
-            self.__errlog_fdst = open("%s/error.log" % os.getenv("IXC_MYAPP_TMP_DIR"))
+            self.__errlog_fdst = open("%s/error.log" % os.getenv("IXC_MYAPP_TMP_DIR"), "a")
 
         if not self.debug and level == logging.LEVEL_ERR:
             self.write_err_log(name, message)
