@@ -198,6 +198,8 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     struct ixc_netif *netif=m->netif;
     struct ixc_addr_map_record *r=NULL;
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    int is_sent;
+    
 
     // 如果直通那么直通数据包
     if(m->passthrough){
@@ -214,8 +216,13 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     }
    
     r=ixc_addr_map_get(m->next_host,1);
+
+    if(NULL==r) is_sent=1;
+    else{
+        if(r->is_changed) is_sent=1;
+    }
     // 找到记录那么直接发送
-    if(r || r->is_changed){
+    if(is_sent){
         memcpy(m->dst_hwaddr,r->hwaddr,6);
         r->up_time=time(NULL);
         ixc_ether_send(m,1);
@@ -230,6 +237,7 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
 {
     struct ixc_addr_map_record *r=NULL;
     struct ixc_netif *netif=m->netif;
+    int is_sent;
 
     unsigned char brd[]={
         0xff,0xff,0xff,
@@ -238,8 +246,13 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
 
     // 查找网关记录是否存在,如果不存在那么就发送ARP请求
     r=ixc_addr_map_get(m->next_host,0);
+
+    if(NULL==r) is_sent=1;
+    else{
+        if(r->is_changed) is_sent=1;
+    }
     
-    if(NULL==r || r->is_changed){
+    if(is_sent){
         ixc_arp_send(netif,brd,m->next_host,IXC_ARP_OP_REQ);
         ixc_mbuf_put(m);
         return;
