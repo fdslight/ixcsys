@@ -30,7 +30,6 @@ class dhcp_server(object):
     __dhcp_options = None
 
     __tmp_alloc_addrs = None
-    __tmp_alloc_addrs_reverse = None
 
     __boot_file = None
 
@@ -38,14 +37,16 @@ class dhcp_server(object):
     __addr_finish = None
 
     __ip_binds = None
+    # 已经使用的IP
+    __used_ips = None
 
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
         self.__runtime = runtime
         self.__dhcp_options = {}
         self.__tmp_alloc_addrs = {}
-        self.__tmp_alloc_addrs_reverse = {}
         self.__ip_binds = {}
+        self.__used_ips = {}
 
         self.__mask_bytes = socket.inet_pton(socket.AF_INET, netutils.ip_prefix_convert(prefix))
         self.__route_bytes = socket.inet_pton(socket.AF_INET, my_ipaddr)
@@ -134,7 +135,11 @@ class dhcp_server(object):
         resp_opts = []
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
 
-        ipaddr = self.__alloc.get_ipaddr(s_client_hwaddr)
+        for i in range(10):
+            ipaddr = self.__alloc.get_ipaddr(s_client_hwaddr)
+            if not ipaddr: continue
+            if ipaddr in self.__used_ips: continue
+            break
 
         if not ipaddr: return
         if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
@@ -150,9 +155,8 @@ class dhcp_server(object):
 
         resp_opts += self.get_resp_opts_from_request_list(request_list)
         self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
-        self.__tmp_alloc_addrs_reverse[ipaddr] = s_client_hwaddr
-
         self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, dst_addr=your_byte_ipaddr, is_server=True)
+        self.__used_ips[ipaddr] = None
 
         self.__dhcp_builder.flags = self.__dhcp_parser.flags
         self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
@@ -225,8 +229,9 @@ class dhcp_server(object):
         if s_client_hwaddr not in self.__tmp_alloc_addrs: return
         ip_addr = self.__tmp_alloc_addrs[s_client_hwaddr]["ip"]
 
+        if ip_addr in self.__used_ips: del self.__used_ips[ip_addr]
+
         del self.__tmp_alloc_addrs[s_client_hwaddr]
-        del self.__tmp_alloc_addrs_reverse[ip_addr]
 
         self.__alloc.unbind_ipaddr(s_client_hwaddr)
 
@@ -245,8 +250,8 @@ class dhcp_server(object):
             self.__alloc.unbind_ipaddr(s_client_hwaddr)
         ip_addr = self.__tmp_alloc_addrs[s_client_hwaddr]["ip"]
 
+        if ip_addr in self.__used_ips: del self.__used_ips[ip_addr]
         del self.__tmp_alloc_addrs[s_client_hwaddr]
-        del self.__tmp_alloc_addrs_reverse[ip_addr]
 
     def handle_dhcp_msg(self, msg: bytes):
         try:
@@ -289,14 +294,15 @@ class dhcp_server(object):
         conflict = False
         hwaddr = None
 
-        if s_ip in self.__tmp_alloc_addrs_reverse:
-            hwaddr = self.__tmp_alloc_addrs_reverse[s_ip]
-            neg_ok = self.__tmp_alloc_addrs[hwaddr]["neg_ok"]
-            if not neg_ok: conflict = True
-
+        for hwaddr in self.__tmp_alloc_addrs:
+            o = self.__tmp_alloc_addrs[hwaddr]
+            ip = o["ip"]
+            if ip == s_ip:
+                neg_ok = o["neg_ok"]
+                if not neg_ok: conflict = True
+            ''''''
         if conflict:
             del self.__tmp_alloc_addrs[hwaddr]
-            del self.__tmp_alloc_addrs_reverse[s_ip]
 
     def set_timeout(self, timeout: int):
         """设置DHCP IP超时时间
@@ -369,7 +375,6 @@ class dhcp_server(object):
             if hwaddr not in binds:
                 self.__tmp_alloc_addrs[hwaddr] = {"time": time.time(), "ip": bind[hwaddr],
                                                   "neg_ok": False}
-                self.__tmp_alloc_addrs_reverse[bind[hwaddr]] = hwaddr
             self.__alloc.bind_ipaddr(hwaddr, bind[hwaddr])
         self.__ip_binds = binds
 
@@ -394,5 +399,5 @@ class dhcp_server(object):
 
         for hwaddr in dels:
             ip = self.__tmp_alloc_addrs[hwaddr]["ip"]
+            if ip in self.__used_ips: del self.__used_ips[ip]
             del self.__tmp_alloc_addrs[hwaddr]
-            del self.__tmp_alloc_addrs_reverse[ip]
