@@ -1,5 +1,5 @@
 # !/usr/bin/env python3
-import pickle, os, socket, sys
+import pickle, os, socket, sys, gc
 
 import router
 
@@ -806,6 +806,8 @@ class helper(object):
             fd.close()
             p = s.find("if_tap.ko")
             if p < 0: os.system("kldload if_tap")
+
+        gc.disable()
 
     def start(self):
         self.start_lan()
