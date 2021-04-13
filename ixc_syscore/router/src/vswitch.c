@@ -271,7 +271,9 @@ int ixc_vsw_send2(struct ixc_mbuf *m)
     unsigned char all_zero[]={0x00,0x00,0x00,0x00,0x00,0x00};
     int rs;
 
+    // 如果没有开启那么就丢弃数据包
     if(!vsw_table.enable){
+        ixc_mbuf_put(m);
         STDERR("no enable vswitch\r\n");
         return -1;
     }

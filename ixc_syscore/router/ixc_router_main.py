@@ -117,11 +117,12 @@ class service(dispatcher.dispatcher):
 
         RPC.wait_proc("init")
         
-        self.clear_os_route()
-        self.clear_os_route(is_ipv6=True)
+        #self.clear_os_route()
+        #self.clear_os_route(is_ipv6=True)
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
-        os.system("%s/ixc_router_core start" % os.getenv("IXC_MYAPP_DIR"))
+
+        #os.system("%s/ixc_router_core start" % os.getenv("IXC_MYAPP_DIR"))
 
         if not self.debug:
             sys.stdout = logging.stdout()

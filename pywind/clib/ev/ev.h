@@ -83,6 +83,8 @@ struct ev_set{
 	struct ev *del_head;
 	// 事件集合
 	struct ev *ev_head;
+	// 空的事件列表
+	struct ev *empty_ev_head;
 	
 	ev_create_fn_t ev_create_fn;
 	ev_delete_fn_t ev_delete_fn;
@@ -100,6 +102,10 @@ struct ev_set{
 
 	time_t wait_timeout;
 	int is_select;
+	// 最大空的EV数目
+	int empty_ev_max;
+	// 当前空的EV数目
+	int cur_empty_ev_count;
 };
 
 /// IO超时等待时间

@@ -1107,6 +1107,8 @@ static void ixc_start(int debug)
         STDERR("cannot create rpc\r\n");
         return;
     }
+    // 内存缓存
+    rpc_session_pre_alloc_set(32);
   
     if(ixc_start_python()<0){
         STDERR("cannot start python helper\r\n");

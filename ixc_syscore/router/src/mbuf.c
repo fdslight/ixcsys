@@ -80,7 +80,7 @@ struct ixc_mbuf *ixc_mbuf_get(void)
         return NULL;
     }
 
-    //STDERR("get mbuf from malloc\r\n");
+    STDERR("get mbuf from malloc\r\n");
 
     m->next=NULL;
     m->netif=NULL;
@@ -106,7 +106,7 @@ void ixc_mbuf_put(struct ixc_mbuf *m)
     if(ixc_mbuf_used_num > ixc_mbuf_pre_alloc_num){
         free(m);
         ixc_mbuf_used_num-=1;
-
+        DBG("mbuf free\r\n");
         return;
     }
     m->next=NULL;

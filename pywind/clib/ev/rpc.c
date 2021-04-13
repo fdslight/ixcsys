@@ -17,6 +17,47 @@ static int rpc_is_initialized=0;
 
 static int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len);
 
+static struct rpc_session *rpc_session_malloc(void)
+{
+	struct rpc_session *s=NULL;
+
+	if(NULL==rpc.empty_head){
+		s=malloc(sizeof(struct rpc_session));
+		if(NULL==s){
+			STDERR("cannot malloc struct rpc_session\r\n");
+			return NULL;
+		}
+		bzero(s,sizeof(struct rpc_session));
+		s->fd=-1;
+		
+		return s;
+	}
+
+	s=rpc.empty_head;
+	rpc.empty_head=s->next;
+	rpc.free_session_count-=1;
+
+	bzero(s,sizeof(struct rpc_session));
+
+	s->fd=-1;
+
+	return s;
+}
+
+static void rpc_session_free(struct rpc_session *session)
+{
+	if(NULL==session) return;
+	if(rpc.free_session_count>=rpc.free_session_max){
+		free(session);
+		return;
+	}
+
+	session->next=rpc.empty_head;
+
+	rpc.empty_head=session;
+	rpc.free_session_count+=1;
+}
+
 static struct rpc_fn_info *rpc_fn_info_get(const char *name)
 {
 	struct rpc_fn_info *result=NULL,*t=rpc.fn_head;
@@ -305,14 +346,14 @@ static int rpc_session_del_fn(struct ev *ev)
 	DBG("delete rpc session %d\r\n",session->fd);
 	
 	close(session->fd);
-	free(session);
+	rpc_session_free(session);
 
 	return 0;
 }
 
 static int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_len)
 {
-	struct rpc_session *session=malloc(sizeof(struct rpc_session));
+	struct rpc_session *session=rpc_session_malloc();
 	int rs;
 	struct ev *ev;
 
@@ -325,17 +366,16 @@ static int rpc_session_create(int fd,struct sockaddr *sockaddr,socklen_t sock_le
 	if(ev_setnonblocking(fd)<0){
 		close(fd);
 		STDERR("cannot set nonblocking\r\n");
-		free(session);
+		rpc_session_free(session);
 		return -1;
 	}
 
-	bzero(session,sizeof(struct rpc_session));
 	session->fd=fd;
 
 	ev=ev_create(rpc.ev_set,fd);
 
 	if(NULL==ev){
-		free(session);
+		rpc_session_free(session);
 		close(fd);
 		STDERR("cannot create event for fd %d\r\n",fd);
 		return -1;
@@ -377,4 +417,12 @@ void rpc_delete(void)
 
 	if(!access(rpc.path,F_OK)) remove(rpc.path);
 	rpc_is_initialized=0;
+}
+
+int rpc_session_pre_alloc_set(int count)
+{
+	if(count<0) return -1;
+	rpc.free_session_max=count;
+
+	return 0;
 }

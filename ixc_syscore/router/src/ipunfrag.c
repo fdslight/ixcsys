@@ -24,10 +24,10 @@ static void ixc_ipunfrag_timeout_cb(void *data)
     char key[10];
 
     struct ixc_mbuf *m=data;
-    DBG_FLAGS;
+    //DBG_FLAGS;
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
 
-    DBG_FLAGS;
+    //DBG_FLAGS;
 
     memcpy(&key[0],header->src_addr,4);
     memcpy(&key[4],header->dst_addr,4);

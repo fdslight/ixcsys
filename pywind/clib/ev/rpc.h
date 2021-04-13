@@ -46,6 +46,7 @@ typedef int (*rpc_fn_call_t)(void *,unsigned short,void *,unsigned short *);
 typedef int (*rpc_fn_req_t)(const char *,void *,unsigned short,void *,unsigned short *);
 
 struct rpc_session{
+	struct rpc_session *next;
 	/// 接收缓冲区
 	unsigned char recv_buf[0x10000];
 	unsigned char sent_buf[0x10000];
@@ -69,12 +70,17 @@ struct rpc_fn_info{
 };
 
 struct rpc{
+	struct rpc_session *empty_head;
 	struct rpc_fn_info *fn_head;
 	struct ev *ev;
 	struct ev_set *ev_set;
 	// 如果设置了请求,那么系统将不会自动查找函数,需要用户自己编写自动查找函数
 	rpc_fn_req_t fn_req;
 	char path[1024];
+	// 最大空闲session大小
+	int free_session_max;
+	// 空闲session计数
+	int free_session_count;
 	int fileno;	
 };
 
@@ -86,5 +92,8 @@ int rpc_fn_reg(const char *name,rpc_fn_call_t fn);
 void rpc_fn_unreg(const char *name);
 /// 删除RPC对象
 void rpc_delete(void);
+
+/// 会话内存预先分配设置
+int rpc_session_pre_alloc_set(int count);
 
 #endif

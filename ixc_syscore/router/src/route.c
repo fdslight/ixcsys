@@ -161,6 +161,7 @@ int ixc_route_init(void)
         STDERR("ceate ipv4 map failed\r\n");
         return -1;
     }
+
     route.ip_rt=m;
     
     rs=map_new(&m,17);
@@ -406,7 +407,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     if(netif->type==IXC_NETIF_WAN && route.ipv6_pass){
         // 检查IPv6安全,注意需要在路由查找代码后面
         if(!ixc_ip6sec_check_ok(m)){
-            DBG_FLAGS;
+            //DBG_FLAGS;
             ixc_mbuf_put(m);
             return;
         }
@@ -501,7 +502,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 
-    IXC_PRINT_IP("route found for dest ip",iphdr->dst_addr);
+    //IXC_PRINT_IP("route found for dest ip",iphdr->dst_addr);
     //IXC_PRINT_IP("macth route ",r->subnet);
 
     // 如果ttl为1那么发送ICMP报文告知
@@ -527,7 +528,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         //ixc_router_send(netif->type,iphdr->protocol,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
         // 这里丢弃数据包,避免内存泄漏
         //ixc_mbuf_put(m);
-        IXC_PRINT_IP("redirect ip packet for dst ",iphdr->dst_addr);
+        //IXC_PRINT_IP("redirect ip packet for dst ",iphdr->dst_addr);
         m->begin=m->offset;
         m->end=m->tail;
         ixc_npfwd_send_raw(m,iphdr->protocol,IXC_FLAG_ROUTE_FWD);
