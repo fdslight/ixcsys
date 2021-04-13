@@ -810,6 +810,8 @@ class helper(object):
             p = s.find("if_tap.ko")
             if p < 0: os.system("kldload if_tap")
 
+        gc.disable()
+
     def start(self):
         self.start_lan()
         self.start_wan()
@@ -870,6 +872,9 @@ class helper(object):
         """
         """
         self.__pppoe.loop()
+
+        gc.enable()
         gc.collect(generation=self.__gc_gen)
         self.__gc_gen += 1
         if self.__gc_gen > 2: self.__gc_gen = 0
+        gc.disable()
