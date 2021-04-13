@@ -1,5 +1,5 @@
 # !/usr/bin/env python3
-import pickle, os, socket, sys, gc
+import pickle, os, socket, sys
 
 import router
 
@@ -496,8 +496,6 @@ class helper(object):
     __conf_dir = None
     __rpc_instance = None
 
-    __gc_gen = None
-
     def load_lan_configs(self):
         path = "%s/lan.ini" % self.__conf_dir
         self.__lan_configs = conf.ini_parse_from_file(path)
@@ -794,7 +792,6 @@ class helper(object):
 
         self.__LAN_NAME = "ixclan"
         self.__WAN_NAME = "ixcwan"
-        self.__gc_gen = 0
 
         self.__wan_configs = {}
         self.__is_linux = sys.platform.startswith("linux")
@@ -809,8 +806,6 @@ class helper(object):
             fd.close()
             p = s.find("if_tap.ko")
             if p < 0: os.system("kldload if_tap")
-
-        gc.disable()
 
     def start(self):
         self.start_lan()
@@ -872,9 +867,3 @@ class helper(object):
         """
         """
         self.__pppoe.loop()
-
-        gc.enable()
-        gc.collect(generation=self.__gc_gen)
-        self.__gc_gen += 1
-        if self.__gc_gen > 2: self.__gc_gen = 0
-        gc.disable()
