@@ -363,7 +363,8 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     if(r){
         // 如果不一致那么修改
         if(memcmp(r->hwaddr,opt->hwaddr,6)) memcpy(r->hwaddr,opt->hwaddr,6);
-            
+        
+        ixc_mbuf_put(m);
         r->up_time=time(NULL);
         r->is_changed=0;
         return;
@@ -371,6 +372,7 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 
     rs=ixc_addr_map_add(netif,na_header->target_addr,opt->hwaddr,1);
     if(rs<0){
+        ixc_mbuf_put(m);
         STDERR("cannot add address map for IPv6\r\n");
         return;
     }
