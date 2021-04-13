@@ -106,9 +106,7 @@ static void ixc_npfwd_rx_data(int fd)
                 break;
             case IXC_FLAG_VSWITCH:
                 //DBG_FLAGS;
-                break;
-            case IXC_FLAG_SRC_FILTER:
-                //DBG_FLAGS;
+                ixc_vsw_send2(m);
                 break;
             case IXC_FLAG_ROUTE_FWD:
                 //DBG_FLAGS;

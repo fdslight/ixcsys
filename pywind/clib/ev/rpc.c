@@ -302,6 +302,8 @@ static int rpc_session_del_fn(struct ev *ev)
 {
 	struct rpc_session *session=ev->data;
 
+	DBG("delete rpc session %d\r\n",session->fd);
+	
 	close(session->fd);
 	free(session);
 
