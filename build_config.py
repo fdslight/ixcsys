@@ -31,7 +31,7 @@ def get_shared_object_fname(fpath: str, prefix: str):
         if p < 4: continue
         p = x.find(prefix)
         if p != 0: continue
-        result = x
+        result = x[0:p]
         break
 
     return result
