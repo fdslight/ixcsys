@@ -31,7 +31,7 @@ def get_shared_object_fname(fpath: str, prefix: str):
         if p < 4: continue
         p = x.find(prefix)
         if p != 0: continue
-        result = x[0:p]
+        result = x
         break
 
     return result
@@ -49,7 +49,8 @@ def gen_build_config(debug):
             return
         so_name = get_shared_object_fname(d, "libpython3")
         if so_name in libs: continue
-        libs.append(so_name[0:-3][3:])
+        p = so_name.find(".so")
+        libs.append(so_name[0:p][3:])
 
     build_config = {"debug": debug,
                     "c_includes": include_dirs,
