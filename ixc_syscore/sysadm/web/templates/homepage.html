@@ -80,6 +80,7 @@ ${self.inherit("base.html")}
                         <a href="${self.url_prefix}/?show=ixc-wake-on-lan&page=wake-on-lan">远程开机</a>
                     </li>
                 </ul>
+
                 <div class="ixc-empty"></div>
                 <ul class="list-group">
                     <li class="list-group-item ixc-left-nav-title">
@@ -94,6 +95,15 @@ ${self.inherit("base.html")}
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-system-network">
                         <a href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&page=system-network&type=wan">系统网络</a>
+                    </li>
+                </ul>
+                <div class="ixc-empty"></div>
+                <ul class="list-group">
+                    <li class="list-group-item ixc-left-nav-title">
+                        <div class="ixc-left-nav-title">日志信息</div>
+                    </li>
+                    <li class="list-group-item ixc-left-menu" id="ixc-dhcp-host">
+                        <a href="${self.url_prefix}/?show=ixc-dhcp-host&page=dhcp-host">DHCP主机信息</a>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-syslog">
                         <a href="${self.url_prefix}/?show=ixc-syslog&page=syslog">系统日志</a>

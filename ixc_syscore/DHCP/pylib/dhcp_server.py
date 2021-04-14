@@ -401,3 +401,17 @@ class dhcp_server(object):
             ip = self.__tmp_alloc_addrs[hwaddr]["ip"]
             if ip in self.__used_ips: del self.__used_ips[ip]
             del self.__tmp_alloc_addrs[hwaddr]
+
+    def get_clients(self):
+        """获取已经分配的客户端
+        """
+        results = []
+
+        for hwaddr in self.__tmp_alloc_addrs:
+            o = self.__tmp_alloc_addrs[hwaddr]
+            ip = o["ip"]
+            neg_ok = o["neg_ok"]
+            if not neg_ok: continue
+            results.append((hwaddr, ip,))
+
+        return results

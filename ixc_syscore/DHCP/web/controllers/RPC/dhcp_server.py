@@ -21,6 +21,7 @@ class controller(rpc.controller):
             "del_dhcp_bind": self.del_dhcp_bind,
             "get_ip_bind_configs": self.get_ip_bind_configs,
             "lease_time_set": self.lease_time_set,
+            "get_clients": self.get_clients,
         }
 
     def get_configs(self):
@@ -89,3 +90,20 @@ class controller(rpc.controller):
 
         self.dhcp.server_configs["public"]["lease_time"] = timeout
         return 0, None
+
+    def get_clients(self):
+        """获取客户端
+        """
+        clients = self.dhcp.server.get_clients()
+        oui_map = self.dhcp.oui_map
+        results = []
+
+        for hwaddr, ip in clients:
+            key = hwaddr.replace(":", "-")
+            corp_prefix = key[0:8]
+            if corp_prefix not in oui_map:
+                results.append((hwaddr, "unkown"))
+            else:
+                results.append((hwaddr, oui_map[corp_prefix]))
+            ''''''
+        return 0, results

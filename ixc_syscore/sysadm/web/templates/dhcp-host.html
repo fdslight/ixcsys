@@ -1,0 +1,20 @@
+<div id="ixc-dhcp-host-view" class="ixc-menu-content" style="display: none;">
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">序号</th>
+            <th scope="col">硬件地址</th>
+            <th scope="col">设备厂商</th>
+        </tr>
+        </thead>
+        <tbody>
+            <%
+            x=1
+            for hwaddr,corp in self.V["clients"]:
+                s="""<tr><td>%d</td><td>%s</td><td>%s</td></tr>""" % (x,hwaddr,corp)
+                x+=1
+                self.show(s)
+            %>
+        </tbody>
+    </table>
+</div>
