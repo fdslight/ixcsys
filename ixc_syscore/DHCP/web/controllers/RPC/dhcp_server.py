@@ -95,15 +95,5 @@ class controller(rpc.controller):
         """获取客户端
         """
         clients = self.dhcp.server.get_clients()
-        oui_map = self.dhcp.oui_map
-        results = []
 
-        for hwaddr, ip in clients:
-            key = hwaddr.replace(":", "-")
-            corp_prefix = key[0:8]
-            if corp_prefix not in oui_map:
-                results.append((hwaddr, "unkown"))
-            else:
-                results.append((hwaddr, oui_map[corp_prefix]))
-            ''''''
-        return 0, results
+        return 0, clients

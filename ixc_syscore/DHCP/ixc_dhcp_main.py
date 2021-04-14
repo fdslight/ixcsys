@@ -95,11 +95,6 @@ class service(dispatcher.dispatcher):
 
     __positive_dhcp_client_req = None
 
-    # MAC地址表厂家映射
-    __oui_map = None
-    # oui文件路径
-    __oui_fpath = None
-
     def init_func(self, debug):
         self.__debug = debug
         self.__scgi_fd = -1
@@ -110,9 +105,6 @@ class service(dispatcher.dispatcher):
         self.__dhcp_server_conf_path = "%s/dhcp_server.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__dhcp_ip_bind_path = "%s/ip_bind.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
-        self.__oui_map = {}
-        self.__oui_fpath = "%s/data/oui.txt" % os.getenv("IXC_MYAPP_DIR")
-
         global_vars["ixcsys.DHCP"] = self
 
         # if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
@@ -121,9 +113,6 @@ class service(dispatcher.dispatcher):
 
         self.load_dhcp_server_configs()
         self.load_dhcp_server_ip_bind()
-
-        if not os.path.isfile(self.__oui_fpath):
-            self.__oui_map = self.parse_oui(self.__oui_fpath)
 
         self.create_poll()
 
@@ -279,10 +268,6 @@ class service(dispatcher.dispatcher):
     def manage_addr(self):
         return self.__manage_addr
 
-    @property
-    def oui_map(self):
-        return self.__oui_map
-
     def handle_arp_data(self, link_data: bytes):
         """处理ARP数据包
         """
@@ -350,47 +335,6 @@ class service(dispatcher.dispatcher):
     @property
     def debug(self):
         return self.__debug
-
-    def __parse_oui_corp(self, s: bytes):
-        """解析厂商
-        """
-        _list = s.split(b"\r\n")
-        if not _list: return None
-        ss = _list.pop(0).decode()
-        p = ss.find("(hex)")
-        prefix = ss[0:p].strip().replace("\t", "")
-        p += 5
-        corp = ss[p:].strip().replace("\t", "")
-
-        return prefix, corp
-
-    def parse_oui(self, path: str):
-        """解析MAC OUI文件
-        """
-        fdst = open(path, "rb")
-
-        s = fdst.read()
-        fdst.close()
-
-        _list = []
-
-        # 首先提取每个厂商部分
-        while 1:
-            p = s.find(b"\r\n\r\n")
-            if p < 4: break
-            _list.append(s[0:p])
-            p += 4
-            s = s[p:]
-        if _list: _list.pop(0)
-
-        results = {}
-
-        for s in _list:
-            result = self.__parse_oui_corp(s)
-            if not result: continue
-            k, v = result
-            results[k] = v
-        return results
 
     def myloop(self):
         if self.dhcp_client_enable: self.client.loop()
