@@ -154,7 +154,11 @@ class dhcp_server(object):
             resp_opts.append((61, client_id))
 
         resp_opts += self.get_resp_opts_from_request_list(request_list)
-        self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
+
+        # 这里需要避免每次更新time值导致客户端认为DHCP服务器不存在
+        if s_client_hwaddr not in self.__tmp_alloc_addrs:
+            self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
+
         self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, dst_addr=your_byte_ipaddr, is_server=True)
         self.__used_ips[ipaddr] = None
 
