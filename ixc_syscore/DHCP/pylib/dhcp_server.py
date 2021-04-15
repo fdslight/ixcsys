@@ -201,7 +201,7 @@ class dhcp_server(object):
         if not request_list: request_list = b""
         resp_opts = []
 
-        if not request_ip or not client_id: return
+        if not request_ip and not client_id: return
         # 检查是否是本机器的DHCP请求
         # if server_id != self.__my_ipaddr: return
 
