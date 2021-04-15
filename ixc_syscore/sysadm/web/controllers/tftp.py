@@ -10,9 +10,6 @@ class controller(base_controller.BaseController):
         self.request.set_allow_methods(["POST"])
         return True
 
-    def handle_post(self):
-        self.finish_with_json({})
-
     def handle(self):
         file_dir = self.request.get_argument("file_dir", is_seq=False, is_qs=False)
         s_enable_v6 = self.request.get_argument("enable_ipv6", is_seq=False, is_qs=False)

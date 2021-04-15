@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os, sys, signal, json, time
 
+from cloudflare_ddns import CloudFlare
+
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
 if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MYAPP_TMP_DIR"))
@@ -76,8 +78,13 @@ class service(dispatcher.dispatcher):
     __is_restart = None
     __up_time = None
 
+    __cloudflare_ddns_cfg = None
+    __cloudflare_ddns_cfg_path = None
+    __ddns_up_time = None
+
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
+        self.load_cloudflare_ddns_cfg()
 
     def write_to_configs(self):
         pass
@@ -114,9 +121,11 @@ class service(dispatcher.dispatcher):
         self.__debug = debug
 
         self.__httpd_cfg_path = "%s/httpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__cloudflare_ddns_cfg_path = "%s/cloudflare_ddns.json" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__scgi_fd = -1
         self.__is_restart = False
+        self.__ddns_up_time = time.time()
 
         global_vars["ixcsys.sysadm"] = self
 
@@ -153,9 +162,48 @@ class service(dispatcher.dispatcher):
         if now - self.__up_time > 10:
             self.do_restart()
 
+        # 如果启用DDNS并且大于同步时间那么进行同步
+        if self.ddns_enabled and now - self.__ddns_up_time > self.ddns_sync_interval:
+            self.__ddns_up_time = now
+            cf = CloudFlare(self.__cloudflare_ddns_cfg["email"], self.__cloudflare_ddns_cfg["api_key"],
+                            self.__cloudflare_ddns_cfg["domain"])
+            cf.sync_dns_from_my_ip()
+
     @property
     def debug(self):
         return self.__debug
+
+    @property
+    def ddns_enabled(self):
+        return self.__cloudflare_ddns_cfg["enable"]
+
+    @property
+    def ddns_sync_interval(self):
+        return self.__cloudflare_ddns_cfg["sync_interval"]
+
+    def load_cloudflare_ddns_cfg(self):
+        with open(self.__cloudflare_ddns_cfg_path, "r") as f:
+            s = f.read()
+        f.close()
+        self.__cloudflare_ddns_cfg = json.loads(s)
+
+    def save_cloudflare_ddns_cfg(self):
+        s = json.dumps(self.__cloudflare_ddns_cfg)
+        with open(self.__cloudflare_ddns_cfg_path, "w") as f:
+            s = f.write(s)
+        f.close()
+
+    def cloudflare_ddns_set(self, email: str, api_key: str, domain: str, sync_interval: int, enable=False):
+        """设置cloudflare DDNS
+        """
+        self.__cloudflare_ddns_cfg = {
+            "email": email,
+            "api_key": api_key,
+            "enable": enable,
+            "sync_interval": sync_interval,
+            "domain": domain
+        }
+        self.save_cloudflare_ddns_cfg()
 
     def do_restart(self):
         """执行路由器重启
