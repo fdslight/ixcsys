@@ -165,9 +165,15 @@ class service(dispatcher.dispatcher):
         # 如果启用DDNS并且大于同步时间那么进行同步
         if self.ddns_enabled and now - self.__ddns_up_time > self.ddns_sync_interval:
             self.__ddns_up_time = now
-            cf = CloudFlare(self.__cloudflare_ddns_cfg["email"], self.__cloudflare_ddns_cfg["api_key"],
-                            self.__cloudflare_ddns_cfg["domain"])
-            cf.sync_dns_from_my_ip()
+            try:
+                cf = CloudFlare(self.__cloudflare_ddns_cfg["email"], self.__cloudflare_ddns_cfg["api_key"],
+                                self.__cloudflare_ddns_cfg["domain"])
+                cf.sync_dns_from_my_ip()
+            except:
+                if self.debug:
+                    print("cannot sync cloudflare DDNS")
+                else:
+                    logging.print_error("cannot sync cloudflare DDNS")
 
     @property
     def debug(self):

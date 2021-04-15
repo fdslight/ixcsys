@@ -146,7 +146,7 @@ class service(dispatcher.dispatcher):
         return self.__positive_dhcp_client_req
 
     def start_dhcp_client(self, port: int):
-        self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__lan_hwaddr)
+        self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__wan_hwaddr)
         consts = self.__router_consts
 
         RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"])

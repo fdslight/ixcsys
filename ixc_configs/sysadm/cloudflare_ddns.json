@@ -1,7 +1,1 @@
-{
-  "enable": false,
-  "email": "",
-  "api_key": "",
-  "sync_interval": 180,
-  "domain": ""
-}
+{"email": "", "api_key": "", "enable": false, "sync_interval": 180, "domain": ""}

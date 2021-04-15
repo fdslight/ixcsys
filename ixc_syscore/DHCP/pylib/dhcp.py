@@ -44,7 +44,7 @@ class dhcp(object):
         self.hw_type = 1
         self.hw_len = 6
         self.h_ops = 0
-        self.xid = random.randint(1, 0xfffffffe)
+        self.xid = 0
         self.secs = 0
         self.flags = 0x8000
 

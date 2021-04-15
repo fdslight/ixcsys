@@ -88,6 +88,7 @@ class dhcp_client(object):
         dhcp_server_id = self.get_dhcp_opt_value(options, 54)
         if not dhcp_server_id: return
         if dhcp_server_id != self.__dhcp_server_id: return
+        if self.__dhcp_parser.xid != self.__xid: return
 
         ipaddr_lease_time = self.get_dhcp_opt_value(options, 51)
         if not ipaddr_lease_time: return
@@ -134,6 +135,7 @@ class dhcp_client(object):
     def handle_dhcp_offer(self, options: list):
         dhcp_server_id = self.get_dhcp_opt_value(options, 54)
         if not dhcp_server_id: return
+        if self.__dhcp_parser.xid != self.__xid: return
 
         self.__up_time = time.time()
         self.__cur_step = 3
@@ -166,11 +168,13 @@ class dhcp_client(object):
         self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, is_server=False)
 
     def send_dhcp_discover(self):
+        self.__dhcp_builder.reset()
         self.__cur_step = 1
         self.__up_time = time.time()
-        self.__dhcp_parser.xid = random.randint(1, 0xfffffffe)
-        self.__xid = self.__dhcp_parser.xid
+        self.__xid = random.randint(1, 0xfffffffe)
+        self.__dhcp_parser.xid = self.__xid
         self.__dhcp_ip_conflict_check_ok = False
+        self.__dhcp_builder.xid = self.__xid
 
         options = [
             # DHCP msg type
