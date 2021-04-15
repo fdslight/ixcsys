@@ -181,6 +181,10 @@ class service(dispatcher.dispatcher):
     def ddns_sync_interval(self):
         return self.__cloudflare_ddns_cfg["sync_interval"]
 
+    @property
+    def cloudflare_ddns_config(self):
+        return self.__cloudflare_ddns_cfg
+
     def load_cloudflare_ddns_cfg(self):
         with open(self.__cloudflare_ddns_cfg_path, "r") as f:
             s = f.read()
