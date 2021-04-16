@@ -10,6 +10,7 @@ A software router for Linux
 2. sudo pip3 install dnspython3
 3. sudo pip3 install cryptography
 4. sudo pip3 install cloudflare-ddns
+5. sudo apt install libpython3-dev
 
 # build ixcsys
 1.first you need run "python3 build_config.py" for configure your environment   
