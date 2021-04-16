@@ -309,14 +309,14 @@ class ixc_main_d(object):
 
 def main():
     __helper = """
-    start [app_uri] | stop [app_uri] | force_stop | debug app_uri | restart [app_uri]
+    start [app_uri] | stop [app_uri] | force_stop | debug app_uri | restart [app_uri] | service_start
     """
     if len(sys.argv) < 2:
         print(__helper)
         return
     set_pub_env()
     action = sys.argv[1]
-    if action not in ("start", "stop", "debug", "restart", "force_stop",):
+    if action not in ("start", "stop", "debug", "restart", "force_stop", "service_start"):
         print(__helper)
         return
 
@@ -335,6 +335,8 @@ def main():
         elif action == "stop":
             stop_main()
             # stop_all()
+        elif action == "service_start":
+            start_main(delay=30)
         elif action == "debug":
             print(__helper)
         else:
