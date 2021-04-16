@@ -2,13 +2,14 @@
 A software router for Linux
 
 # dep envrionment
-1. python3,python3 module dnspython3 and cryptography
+1. python3,python3 module dnspython3,cryptography and cloudflare-ddns
 
 
 # debian/ubuntu install runtime
 1. sudo apt install python3-pip
 2. sudo pip3 install dnspython3
 3. sudo pip3 install cryptography
+4. sudo pip3 install cloudflare-ddns
 
 # build ixcsys
 1.first you need run "python3 build_config.py" for configure your environment   
