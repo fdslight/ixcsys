@@ -125,7 +125,7 @@ class service(dispatcher.dispatcher):
             return
 
         if not self.debug:
-            self.__errlog_fdst = open(self.__errlog_path, "a")
+            self.__errlog_fdst = open(self.__errlog_path, "w")
 
         if not self.debug and level == logging.LEVEL_ERR:
             self.write_err_log(name, message)
