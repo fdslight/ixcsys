@@ -30,7 +30,6 @@ inline static int ixc_qos_calc_slot(unsigned char a, unsigned char b, unsigned c
 
 static void ixc_qos_put(struct ixc_mbuf *m,unsigned char a,unsigned char b,unsigned char c,unsigned char d)
 {
-    unsigned short id=0;
     int slot_no;
     struct ixc_qos_slot *slot_obj;
 
@@ -111,7 +110,7 @@ void ixc_qos_add(struct ixc_mbuf *m)
 void ixc_qos_pop(void)
 {
     struct ixc_qos_slot *slot_first=ixc_qos.slot_head;
-    struct ixc_qos_slot *slot_obj=slot_first;
+    struct ixc_qos_slot *slot_obj=slot_first,*t_slot;
     struct ixc_qos_slot *slot_old=ixc_qos.slot_head;
     struct ixc_mbuf *m=NULL,*t;
 
@@ -130,7 +129,7 @@ void ixc_qos_pop(void)
             ixc_route_handle(m);
         }
         m=t;
-        // 如果数据未发生完毕,那么跳转到下一个
+        // 如果数据未发送完毕,那么跳转到下一个
         if(NULL!=m){
             slot_obj->mbuf_first=m;
             slot_old=slot_obj;
@@ -145,13 +144,16 @@ void ixc_qos_pop(void)
         // 如果不是第一个的处置方式
         if(slot_obj!=slot_first){
             slot_old->next=slot_obj->next;
-            slot_old=slot_obj;
-            slot_obj=slot_obj->next;
+            t_slot=slot_obj->next;
+            slot_obj->next=NULL;
+            slot_obj=t_slot;
             continue;
         }
 
         ixc_qos.slot_head=slot_obj->next;
-        slot_obj=slot_obj->next;
+        t_slot=slot_obj->next;
+        slot_obj->next=NULL;
+        slot_obj=t_slot;
         slot_first=ixc_qos.slot_head;
         slot_old=slot_first;
     }
