@@ -18,7 +18,7 @@ libs = []
 
 
 def get_shared_object_fname(fpath: str, prefix: str):
-    """根据文件前缀获取共享哭名称
+    """根据文件前缀获取共享库名称
     """
     _list = os.listdir(fpath)
     result = ""
