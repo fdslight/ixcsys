@@ -13,7 +13,7 @@ A software router for Linux
 5. sudo apt install libpython3-dev
 
 # build ixcsys
-1.first you need run "python3 build_config.py" for configure your environment   
+1.first you need run "python3 build_config.py" for configure your environment(for debian 10 example,"python3 build_config.py --python3_include=/usr/include/python3.7m --python3_lib=/usr/lib/x86_64-linux-gnu")
 2.secondly you need run "python3 make.py build_all" for build all apps    
 3.last run "python3 make.py install_all" for install to directory "/opt/ixcsys"    
 
