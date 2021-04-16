@@ -130,7 +130,7 @@ class service(dispatcher.dispatcher):
         global_vars["ixcsys.sysadm"] = self
 
         RPCClient.wait_processes(["router"])
-        time.sleep(60)
+        time.sleep(30)
 
         self.load_configs()
         self.create_poll()
