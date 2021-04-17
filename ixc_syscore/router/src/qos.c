@@ -55,14 +55,16 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr = (struct netutil_iphdr *)(m->data + m->offset);
 
-    ixc_qos_put(m,iphdr->src_addr[3],iphdr->dst_addr[1],iphdr->dst_addr[2],iphdr->dst_addr[3]);
+    if(IXC_MBUF_FROM_LAN==m->from) ixc_qos_put(m,iphdr->src_addr[3],iphdr->dst_addr[1],iphdr->dst_addr[2],iphdr->dst_addr[3]);
+    else ixc_qos_put(m,iphdr->dst_addr[3],iphdr->src_addr[1],iphdr->src_addr[2],iphdr->src_addr[3]);
 }
 
 static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
 
-    ixc_qos_put(m,header->src_addr[15],header->dst_addr[13],header->dst_addr[14],header->dst_addr[15]);
+    if(IXC_MBUF_FROM_LAN==m->from) ixc_qos_put(m,header->src_addr[15],header->dst_addr[13],header->dst_addr[14],header->dst_addr[15]);
+    else ixc_qos_put(m,header->dst_addr[15],header->src_addr[13],header->src_addr[14],header->src_addr[15]);
 }
 
 int ixc_qos_init(void)
