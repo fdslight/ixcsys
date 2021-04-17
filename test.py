@@ -69,12 +69,12 @@ def parse_ieee_ma_info(path: str):
         s = line.decode()
         s = s.replace("\r\n", "")
         _list = s.split(",")
-        if len(_list) != 4: continue
-        name = _list[1]
+        if len(_list) < 4: continue
+        name = _list[1].strip()
         results[name] = _list[2]
 
     return results
 
 
 results = parse_ieee_ma_info("ixc_syscore/DHCP/data/oui.csv")
-print(results)
+print(results["141AA3"])

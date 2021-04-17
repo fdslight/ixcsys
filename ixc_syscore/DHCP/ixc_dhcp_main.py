@@ -148,9 +148,9 @@ class service(dispatcher.dispatcher):
             s = line.decode()
             s = s.replace("\r\n", "")
             _list = s.split(",")
-            if len(_list) != 4: continue
+            if len(_list) < 3: continue
             name = _list[1]
-            results[name] = _list[2]
+            results[name] = _list[2].replace("\"", "")
 
         return results
 
