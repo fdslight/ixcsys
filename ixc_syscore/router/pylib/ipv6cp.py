@@ -58,8 +58,6 @@ class IPv6CP(ncp.NCP):
         self.send_ncp_ipv6addr_request()
 
     def loop(self):
-        x = time.time() - self.up_time
-        if x < 1: return
         if not self.__my_ipaddr_ok and self.__try_count > 3:
             return
         if not self.__my_ipaddr_ok:

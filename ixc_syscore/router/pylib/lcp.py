@@ -56,6 +56,8 @@ class LCP(object):
             ECHO_REPLY: self.handle_echo_reply,
             DISCARD_REQ: self.handle_discard_req,
         }
+        self.__up_time = time.time()
+
         self.reset()
 
     @property
@@ -63,8 +65,6 @@ class LCP(object):
         return self.__pppoe.debug
 
     def send(self, code: int, _id: int, byte_data: bytes):
-        self.__up_time = time.time()
-
         length = len(byte_data) + 4
         header = struct.pack("!BBH", code, _id, length)
 
@@ -349,7 +349,6 @@ class LCP(object):
 
     def loop(self):
         now = time.time()
-        if now - self.__up_time < 1: return
         if self.__is_first:
             self.send_neg_request_first()
             return
@@ -363,7 +362,10 @@ class LCP(object):
                 self.send_mru_neg_request()
                 return
             ''''''
-        return
+
+        # 30s LCP未协商成功那么重新协商
+        if now - self.__up_time >= 30 and not self.lcp_ok():
+            self.__pppoe.reset()
 
     def reset(self):
         magic_num = random.randint(1, 0xfffffff0)

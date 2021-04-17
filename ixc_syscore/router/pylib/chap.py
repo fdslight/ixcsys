@@ -24,6 +24,7 @@ class CHAP(object):
 
         if len(byte_data) < value_size:
             if self.debug: print("PPPoE server bug,wrong value size for chap")
+            self.__pppoe.reset()
             return
 
         value = byte_data[0:value_size]

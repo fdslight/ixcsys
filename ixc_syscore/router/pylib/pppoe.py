@@ -85,6 +85,7 @@ class pppoe(object):
             return
         if protocol == 0x8057:
             self.handle_ipv6cp_from_ns(data)
+            return
 
     def handle_chap_from_ns(self, data: bytes):
         if len(data) < 4: return

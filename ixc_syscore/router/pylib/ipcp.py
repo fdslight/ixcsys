@@ -114,7 +114,6 @@ class IPCP(ncp.NCP):
         """
         options = self.parse_options(byte_data)
         if not options: return
-
         if _id != self.__my_id: return
 
         for _type, value in options:
@@ -196,8 +195,6 @@ class IPCP(ncp.NCP):
         self.my_init()
 
     def loop(self):
-        now = time.time()
-        if now - self.up_time < 1: return
         if not self.__ipaddr_ok and self.__try_count > 3:
             self.pppoe.lcp.term_req()
             return
