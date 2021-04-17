@@ -99,7 +99,7 @@ class controller(rpc.controller):
         results = []
         for hwaddr, ip in clients:
             t = hwaddr.replace(":", "")
-            k = t[0:6]
+            k = t[0:6].upper()
             if k in ieee_mac_map:
                 results.append((hwaddr, ip, ieee_mac_map[k]))
             else:
