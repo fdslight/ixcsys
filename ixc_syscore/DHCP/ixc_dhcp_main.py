@@ -94,6 +94,7 @@ class service(dispatcher.dispatcher):
     __router_wan_configs = None
 
     __positive_dhcp_client_req = None
+    __ieee_mac_map = None
 
     def init_func(self, debug):
         self.__debug = debug
@@ -104,6 +105,7 @@ class service(dispatcher.dispatcher):
 
         self.__dhcp_server_conf_path = "%s/dhcp_server.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__dhcp_ip_bind_path = "%s/ip_bind.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__ieee_mac_map = self.parse_ieee_ma_info("%s/data/oui.csv" % os.getenv("IXC_MYAPP_DIR"))
 
         global_vars["ixcsys.DHCP"] = self
 
@@ -133,6 +135,25 @@ class service(dispatcher.dispatcher):
     def save_ip_bind_configs(self):
         conf.save_to_ini(self.__dhcp_ip_bind, self.__dhcp_ip_bind_path)
 
+    def parse_ieee_ma_info(self, path: str):
+        """解析IEEE MA的厂商MAC地址分配信息
+        """
+        fdst = open(path, "rb")
+        first_line = True
+        results = {}
+        for line in fdst:
+            if first_line:
+                first_line = False
+                continue
+            s = line.decode()
+            s = s.replace("\r\n", "")
+            _list = s.split(",")
+            if len(_list) != 4: continue
+            name = _list[1]
+            results[name] = _list[2]
+
+        return results
+
     @property
     def conf_dir(self):
         return os.getenv("IXC_MYAPP_CONF_DIR")
@@ -144,6 +165,10 @@ class service(dispatcher.dispatcher):
     @property
     def positive_dhcp_client_request(self):
         return self.__positive_dhcp_client_req
+
+    @property
+    def ieee_mac_info(self):
+        return self.__ieee_mac_map
 
     def start_dhcp_client(self, port: int):
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__wan_hwaddr)

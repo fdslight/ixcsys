@@ -10,8 +10,8 @@
         <tbody>
             <%
             x=1
-            for hwaddr,ip in self.V["clients"]:
-                s="""<tr><td>%d</td><td>%s</td><td>%s</td></tr>""" % (x,hwaddr,ip)
+            for hwaddr,ip,vendor in self.V["clients"]:
+                s="""<tr><td>%d</td><td>%s</td><td>%s</td></tr>""" % (x,hwaddr,ip,vendor)
                 x+=1
                 self.show(s)
             %>

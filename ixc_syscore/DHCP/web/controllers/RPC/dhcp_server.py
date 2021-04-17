@@ -94,6 +94,15 @@ class controller(rpc.controller):
     def get_clients(self):
         """获取客户端
         """
+        ieee_mac_map = self.dhcp.ieee_mac_info
         clients = self.dhcp.server.get_clients()
+        results = []
+        for hwaddr, ip in clients:
+            t = hwaddr.replace(":", "")
+            k = t[0:6]
+            if k in ieee_mac_map:
+                results.append((hwaddr, ip, ieee_mac_map[k]))
+            else:
+                results.append((hwaddr, ip, "unkown"))
 
-        return 0, clients
+        return 0, results

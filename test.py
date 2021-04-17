@@ -56,33 +56,25 @@ def __parse_oui_corp(s: bytes):
     return prefix, corp
 
 
-def parse_oui(path: str):
-    """解析MAC OUI文件
+def parse_ieee_ma_info(path: str):
+    """解析IEEE MA的厂商MAC地址分配信息
     """
     fdst = open(path, "rb")
-    s = fdst.read()
-    fdst.close()
-
-    _list = []
-
-    # 首先提取每个厂商部分
-    while 1:
-        p = s.find(b"\r\n\r\n")
-        if p < 4: break
-        _list.append(s[0:p])
-        p += 4
-        s = s[p:]
-    if _list: _list.pop(0)
-
-    results = []
-
-    for s in _list:
-        result = __parse_oui_corp(s)
-        if not result: continue
-        results.append(result)
+    first_line = True
+    results = {}
+    for line in fdst:
+        if first_line:
+            first_line = False
+            continue
+        s = line.decode()
+        s = s.replace("\r\n", "")
+        _list = s.split(",")
+        if len(_list) != 4: continue
+        name = _list[1]
+        results[name] = _list[2]
 
     return results
 
 
-results=parse_oui("ixc_syscore/DHCP/data/oui.txt")
+results = parse_ieee_ma_info("ixc_syscore/DHCP/data/oui.csv")
 print(results)
