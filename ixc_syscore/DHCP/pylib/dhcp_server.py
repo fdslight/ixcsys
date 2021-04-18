@@ -196,7 +196,8 @@ class dhcp_server(object):
 
         self.__dhcp_builder.xid = self.__dhcp_parser.xid
         self.__dhcp_builder.op = 2
-        self.__dhcp_builder.siaddr = self.__my_ipaddr
+        # self.__dhcp_builder.siaddr = self.__my_ipaddr
+        self.__dhcp_builder.siaddr = socket.inet_pton(socket.AF_INET, self.__runtime.manage_addr)
         self.__dhcp_builder.chaddr = self.__client_hwaddr
         self.__dhcp_builder.secs = self.__dhcp_parser.secs
 
