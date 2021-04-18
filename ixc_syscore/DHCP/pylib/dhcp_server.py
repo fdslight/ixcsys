@@ -47,7 +47,9 @@ class dhcp_server(object):
         size = os.stat(file_path).st_size
         # 最大只能支持连个
         size = int(size / 512)
+        x = size % 1024
         if size > 0xffff: return 0
+        if x: size += 1
 
         return size
 
