@@ -123,19 +123,16 @@ class dhcp_server(object):
             #    byte_server_name = self.__hostname.encode("iso-8859-1")
             #    server_name = b"".join([byte_server_name, b"\0"])
             #    resp_opts.append((code, server_name))
-            # if code == 67:
-            #    byte_boot_file = self.__boot_file.encode("iso-8859-1")
-            #    boot_file = b"".join([byte_boot_file, b"\0"])
-            #    resp_opts.append((code, boot_file))
+            if code == 67:
+                byte_boot_file = self.__boot_file.encode("iso-8859-1")
+                boot_file = b"".join([byte_boot_file, b"\0"])
+                resp_opts.append((code, boot_file))
             if code in self.__dhcp_options:
                 resp_opts.append((code, self.__dhcp_options[code]))
             ''''''
 
+        # 让server id位于dhcp message type后面
         resp_opts.insert(0, (54, self.__my_ipaddr))
-        if 67 in request_list:
-            byte_boot_file = self.__boot_file.encode("iso-8859-1")
-            boot_file = b"".join([byte_boot_file, b"\0"])
-            resp_opts.insert(1, (67, boot_file))
 
         resp_opts.append((51, struct.pack("!I", self.__TIMEOUT)))
         resp_opts.append((58, struct.pack("!I", int(self.__TIMEOUT * 0.5))))
