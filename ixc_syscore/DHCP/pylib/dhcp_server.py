@@ -123,7 +123,7 @@ class dhcp_server(object):
                 resp_opts.append((code, self.__hostname.encode("iso-8859-1")))
             if code == 67:
                 byte_boot_file = self.__boot_file.encode("iso-8859-1")
-                boot_file = b"".join([byte_boot_file, "\0"])
+                boot_file = b"".join([byte_boot_file, b"\0"])
                 resp_opts.append((code, boot_file))
             if code in self.__dhcp_options:
                 resp_opts.append((code, self.__dhcp_options[code]))
