@@ -180,6 +180,8 @@ class tftp(object):
             _context.release()
             return
 
+        logging.print_info("send tftp file %s to client %s" % (fpath, client_addr[0],))
+
         _context = context(self, fpath, tftplib.OP_RRQ, mode, client_addr)
         self.sessions[session_id] = _context
         self.send_ack(0, client_addr)

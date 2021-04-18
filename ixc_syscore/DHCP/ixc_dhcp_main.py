@@ -96,8 +96,6 @@ class service(dispatcher.dispatcher):
     __positive_dhcp_client_req = None
     __ieee_mac_map = None
 
-    __tftp_file_dir = None
-
     def init_func(self, debug):
         self.__debug = debug
         self.__scgi_fd = -1
@@ -113,7 +111,7 @@ class service(dispatcher.dispatcher):
 
         # if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-        RPCClient.wait_processes(["router", "DNS", "tftp"])
+        RPCClient.wait_processes(["router", "DNS",])
 
         self.load_dhcp_server_configs()
         self.load_dhcp_server_ip_bind()
@@ -211,8 +209,6 @@ class service(dispatcher.dispatcher):
                                         self.__rand_key, port)
         if not ok: raise SystemError(message)
 
-        self.__tftp_file_dir = RPCClient.fn_call("tftp", "/config", "get_file_dir")
-
         self.__dhcp_server.load_dhcp_cache()
         self.__dhcp_server.set_timeout(lease_time)
 
@@ -296,10 +292,6 @@ class service(dispatcher.dispatcher):
     @property
     def manage_addr(self):
         return self.__manage_addr
-
-    @property
-    def tftp_file_dir(self):
-        return self.__tftp_file_dir
 
     def handle_arp_data(self, link_data: bytes):
         """处理ARP数据包
