@@ -120,7 +120,9 @@ class dhcp_server(object):
             if code == 3:
                 resp_opts.append((code, self.__my_ipaddr))
             if code == 66:
-                resp_opts.append((code, self.__hostname.encode("iso-8859-1")))
+                byte_server_name = self.__hostname.encode("iso-8859-1")
+                server_name = b"".join([byte_server_name, b"\0"])
+                resp_opts.append((code, server_name))
             if code == 67:
                 byte_boot_file = self.__boot_file.encode("iso-8859-1")
                 boot_file = b"".join([byte_boot_file, b"\0"])
