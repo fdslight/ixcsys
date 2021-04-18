@@ -120,7 +120,7 @@ class dhcp_server(object):
             if code == 3:
                 resp_opts.append((code, self.__my_ipaddr))
             if code == 43:
-                resp_opts.append((code, struct.pack("BB4s", 0x01, 0x04, self.__my_ipaddr)))
+                resp_opts.append((code, struct.pack("BB6s", 0x02, 0x06, b"ixcsys")))
             if code in self.__dhcp_options:
                 resp_opts.append((code, self.__dhcp_options[code]))
             ''''''
