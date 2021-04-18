@@ -16,6 +16,7 @@ class widget(ui_widget.widget):
             public = configs["public"]
             if_name = public["phy_ifname"]
             hwaddr = public["hwaddr"]
+            ip_addr = ""
         else:
             configs = RPC.fn_call("router", "/config", "lan_config_get")
             if_config = configs["if_config"]
