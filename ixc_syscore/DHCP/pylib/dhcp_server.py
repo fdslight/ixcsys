@@ -250,9 +250,9 @@ class dhcp_server(object):
         self.__alloc.bind_ipaddr(s_client_hwaddr, o["ip"])
         self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
 
-        vendor = self.get_dhcp_opt_value(60, opts)
+        vendor = self.get_dhcp_opt_value(opts,60)
         if vendor:
-            resp_opts.append((32, vendor))
+            resp_opts.append((43, vendor))
         self.dhcp_msg_send(resp_opts)
 
     def handle_dhcp_decline(self, opts: list):
