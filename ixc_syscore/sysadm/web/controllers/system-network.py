@@ -33,6 +33,7 @@ class controller(base_controller.BaseController):
         if not netutils.is_hwaddr(hwaddr):
             self.json_resp(True, "wrong hardware address format")
             return
+        self.json_resp(False, "")
 
     def handle(self):
         _type = self.request.get_argument("type", is_qs=True, is_seq=False)
