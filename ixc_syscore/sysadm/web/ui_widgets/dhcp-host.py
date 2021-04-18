@@ -13,7 +13,7 @@ class widget(ui_widget.widget):
             if not host_name:
                 host_name = "-"
             else:
-                dic["host_name"] = host_name.decode("iso-8859-1")
-            ''''''
+                host_name = host_name.decode("iso-8859-1")
+            dic["host_name"] = host_name
 
         return True, "dhcp-host.html", {"clients": clients}
