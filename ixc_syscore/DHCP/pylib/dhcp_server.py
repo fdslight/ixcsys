@@ -131,7 +131,7 @@ class dhcp_server(object):
                 resp_opts.append((code, self.__dhcp_options[code]))
             ''''''
 
-        resp_opts.insert(1, (54, self.__my_ipaddr))
+        resp_opts.insert(0, (54, self.__my_ipaddr))
         resp_opts.append((51, struct.pack("!I", self.__TIMEOUT)))
         resp_opts.append((58, struct.pack("!I", int(self.__TIMEOUT * 0.5))))
         resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
