@@ -119,7 +119,7 @@ class dhcp_server(object):
             #    resp_opts.append((code, self.__my_ipaddr))
             if code == 3:
                 resp_opts.append((code, self.__my_ipaddr))
-            #if code == 66:
+            # if code == 66:
             #    byte_server_name = self.__hostname.encode("iso-8859-1")
             #    server_name = b"".join([byte_server_name, b"\0"])
             #    resp_opts.append((code, server_name))
@@ -131,7 +131,7 @@ class dhcp_server(object):
                 resp_opts.append((code, self.__dhcp_options[code]))
             ''''''
 
-        resp_opts.append((54, self.__my_ipaddr))
+        resp_opts.insert(1, (54, self.__my_ipaddr))
         resp_opts.append((51, struct.pack("!I", self.__TIMEOUT)))
         resp_opts.append((58, struct.pack("!I", int(self.__TIMEOUT * 0.5))))
         resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
@@ -178,7 +178,7 @@ class dhcp_server(object):
         self.__used_ips[ipaddr] = None
 
         self.__dhcp_builder.flags = self.__dhcp_parser.flags
-        #self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
+        # self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
         self.dhcp_msg_send(resp_opts)
 
     def dhcp_msg_send(self, resp_opts: list):
@@ -238,7 +238,7 @@ class dhcp_server(object):
             o["host_name"] = host_name
 
         self.__alloc.bind_ipaddr(s_client_hwaddr, o["ip"])
-        #self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
+        # self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
 
         self.dhcp_msg_send(resp_opts)
 
