@@ -178,7 +178,7 @@ class dhcp_server(object):
         self.__used_ips[ipaddr] = None
 
         self.__dhcp_builder.flags = self.__dhcp_parser.flags
-        self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
+        #self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
         self.dhcp_msg_send(resp_opts)
 
     def dhcp_msg_send(self, resp_opts: list):
