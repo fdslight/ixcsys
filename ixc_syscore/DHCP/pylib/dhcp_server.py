@@ -46,7 +46,7 @@ class dhcp_server(object):
         if not os.path.isfile(file_path): return 0
         size = os.stat(file_path).st_size
         # 最大只能支持连个
-        size = size / 512
+        size = int(size / 512)
         if size > 0xffff: return 0
 
         return size
