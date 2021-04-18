@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import socket, struct, time, pickle, os
+import base64
 
 import pywind.lib.netutils as netutils
 
@@ -145,6 +146,7 @@ class dhcp_server(object):
         if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
 
         client_id = self.get_dhcp_opt_value(opts, 61)
+        host_name = self.get_dhcp_opt_value(opts, 12)
 
         your_byte_ipaddr = socket.inet_pton(socket.AF_INET, ipaddr)
         self.__dhcp_builder.yiaddr = your_byte_ipaddr
@@ -157,7 +159,12 @@ class dhcp_server(object):
 
         # 这里需要避免每次更新time值导致客户端认为DHCP服务器不存在
         if s_client_hwaddr not in self.__tmp_alloc_addrs:
-            self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False}
+            self.__tmp_alloc_addrs[s_client_hwaddr] = {"time": time.time(), "ip": ipaddr, "neg_ok": False,
+                                                       "host_name": b""}
+
+        if not host_name: host_name = b""
+        # 考虑到主机名的编码问题,这里的bytes暂时不做转换
+        self.__tmp_alloc_addrs[s_client_hwaddr]["host_name"] = host_name
 
         self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, dst_addr=your_byte_ipaddr, is_server=True)
         self.__used_ips[ipaddr] = None
@@ -201,6 +208,7 @@ class dhcp_server(object):
         request_ip = self.get_dhcp_opt_value(opts, 50)
         # server_id = self.get_dhcp_opt_value(opts, 54)
         request_list = self.get_dhcp_opt_value(opts, 55)
+        host_name = self.get_dhcp_opt_value(opts, 12)
 
         if not request_list: request_list = b""
         resp_opts = []
@@ -218,6 +226,8 @@ class dhcp_server(object):
         o["neg_ok"] = True
         # 更新时间
         o["time"] = time.time()
+        if host_name:
+            o["host_name"] = host_name
 
         self.__alloc.bind_ipaddr(s_client_hwaddr, o["ip"])
         self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
@@ -415,7 +425,8 @@ class dhcp_server(object):
             o = self.__tmp_alloc_addrs[hwaddr]
             ip = o["ip"]
             neg_ok = o["neg_ok"]
+            host_name = o["host_name"]
             if not neg_ok: continue
-            results.append((hwaddr, ip,))
+            results.append({"hwaddr": hwaddr, "ip": ip, "host_name": host_name})
 
         return results

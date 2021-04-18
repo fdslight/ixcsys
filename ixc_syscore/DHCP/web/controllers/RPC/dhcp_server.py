@@ -97,12 +97,19 @@ class controller(rpc.controller):
         ieee_mac_map = self.dhcp.ieee_mac_info
         clients = self.dhcp.server.get_clients()
         results = []
-        for hwaddr, ip in clients:
+        for dic in clients:
+            hwaddr = dic["hwaddr"]
+            ip = dic["ip"]
+            host_name = dic["host_name"]
             t = hwaddr.replace(":", "")
             k = t[0:6].upper()
-            if k in ieee_mac_map:
-                results.append((hwaddr, ip, ieee_mac_map[k]))
-            else:
-                results.append((hwaddr, ip, "unkown"))
+
+            o = {
+                "hwaddr": hwaddr,
+                "ip": ip,
+                "vendor": ieee_mac_map.get(k, "unkown"),
+                "host_name": host_name
+            }
+            results.append(o)
 
         return 0, results
