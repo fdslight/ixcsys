@@ -2,6 +2,7 @@
 import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.web.ui_widget as ui_widget
 
+
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
         _type = self.get_argument("type", default="wan")
@@ -22,6 +23,7 @@ class widget(ui_widget.widget):
             hwaddr = if_config["hwaddr"]
             manage_addr = if_config["manage_addr"]
             mask = if_config["mask"]
+            ip_addr = if_config["ip_addr"]
 
         return True, "system-network.html", {"if_name": if_name, "hwaddr": hwaddr, "manage_addr": manage_addr,
-                                             "mask": mask}
+                                             "mask": mask, "ip_addr": ip_addr}

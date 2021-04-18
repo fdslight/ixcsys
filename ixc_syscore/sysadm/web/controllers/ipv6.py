@@ -67,6 +67,6 @@ class controller(base_controller.BaseController):
         RPC.fn_call("router", "/config", "lan_static_ipv6_enable", enable_static_v6)
         RPC.fn_call("router", "/config", "lan_static_ipv6_set", subnet, prefix)
         RPC.fn_call("router", "/config", "lan_ipv6_security_enable", enable_ipv6_security)
-        RPC.fn_call("router", "/config", "save")
+        RPC.fn_call("router", "/config", "config_save")
 
         self.json_resp(False, {})

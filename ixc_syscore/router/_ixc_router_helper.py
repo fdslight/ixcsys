@@ -34,6 +34,9 @@ class rpc(object):
             "lan_config_get": self.lan_config_get,
             "manage_addr_get": self.manage_addr_get,
             "wan_hwaddr_set": self.wan_hwaddr_set,
+            "lan_hwaddr_set": self.lan_hwaddr_set,
+            "manage_addr_set": self.manage_addr_set,
+            "lan_addr_set": self.lan_addr_set,
             "wan_addr_set": self.wan_addr_set,
             "cur_internet_type_get": self.cur_internet_type_get,
             "internet_type_set": self.internet_type_set,
@@ -283,6 +286,26 @@ class rpc(object):
 
         configs = self.__helper.wan_configs
         configs["public"]["hwaddr"] = hwaddr
+
+        return 0, None
+
+    def lan_hwaddr_set(self, hwaddr: str):
+        lan_configs = self.__helper.lan_configs
+        lan_configs["if_config"]["hwaddr"] = hwaddr
+
+        return 0, None
+
+    def manage_addr_set(self, ip: str):
+        lan_configs = self.__helper.lan_configs
+        lan_configs["if_config"]["manage_addr"] = ip
+
+        return 0, None
+
+    def lan_addr_set(self, ip: str, mask: str):
+        lan_configs = self.__helper.lan_configs
+
+        lan_configs["if_config"]["ip_addr"] = ip
+        lan_configs["if_config"]["mask"] = mask
 
         return 0, None
 
