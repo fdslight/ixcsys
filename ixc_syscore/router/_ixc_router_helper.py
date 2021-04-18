@@ -492,6 +492,7 @@ class helper(object):
     __pppoe_enable = None
     __pppoe_user = None
     __pppoe_passwd = None
+    __pppoe_heartbeat = None
 
     __conf_dir = None
     __rpc_instance = None
@@ -714,6 +715,7 @@ class helper(object):
         if self.__pppoe_enable:
             self.__pppoe_user = wan_pppoe["user"]
             self.__pppoe_passwd = wan_pppoe["passwd"]
+            self.__pppoe_heartbeat = bool(int(wan_pppoe["heartbeat"]))
             self.router.pppoe_enable(True)
             self.router.pppoe_start()
             return
@@ -832,6 +834,10 @@ class helper(object):
     @property
     def pppoe_passwd(self):
         return self.__pppoe_passwd
+
+    @property
+    def pppoe_heartbeat(self):
+        return self.__pppoe_heartbeat
 
     def rpc_fn_call(self, name: str, arg_data: bytes):
         """

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import os
 import struct, random, time
 import ixc_syslib.pylib.logging as logging
 
@@ -65,11 +65,17 @@ class LCP(object):
         return self.__pppoe.debug
 
     def send(self, code: int, _id: int, byte_data: bytes):
+        #if self.lcp_ok():
+        #    self.__up_time = time.time()
+
         length = len(byte_data) + 4
         header = struct.pack("!BBH", code, _id, length)
 
         sent_data = b"".join([header, byte_data])
         self.__pppoe.send_data_to_ns(0xc021, sent_data)
+
+    def send_echo_request(self):
+        self.send(ECHO_REQ, self.__my_id, struct.pack("4s",os.urandom(4)))
 
     def send_cfg_req(self, options: list):
         _id = random.randint(1, 0xf0)
@@ -302,7 +308,7 @@ class LCP(object):
         self.send(ECHO_REPLY, _id, byte_data)
 
     def handle_echo_reply(self, _id: int, byte_data: bytes):
-        pass
+        self.__up_time = time.time()
 
     def handle_discard_req(self, _id: int, byte_data: bytes):
         pass
@@ -349,6 +355,8 @@ class LCP(object):
 
     def loop(self):
         now = time.time()
+        x = now - self.__up_time
+
         if self.__is_first:
             self.send_neg_request_first()
             return
@@ -364,8 +372,18 @@ class LCP(object):
             ''''''
 
         # 30s LCP未协商成功那么重新协商
-        if now - self.__up_time >= 30 and not self.lcp_ok():
+        if x >= 30 and not self.lcp_ok():
             self.__pppoe.reset()
+            return
+
+        if self.lcp_ok():
+            if x >= 60:
+                self.send_echo_request()
+                return
+            # 大于90秒未回应那么重置PPPoE请求
+            if x >= 90:
+                self.__pppoe.reset()
+                return
 
     def reset(self):
         magic_num = random.randint(1, 0xfffffff0)
