@@ -252,7 +252,7 @@ class dhcp_server(object):
 
         vendor = self.get_dhcp_opt_value(opts,60)
         if vendor:
-            resp_opts.append((43, vendor))
+            resp_opts.append((60, vendor))
         self.dhcp_msg_send(resp_opts)
 
     def handle_dhcp_decline(self, opts: list):
