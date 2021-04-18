@@ -171,20 +171,21 @@ class tftp(object):
 
         if not os.path.isfile(fpath):
             self.send_error_msg(tftplib.ERR_FILE_NOT_FOUND, "not found file %s" % filename, client_addr)
-            return False
+            return
         session_id = "%s-%s" % client_addr
 
         if session_id in self.sessions:
             self.send_error_msg(tftplib.ERR_NOT_DEF, "the session exists", client_addr)
             _context = self.sessions[session_id]
             _context.release()
-            return False
+            return
 
         logging.print_info("send tftp file %s to client %s" % (fpath, client_addr[0],))
 
         _context = context(self, fpath, tftplib.OP_RRQ, mode, client_addr)
         self.sessions[session_id] = _context
-        return True
+        #self.send_ack(0, client_addr)
+        _context.do_read()
 
     def handle_data(self, block_no: int, byte_data: bytes, _context):
         pass
@@ -217,10 +218,8 @@ class tftp(object):
             return
 
         if opcode == tftplib.OP_RRQ and (session_id not in self.sessions):
-            if self.handle_rrq(obj, client_addr):
-                opcode = tftplib.OP_DATA
-            else:
-                return
+            self.handle_rrq(obj, client_addr)
+            return
 
         if session_id not in self.sessions:
             self.send_error_msg(tftplib.ERR_ID, "not send RRQ or WRQ request", client_addr)
