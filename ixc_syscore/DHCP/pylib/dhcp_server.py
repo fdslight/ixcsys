@@ -198,6 +198,7 @@ class dhcp_server(object):
         self.__dhcp_builder.op = 2
         self.__dhcp_builder.siaddr = self.__my_ipaddr
         self.__dhcp_builder.chaddr = self.__client_hwaddr
+        self.__dhcp_builder.secs = self.__dhcp_parser.secs
 
         resp_data = self.__dhcp_builder.build_to_link_data(
             dst_hwaddr, self.__hwaddr, bytes([0xff, 0xff, 0xff, 0xff]), self.__my_ipaddr, resp_opts, is_server=True
