@@ -184,7 +184,7 @@ class tftp(object):
 
         _context = context(self, fpath, tftplib.OP_RRQ, mode, client_addr)
         self.sessions[session_id] = _context
-        self.send_ack(0, client_addr)
+        self.send_ack(1, client_addr)
 
     def handle_data(self, block_no: int, byte_data: bytes, _context):
         pass
