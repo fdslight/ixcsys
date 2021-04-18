@@ -238,7 +238,7 @@ class dhcp_server(object):
             o["host_name"] = host_name
 
         self.__alloc.bind_ipaddr(s_client_hwaddr, o["ip"])
-        self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
+        #self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
 
         self.dhcp_msg_send(resp_opts)
 
