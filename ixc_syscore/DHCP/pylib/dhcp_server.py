@@ -388,7 +388,7 @@ class dhcp_server(object):
         for hwaddr in bind:
             if hwaddr not in binds:
                 self.__tmp_alloc_addrs[hwaddr] = {"time": time.time(), "ip": bind[hwaddr],
-                                                  "neg_ok": False}
+                                                  "neg_ok": False, "host_name": b""}
             self.__alloc.bind_ipaddr(hwaddr, bind[hwaddr])
         self.__ip_binds = binds
 
