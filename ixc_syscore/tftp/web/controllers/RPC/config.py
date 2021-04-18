@@ -16,6 +16,7 @@ class controller(rpc.controller):
         self.fobjs = {
             "config_get": self.config_get,
             "config_write": self.config_write,
+            "get_file_dir": self.get_file_dir,
         }
 
     def config_get(self):
@@ -36,3 +37,6 @@ class controller(rpc.controller):
         self.__runtime.save_configs()
 
         return 0, None
+
+    def get_file_dir(self):
+        return 0, self.__runtime.configs["conf"]["file_dir"]

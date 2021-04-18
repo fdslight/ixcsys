@@ -41,6 +41,16 @@ class dhcp_server(object):
     # 已经使用的IP
     __used_ips = None
 
+    def get_boot_file_size(self):
+        file_path = "%s/%s" % (self.__runtime.tftp_file_dir, self.__boot_file,)
+        if not os.path.isfile(file_path): return 0
+        size = os.stat(file_path).st_size
+        # 最大只能支持连个
+        size = size / 512
+        if size > 0xffff: return 0
+
+        return size
+
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
         self.__runtime = runtime
@@ -119,6 +129,12 @@ class dhcp_server(object):
             #    resp_opts.append((code, self.__my_ipaddr))
             if code == 3:
                 resp_opts.append((code, self.__my_ipaddr))
+            if code == 13:
+                resp_opts.append((code, struct.pack("!H", self.get_boot_file_size())))
+            if code == 66:
+                resp_opts.append((code, self.__hostname.encode("iso-8859-1")))
+            if code == 67:
+                resp_opts.append((code, self.__boot_file.encode("iso-8859-1")))
             if code in self.__dhcp_options:
                 resp_opts.append((code, self.__dhcp_options[code]))
             ''''''
