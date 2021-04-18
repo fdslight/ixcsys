@@ -62,13 +62,13 @@ class context(object):
             self.__block_no += 1
         return self.__block_no
 
-    def get_block(self, is_first=False):
+    def get_block(self):
         """获取文件块
         :return tuple,(True|False,byte_data),True表示文件未结束,False表示文件已结束
         """
         t = time.time() - self.__up_time
-        if not self.__is_ack and self.__last_byte_data and not is_first:
-            # 小于1s不发送数据包
+        if not self.__is_ack and self.__last_byte_data:
+            # 小于1s步伐送数据包
             if t < 1: return None
             return len(self.__last_byte_data) == tftplib.BLK_SIZE, self.__block_no, self.__last_byte_data
 
@@ -119,8 +119,8 @@ class context(object):
         """
         return self.__is_ack
 
-    def do_read(self, is_first=False):
-        rs = self.get_block(is_first=is_first)
+    def do_read(self):
+        rs = self.get_block()
         if not rs: return
         have_content, block_no, byte_data = rs
         self.__tftp_obj.send_data_msg(block_no, byte_data, self.__client_addr)
@@ -184,8 +184,7 @@ class tftp(object):
 
         _context = context(self, fpath, tftplib.OP_RRQ, mode, client_addr)
         self.sessions[session_id] = _context
-        # self.send_ack(0, client_addr)
-        _context.do_read(is_first=True)
+        self.send_ack(0, client_addr)
 
     def handle_data(self, block_no: int, byte_data: bytes, _context):
         pass
