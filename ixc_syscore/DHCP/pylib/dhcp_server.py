@@ -36,6 +36,7 @@ class dhcp_server(object):
 
     __addr_begin = None
     __addr_finish = None
+    __byte_brd_ipaddr = None
 
     __ip_binds = None
     # 已经使用的IP
@@ -64,6 +65,8 @@ class dhcp_server(object):
 
         self.__addr_begin = addr_begin
         self.__addr_finish = addr_finish
+        brd_ipaddr = netutils.get_broadcast_for_ip4addr(subnet, int(prefix))
+        self.__byte_brd_ipaddr = socket.inet_pton(socket.AF_INET, brd_ipaddr)
 
         self.load_dhcp_cache()
 
@@ -133,6 +136,7 @@ class dhcp_server(object):
 
         # 让server id位于dhcp message type后面
         resp_opts.insert(0, (54, self.__my_ipaddr))
+        resp_opts.append((28, self.__byte_brd_ipaddr))
 
         resp_opts.append((51, struct.pack("!I", self.__TIMEOUT)))
         resp_opts.append((58, struct.pack("!I", int(self.__TIMEOUT * 0.5))))

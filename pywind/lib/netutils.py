@@ -288,3 +288,22 @@ def mask_to_prefix(mask: str, is_ipv6=False):
         prefix += map_values[x]
 
     return prefix
+
+
+def get_broadcast_for_ip4addr(subnet: str, prefix: int):
+    """获取IPv4的广播地址
+    """
+    mask = ip_prefix_convert(prefix)
+    byte_mask = socket.inet_pton(socket.AF_INET, mask)
+    byte_ip = socket.inet_pton(socket.AF_INET, subnet)
+
+    results = []
+
+    for x in range(4):
+        a = byte_ip[x]
+        b = (~byte_mask[x]) & 0xff
+        results.append(a | b)
+
+    data = bytes(results)
+
+    return socket.inet_ntop(socket.AF_INET, data)
