@@ -13,7 +13,6 @@ __builds = [
     "ixc_syscore/sysadm",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
-    "ixc_syscore/tftp",
     "ixc_syscore/proxy",
     "ixc_syscore/init",
 ]
