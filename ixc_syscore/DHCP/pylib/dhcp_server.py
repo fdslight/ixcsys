@@ -77,9 +77,9 @@ class dhcp_server(object):
         self.__boot_file_map = {
             "default": pub_configs.get("boot_file", None),
             # intel x86PC
-            0: pub_configs.get("x64_efi_boot_file", None),
+            0: pub_configs.get("x86_pc_boot_file", None),
             # EFI x64
-            7: pub_configs.get("x86_pc_boot_file", None),
+            7: pub_configs.get("x64_efi_boot_file", None),
         }
 
         self.load_dhcp_cache()
@@ -171,7 +171,7 @@ class dhcp_server(object):
 
         boot_file = self.__boot_file_map[arch]
         if not boot_file:
-            logging.print_error("not found boot file for client architecture %s" % arch)
+            logging.print_info("not found boot file for client architecture %s" % arch)
             return
 
         byte_boot_file = b"".join([boot_file.encode("iso-8859-1"), b"\0"])
