@@ -164,7 +164,7 @@ class dhcp_server(object):
         if 67 not in request_list: return
         client_sys_arch = self.get_dhcp_opt_value(opts, 93)
         if len(client_sys_arch) != 2: return
-        arch = struct.unpack("!H", client_sys_arch)
+        arch, = struct.unpack("!H", client_sys_arch)
         print(arch)
 
         if arch not in self.__boot_file_map:
@@ -269,7 +269,7 @@ class dhcp_server(object):
         # if server_id != self.__my_ipaddr: return
 
         resp_opts.append((53, bytes([5])))
-        self.add_boot_file(opts,request_list,resp_opts)
+        self.add_boot_file(opts, request_list, resp_opts)
         resp_opts += self.get_resp_opts_from_request_list(request_list)
 
         self.__dhcp_builder.yiaddr = request_ip
