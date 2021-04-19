@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import socket, struct, time, pickle, os
-import base64
 
 import pywind.lib.netutils as netutils
 
 import ixc_syscore.DHCP.pylib.dhcp as dhcp
 import ixc_syscore.DHCP.pylib.ipalloc as ipalloc
+
+import ixc_syslib.pylib.logging as logging
 
 
 class dhcp_server(object):
@@ -42,6 +43,9 @@ class dhcp_server(object):
     # 已经使用的IP
     __used_ips = None
 
+    # 引导文件映射
+    __boot_file_map = None
+
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
         self.__runtime = runtime
@@ -58,7 +62,6 @@ class dhcp_server(object):
         self.__my_ipaddr = socket.inet_pton(socket.AF_INET, my_ipaddr)
         self.__hostname = hostname
         self.__hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
-        self.__boot_file = runtime.server_configs["public"]["boot_file"]
 
         self.__dhcp_parser = dhcp.dhcp_parser()
         self.__dhcp_builder = dhcp.dhcp_builder()
@@ -67,6 +70,17 @@ class dhcp_server(object):
         self.__addr_finish = addr_finish
         brd_ipaddr = netutils.get_broadcast_for_ip4addr(subnet, int(prefix))
         self.__byte_brd_ipaddr = socket.inet_pton(socket.AF_INET, brd_ipaddr)
+
+        server_configs = self.__runtime.server_configs
+        pub_configs = server_configs["public"]
+
+        self.__boot_file_map = {
+            "default": pub_configs.get("boot_file", None),
+            # intel x86PC
+            0: pub_configs.get("x86_64_efi_boot_file", None),
+            # EFI x86-64
+            9: pub_configs.get("x86_pc_boot_file", None),
+        }
 
         self.load_dhcp_cache()
 
@@ -126,10 +140,6 @@ class dhcp_server(object):
             #    byte_server_name = self.__hostname.encode("iso-8859-1")
             #    server_name = b"".join([byte_server_name, b"\0"])
             #    resp_opts.append((code, server_name))
-            if code == 67:
-                byte_boot_file = self.__boot_file.encode("iso-8859-1")
-                boot_file = b"".join([byte_boot_file, b"\0"])
-                resp_opts.append((code, boot_file))
             if code in self.__dhcp_options:
                 resp_opts.append((code, self.__dhcp_options[code]))
             ''''''
@@ -143,6 +153,30 @@ class dhcp_server(object):
         resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
 
         return resp_opts
+
+    def add_boot_file(self, opts: list, request_list: list, resp_opts: list):
+        """加入引导文件
+        :param opts,请求选项
+        :param request_list,请求列表
+        :param resp_opts,响应选项
+        """
+        # 如果没有67那么不加入引导选项
+        if 67 not in request_list: return
+        client_sys_arch = self.get_dhcp_opt_value(opts, 93)
+        if len(client_sys_arch) != 2: return
+        arch = struct.unpack("!H", client_sys_arch)
+        print(arch)
+
+        if arch not in self.__boot_file_map:
+            arch = "default"
+
+        boot_file = self.__boot_file_map[arch]
+        if not boot_file:
+            logging.print_error("not found boot file for client architecture %s" % arch)
+            return
+
+        byte_boot_file = b"".join([boot_file.encode("iso-8859-1"), b"\0"])
+        resp_opts.append((67, byte_boot_file))
 
     def handle_dhcp_discover_req(self, opts: list):
         request_list = self.get_dhcp_opt_value(opts, 55)
@@ -169,6 +203,7 @@ class dhcp_server(object):
         if client_id:
             resp_opts.append((61, client_id))
 
+        self.add_boot_file(opts, request_list, resp_opts)
         resp_opts += self.get_resp_opts_from_request_list(request_list)
 
         # 这里需要避免每次更新time值导致客户端认为DHCP服务器不存在
@@ -234,6 +269,7 @@ class dhcp_server(object):
         # if server_id != self.__my_ipaddr: return
 
         resp_opts.append((53, bytes([5])))
+        self.add_boot_file(opts,request_list,resp_opts)
         resp_opts += self.get_resp_opts_from_request_list(request_list)
 
         self.__dhcp_builder.yiaddr = request_ip
