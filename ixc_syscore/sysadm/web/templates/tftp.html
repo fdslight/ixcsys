@@ -5,21 +5,6 @@
         <div class="ixc-empty"></div>
         <div class="ixc-empty"></div>
         <div class="form-group row">
-            <div class="col-sm-2">启用IPv6</div>
-            <div class="col-sm-10">
-                <div class="form-check">
-                    <%
-                    if self.V['enable_ipv6']:self.show("""<input class="form-check-input" name="enable_ipv6"
-                                                                 type="checkbox" checked="checked">""")
-                    else:self.show("""<input class="form-check-input" name="enable_ipv6" type="checkbox">""")
-                    %>
-                    <label class="form-check-label" for="gridCheck1">
-                        开启
-                    </label>
-                </div>
-            </div>
-        </div>
-        <div class="form-group row">
             <label for="inputEmail3" class="col-sm-2 col-form-label">文件目录</label>
             <div class="col-sm-10">
                 <input type="text" class="form-control" name="file_dir" placeholder="文件目录"

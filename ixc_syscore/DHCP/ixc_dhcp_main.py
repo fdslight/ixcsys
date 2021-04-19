@@ -128,7 +128,19 @@ class service(dispatcher.dispatcher):
 
     def start_tftp(self):
         conf = self.__tftp_configs["conf"]
+        _list = [
+            "# /etc/default/tftpd-hpa",
+            "TFTP_USERNAME=\"nobody\"",
+            "TFTP_DIRECTORY=\"%s\"" % conf["file_dir"],
+            "TFTP_ADDRESS=\"%s:69\"" % self.manage_addr,
+            "TFTP_OPTIONS=\"--secure\""
+        ]
+        fdst = open("/etc/default/tftpd-hpa", "w")
+        fdst.write("\n".join(_list))
+        fdst.close()
 
+        os.system("systemctl stop tftpd-hpa")
+        os.system("systemctl start tftpd-hpa")
 
     def load_tftp_configs(self):
         self.__tftp_configs = conf.ini_parse_from_file(self.__tftp_conf_fpath)
@@ -230,6 +242,7 @@ class service(dispatcher.dispatcher):
 
         self.__dhcp_server.load_dhcp_cache()
         self.__dhcp_server.set_timeout(lease_time)
+        self.start_tftp()
 
     def start_dhcp(self):
         self.__dhcp_fd = self.create_handler(-1, dhcp.dhcp_service)
@@ -390,6 +403,7 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = -1
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
         if self.__dhcp_server: self.__dhcp_server.save_dhcp_cache()
+        os.system("systemctl stop tftpd-hpa")
 
 
 def main():
