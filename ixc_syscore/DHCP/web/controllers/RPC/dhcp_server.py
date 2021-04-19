@@ -38,8 +38,8 @@ class controller(rpc.controller):
 
         return 0, True
 
-    def boot_file_set(self, boot_file: str):
-        self.dhcp.server_configs["public"]["boot_file"] = boot_file
+    def boot_file_set(self, type_key_val: str, boot_file: str):
+        self.dhcp.server_configs["public"][type_key_val] = boot_file
 
         return 0, True
 
