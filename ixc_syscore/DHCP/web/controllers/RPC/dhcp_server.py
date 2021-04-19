@@ -22,6 +22,9 @@ class controller(rpc.controller):
             "get_ip_bind_configs": self.get_ip_bind_configs,
             "lease_time_set": self.lease_time_set,
             "get_clients": self.get_clients,
+            "tftp_config_get": self.tftp_config_get,
+            "tftp_enable_ipv6": self.tftp_enable_ipv6,
+            "tftp_dir_set": self.tftp_dir_set,
         }
 
     def get_configs(self):
@@ -52,6 +55,7 @@ class controller(rpc.controller):
 
     def save(self):
         self.dhcp.save_dhcp_server_configs()
+        self.dhcp.save_tftp_configs()
 
         return 0, None
 
@@ -113,3 +117,23 @@ class controller(rpc.controller):
             results.append(o)
 
         return 0, results
+
+    def tftp_config_get(self):
+        return 0, self.dhcp.tftp_configs
+
+    def tftp_enable_ipv6(self, enable: bool):
+        configs = self.dhcp.tftp_configs
+        conf = configs["conf"]
+        if enable:
+            conf["enable_ipv6"] = 1
+        else:
+            conf["enable_ipv6"] = 0
+
+        return 0, None
+
+    def tftp_dir_set(self, d: str):
+        configs = self.dhcp.tftp_configs
+        conf = configs["conf"]
+        conf["file_dir"] = d
+
+        return 0, None

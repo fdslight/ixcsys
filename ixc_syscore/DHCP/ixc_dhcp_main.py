@@ -96,6 +96,9 @@ class service(dispatcher.dispatcher):
     __positive_dhcp_client_req = None
     __ieee_mac_map = None
 
+    __tftp_configs = None
+    __tftp_conf_fpath = None
+
     def init_func(self, debug):
         self.__debug = debug
         self.__scgi_fd = -1
@@ -106,20 +109,29 @@ class service(dispatcher.dispatcher):
         self.__dhcp_server_conf_path = "%s/dhcp_server.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__dhcp_ip_bind_path = "%s/ip_bind.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__ieee_mac_map = self.parse_ieee_ma_info("%s/data/oui.csv" % os.getenv("IXC_MYAPP_DIR"))
+        self.__tftp_conf_fpath = "%s/tftpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         global_vars["ixcsys.DHCP"] = self
 
         # if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-        RPCClient.wait_processes(["router", "DNS",])
+        RPCClient.wait_processes(["router", "DNS", ])
 
         self.load_dhcp_server_configs()
         self.load_dhcp_server_ip_bind()
+        self.load_tftp_configs()
 
         self.create_poll()
 
         self.start_dhcp()
         self.start_scgi()
+
+    def start_tftp(self):
+        conf = self.__tftp_configs["conf"]
+
+
+    def load_tftp_configs(self):
+        self.__tftp_configs = conf.ini_parse_from_file(self.__tftp_conf_fpath)
 
     def load_dhcp_server_configs(self):
         self.__dhcp_server_configs = conf.ini_parse_from_file(self.__dhcp_server_conf_path)
@@ -134,6 +146,9 @@ class service(dispatcher.dispatcher):
 
     def save_ip_bind_configs(self):
         conf.save_to_ini(self.__dhcp_ip_bind, self.__dhcp_ip_bind_path)
+
+    def save_tftp_configs(self):
+        conf.save_to_ini(self.__tftp_configs, self.__tftp_conf_fpath)
 
     def parse_ieee_ma_info(self, path: str):
         """解析IEEE MA的厂商MAC地址分配信息
@@ -169,6 +184,10 @@ class service(dispatcher.dispatcher):
     @property
     def ieee_mac_info(self):
         return self.__ieee_mac_map
+
+    @property
+    def tftp_configs(self):
+        return self.__tftp_configs
 
     def start_dhcp_client(self, port: int):
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__wan_hwaddr)
