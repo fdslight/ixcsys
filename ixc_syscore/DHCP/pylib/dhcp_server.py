@@ -77,7 +77,7 @@ class dhcp_server(object):
         self.__boot_file_map = {
             "default": pub_configs.get("boot_file", None),
             # intel x86PC
-            0: pub_configs.get("x86_64_efi_boot_file", None),
+            0: pub_configs.get("x64_efi_boot_file", None),
             # EFI x64
             7: pub_configs.get("x86_pc_boot_file", None),
         }
