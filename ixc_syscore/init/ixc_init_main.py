@@ -133,7 +133,10 @@ class service(dispatcher.dispatcher):
 
         o = {"level": level_map[level], "application": name, "message": message,
              "time": time.strftime("%Y-%m-%d %H:%M:%S %Z")}
-        if self.__log_count > self.__log_max: self.__logs.pop(0)
+        if self.__log_count >= self.__log_max:
+            self.__logs.pop(0)
+        else:
+            self.__log_count += 1
         self.__logs.append(o)
 
     def write_err_log(self, name: str, message: str):
