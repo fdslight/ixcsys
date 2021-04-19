@@ -78,8 +78,8 @@ class dhcp_server(object):
             "default": pub_configs.get("boot_file", None),
             # intel x86PC
             0: pub_configs.get("x86_64_efi_boot_file", None),
-            # EFI x86-64
-            9: pub_configs.get("x86_pc_boot_file", None),
+            # EFI x64
+            7: pub_configs.get("x86_pc_boot_file", None),
         }
 
         self.load_dhcp_cache()
@@ -165,7 +165,6 @@ class dhcp_server(object):
         client_sys_arch = self.get_dhcp_opt_value(opts, 93)
         if len(client_sys_arch) != 2: return
         arch, = struct.unpack("!H", client_sys_arch)
-        print(arch)
 
         if arch not in self.__boot_file_map:
             arch = "default"
