@@ -14,6 +14,7 @@ from pywind.global_vars import global_vars
 
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.web.route as webroute
+import ixc_syslib.pylib.RPCClient as RPCClient
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -63,6 +64,8 @@ class service(dispatcher.dispatcher):
         global_vars["ixcsys.iPXE"] = self
 
         self.__debug = debug
+
+        RPCClient.wait_proc("sysadm")
 
         self.create_poll()
         self.start_scgi()
