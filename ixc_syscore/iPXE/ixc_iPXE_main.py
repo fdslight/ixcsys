@@ -65,13 +65,10 @@ class service(dispatcher.dispatcher):
 
         self.__debug = debug
 
-        RPCClient.wait_proc("sysadm")
+        RPCClient.wait_proc("router")
 
         self.create_poll()
         self.start_scgi()
-
-    def log_start(self):
-        self.__log_fd = self.create_handler(-1, syslog.syslogd)
 
     def myloop(self):
         pass
