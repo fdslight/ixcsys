@@ -1,8 +1,11 @@
 # ixcsys
-A software router for Linux
+A software router for Linux   
+
+# CPU requirement
+X86_64 or ARM64 with NEON
 
 # dep envrionment
-1. python3,python3 module dnspython3,cryptography and cloudflare-ddns
+1. python3,tftpd-hpa,python3 module dnspython3,cryptography and cloudflare-ddns
 
 
 # debian/ubuntu install runtime
@@ -10,7 +13,8 @@ A software router for Linux
 2. sudo pip3 install dnspython3
 3. sudo pip3 install cryptography
 4. sudo pip3 install cloudflare-ddns
-5. sudo apt install libpython3-dev
+5. sudo apt install libpython3-dev  
+6. sudo apt install tftpd-hpa
 
 # build ixcsys
 1.first you need run "python3 build_config.py" for configure your environment(for debian 10 example,"python3 build_config.py --python3_include=/usr/include/python3.7m --python3_lib=/usr/lib/x86_64-linux-gnu")    

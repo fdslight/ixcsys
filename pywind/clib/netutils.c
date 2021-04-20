@@ -28,6 +28,25 @@ int subnet_calc_with_msk_for_ipv6(unsigned char *address,unsigned char *msk,unsi
 }
 #endif
 
+/// ARM NEON指令支持
+#ifdef __aarch64__
+#include<arm_neon.h>>
+/// 使用neon优化IPv6子网计算
+static inline
+int subnet_calc_with_msk_for_ipv6(unsigned char *address,unsigned char *msk,unsigned char *res)
+{
+    int8x16_t ra=vld1q_s8(address);
+    int8x16_t rb=vld1q_s8(msk);
+
+    ra=vandq_s8(ra,rb);
+    vst1q_s8(res);
+
+    return 0;
+}
+
+#endif
+
+
 int msk_calc(unsigned char prefix,int is_ipv6,unsigned char *res)
 {
     unsigned char a,b,constant=0xff;
@@ -69,6 +88,8 @@ int subnet_calc_with_msk(unsigned char *address,unsigned char *msk,int is_ipv6,u
 
     if(is_ipv6){
 #ifdef __x86_64__
+        return subnet_calc_with_msk_for_ipv6(address,msk,res);
+#elif defined(__aarch64__)
         return subnet_calc_with_msk_for_ipv6(address,msk,res);
 #else
         size=16;
