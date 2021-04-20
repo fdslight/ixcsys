@@ -35,11 +35,11 @@ int subnet_calc_with_msk_for_ipv6(unsigned char *address,unsigned char *msk,unsi
 static inline
 int subnet_calc_with_msk_for_ipv6(unsigned char *address,unsigned char *msk,unsigned char *res)
 {
-    int8x16_t ra=vld1q_s8(address);
-    int8x16_t rb=vld1q_s8(msk);
+    uint8x16_t ra=vld1q_u8(address);
+    uint8x16_t rb=vld1q_u8(msk);
 
-    ra=vandq_s8(ra,rb);
-    vst1q_s8(res);
+    ra=vandq_u8(ra,rb);
+    vst1q_u8(res,ra);
 
     return 0;
 }
