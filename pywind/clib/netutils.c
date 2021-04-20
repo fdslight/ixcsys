@@ -30,7 +30,7 @@ int subnet_calc_with_msk_for_ipv6(unsigned char *address,unsigned char *msk,unsi
 
 /// ARM NEON指令支持
 #ifdef __aarch64__
-#include<arm_neon.h>>
+#include<arm_neon.h>
 /// 使用neon优化IPv6子网计算
 static inline
 int subnet_calc_with_msk_for_ipv6(unsigned char *address,unsigned char *msk,unsigned char *res)
