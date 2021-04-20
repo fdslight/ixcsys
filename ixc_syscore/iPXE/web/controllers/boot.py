@@ -5,6 +5,7 @@ import ixc_syscore.sysadm.web.controllers.controller as base_controller
 
 class controller(base_controller.BaseController):
     def myinit(self):
+        self.set_auto_auth(False)
         self.request.set_allow_methods(["GET"])
         return True
 
