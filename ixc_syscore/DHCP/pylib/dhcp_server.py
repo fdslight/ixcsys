@@ -177,6 +177,13 @@ class dhcp_server(object):
         byte_boot_file = b"".join([boot_file.encode("iso-8859-1"), b"\0"])
         resp_opts.append((67, byte_boot_file))
 
+        # 加入ISCSI相关信息
+        root_path = b"iscsi:192.168.1.200::::iqn.windows\0"
+        initiator_iqn = b"iqn.windows\0"
+
+        resp_opts.append((17, root_path))
+        resp_opts.append((203, initiator_iqn))
+
     def handle_dhcp_discover_req(self, opts: list):
         request_list = self.get_dhcp_opt_value(opts, 55)
         if not request_list: return
