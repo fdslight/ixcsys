@@ -39,6 +39,7 @@ class app_route(object):
     def __call__(self, environ: dict, start_response):
         path_info = environ["PATH_INFO"]
         # 对favicon图标进行特殊处理
+        print(path_info)
         if path_info == "/favicon.ico":
             environ["PATH_INFO"] = "/staticfiles%s" % path_info
             path_info = environ["PATH_INFO"]
