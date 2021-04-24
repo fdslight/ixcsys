@@ -22,6 +22,8 @@ class app_route(object):
 
         p = x.find("/staticfiles")
         if p == 0: x = "/staticfiles"
+        if path_info == "/favicon.ico":
+            x = "/staticfiles"
 
         s = "%s/web.controllers%s" % (os.getenv("IXC_MYAPP_RELATIVE_DIR"), x)
         name = s.replace("/", ".")
