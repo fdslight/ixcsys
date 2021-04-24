@@ -22,8 +22,6 @@ class app_route(object):
 
         p = x.find("/staticfiles")
         if p == 0: x = "/staticfiles"
-        if path_info == "/favicon.ico":
-            x = "/staticfiles/favicon.ico"
 
         s = "%s/web.controllers%s" % (os.getenv("IXC_MYAPP_RELATIVE_DIR"), x)
         name = s.replace("/", ".")
@@ -40,6 +38,11 @@ class app_route(object):
 
     def __call__(self, environ: dict, start_response):
         path_info = environ["PATH_INFO"]
+        # 对favicon图标进行特殊处理
+        if path_info == "/favicon.ico":
+            environ["PATH_INFO"] = "/staticfiles%s" % path_info
+            path_info = environ["PATH_INFO"]
+
         m = self.get_module(path_info)
 
         if not m:
