@@ -28,6 +28,7 @@
 #include "global.h"
 #include "vswitch.h"
 #include "npfwd.h"
+#include "sec_net.h"
 
 
 #include "../../../pywind/clib/pycall.h"
@@ -988,6 +989,12 @@ static void ixc_start(int debug)
     rs=ixc_init_python(debug);
     if(rs<0){
         STDERR("cannot init python helper instance\r\n");
+        return;
+    }
+
+    rs=ixc_sec_net_init();
+    if(rs<0){
+        STDERR("cannot init sec net\r\n");
         return;
     }
 
