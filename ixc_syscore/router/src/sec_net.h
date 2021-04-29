@@ -12,6 +12,8 @@ struct ixc_sec_net{
     struct map *rule_cache_v4;
     // IPv6的规则缓存
     struct map *rule_cache_v6;
+    // 硬件地址的log日志
+    struct map *log_hwaddr;
     // IPv4的访问日志
     struct map *logv4;
     // IPv6的访问日志
@@ -36,6 +38,8 @@ struct ixc_sec_net_log{
     unsigned char protocol;
     // 填充字节
     unsigned char pad1[3];
+    // 引用计数
+    unsigned int refcnt;
     // 是否是IPv6
     int is_ipv6;
 };
@@ -65,6 +69,8 @@ struct ixc_sec_net_rule_src{
     short default_action;
     // 硬件地址,如果全0表示不绑定硬件地址
     unsigned char hwaddr[6];
+    // 引用计数
+    unsigned int refcnt;
     // 该值只有在源头
     int is_ipv6;
 };

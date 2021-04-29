@@ -11,9 +11,18 @@ static int sec_net_is_initialized=0;
 
 int ixc_sec_net_init(void)
 {
+    struct map *m=NULL;
+    int rs;
+
     bzero(&sec_net,sizeof(struct ixc_sec_net));
 
+    rs=map_new(&m,6);
+    if(0!=rs){
+        STDERR("cannot create map for log hwaddr\r\n");
+        return -1;
+    }
 
+    sec_net.log_hwaddr=m;
 
 
     return 0;
