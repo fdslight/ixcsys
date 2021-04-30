@@ -138,7 +138,7 @@ static void ixc_sec_net_handle_v6(struct ixc_mbuf *m)
     struct ixc_sec_net_rule_src *rule=NULL;
     char is_found;
 
-    rule=map_find(sec_net.rule_ip6_m,header->src_addr,&is_found);
+    rule=map_find(sec_net.rule_ip6_m,(char *)header->src_addr,&is_found);
     ixc_sec_net_handle_src(m,rule);
 }
 
