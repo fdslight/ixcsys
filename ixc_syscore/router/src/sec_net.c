@@ -52,7 +52,7 @@ static void ixc_sec_net_log_write_and_send(struct ixc_mbuf *m)
 }
 
 static struct ixc_sec_net_rule_dst *
-ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,unsigned char *address,int is_ipv6)
+ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,const char *address,int is_ipv6)
 {
     return NULL;
 }
@@ -127,7 +127,7 @@ static void ixc_sec_net_handle_v4(struct ixc_mbuf *m)
     struct ixc_sec_net_rule_src *rule=NULL;
     char is_found;
 
-    rule=map_find(sec_net.rule_ip_m,header->src_addr,&is_found);
+    rule=map_find(sec_net.rule_ip_m,(char *)(header->src_addr),&is_found);
 
     ixc_sec_net_handle_src(m,rule);
 }
@@ -148,7 +148,7 @@ static void ixc_sec_net_handle_hwaddr_rule(struct ixc_mbuf *m)
     char is_found;
 
     // 首先查找硬件规则匹配是否存在
-    rule=map_find(sec_net.rule_hwaddr_m,m->src_hwaddr,&is_found);
+    rule=map_find(sec_net.rule_hwaddr_m,(char *)(m->src_hwaddr),&is_found);
     ixc_sec_net_handle_src(m,rule);
 }
 
