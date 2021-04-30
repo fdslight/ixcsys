@@ -992,12 +992,6 @@ static void ixc_start(int debug)
         return;
     }
 
-    rs=ixc_sec_net_init();
-    if(rs<0){
-        STDERR("cannot init sec net\r\n");
-        return;
-    }
-
     if(rs<0){
        ixc_netif_uninit();
        STDERR("cannot start python\r\n");
@@ -1015,6 +1009,12 @@ static void ixc_start(int debug)
     rs=sysloop_init();
     if(rs<0){
         STDERR("cannot init sysloop\r\n");
+        return;
+    }
+
+    rs=ixc_sec_net_init();
+    if(rs<0){
+        STDERR("cannot init sec net\r\n");
         return;
     }
 

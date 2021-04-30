@@ -5,19 +5,20 @@
 
 #include<sys/types.h>
 
+#include "mbuf.h"
+
 #include "../../../pywind/clib/map.h"
 
 struct ixc_sec_net{
-    // IPv4的规则缓存
-    struct map *rule_cache_v4;
-    // IPv6的规则缓存
-    struct map *rule_cache_v6;
+    struct map *rule_hwaddr_m;
+    struct map *rule_ip_m;
+    struct map *rule_ip6_m;
     // 硬件地址的log日志
-    struct map *log_hwaddr;
+    struct map *log_hwaddr_m;
     // IPv4的访问日志
-    struct map *logv4;
+    struct map *logv4_m;
     // IPv6的访问日志
-    struct map *logv6;
+    struct map *logv6_m;
 };
 
 /// 安全IP记录
@@ -55,7 +56,6 @@ struct ixc_sec_net_rule_dst{
     struct ixc_sec_net_rule_dst *next;
     unsigned char dst_addr[16];
     unsigned char mask[16];
-    int action;
     unsigned char prefix;
 };
 
@@ -63,6 +63,7 @@ struct ixc_sec_net_rule_dst{
 // 如果IP地址不为0而硬件地址为0表示规则绑定IP地址
 // 如果IP地址为0而MAC地址不为0表示绑定MAC地址
 struct ixc_sec_net_rule_src{
+    struct map *cache_m;
     struct ixc_sec_net_rule_dst *dst_head;
     // 源端IP地址,如果全零表示不绑定IP地址
     unsigned char address[16];
@@ -78,9 +79,11 @@ struct ixc_sec_net_rule_src{
 int ixc_sec_net_init(void);
 void ixc_sec_net_uninit(void);
 
-// 源规则加入
+/// 源规则加入
 int ixc_sec_net_src_rule_add(unsigned char *hwaddr,unsigned char *address,short action,int is_ipv6);
-// 源规则删除
+/// 源规则删除
 int ixc_sec_net_src_rule_del(unsigned char *hwaddr,unsigned char *address,int is_ipv6);
+/// 处理数据包
+void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m);
 
 #endif
