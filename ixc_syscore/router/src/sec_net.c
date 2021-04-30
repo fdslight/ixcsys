@@ -2,6 +2,7 @@
 #include<string.h>
 
 #include "sec_net.h"
+#include "route.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/timer.h"
@@ -44,12 +45,15 @@ int ixc_sec_net_src_rule_del(unsigned char *hwaddr,unsigned char *address,int is
     return 0;
 }
 
+/// 记录日志
+static void ixc_sec_net_log_write_and_send(struct ixc_mbuf *m)
+{
+    ixc_route_handle(m);
+}
 
 static struct ixc_sec_net_rule_dst *
 ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,unsigned char *address,int is_ipv6)
 {
-
-
     return NULL;
 }
 
@@ -72,10 +76,20 @@ static void ixc_sec_net_find_dst_rule(struct ixc_mbuf *m,struct ixc_sec_net_rule
 
 static void ixc_sec_net_handle_src(struct ixc_mbuf *m,struct ixc_sec_net_rule_src *rule)
 {
-    // 未找到规则那么接受数据包
+    struct ixc_sec_net_rule_dst *dst_rule,*tmp_dst_rule;
+    struct netutil_iphdr *ipdhr=(struct netutil_iphdr *)(m->data+m->offset);
+    struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
+    //
+    char key[16],is_found;
+    int flags=0;
+    // 未找到规则那么接受数据包并且记录日志
     if(NULL==rule){
+        ixc_sec_net_log_write_and_send(m);
         return;
     }
+    // 拷贝内存响应key
+    if(m->is_ipv6) memcpy(key,ip6hdr->dst_addr,16);
+    else memcpy(key,ipdhr->dst_addr,4);
     //
     if(IXC_SEC_NET_ACT_DROP==rule->default_action){
         // 默认为丢弃数据包并且未找到允许的地址范围,那么丢弃数据包
@@ -83,8 +97,28 @@ static void ixc_sec_net_handle_src(struct ixc_mbuf *m,struct ixc_sec_net_rule_sr
             ixc_mbuf_put(m);
             return;
         }
-
     }
+    // 首先从缓存中查找是否存在
+    dst_rule=map_find(rule->cache_m,key,&is_found);
+__SEC_NET_DST:
+    if(NULL!=dst_rule){
+        // 如果默认是丢弃数据包那么规则中含有目标规则,那么就接受此数据包
+        if(IXC_SEC_NET_ACT_DROP==rule->default_action){
+            ixc_sec_net_log_write_and_send(m);
+        }else{
+            ixc_mbuf_put(m);
+        }
+        return;
+    }
+    //
+    if(flags && NULL==dst_rule){
+        ixc_sec_net_log_write_and_send(m);
+        return;
+    }
+    // 处理不在缓存中的目标规则
+    dst_rule=ixc_sec_net_find_no_cached(rule,key,m->is_ipv6);
+    flags=1;
+    goto __SEC_NET_DST;
 }
 
 static void ixc_sec_net_handle_v4(struct ixc_mbuf *m)

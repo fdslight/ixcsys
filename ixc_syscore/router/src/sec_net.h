@@ -1,4 +1,4 @@
-/* 实现IP网络安全,防止流氓软件 **/
+/* 实现IP网络安全,防止流氓软件 */
 
 #ifndef IXC_SEC_NET_H
 #define IXC_SEC_NET_H

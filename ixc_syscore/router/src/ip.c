@@ -13,6 +13,7 @@
 #include "debug.h"
 #include "global.h"
 #include "npfwd.h"
+#include "sec_net.h"
 
 #include "../../../pywind/clib/netutils.h"
 
@@ -108,6 +109,8 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         ixc_mbuf_put(m);
         return;
     }
+
+    //ixc_sec_net_handle_from_lan(m);
     //DBG_FLAGS;
     // 发送数据到route
     ixc_route_handle(m);
