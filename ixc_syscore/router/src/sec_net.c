@@ -17,19 +17,33 @@ static int sec_net_is_initialized=0;
 
 static void __ixc_sec_net_cache_del(void *data)
 {
+    struct ixc_sec_net_rule_cache *cache=data;
 
+    free(cache);
 }
 
 static void __ixc_sec_net_cache_timeout(void *data)
 {
     struct ixc_sec_net_rule_cache *cache=data;
     time_t now=time(NULL);
+    struct time_data *tdata;
 
+    if(now-cache->up_time>=IXC_SEC_NET_CACHE_TIMEOUT){
+        map_del(cache->src_rule->cache_m,(char *)(cache->address),__ixc_sec_net_cache_del);
+        return;
+    }
+
+    tdata=time_wheel_add(&sec_net_cache_time_wheel,cache,10);
+    if(NULL==tdata){
+        map_del(cache->src_rule->cache_m,(char *)(cache->address),__ixc_sec_net_cache_del);
+        STDERR("cannot add to time wheel\r\n");
+        return;
+    }
 }
 
 static void __ixc_sec_net_log_timeout(void *data)
 {
-
+    
 }
 
 int ixc_sec_net_init(void)
