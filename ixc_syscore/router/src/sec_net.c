@@ -98,6 +98,7 @@ ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,unsigned char *addre
 {
     struct ixc_sec_net_rule_dst *dst_rule=src->dst_head;
     int is_found=0,rs;
+    struct time_data *tdata;
 
     while(NULL!=dst_rule){
         if(!is_same_subnet_with_msk(address,dst_rule->dst_addr,dst_rule->mask,is_ipv6)){
@@ -118,8 +119,8 @@ ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,unsigned char *addre
         return dst_rule;
     }
 
-    rs=time_wheel_add(&sec_net_cache_time_wheel,dst_rule,10);
-    if(rs<0){
+    tdata=time_wheel_add(&sec_net_cache_time_wheel,dst_rule,10);
+    if(NULL==tdata){
         map_del(src->cache_m,(char *)address,NULL);
         STDERR("cannot add to sec_net cache\r\n");
         return dst_rule;
@@ -191,7 +192,7 @@ __SEC_NET_DST:
         return;
     }
     // 处理不在缓存中的目标规则
-    dst_rule=ixc_sec_net_find_no_cached(rule,key,m->is_ipv6);
+    dst_rule=ixc_sec_net_find_no_cached(rule,(unsigned char *)key,m->is_ipv6);
     flags=1;
     goto __SEC_NET_DST;
 }
