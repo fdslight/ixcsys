@@ -99,6 +99,8 @@ ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,unsigned char *addre
     struct ixc_sec_net_rule_dst *dst_rule=src->dst_head;
     int is_found=0,rs;
     struct time_data *tdata;
+    struct ixc_sec_net_rule_cache *cache;
+    int size=is_ipv6?16:4;
 
     while(NULL!=dst_rule){
         if(!is_same_subnet_with_msk(address,dst_rule->dst_addr,dst_rule->mask,is_ipv6)){
@@ -111,25 +113,38 @@ ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,unsigned char *addre
 
     if(!is_found) return NULL;
 
+    cache=malloc(sizeof(struct ixc_sec_net_rule_cache));
+    if(NULL==cache){
+        STDERR("cannot add to cache for sec_net\r\n");
+        return dst_rule;
+    }
+    bzero(cache,sizeof(struct ixc_sec_net_rule_cache));
+    memcpy(cache->address,address,size);
+
+    cache->is_ipv6=is_ipv6;
+    cache->up_time=time(NULL);
+    cache->src_rule=src;
+    cache->dst_rule=dst_rule;
+
     // 如果找到策略,那么就加入到缓存当中,以便加快访问速度
-    rs=map_add(src->cache_m,(char *)address,dst_rule);
+    rs=map_add(src->cache_m,(char *)address,cache);
 
     if(rs<0){
+        free(cache);
         STDERR("cannot add to sec_net cache\r\n");
         return dst_rule;
     }
 
     tdata=time_wheel_add(&sec_net_cache_time_wheel,dst_rule,10);
     if(NULL==tdata){
+        free(cache);
         map_del(src->cache_m,(char *)address,NULL);
         STDERR("cannot add to sec_net cache\r\n");
+
         return dst_rule;
     }
 
-    dst_rule->up_time=time(NULL);
-    // 增加引用计数
-    dst_rule->refcnt+=1;
-
+    
     return dst_rule;
 }
 
