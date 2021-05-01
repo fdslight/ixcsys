@@ -9,6 +9,8 @@
 
 #include "../../../pywind/clib/map.h"
 
+#define IXC_SEC_NET_CACHE_TIMEOUT 600
+
 struct ixc_sec_net{
     struct map *rule_hwaddr_m;
     struct map *rule_ip_m;
@@ -51,11 +53,16 @@ struct ixc_sec_net_log{
 /// 接受数据包
 #define IXC_SEC_NET_ACT_ACCEPT 1
 
+struct ixc_sec_net_rule_src;
 /// 目标地址过滤规则
 struct ixc_sec_net_rule_dst{
+    struct ixc_sec_net_rule_src *src_rule;
     struct ixc_sec_net_rule_dst *next;
     unsigned char dst_addr[16];
     unsigned char mask[16];
+    // 引用计数
+    unsigned long long refcnt;
+    time_t up_time;
     unsigned char prefix;
 };
 

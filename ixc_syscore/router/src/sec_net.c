@@ -9,7 +9,32 @@
 #include "../../../pywind/clib/netutils.h"
 
 static struct ixc_sec_net sec_net;
+/// 缓存定时器
+static struct time_wheel sec_net_cache_time_wheel;
+/// 日志定时器
+static struct time_wheel sec_net_log_time_wheel;
 static int sec_net_is_initialized=0;
+
+static void __ixc_sec_net_cache_del(void *data)
+{
+
+}
+
+static void __ixc_sec_net_cache_timeout(void *data)
+{
+    struct ixc_sec_net_rule_dst *dst_rule=data;
+    time_t now=time(NULL);
+
+    // 大于缓存超时那么删除缓存
+    if(now-dst_rule->up_time>IXC_SEC_NET_CACHE_TIMEOUT){
+    }
+
+}
+
+static void __ixc_sec_net_log_timeout(void *data)
+{
+
+}
 
 int ixc_sec_net_init(void)
 {
@@ -18,15 +43,32 @@ int ixc_sec_net_init(void)
 
     bzero(&sec_net,sizeof(struct ixc_sec_net));
 
+    rs=time_wheel_new(&sec_net_cache_time_wheel,(IXC_SEC_NET_CACHE_TIMEOUT*2)/10,10,__ixc_sec_net_cache_timeout,128);
+
+    if(rs<0){
+        STDERR("cannot create cache time wheel for sec_net\r\n");
+        return -1;
+    }
+
+    rs=time_wheel_new(&sec_net_cache_time_wheel,20,10,__ixc_sec_net_log_timeout,128);
+
+    if(rs<0){
+        STDERR("cannot create log time wheel for sec_net\r\n");
+        return -1;
+    }
+
     rs=map_new(&m,6);
     if(0!=rs){
+        time_wheel_release(&sec_net_cache_time_wheel);
+        time_wheel_release(&sec_net_log_time_wheel);
+
         STDERR("cannot create map for log hwaddr\r\n");
         return -1;
     }
 
     sec_net.log_hwaddr_m=m;
 
-
+    sec_net_is_initialized=1;
     return 0;
 }
 
@@ -52,9 +94,42 @@ static void ixc_sec_net_log_write_and_send(struct ixc_mbuf *m)
 }
 
 static struct ixc_sec_net_rule_dst *
-ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,const char *address,int is_ipv6)
+ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,unsigned char *address,int is_ipv6)
 {
-    return NULL;
+    struct ixc_sec_net_rule_dst *dst_rule=src->dst_head;
+    int is_found=0,rs;
+
+    while(NULL!=dst_rule){
+        if(!is_same_subnet_with_msk(address,dst_rule->dst_addr,dst_rule->mask,is_ipv6)){
+            dst_rule=dst_rule->next;
+            continue;
+        }
+        is_found=1;
+        break;
+    }
+
+    if(!is_found) return NULL;
+
+    // 如果找到策略,那么就加入到缓存当中,以便加快访问速度
+    rs=map_add(src->cache_m,(char *)address,dst_rule);
+
+    if(rs<0){
+        STDERR("cannot add to sec_net cache\r\n");
+        return dst_rule;
+    }
+
+    rs=time_wheel_add(&sec_net_cache_time_wheel,dst_rule,10);
+    if(rs<0){
+        map_del(src->cache_m,(char *)address,NULL);
+        STDERR("cannot add to sec_net cache\r\n");
+        return dst_rule;
+    }
+
+    dst_rule->up_time=time(NULL);
+    // 增加引用计数
+    dst_rule->refcnt+=1;
+
+    return dst_rule;
 }
 
 
@@ -71,7 +146,7 @@ static void ixc_sec_net_find_dst_rule(struct ixc_mbuf *m,struct ixc_sec_net_rule
     // 首先从缓存中查找是否存在该规则
     rule_dst=map_find(src->cache_m,key,&is_found);
     // 如果该规则不在缓存中,那么直接查找
-    if(NULL!=rule_dst) rule_dst=ixc_sec_net_find_no_cached(src,key,m->is_ipv6);
+    if(NULL!=rule_dst) rule_dst=ixc_sec_net_find_no_cached(src,(unsigned char *)key,m->is_ipv6);
 }
 
 static void ixc_sec_net_handle_src(struct ixc_mbuf *m,struct ixc_sec_net_rule_src *rule)

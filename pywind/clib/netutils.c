@@ -339,3 +339,26 @@ void rewrite_ip6_addr(struct netutil_ip6hdr *ip6hr,unsigned char new_addr,int is
 {
     
 }
+
+int is_same_subnet(unsigned char *address,unsigned char *subnet,unsigned char prefix,int is_ipv6)
+{
+    unsigned char tmp_addr[16];
+    int size=is_ipv6?16:4;
+
+    subnet_calc_with_prefix(address,prefix,is_ipv6,tmp_addr);
+
+    if(memcmp(tmp_addr,subnet,size)) return 0;
+
+    return 1;
+}
+
+int is_same_subnet_with_msk(unsigned char *address,unsigned char *subnet,unsigned char *mask,int is_ipv6)
+{
+    unsigned char tmp_addr[16];
+    int size=is_ipv6?16:4;
+    subnet_calc_with_msk(address,mask,is_ipv6,tmp_addr);
+    
+    if(memcmp(tmp_addr,subnet,size)) return 0;
+
+    return 1;
+}
