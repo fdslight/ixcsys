@@ -43,7 +43,7 @@ static void __ixc_sec_net_cache_timeout(void *data)
 
 static void __ixc_sec_net_log_timeout(void *data)
 {
-    
+
 }
 
 int ixc_sec_net_init(void)
@@ -153,8 +153,7 @@ ixc_sec_net_find_no_cached(struct ixc_sec_net_rule_src *src,unsigned char *addre
 
         return dst_rule;
     }
-
-    
+        
     return dst_rule;
 }
 
