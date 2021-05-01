@@ -22,12 +22,8 @@ static void __ixc_sec_net_cache_del(void *data)
 
 static void __ixc_sec_net_cache_timeout(void *data)
 {
-    struct ixc_sec_net_rule_dst *dst_rule=data;
+    struct ixc_sec_net_rule_cache *cache=data;
     time_t now=time(NULL);
-
-    // 大于缓存超时那么删除缓存
-    if(now-dst_rule->up_time>IXC_SEC_NET_CACHE_TIMEOUT){
-    }
 
 }
 
