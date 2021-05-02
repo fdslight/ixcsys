@@ -6,6 +6,7 @@
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
+#include "../../../pywind/clib/sysloop.h"
 
 static struct ixc_sec_net sec_net;
 static struct time_wheel sec_net_cache_tw;
@@ -137,6 +138,7 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_ru
     struct map *mm=m->is_ipv6?src_rule->ip6_cache:src_rule->ip_cache;
     char is_found;
     unsigned char *addr=m->is_ipv6?ip6hdr->dst_addr:iphdr->dst_addr;
+    struct time_data *tdata;
     int size=m->is_ipv6?16:4,rs;
     // 首先检查缓存是否存在
     cache=map_find(mm,(char *)addr,&is_found);
@@ -155,14 +157,21 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_ru
     cache->up_time=time(NULL);
     cache->is_ipv6=m->is_ipv6;
 
-    rs=map_add(mm,(char *)addr,cache);
-    if(rs<0){
+    tdata=time_wheel_add(&sec_net_cache_tw,cache,10);
+    if(NULL==tdata){
+        STDERR("cannot add to time wheel\r\n");
         free(cache);
-        STDERR("cannto add to map\r\n");
         return -1;
     }
 
-
+    rs=map_add(mm,(char *)addr,cache);
+    
+    if(rs<0){
+        free(cache);
+        tdata->is_deleted=1;
+        STDERR("cannto add to map\r\n");
+        return -1;
+    }
 
     return 0;
 }
@@ -382,9 +391,6 @@ void ixc_sec_net_del_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned ch
 {
     char is_found;
     struct ixc_sec_net_src_rule *src_rule=map_find(sec_net.rule_m,(char *)hwaddr,&is_found);
-    
-    int exists=0;
-    int size=is_ipv6?16:4;
 
     if(NULL==src_rule){
         STDERR("not found source rule\r\n");
