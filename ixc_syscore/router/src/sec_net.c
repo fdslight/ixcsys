@@ -136,9 +136,10 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
     int is_matched=0;
     char is_found;
     struct ixc_sec_net_rule_cache *cache;
+    struct map *mm=m->is_ipv6?dst_rule->src_rule->ip6_cache:dst_rule->src_rule->ip_cache;
 
     // 首先查找缓存是否存在
-    cache=map_find(m,(char *)addr,&is_found);
+    cache=map_find(mm,(char *)addr,&is_found);
     if(NULL!=cache){
         // 检查缓存是否有效,无效的缓存那么忽略
         if(cache->dst_rule->is_deleted){
@@ -154,14 +155,18 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
         }
     }
     
-
     while(NULL!=dst_rule){
         is_matched=is_same_subnet_with_msk(addr,dst_rule->address,dst_rule->mask,m->is_ipv6);
         if(!is_matched){
             dst_rule=dst_rule->next;
             continue;
         }
-        break;
+        if(!dst_rule->is_deleted){
+            break;
+        }else{
+            is_matched=0;
+            dst_rule=dst_rule->next;
+        }
     }
 
     if(!is_matched){
