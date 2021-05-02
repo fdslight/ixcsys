@@ -596,6 +596,25 @@ router_netpkt_forward_disable(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_sec_net_add_src(PyObject *self,PyObject *args)
+{
+    return NULL;
+}
+
+static PyObject *
+router_sec_net_del_src(PyObject *self,PyObject *args)
+{
+    return NULL;
+}
+
+static PyObject *
+router_sec_net_add_dst(PyObject *self,PyObject *args)
+{
+    return NULL;
+}
+
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -643,6 +662,10 @@ static PyMethodDef routerMethods[]={
     //
     {"netpkt_forward_set",(PyCFunction)router_netpkt_forward_set,METH_VARARGS,"set network packet forward"},
     {"netpkt_forward_disable",(PyCFunction)router_netpkt_forward_disable,METH_VARARGS,"disable network packet forward"},
+    //
+    {"sec_net_add_src",(PyCFunction)router_sec_net_add_src,METH_VARARGS,"add security network rule"},
+    {"sec_net_del_src",(PyCFunction)router_sec_net_del_src,METH_VARARGS,"delete security network rule"},
+    {"sec_net_add_dst",(PyCFunction)router_sec_net_add_dst,METH_VARARGS,"add dst security network rule"},
 
     {NULL,NULL,0,NULL}
 };
