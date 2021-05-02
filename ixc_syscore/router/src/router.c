@@ -599,19 +599,29 @@ router_netpkt_forward_disable(PyObject *self,PyObject *args)
 static PyObject *
 router_sec_net_add_src(PyObject *self,PyObject *args)
 {
-    return NULL;
+    unsigned char *hwaddr;
+    Py_ssize_t size;
+    int action;
+
+    if(!PyArg_ParseTuple(args,"y#i",&hwaddr,&size,&action)) return NULL;
+
+    Py_RETURN_NONE;
 }
 
 static PyObject *
 router_sec_net_del_src(PyObject *self,PyObject *args)
 {
-    return NULL;
+    unsigned char *hwaddr;
+    Py_ssize_t size;
+    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
+
+    Py_RETURN_NONE;
 }
 
 static PyObject *
 router_sec_net_add_dst(PyObject *self,PyObject *args)
 {
-    return NULL;
+    Py_RETURN_NONE;
 }
 
 
@@ -718,6 +728,9 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //
     PyModule_AddIntMacro(m,IXC_NETIF_WAN);
+
+    PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_DROP);
+    PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_ACCEPT);
 
     return m;
 }
