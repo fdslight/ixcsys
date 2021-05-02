@@ -39,6 +39,8 @@ struct ixc_sec_net_dst_rule{
 
     unsigned char address[16];
     unsigned char mask[16];
+    // 缓存引用计数
+    unsigned long long cache_refcnt;
     // 是否已经删除
     int is_deleted;
     int action;
@@ -58,6 +60,17 @@ struct ixc_sec_net_src_rule{
     char pad[2];
     // 动作类型
     int action;
+    // 是否删除
+    int is_deleted;
+};
+
+/// 缓存
+struct ixc_sec_net_rule_cache{
+    // 指向的目标规则
+    struct ixc_sec_net_dst_rule *dst_rule;
+    unsigned char address[16];
+    time_t up_time;
+    int action;
 };
 
 /// 丢弃数据包
@@ -71,9 +84,9 @@ void ixc_sec_net_uninit(void);
 
 void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m);
 
-/// 加入源端过滤规则L1
+/// 加入源端过滤规则
 int ixc_sec_net_add_src(unsigned char *hwaddr,int action);
-/// 删除源端过滤规则L1
+/// 删除源端过滤规则
 void ixc_sec_net_del_src(unsigned char *hwaddr);
 
 /// 加入目标过滤规则
