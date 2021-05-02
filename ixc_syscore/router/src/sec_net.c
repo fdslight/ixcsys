@@ -22,7 +22,7 @@ void ixc_sec_net_uninit(void)
 }
 
 
-static void ixc_sec_net_handle_L2_rule(struct ixc_mbuf *m,int L1_action,struct ixc_sec_net_src_rule_L2 *L2_rule)
+static void ixc_sec_net_handle_L2_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_rule_L2 *L2_rule)
 {
     struct ixc_sec_net_dst_rule *dst_rule=L2_rule->dst_rule_head;
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
@@ -39,7 +39,22 @@ static void ixc_sec_net_handle_L2_rule(struct ixc_mbuf *m,int L1_action,struct i
         break;
     }
 
+    if(!is_matched){
+        if(IXC_SEC_NET_ACT_DROP==L2_rule->action){
+            ixc_mbuf_put(m);
+        }else{
+            ixc_route_handle(m);
+        }
+        return;
+    }
 
+    // 处理匹配的情况
+    if(IXC_SEC_NET_ACT_DROP==dst_rule->action){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    ixc_route_handle(m);
 }
 
 static void ixc_sec_net_handle_L1_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_rule_L1 *L1_rule)
@@ -64,7 +79,7 @@ static void ixc_sec_net_handle_L1_rule(struct ixc_mbuf *m,struct ixc_sec_net_src
         return;
     }
 
-    ixc_sec_net_handle_L2_rule(m,L1_rule->action,L2_rule);
+    ixc_sec_net_handle_L2_rule(m,L2_rule);
 }
 
 void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m)
@@ -86,4 +101,39 @@ void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m)
         return;
     }
     ixc_sec_net_handle_L1_rule(m,src_L1_rule);
+}
+
+/// 加入源端过滤规则L1
+int ixc_sec_net_add_src_L1(unsigned char *hwaddr,int action)
+{
+    return 0;
+}
+
+/// 删除源端过滤规则L1
+void ixc_sec_net_del_src_L1(unsigned char *hwaddr)
+{
+
+}
+
+/// 加入源端过滤规则L2
+int ixc_sec_net_add_src_L2(unsigned char *hwaddr,unsigned char *address,int is_ipv6)
+{
+    return 0;
+}
+
+/// 删除源端过滤规则L2
+void ixc_sec_net_del_src_L2(unsigned char *hwaddr,unsigned char *address,int is_ipv6)
+{
+
+}
+
+/// 加入目标过滤规则
+int ixc_sec_net_add_dst(unsigned char *id,unsigned char *subnet,unsigned char prefix,int is_ipv6)
+{
+    return 0;
+}
+/// 删除目标过滤规则
+void ixc_sec_net_del_dst(unsigned char *id,unsigned char *subnet,unsigned char prefix,int is_ipv6)
+{
+    
 }

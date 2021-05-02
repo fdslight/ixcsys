@@ -23,4 +23,6 @@ int ixc_router_tell(const char *content);
 
 void ixc_router_exit(void);
 
+void ixc_router_md5_calc(void *data,int size,unsigned char *res);
+
 #endif

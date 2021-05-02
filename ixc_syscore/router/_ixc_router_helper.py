@@ -1,5 +1,5 @@
 # !/usr/bin/env python3
-import pickle, os, socket, sys
+import pickle, os, socket, sys, hashlib
 
 import router
 
@@ -891,6 +891,14 @@ class helper(object):
             if self.__pppoe: self.__pppoe.start_lcp()
         if cmd == "lcp_stop":
             if self.__pppoe: self.__pppoe.stop_lcp()
+
+    def calc_md5(self, byte_data: bytes):
+        """计算MD5
+        """
+        md5 = hashlib.md5()
+        md5.update(byte_data)
+
+        return md5.digest()
 
     def loop(self):
         """

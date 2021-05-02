@@ -756,6 +756,38 @@ void ixc_router_exit(void)
     ixc_exit();
 }
 
+void ixc_router_md5_calc(void *data,int size,unsigned char *res)
+{
+    PyObject *pfunc,*result,*args;
+    Py_ssize_t rsize;
+    const char *md5_val;
+    
+    pfunc=PyObject_GetAttrString(py_helper_instance,"calc_md5");
+    if(NULL==pfunc){
+        DBG("cannot found python function calc_md5\r\n");
+        return;
+    }
+
+    args=Py_BuildValue("(y#)",data,size);
+    result=PyObject_CallObject(pfunc, args);
+
+    if(NULL==result){
+        PyErr_Print();
+    }
+
+    PyArg_ParseTuple(result,"y#",&md5_val,&rsize);
+
+    if(rsize!=16){
+        STDERR("wrong python return value length\r\n");
+    }else{
+        memcpy(res,md5_val,16);
+    }
+
+    Py_XDECREF(pfunc);
+    Py_XDECREF(result);
+    Py_XDECREF(args);
+}
+
 static void ixc_python_loop(void)
 {
     PyObject *pfunc,*result;

@@ -46,6 +46,7 @@ struct ixc_sec_net_dst_rule{
     unsigned char mask[16];
     // 是否已经删除
     int is_deleted;
+    int action;
     unsigned char prefix; 
 };
 
@@ -80,6 +81,21 @@ int ixc_sec_net_init(void);
 void ixc_sec_net_uninit(void);
 
 void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m);
+
+/// 加入源端过滤规则L1
+int ixc_sec_net_add_src_L1(unsigned char *hwaddr,int action);
+/// 删除源端过滤规则L1
+void ixc_sec_net_del_src_L1(unsigned char *hwaddr);
+
+/// 加入源端过滤规则L2
+int ixc_sec_net_add_src_L2(unsigned char *hwaddr,unsigned char *address,int is_ipv6);
+/// 删除源端过滤规则L2
+void ixc_sec_net_del_src_L2(unsigned char *hwaddr,unsigned char *address,int is_ipv6);
+
+/// 加入目标过滤规则
+int ixc_sec_net_add_dst(unsigned char *id,unsigned char *subnet,unsigned char prefix,int is_ipv6);
+/// 删除目标过滤规则
+void ixc_sec_net_del_dst(unsigned char *id,unsigned char *subnet,unsigned char prefix,int is_ipv6);
 
 
 #endif
