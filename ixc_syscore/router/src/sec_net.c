@@ -10,6 +10,7 @@
 
 static struct ixc_sec_net sec_net;
 static struct time_wheel sec_net_cache_tw;
+static struct sysloop *sec_net_sysloop=NULL;
 static int sec_net_is_initialized=0;
 
 static void __ixc_sec_net_del_dst_rule(struct ixc_sec_net_src_rule *src_rule,unsigned char *subnet,unsigned char prefix,int is_ipv6)
@@ -106,10 +107,59 @@ static void __ixc_sec_net_cache_timeout(void *data)
     cache->tdata=tdata;
 }
 
+static void __ixc_sec_net_sysloop_fn(struct sysloop *loop)
+{
+    time_wheel_handle(&sec_net_cache_tw);
+}
 
 int ixc_sec_net_init(void)
 {
+    struct map *logv4m,*logv6m,*rule_m;
+    int rs;
+
     bzero(&sec_net,sizeof(struct ixc_sec_net));
+
+    sec_net_sysloop=sysloop_add(__ixc_sec_net_sysloop_fn,NULL);
+    if(NULL==sec_net_sysloop){
+        STDERR("cannot add to sysloop\r\n");
+        return -1;
+    }
+
+    rs=time_wheel_new(&sec_net_cache_tw,(IXC_SEC_NET_CACHE_TIMEOUT*2)/10,10,__ixc_sec_net_cache_timeout,128);
+    if(rs<0){
+        sysloop_del(sec_net_sysloop);
+        STDERR("cannot create new time wheel\r\n");
+        return -1;
+    }
+
+    rs=map_new(&logv4m,4);
+    if(rs<0){
+        sysloop_del(sec_net_sysloop);
+        time_wheel_release(&sec_net_cache_tw);
+        STDERR("cannot create log map for IPv4\r\n");
+        return -1;
+    }
+
+    rs=map_new(&logv6m,16);
+
+    if(rs<0){
+        sysloop_del(sec_net_sysloop);
+        time_wheel_release(&sec_net_cache_tw);
+        map_release(logv4m,NULL);
+        STDERR("cannot create log map for IPv6\r\n");
+        return -1;
+    }
+
+    rs=map_new(&rule_m,6);
+
+    if(rs<0){
+        sysloop_del(sec_net_sysloop);
+        time_wheel_release(&sec_net_cache_tw);
+        map_release(logv4m,NULL);
+        map_release(logv6m,NULL);
+        STDERR("cannot create log map for rule\r\n");
+        return -1;
+    }
 
     sec_net_is_initialized=1;
     return 0;
@@ -165,7 +215,7 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_ru
     }
 
     rs=map_add(mm,(char *)addr,cache);
-    
+
     if(rs<0){
         free(cache);
         tdata->is_deleted=1;
@@ -203,7 +253,7 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
             return;
         }
     }
-    
+
     while(NULL!=dst_rule){
         is_matched=is_same_subnet_with_msk(addr,dst_rule->address,dst_rule->mask,m->is_ipv6);
         if(!is_matched){
@@ -226,7 +276,6 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
         }
         return;
     }
-
     // 检查匹配之后的规则
     if(IXC_SEC_NET_ACT_DROP==dst_rule->action){
         ixc_mbuf_put(m);
@@ -256,7 +305,7 @@ void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m)
     ixc_sec_net_handle_rule(m,src_rule);
 }
 
-/// 加入源端过滤规则L1
+/// 加入源端过滤规则
 int ixc_sec_net_add_src(unsigned char *hwaddr,int action)
 {
     char is_found;
@@ -333,7 +382,6 @@ int ixc_sec_net_add_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned cha
 {
     char is_found;
     struct ixc_sec_net_src_rule *src_rule=map_find(sec_net.rule_m,(char *)hwaddr,&is_found);
-    struct map *m;
     struct ixc_sec_net_dst_rule *dst_rule;
     int exists=0;
     int size=is_ipv6?16:4;
