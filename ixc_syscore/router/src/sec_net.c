@@ -97,12 +97,12 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_ru
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
     struct ixc_sec_net_rule_cache *cache=NULL;
-    struct map *m=m->is_ipv6?src_rule->ip6_cache:src_rule->ip_cache;
+    struct map *mm=m->is_ipv6?src_rule->ip6_cache:src_rule->ip_cache;
     char is_found;
     unsigned char *addr=m->is_ipv6?ip6hdr->dst_addr:iphdr->dst_addr;
     int size=m->is_ipv6?16:4,rs;
     // 首先检查缓存是否存在
-    cache=map_find(m,(char *)addr,&is_found);
+    cache=map_find(mm,(char *)addr,&is_found);
     // 如果缓存存在那么直接返回
     if(NULL!=cache) return 0;
 
@@ -117,7 +117,7 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_ru
     cache->action=dst_rule->action;
     cache->up_time=time(NULL);
 
-    rs=map_add(m,(char *)addr,cache);
+    rs=map_add(mm,(char *)addr,cache);
     if(rs<0){
         free(cache);
         STDERR("cannto add to map\r\n");
