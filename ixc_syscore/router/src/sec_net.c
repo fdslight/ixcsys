@@ -47,11 +47,6 @@ static void __ixc_sec_net_cache_timeout(void *data)
     cache->tdata=tdata;
 }
 
-static void __ixc_sec_count_timeout(void *data)
-{
-
-}
-
 static void __ixc_sec_net_sysloop_fn(struct sysloop *loop)
 {
     time_wheel_handle(&sec_net_cache_tw);
