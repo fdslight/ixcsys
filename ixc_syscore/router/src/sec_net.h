@@ -9,27 +9,8 @@
 #include "../../../pywind/clib/timer.h"
 
 struct ixc_sec_net{
-    // IPv4日志
-    struct map *logv4m;
-    // IPv6日志
-    struct map *logv6m;
     // 规则
     struct map *rule_m;
-};
-
-struct ixc_sec_net_log{
-    unsigned char address[16];
-    // 访问计数
-    unsigned long long acs_count;
-    unsigned char hwaddr[6];
-    // 访问的协议类型
-    unsigned short id;
-    time_t up_time;
-    // 开始时间
-    time_t begin_time;
-    int is_ipv6;
-    // 访问的协议类型
-    unsigned char protocol;
 };
 
 struct ixc_sec_net_src_rule;
@@ -93,10 +74,8 @@ int ixc_sec_net_add_src(unsigned char *hwaddr,int action);
 /// 删除源端过滤规则
 void ixc_sec_net_del_src(unsigned char *hwaddr);
 
-/// 加入目标过滤规则
+/// 加入目标过滤规则,注意删除只能删除src规则然后重新加入
 int ixc_sec_net_add_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned char prefix,int is_ipv6);
-/// 删除目标过滤规则
-void ixc_sec_net_del_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned char prefix,int is_ipv6);
 
 
 #endif

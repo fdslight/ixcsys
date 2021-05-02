@@ -13,65 +13,6 @@ static struct time_wheel sec_net_cache_tw;
 static struct sysloop *sec_net_sysloop=NULL;
 static int sec_net_is_initialized=0;
 
-static void __ixc_sec_net_del_dst_rule(struct ixc_sec_net_src_rule *src_rule,unsigned char *subnet,unsigned char prefix,int is_ipv6)
-{
-    struct ixc_sec_net_dst_rule *dst_rule,*dst_rule_old,*first,*del_dst_rule=NULL,*t;
-    int size,need_deleted=0;
-
-    if(is_ipv6){
-        dst_rule_old=src_rule->v6_dst_rule_head;
-        dst_rule=src_rule->v6_dst_rule_head;
-        size=16;
-    }else{
-        dst_rule_old=src_rule->v4_dst_rule_head;
-        dst_rule=src_rule->v4_dst_rule_head;
-        size=4;
-    }
-    first=dst_rule;
-
-    while(NULL!=dst_rule){
-        // 如果存在那么进行处理
-        if(!memcmp(dst_rule->address,subnet,size) && dst_rule->prefix==prefix){
-            dst_rule->is_deleted=1;
-            // 此处检查缓存计数是否为0,如果不为零那么减少缓存计数
-            if(0!=dst_rule->cache_refcnt){
-                dst_rule->cache_refcnt-=1;
-            }else{
-                del_dst_rule=dst_rule;
-                need_deleted=1;
-            }
-            break;
-        }
-        dst_rule=dst_rule->next;
-    }
-
-    // 如果缓存计数不为0那么就不能删除该规则
-    if(!need_deleted) return;
-    dst_rule=first;
-
-    // 如果是第一个要删除的规则处理
-    if(dst_rule==del_dst_rule){
-        t=dst_rule->next;
-        free(dst_rule);
-        if(is_ipv6) src_rule->v6_dst_rule_head=t;
-        else src_rule->v4_dst_rule_head=t;
-        return;
-    }
-
-    while(NULL!=dst_rule){
-        if(dst_rule!=del_dst_rule){
-            dst_rule_old=dst_rule;
-            dst_rule=dst_rule->next;
-
-            continue;
-        }
-
-        dst_rule_old->next=dst_rule->next;
-        free(dst_rule);
-        break;
-    }
-}
-
 static void __ixc_sec_net_cache_del(void *data)
 {
     struct ixc_sec_net_rule_cache *cache=data;
@@ -80,7 +21,6 @@ static void __ixc_sec_net_cache_del(void *data)
     // 回收内存
     free(cache);
 }
-
 
 static void __ixc_sec_net_cache_timeout(void *data)
 {
@@ -107,6 +47,11 @@ static void __ixc_sec_net_cache_timeout(void *data)
     cache->tdata=tdata;
 }
 
+static void __ixc_sec_count_timeout(void *data)
+{
+
+}
+
 static void __ixc_sec_net_sysloop_fn(struct sysloop *loop)
 {
     time_wheel_handle(&sec_net_cache_tw);
@@ -114,7 +59,7 @@ static void __ixc_sec_net_sysloop_fn(struct sysloop *loop)
 
 int ixc_sec_net_init(void)
 {
-    struct map *logv4m,*logv6m,*rule_m;
+    struct map *rule_m;
     int rs;
 
     bzero(&sec_net,sizeof(struct ixc_sec_net));
@@ -132,34 +77,16 @@ int ixc_sec_net_init(void)
         return -1;
     }
 
-    rs=map_new(&logv4m,4);
-    if(rs<0){
-        sysloop_del(sec_net_sysloop);
-        time_wheel_release(&sec_net_cache_tw);
-        STDERR("cannot create log map for IPv4\r\n");
-        return -1;
-    }
-
-    rs=map_new(&logv6m,16);
-
-    if(rs<0){
-        sysloop_del(sec_net_sysloop);
-        time_wheel_release(&sec_net_cache_tw);
-        map_release(logv4m,NULL);
-        STDERR("cannot create log map for IPv6\r\n");
-        return -1;
-    }
-
     rs=map_new(&rule_m,6);
 
     if(rs<0){
         sysloop_del(sec_net_sysloop);
         time_wheel_release(&sec_net_cache_tw);
-        map_release(logv4m,NULL);
-        map_release(logv6m,NULL);
-        STDERR("cannot create log map for rule\r\n");
+        STDERR("cannot create rule map for rule\r\n");
         return -1;
     }
+
+    sec_net.rule_m=rule_m;
 
     sec_net_is_initialized=1;
     return 0;
@@ -171,12 +98,6 @@ void ixc_sec_net_uninit(void)
 
     sec_net_is_initialized=0;
 }
-
-static void ixc_sec_net_log_write_and_send(struct ixc_mbuf *m)
-{
-    ixc_route_handle(m);
-}
-
 
 /// 加入到缓存
 static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_rule *dst_rule)
@@ -248,7 +169,7 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
             if(IXC_SEC_NET_ACT_DROP==cache->action){
                 ixc_mbuf_put(m);
             }else{
-                ixc_sec_net_log_write_and_send(m);
+                ixc_route_handle(m);
             }
             return;
         }
@@ -272,7 +193,7 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
         if(IXC_SEC_NET_ACT_DROP==rule->action){
             ixc_mbuf_put(m);
         }else{
-            ixc_sec_net_log_write_and_send(m);
+            ixc_route_handle(m);
         }
         return;
     }
@@ -280,7 +201,7 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
     if(IXC_SEC_NET_ACT_DROP==dst_rule->action){
         ixc_mbuf_put(m);
     }else{
-        ixc_sec_net_log_write_and_send(m);
+        ixc_route_handle(m);
     }
 }
 
@@ -299,7 +220,7 @@ void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m)
 
     // 找不到规则那么就通过
     if(NULL==src_rule){
-        ixc_sec_net_log_write_and_send(m);
+        ixc_route_handle(m);
         return;
     }
     ixc_sec_net_handle_rule(m,src_rule);
@@ -432,17 +353,4 @@ int ixc_sec_net_add_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned cha
     }
 
     return 0;
-}
-
-/// 删除目标过滤规则
-void ixc_sec_net_del_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned char prefix,int is_ipv6)
-{
-    char is_found;
-    struct ixc_sec_net_src_rule *src_rule=map_find(sec_net.rule_m,(char *)hwaddr,&is_found);
-
-    if(NULL==src_rule){
-        STDERR("not found source rule\r\n");
-        return;
-    }
-    __ixc_sec_net_del_dst_rule(src_rule,subnet,prefix,is_ipv6);
 }
