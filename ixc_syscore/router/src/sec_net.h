@@ -12,10 +12,6 @@ struct ixc_sec_net{
     struct map *logv4m;
     // IPv6日志
     struct map *logv6m;
-    // IPv4缓存
-    struct map *cache_m;
-    // IPv6缓存
-    struct map *cache6_m;
     // 规则
     struct map *rule_m;
 };
@@ -35,9 +31,10 @@ struct ixc_sec_net_log{
     unsigned char protocol;
 };
 
+struct ixc_sec_net_src_rule;
 /// 目标规则器
 struct ixc_sec_net_dst_rule{
-    struct ixc_sec_net_src_rule_L2 *src_L2_rule;
+    struct ixc_sec_net_src_rule *src_rule;
     struct ixc_sec_net_dst_rule *next;
 
     unsigned char address[16];
@@ -50,8 +47,13 @@ struct ixc_sec_net_dst_rule{
 
 /// 源过滤器
 struct ixc_sec_net_src_rule{
-    struct map *ip_m;
-    struct map *ip6_m;
+    struct ixc_sec_net_dst_rule *v4_dst_rule_head;
+    struct ixc_sec_net_dst_rule *v6_dst_rule_head;
+    // IPv4缓存
+    struct map *ip_cache;
+    // IPv6缓存
+    struct map *ip6_cache;
+    // 硬件地址
     unsigned char hwaddr[6];
     char pad[2];
     // 动作类型

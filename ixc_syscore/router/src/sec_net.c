@@ -31,15 +31,36 @@ void ixc_sec_net_uninit(void)
 
 static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_rule *rule)
 {
-    struct map *m=m->is_ipv6?rule->ip6_m:rule->ip_m;
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
-    char is_found;
-    unsigned char *key=m->is_ipv6?ip6hdr->dst_addr:iphdr->dst_addr;
-    struct ixc_sec_net_dst_rule *dst_rule;
+    struct ixc_sec_net_dst_rule *dst_rule=m->is_ipv6?rule->v6_dst_rule_head:rule->v4_dst_rule_head;
+    unsigned char *addr=m->is_ipv6?ip6hdr->dst_addr:iphdr->dst_addr;
+    int is_matched=0;
 
+    while(NULL!=dst_rule){
+        is_matched=is_same_subnet_with_msk(addr,dst_rule->address,dst_rule->mask,m->is_ipv6);
+        if(!is_matched){
+            dst_rule=dst_rule->next;
+            continue;
+        }
+        break;
+    }
+
+    if(!is_matched){
+        if(IXC_SEC_NET_ACT_DROP==rule->action){
+            ixc_mbuf_put(m);
+        }else{
+            ixc_route_handle(m);
+        }
+        return;
+    }
     
-
+    // 检查匹配之后的规则
+    if(IXC_SEC_NET_ACT_DROP==dst_rule->action){
+        ixc_mbuf_put(m);
+    }else{
+        ixc_route_handle(m);
+    }
 }
 
 void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m)
