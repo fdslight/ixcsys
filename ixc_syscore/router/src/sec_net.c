@@ -134,6 +134,26 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
     struct ixc_sec_net_dst_rule *dst_rule=m->is_ipv6?rule->v6_dst_rule_head:rule->v4_dst_rule_head;
     unsigned char *addr=m->is_ipv6?ip6hdr->dst_addr:iphdr->dst_addr;
     int is_matched=0;
+    char is_found;
+    struct ixc_sec_net_rule_cache *cache;
+
+    // 首先查找缓存是否存在
+    cache=map_find(m,(char *)addr,&is_found);
+    if(NULL!=cache){
+        // 检查缓存是否有效,无效的缓存那么忽略
+        if(cache->dst_rule->is_deleted){
+            cache=NULL;
+        }else{
+            cache->up_time=time(NULL);
+            if(IXC_SEC_NET_ACT_DROP==cache->action){
+                ixc_mbuf_put(m);
+            }else{
+                ixc_sec_net_log_write_and_send(m);
+            }
+            return;
+        }
+    }
+    
 
     while(NULL!=dst_rule){
         is_matched=is_same_subnet_with_msk(addr,dst_rule->address,dst_rule->mask,m->is_ipv6);
@@ -299,7 +319,7 @@ void ixc_sec_net_del_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned ch
 
     if(NULL==src_rule){
         STDERR("not found source rule\r\n");
-        return -1;
+        return;
     }
     __ixc_sec_net_del_dst_rule(src_rule,subnet,prefix,is_ipv6);
 }
