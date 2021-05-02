@@ -8,6 +8,7 @@
 #include "../../../pywind/clib/netutils.h"
 
 static struct ixc_sec_net sec_net;
+static struct time_wheel sec_net_cache_tw;
 static int sec_net_is_initialized=0;
 
 static void __ixc_sec_net_del_dst_rule(struct ixc_sec_net_src_rule *src_rule,unsigned char *subnet,unsigned char prefix,int is_ipv6)
@@ -69,6 +70,42 @@ static void __ixc_sec_net_del_dst_rule(struct ixc_sec_net_src_rule *src_rule,uns
     }
 }
 
+static void __ixc_sec_net_cache_del(void *data)
+{
+    struct ixc_sec_net_rule_cache *cache=data;
+
+    if(NULL!=cache->tdata) cache->tdata->is_deleted=1;
+    // 回收内存
+    free(cache);
+}
+
+
+static void __ixc_sec_net_cache_timeout(void *data)
+{
+    struct ixc_sec_net_rule_cache *cache=data;
+    struct ixc_sec_net_dst_rule *dst_rule=cache->dst_rule;
+    struct ixc_sec_net_src_rule *src_rule=dst_rule->src_rule;
+    struct time_data *tdata=NULL;
+
+    time_t now=time(NULL);
+
+    if(now-cache->up_time>=IXC_SEC_NET_CACHE_TIMEOUT){
+ __CACHE_DEL:
+        if(cache->is_ipv6) map_del(src_rule->ip6_cache,(char *)cache->address,__ixc_sec_net_cache_del);
+        else map_del(src_rule->ip_cache,(char *)cache->address,__ixc_sec_net_cache_del);
+        return;
+    }
+
+    tdata=time_wheel_add(&sec_net_cache_tw,cache,10);
+    if(NULL==tdata){
+        STDERR("cannot add to time wheel\r\n");
+        goto __CACHE_DEL;
+    }
+
+    cache->tdata=tdata;
+}
+
+
 int ixc_sec_net_init(void)
 {
     bzero(&sec_net,sizeof(struct ixc_sec_net));
@@ -116,6 +153,7 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_ru
     cache->dst_rule=dst_rule;
     cache->action=dst_rule->action;
     cache->up_time=time(NULL);
+    cache->is_ipv6=m->is_ipv6;
 
     rs=map_add(mm,(char *)addr,cache);
     if(rs<0){
@@ -123,6 +161,8 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_ru
         STDERR("cannto add to map\r\n");
         return -1;
     }
+
+
 
     return 0;
 }
@@ -252,7 +292,31 @@ int ixc_sec_net_add_src(unsigned char *hwaddr,int action)
 /// 删除源端过滤规则L1
 void ixc_sec_net_del_src(unsigned char *hwaddr)
 {
+    char is_found;
+    struct ixc_sec_net_src_rule *rule=map_find(sec_net.rule_m,(char *)hwaddr,&is_found);
+    struct ixc_sec_net_dst_rule *dst_rules[]={
+        rule->v4_dst_rule_head,
+        rule->v6_dst_rule_head
+    };
+    struct ixc_sec_net_dst_rule *dst_rule,*t;
 
+    if(NULL==rule) return;
+
+    // 首先清除所有缓存
+    map_release(rule->ip_cache,__ixc_sec_net_cache_del);
+    map_release(rule->ip6_cache,__ixc_sec_net_cache_del);
+
+    // 清除所有的的目标规则
+    for(int n=0;n<2;n++){
+        dst_rule=dst_rules[n];
+        while(NULL!=dst_rule){
+            t=dst_rule->next;
+            free(dst_rule);
+            dst_rule=t;
+        }
+    }
+
+    free(rule);
 }
 
 /// 加入目标过滤规则

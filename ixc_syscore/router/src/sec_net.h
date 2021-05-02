@@ -6,6 +6,7 @@
 #include "mbuf.h"
 
 #include "../../../pywind/clib/map.h"
+#include "../../../pywind/clib/timer.h"
 
 struct ixc_sec_net{
     // IPv4日志
@@ -60,23 +61,26 @@ struct ixc_sec_net_src_rule{
     char pad[2];
     // 动作类型
     int action;
-    // 是否删除
-    int is_deleted;
 };
 
 /// 缓存
 struct ixc_sec_net_rule_cache{
     // 指向的目标规则
     struct ixc_sec_net_dst_rule *dst_rule;
+    struct time_data *tdata;
     unsigned char address[16];
     time_t up_time;
     int action;
+    int is_ipv6;
 };
 
 /// 丢弃数据包
 #define IXC_SEC_NET_ACT_DROP 0
 /// 接受数据包
 #define IXC_SEC_NET_ACT_ACCEPT 1
+
+/// 缓存超时时间
+#define IXC_SEC_NET_CACHE_TIMEOUT 600
 
 
 int ixc_sec_net_init(void);
