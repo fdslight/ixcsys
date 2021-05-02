@@ -156,18 +156,13 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
     // 首先查找缓存是否存在
     cache=map_find(mm,(char *)addr,&is_found);
     if(NULL!=cache){
-        // 检查缓存是否有效,无效的缓存那么忽略
-        if(cache->dst_rule->is_deleted){
-            cache=NULL;
+        cache->up_time=time(NULL);
+        if(IXC_SEC_NET_ACT_DROP==cache->action){
+            ixc_mbuf_put(m);
         }else{
-            cache->up_time=time(NULL);
-            if(IXC_SEC_NET_ACT_DROP==cache->action){
-                ixc_mbuf_put(m);
-            }else{
-                ixc_route_handle(m);
-            }
-            return;
+            ixc_route_handle(m);
         }
+        return;
     }
 
     while(NULL!=dst_rule){
@@ -176,12 +171,7 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
             dst_rule=dst_rule->next;
             continue;
         }
-        if(!dst_rule->is_deleted){
-            break;
-        }else{
-            is_matched=0;
-            dst_rule=dst_rule->next;
-        }
+        break;
     }
 
     if(!is_matched){

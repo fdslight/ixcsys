@@ -23,8 +23,6 @@ struct ixc_sec_net_dst_rule{
     unsigned char mask[16];
     // 缓存引用计数
     unsigned long long cache_refcnt;
-    // 是否已经删除
-    int is_deleted;
     int action;
     unsigned char prefix; 
 };
