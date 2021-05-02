@@ -17,7 +17,7 @@ struct ixc_sec_net{
     // IPv6缓存
     struct map *cache6_m;
     // 规则
-    struct map *rule;
+    struct map *rule_m;
 };
 
 struct ixc_sec_net_log{
@@ -35,8 +35,6 @@ struct ixc_sec_net_log{
     unsigned char protocol;
 };
 
-struct ixc_sec_net_src_rule_L2;
-
 /// 目标规则器
 struct ixc_sec_net_dst_rule{
     struct ixc_sec_net_src_rule_L2 *src_L2_rule;
@@ -50,8 +48,8 @@ struct ixc_sec_net_dst_rule{
     unsigned char prefix; 
 };
 
-/// 一级过滤器
-struct ixc_sec_net_src_rule_L1{
+/// 源过滤器
+struct ixc_sec_net_src_rule{
     struct map *ip_m;
     struct map *ip6_m;
     unsigned char hwaddr[6];
@@ -59,17 +57,6 @@ struct ixc_sec_net_src_rule_L1{
     // 动作类型
     int action;
 };
-
-/// 二级源端过滤器
-struct ixc_sec_net_src_rule_L2{
-    struct ixc_sec_src_rule_L1 *L1_rule;
-    struct ixc_sec_net_dst_rule *dst_rule_head;
-
-    unsigned char address[16];
-    int action;
-    int is_ipv6;
-};
-
 
 /// 丢弃数据包
 #define IXC_SEC_NET_ACT_DROP 0
@@ -83,19 +70,14 @@ void ixc_sec_net_uninit(void);
 void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m);
 
 /// 加入源端过滤规则L1
-int ixc_sec_net_add_src_L1(unsigned char *hwaddr,int action);
+int ixc_sec_net_add_src(unsigned char *hwaddr,int action);
 /// 删除源端过滤规则L1
-void ixc_sec_net_del_src_L1(unsigned char *hwaddr);
-
-/// 加入源端过滤规则L2
-int ixc_sec_net_add_src_L2(unsigned char *hwaddr,unsigned char *address,int is_ipv6);
-/// 删除源端过滤规则L2
-void ixc_sec_net_del_src_L2(unsigned char *hwaddr,unsigned char *address,int is_ipv6);
+void ixc_sec_net_del_src(unsigned char *hwaddr);
 
 /// 加入目标过滤规则
-int ixc_sec_net_add_dst(unsigned char *id,unsigned char *subnet,unsigned char prefix,int is_ipv6);
+int ixc_sec_net_add_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned char prefix,int is_ipv6);
 /// 删除目标过滤规则
-void ixc_sec_net_del_dst(unsigned char *id,unsigned char *subnet,unsigned char prefix,int is_ipv6);
+void ixc_sec_net_del_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned char prefix,int is_ipv6);
 
 
 #endif
