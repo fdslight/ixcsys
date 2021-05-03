@@ -12,6 +12,31 @@
 
 #include "../../../pywind/clib/debug.h"
 
+/// 是否开启以太网流量监控,如果开启那么将向指定的网卡发送一份出口数据
+static int ether_net_monitor_enable=0;
+/// 网络重定向硬件地址
+static unsigned char ether_net_monitor_fwd_hwaddr[6];
+
+
+/// 拷贝到监控主机
+static void ixc_ether_copy_to_monitor_host(struct ixc_mbuf *mbuf)
+{
+    struct ixc_mbuf *m=ixc_mbuf_clone(mbuf);
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
+    struct ixc_ether_header *eth_header=NULL;
+
+    if(NULL==m) return;
+
+    eth_header=(struct ixc_ether_header *)(m->data+m->begin);
+
+    // 修改网卡为内网网口
+    m->netif=netif;
+    // 修改目标mac地址
+    memcpy(eth_header->dst_hwaddr,ether_net_monitor_fwd_hwaddr,6);
+    // 发送数据
+    ixc_netif_send(m);
+}
+
 int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
 {
     struct ixc_ether_header eth_header;
@@ -46,6 +71,10 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
     if(size<60){
         bzero(mbuf->data+mbuf->end,60-size);
         mbuf->end+=(60-size);
+    }
+    
+    if(ether_net_monitor_enable && mbuf->netif->type==IXC_NETIF_WAN){
+        ixc_ether_copy_to_monitor_host(mbuf);
     }
  
     ixc_netif_send(mbuf);
@@ -170,6 +199,10 @@ int ixc_ether_send2(struct ixc_mbuf *m)
         m->end+=(60-size);
     }
 
+    if(ether_net_monitor_enable && m->netif->type==IXC_NETIF_WAN){
+        ixc_ether_copy_to_monitor_host(m);
+    }
+
     ixc_netif_send(m);
 
     return 0;
@@ -208,5 +241,13 @@ int ixc_ether_is_self(struct ixc_netif *netif,unsigned char *hwaddr)
     if(!memcmp(all_zero,hwaddr,6)) return 1;
     if(!memcmp(hwaddr,netif->hwaddr,6)) return 1;
     
+    return 0;
+}
+
+int ixc_ether_net_monitor_set(int enable,unsigned char *hwaddr)
+{
+    ether_net_monitor_enable=enable;
+    if(NULL!=hwaddr) memcpy(ether_net_monitor_fwd_hwaddr,hwaddr,6);
+
     return 0;
 }

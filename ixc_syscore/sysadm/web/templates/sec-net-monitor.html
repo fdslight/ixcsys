@@ -1,0 +1,36 @@
+<div id="ixc-sec-net-monitor-view" class="ixc-menu-content" style="display: none;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/sec-net-monitor">
+        <h4>流量监控设置</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-group row">
+            <label for="inputEmail3" class="col-sm-4 col-form-label">监控主机MAC地址</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" name="hwaddr" placeholder="硬件地址"
+                       value="${self.V['hwaddr']}"/>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-4">开启</div>
+            <div class="col-sm-8">
+                <div class="form-check">
+                    <%
+                        s="""<input class="form-check-input" type="checkbox" value="1" name="enable" {}/>"""
+                        if self.V["enable"]:x=s.format("checked")
+                        else:x=s.format("{}")
+                        self.show(x)
+                    %>
+                    <label class="form-check-label" for="gridCheck1">
+                        开启
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            </div>
+        </div>
+    </form>
+</div>

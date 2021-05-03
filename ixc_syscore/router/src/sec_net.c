@@ -25,8 +25,7 @@ static void __ixc_sec_net_cache_del(void *data)
 static void __ixc_sec_net_cache_timeout(void *data)
 {
     struct ixc_sec_net_rule_cache *cache=data;
-    struct ixc_sec_net_dst_rule *dst_rule=cache->dst_rule;
-    struct ixc_sec_net_src_rule *src_rule=dst_rule->src_rule;
+    struct ixc_sec_net_src_rule *src_rule=cache->src_rule;
     struct time_data *tdata=NULL;
 
     time_t now=time(NULL);
@@ -95,9 +94,8 @@ void ixc_sec_net_uninit(void)
 }
 
 /// 加入到缓存
-static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_rule *dst_rule)
+static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_src_rule *src_rule)
 {
-    struct ixc_sec_net_src_rule *src_rule=dst_rule->src_rule;
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
     struct ixc_sec_net_rule_cache *cache=NULL;
@@ -118,10 +116,10 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_dst_ru
     }
     memcpy(cache->address,addr,size);
 
-    cache->dst_rule=dst_rule;
-    cache->action=dst_rule->action;
+    cache->action=IXC_SEC_NET_ACT_DROP==src_rule->action?IXC_SEC_NET_ACT_ACCEPT:IXC_SEC_NET_ACT_DROP;
     cache->up_time=time(NULL);
     cache->is_ipv6=m->is_ipv6;
+    cache->src_rule=src_rule;
 
     tdata=time_wheel_add(&sec_net_cache_tw,cache,10);
     if(NULL==tdata){
@@ -173,6 +171,9 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
         }
         break;
     }
+
+    // 加入到缓存
+    ixc_sec_net_add_to_cache(m,rule);
 
     if(!is_matched){
         if(IXC_SEC_NET_ACT_DROP==rule->action){
@@ -229,13 +230,21 @@ int ixc_sec_net_add_src(unsigned char *hwaddr,int action)
         DBG("cannot malloc for struct ixc_sec_net_src_rule_L1\r\n");
         return -2;
     }
+
     bzero(rule,sizeof(struct ixc_sec_net_src_rule));
     rule->action=action;
     memcpy(rule->hwaddr,hwaddr,6);
 
+    rs=map_add(sec_net.rule_m,(char *)hwaddr,rule);
+    if(rs<0){
+        STDERR("cannot add source rule\r\n");
+        return -1;
+    }
+
     rs=map_new(&m1,4);
     if(rs<0){
         free(rule);
+        map_del(sec_net.rule_m,(char *)hwaddr,NULL);
         STDERR("no memory for create map\r\n");
         return -3;
     }
@@ -243,6 +252,7 @@ int ixc_sec_net_add_src(unsigned char *hwaddr,int action)
     if(rs<0){
         free(rule);
         map_release(m1,NULL);
+        map_del(sec_net.rule_m,(char *)hwaddr,NULL);
         STDERR("no memory for create map\r\n");
         return -4;
     }

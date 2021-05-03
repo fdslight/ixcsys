@@ -44,8 +44,7 @@ struct ixc_sec_net_src_rule{
 
 /// 缓存
 struct ixc_sec_net_rule_cache{
-    // 指向的目标规则
-    struct ixc_sec_net_dst_rule *dst_rule;
+    struct ixc_sec_net_src_rule *src_rule;
     struct time_data *tdata;
     unsigned char address[16];
     time_t up_time;

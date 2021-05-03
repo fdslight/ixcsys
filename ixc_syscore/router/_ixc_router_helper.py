@@ -1,4 +1,5 @@
 # !/usr/bin/env python3
+import json
 import pickle, os, socket, sys, hashlib
 
 import router
@@ -51,9 +52,18 @@ class rpc(object):
             "port_map_add": self.port_map_add,
             "port_map_del": self.port_map_del,
             "port_map_configs_get": self.port_map_configs_get,
+
             "src_filter_set_ip": self.src_filter_set_ip,
             "src_filter_enable": self.src_filter_enable,
             "src_filter_set_protocols": self.src_filter_set_protocols,
+
+            "sec_net_add_src": self.sec_net_add_src,
+            "sec_net_del_src": self.sec_net_del_src,
+            "sec_net_add_dst": self.sec_net_add_dst,
+            "sec_net_config_get": self.sec_net_config_get,
+            "net_monitor_set": self.net_monitor_set,
+            "net_monitor_config_get": self.net_monitor_config_get,
+
             "config_save": self.save
         }
 
@@ -81,6 +91,8 @@ class rpc(object):
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
+            "IXC_SEC_NET_ACT_DROP": router.IXC_SEC_NET_ACT_DROP,
+            "IXC_SEC_NET_ACT_ACCEPT": router.IXC_SEC_NET_ACT_ACCEPT,
         }
 
         return 0, values
@@ -434,6 +446,9 @@ class rpc(object):
         self.__helper.save_wan_configs()
         self.__helper.save_lan_configs()
         self.__helper.save_router_configs()
+        self.__helper.save_net_monitor_configs()
+        self.__helper.save_sec_net_configs()
+
         return 0, None
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
@@ -489,6 +504,83 @@ class rpc(object):
 
         return 0, self.__helper.router.src_filter_set_protocols(byte_data)
 
+    def sec_net_add_src(self, hwaddr: str, action: str):
+        if not netutils.is_hwaddr(hwaddr):
+            return RPC.ERR_ARGS, "wrong hwaddr value"
+
+        if action not in ("accept", "drop",):
+            return RPC.ERR_ARGS, "wrong action value"
+
+        if hwaddr in self.__helper.sec_net_configs:
+            return RPC.ERR_SYS, "source rule %s exists" % hwaddr
+
+        self.__helper.sec_net_configs[hwaddr] = {"global_action": action, "rules": {}}
+
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+        return 0, self.__helper.router.sec_net_add_src(byte_hwaddr, action)
+
+    def sec_net_del_src(self, hwaddr: str):
+        if not netutils.is_hwaddr(hwaddr):
+            return RPC.ERR_ARGS, "wrong hwaddr value"
+
+        if hwaddr not in self.__helper.sec_net_configs: return
+
+        del self.__helper.sec_net_configs[hwaddr]
+
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+
+        return 0, self.__helper.router.sec_net_del_src(byte_hwaddr)
+
+    def sec_net_add_dst(self, hwaddr: str, subnet: str, prefix: int, is_ipv6=False):
+        if not netutils.is_hwaddr(hwaddr):
+            return RPC.ERR_ARGS, "wrong hwaddr value"
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+
+        if prefix < 0:
+            return RPC.ERR_ARGS, "wrong prefix value %s" % prefix
+
+        if is_ipv6 and prefix > 128:
+            return RPC.ERR_ARGS, "wrong prefix value %s" % prefix
+
+        if not is_ipv6 and prefix > 32:
+            return RPC.ERR_ARGS, "wrong prefix value %s" % prefix
+
+        if is_ipv6:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+
+        byte_subnet = socket.inet_pton(fa, subnet)
+
+        if hwaddr not in self.__helper.sec_net_configs:
+            return RPC.ERR_SYS, "not found source rule %s" % hwaddr
+
+        # 首先检查规则是否存在
+        rules = self.__helper.sec_net_configs[hwaddr]["rules"]
+        # 如果存在
+        for _subnet, _prefix in rules:
+            if _subnet == subnet and prefix == _prefix: return 0, True
+
+        return 0, self.__helper.router.sec_net_add_dst(byte_hwaddr, byte_subnet, prefix, is_ipv6)
+
+    def sec_net_config_get(self):
+        return 0, self.__helper.sec_net_configs
+
+    def net_monitor_set(self, hwaddr: str, enable=False):
+        if enable and not netutils.is_hwaddr(hwaddr):
+            return RPC.ERR_ARGS, "wrong hwaddr value"
+
+        if not enable:
+            self.__helper.net_monitor_configs["enable"] = False
+            return 0, self.__helper.router.net_monitor_set(False, b"")
+
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+        self.__helper.net_monitor_configs["enable"] = True
+        return 0, self.__helper.router.net_monitor_set(True, byte_hwaddr)
+
+    def net_monitor_config_get(self):
+        return 0, self.__helper.net_monitor_configs
+
 
 class helper(object):
     __WAN_BR_NAME = None
@@ -507,6 +599,8 @@ class helper(object):
     __wan_configs = None
     __router_configs = None
     __port_map_configs = None
+    __net_monitor_configs = None
+    __sec_net_rules = None
 
     __is_linux = None
     __scgi_fd = None
@@ -543,6 +637,32 @@ class helper(object):
     def load_port_map_configs(self):
         path = "%s/port_map.ini" % self.__conf_dir
         self.__port_map_configs = conf.ini_parse_from_file(path)
+
+    def load_net_monitor_configs(self):
+        path = "%s/net_monitor.json" % self.__conf_dir
+        with open(path, "r") as f:
+            s = f.read()
+        f.close()
+        self.__net_monitor_configs = json.loads(s)
+
+    def load_sec_net_configs(self):
+        path = "%s/sec_net.json" % self.__conf_dir
+        with open(path, "r") as f:
+            s = f.read()
+        f.close()
+        self.__sec_net_rules = json.loads(s)
+
+    def save_sec_net_configs(self):
+        path = "%s/sec_net.json" % self.__conf_dir
+        with open(path, "w") as f:
+            f.write(json.dumps(self.__sec_net_rules))
+        f.close()
+
+    def save_net_monitor_configs(self):
+        path = "%s/net_monitor.json" % self.__conf_dir
+        with open(path, "w") as f:
+            f.write(json.dumps(self.__net_monitor_configs))
+        f.close()
 
     def save_router_configs(self):
         path = "%s/router.ini" % self.__conf_dir
@@ -602,6 +722,14 @@ class helper(object):
     def pppoe_passwd(self):
         return self.__pppoe_passwd
 
+    @property
+    def net_monitor_configs(self):
+        return self.__net_monitor_configs
+
+    @property
+    def sec_net_configs(self):
+        return self.__sec_net_rules
+
     def release(self):
         if self.is_linux:
             os.system("ip link set %s down" % self.__LAN_NAME)
@@ -650,6 +778,46 @@ class helper(object):
         os.system(cmd)
 
         return s
+
+    def start_security(self):
+        """打开安全网络
+        """
+        self.load_net_monitor_configs()
+        self.load_sec_net_configs()
+
+        hwaddr = self.__net_monitor_configs["hwaddr"]
+        if self.__net_monitor_configs["enable"]:
+            byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+
+            self.router.net_monitor_set(True, byte_hwaddr)
+
+        for hwaddr in self.__sec_net_rules:
+            byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+            o = self.__sec_net_rules[hwaddr]
+
+            action = o["global_action"]
+            rules = o["rules"]
+
+            if action == "accept":
+                n_action = router.IXC_SEC_NET_ACT_ACCEPT
+            else:
+                n_action = router.IXC_SEC_NET_ACT_DROP
+
+            x = self.router.sec_net_add_src(byte_hwaddr, n_action)
+            if not x: continue
+
+            for rule in rules:
+                t = tuple(rule)
+                ipaddr, prefix = t
+                is_ipv6 = False
+                if netutils.is_ipv4_address(ipaddr):
+                    byte_ipaddr = socket.inet_pton(socket.AF_INET, ipaddr)
+                else:
+                    is_ipv6 = True
+                    byte_ipaddr = socket.inet_pton(socket.AF_INET6, ipaddr)
+                prefix = int(prefix)
+                self.router.sec_net_add_dst(byte_hwaddr, byte_ipaddr, prefix, is_ipv6)
+            ''''''
 
     def start_lan(self):
         self.load_lan_configs()
@@ -840,6 +1008,8 @@ class helper(object):
 
         self.load_port_map_configs()
         self.reset_port_map()
+
+        self.start_security()
 
     @property
     def router(self):

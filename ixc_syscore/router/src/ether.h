@@ -32,4 +32,5 @@ int ixc_ether_get_multi_hwaddr_by_ipv6(unsigned char *ip6,unsigned char *result)
 /// 是否是自身的地址
 int ixc_ether_is_self(struct ixc_netif *netif,unsigned char *hwaddr);
 
+int ixc_ether_net_monitor_set(int enable,unsigned char *hwaddr);
 #endif

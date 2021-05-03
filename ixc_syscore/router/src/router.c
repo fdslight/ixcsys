@@ -605,7 +605,16 @@ router_sec_net_add_src(PyObject *self,PyObject *args)
 
     if(!PyArg_ParseTuple(args,"y#i",&hwaddr,&size,&action)) return NULL;
 
-    Py_RETURN_NONE;
+    if(6!=size){
+        PyErr_SetString(PyExc_ValueError,"wrong hwaddr length");
+        return NULL;
+    }
+
+    if(ixc_sec_net_add_src(hwaddr,action)<0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
 }
 
 static PyObject *
@@ -615,12 +624,63 @@ router_sec_net_del_src(PyObject *self,PyObject *args)
     Py_ssize_t size;
     if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
 
+    if(6!=size){
+        PyErr_SetString(PyExc_ValueError,"wrong hwaddr length");
+        return NULL;
+    }
+
+    ixc_sec_net_del_src(hwaddr);
     Py_RETURN_NONE;
 }
 
 static PyObject *
 router_sec_net_add_dst(PyObject *self,PyObject *args)
 {
+    unsigned char *hwaddr,*subnet,prefix;
+    Py_ssize_t size1,size2;
+    int is_ipv6;
+
+    if(!PyArg_ParseTuple(args,"y#y#Bp",&hwaddr,&size1,&subnet,&size2,&prefix,&is_ipv6)) 
+        return NULL;
+
+    if(6!=size1){
+        PyErr_SetString(PyExc_ValueError,"wrong hwaddr length");
+        return NULL;
+    }
+
+    if(is_ipv6 && prefix>128){
+        PyErr_SetString(PyExc_ValueError,"wrong subnet value length for IPv6");
+        return NULL;
+    }
+
+    if(!is_ipv6 && prefix>32){
+        PyErr_SetString(PyExc_ValueError,"wrong subnet value length for IPv4");
+        return NULL; 
+    }
+
+    if(ixc_sec_net_add_dst(hwaddr,subnet,prefix,is_ipv6)<0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_net_monitor_set(PyObject *self,PyObject *args)
+{
+    unsigned char *hwaddr;
+    int enable;
+    Py_ssize_t size;
+
+    if(!PyArg_ParseTuple(args,"py#",&enable,&hwaddr,&size)) return NULL;
+
+    if(enable && 6!=size){
+        PyErr_SetString(PyExc_ValueError,"wrong hwaddr length");
+        return NULL;
+    }
+
+    ixc_ether_net_monitor_set(enable,hwaddr);
+
     Py_RETURN_NONE;
 }
 
@@ -676,7 +736,8 @@ static PyMethodDef routerMethods[]={
     {"sec_net_add_src",(PyCFunction)router_sec_net_add_src,METH_VARARGS,"add security network rule"},
     {"sec_net_del_src",(PyCFunction)router_sec_net_del_src,METH_VARARGS,"delete security network rule"},
     {"sec_net_add_dst",(PyCFunction)router_sec_net_add_dst,METH_VARARGS,"add dst security network rule"},
-
+    //
+    {"net_monitor_set",(PyCFunction)router_net_monitor_set,METH_VARARGS,"set network monitor"},
     {NULL,NULL,0,NULL}
 };
 

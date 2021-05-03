@@ -143,7 +143,6 @@ class dhcp_client(object):
         self.__my_ipaddr = self.__dhcp_parser.yiaddr
 
         self.__dhcp_builder.reset()
-        self.__dhcp_builder.ciaddr = self.__hwaddr
         self.__dhcp_builder.xid = self.__xid
 
         new_opts = [
@@ -163,6 +162,7 @@ class dhcp_client(object):
             new_opts,
             is_server=False
         )
+
         self.__runtime.send_dhcp_client_msg(byte_data)
         # 此处发送ARP数据包进行验证IP地址是否重复
         self.__runtime.send_arp_request(self.__hwaddr, self.__my_ipaddr, is_server=False)
