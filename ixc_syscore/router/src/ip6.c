@@ -10,6 +10,7 @@
 #include "route.h"
 #include "addr_map.h"
 #include "global.h"
+#include "sec_net.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -68,6 +69,7 @@ static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
         return;
     }
 
+    //ixc_sec_net_handle_from_lan(m);
     ixc_route_handle(m);
 }
 

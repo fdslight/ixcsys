@@ -514,10 +514,15 @@ class rpc(object):
         if hwaddr in self.__helper.sec_net_configs:
             return RPC.ERR_SYS, "source rule %s exists" % hwaddr
 
-        self.__helper.sec_net_configs[hwaddr] = {"global_action": action, "rules": {}}
+        if action == "accept":
+            n_act = router.IXC_SEC_NET_ACT_ACCEPT
+        else:
+            n_act = router.IXC_SEC_NET_ACT_DROP
+
+        self.__helper.sec_net_configs[hwaddr] = {"global_action": action, "rules": []}
 
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
-        return 0, self.__helper.router.sec_net_add_src(byte_hwaddr, action)
+        return 0, self.__helper.router.sec_net_add_src(byte_hwaddr, n_act)
 
     def sec_net_del_src(self, hwaddr: str):
         if not netutils.is_hwaddr(hwaddr):
@@ -560,6 +565,8 @@ class rpc(object):
         # 如果存在
         for _subnet, _prefix in rules:
             if _subnet == subnet and prefix == _prefix: return 0, True
+
+        rules.append((subnet, prefix,))
 
         return 0, self.__helper.router.sec_net_add_dst(byte_hwaddr, byte_subnet, prefix, is_ipv6)
 

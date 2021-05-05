@@ -183,19 +183,19 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
         }
         return;
     }
-    // 检查匹配之后的规则
+    // 检查匹配之后的规则,匹配的规则和全局动作相反
     if(IXC_SEC_NET_ACT_DROP==dst_rule->action){
-        ixc_mbuf_put(m);
-    }else{
         ixc_route_handle(m);
+    }else{
+        ixc_mbuf_put(m);
     }
 }
 
 void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m)
 {
     unsigned char unspec_hwaddr[]={
-        0xff,0xff,0xff,
-        0xff,0xff,0xff
+        0x00,0x00,0x00,
+        0x00,0x00,0x00
     };
     char is_found;
     struct ixc_sec_net_src_rule *src_rule;
@@ -206,9 +206,12 @@ void ixc_sec_net_handle_from_lan(struct ixc_mbuf *m)
 
     // 找不到规则那么就通过
     if(NULL==src_rule){
+        //DBG_FLAGS;
         ixc_route_handle(m);
         return;
     }
+
+    //DBG_FLAGS;
     ixc_sec_net_handle_rule(m,src_rule);
 }
 

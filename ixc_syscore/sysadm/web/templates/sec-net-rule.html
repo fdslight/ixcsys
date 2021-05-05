@@ -108,7 +108,7 @@
         $(".ixc-sec-net-dst-rule-add").click(function () {
             let hwaddr = $(this).attr("name");
             $("#ixc-sec-net-dst-rule-modal h5 span").html(hwaddr);
-            $("#ixc-sec-net-src-rule-form input[name='hwaddr']").val(hwaddr);
+            $("#ixc-sec-net-dst-rule-form input[name='hwaddr']").val(hwaddr);
             $("#ixc-sec-net-dst-rule-modal").modal("show");
         });
 
@@ -139,5 +139,6 @@
                 }
             });
         });
+
     });
 </script>
