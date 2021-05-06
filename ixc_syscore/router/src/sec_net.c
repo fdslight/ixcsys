@@ -94,7 +94,7 @@ void ixc_sec_net_uninit(void)
 }
 
 /// 加入到缓存
-static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_src_rule *src_rule)
+static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_src_rule *src_rule,int action)
 {
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
@@ -116,7 +116,7 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
     }
     memcpy(cache->address,addr,size);
 
-    cache->action=IXC_SEC_NET_ACT_DROP==src_rule->action?IXC_SEC_NET_ACT_ACCEPT:IXC_SEC_NET_ACT_DROP;
+    cache->action=action;
     cache->up_time=time(NULL);
     cache->is_ipv6=m->is_ipv6;
     cache->src_rule=src_rule;
@@ -151,6 +151,7 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
     struct ixc_sec_net_rule_cache *cache;
     struct map *mm=m->is_ipv6?rule->ip6_cache:rule->ip_cache;
 
+    
     // 首先查找缓存是否存在
     cache=map_find(mm,(char *)addr,&is_found);
     if(NULL!=cache){
@@ -172,22 +173,23 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
         break;
     }
 
-    // 加入到缓存
-    ixc_sec_net_add_to_cache(m,rule);
-
     if(!is_matched){
         if(IXC_SEC_NET_ACT_DROP==rule->action){
+            ixc_sec_net_add_to_cache(m,rule,IXC_SEC_NET_ACT_DROP);
             ixc_mbuf_put(m);
         }else{
+            ixc_sec_net_add_to_cache(m,rule,IXC_SEC_NET_ACT_ACCEPT);
             ixc_route_handle(m);
         }
         return;
     }
-    // 检查匹配之后的规则,匹配的规则和全局动作相反
+
     if(IXC_SEC_NET_ACT_DROP==dst_rule->action){
-        ixc_route_handle(m);
-    }else{
+        ixc_sec_net_add_to_cache(m,rule,IXC_SEC_NET_ACT_DROP);
         ixc_mbuf_put(m);
+    }else{
+        ixc_sec_net_add_to_cache(m,rule,IXC_SEC_NET_ACT_ACCEPT);
+        ixc_route_handle(m);
     }
 }
 
@@ -266,18 +268,18 @@ int ixc_sec_net_add_src(unsigned char *hwaddr,int action)
     return 0;
 }
 
-/// 删除源端过滤规则L1
+/// 删除源端过滤规则
 void ixc_sec_net_del_src(unsigned char *hwaddr)
 {
     char is_found;
     struct ixc_sec_net_src_rule *rule=map_find(sec_net.rule_m,(char *)hwaddr,&is_found);
-    struct ixc_sec_net_dst_rule *dst_rules[]={
-        rule->v4_dst_rule_head,
-        rule->v6_dst_rule_head
-    };
+    struct ixc_sec_net_dst_rule *dst_rules[2];
     struct ixc_sec_net_dst_rule *dst_rule,*t;
 
     if(NULL==rule) return;
+
+    dst_rules[0]=rule->v4_dst_rule_head;
+    dst_rules[1]=rule->v6_dst_rule_head;
 
     // 首先清除所有缓存
     map_release(rule->ip_cache,__ixc_sec_net_cache_del);
@@ -338,7 +340,7 @@ int ixc_sec_net_add_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned cha
     if(IXC_SEC_NET_ACT_DROP==src_rule->action){
         dst_rule->action=IXC_SEC_NET_ACT_ACCEPT;
     }else{
-        dst_rule->action=IXC_SEC_NET_ACT_ACCEPT;
+        dst_rule->action=IXC_SEC_NET_ACT_DROP;
     }
 
     if(is_ipv6){
