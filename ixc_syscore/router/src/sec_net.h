@@ -16,7 +16,6 @@ struct ixc_sec_net{
 struct ixc_sec_net_src_rule;
 /// 目标规则器
 struct ixc_sec_net_dst_rule{
-    struct ixc_sec_net_src_rule *src_rule;
     struct ixc_sec_net_dst_rule *next;
 
     unsigned char address[16];

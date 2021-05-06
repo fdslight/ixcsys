@@ -149,7 +149,7 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
     int is_matched=0;
     char is_found;
     struct ixc_sec_net_rule_cache *cache;
-    struct map *mm=m->is_ipv6?dst_rule->src_rule->ip6_cache:dst_rule->src_rule->ip_cache;
+    struct map *mm=m->is_ipv6?rule->ip6_cache:rule->ip_cache;
 
     // 首先查找缓存是否存在
     cache=map_find(mm,(char *)addr,&is_found);
@@ -329,7 +329,6 @@ int ixc_sec_net_add_dst(unsigned char *hwaddr,unsigned char *subnet,unsigned cha
     }
     bzero(dst_rule,sizeof(struct ixc_sec_net_dst_rule));
 
-    dst_rule->src_rule=src_rule;
     dst_rule->prefix=prefix;
 
     msk_calc(prefix,is_ipv6,dst_rule->mask);
