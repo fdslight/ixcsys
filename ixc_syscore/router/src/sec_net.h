@@ -57,7 +57,7 @@ struct ixc_sec_net_rule_cache{
 #define IXC_SEC_NET_ACT_ACCEPT 1
 
 /// 缓存超时时间
-#define IXC_SEC_NET_CACHE_TIMEOUT 600
+#define IXC_SEC_NET_CACHE_TIMEOUT 120
 
 
 int ixc_sec_net_init(void);

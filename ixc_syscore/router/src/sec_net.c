@@ -16,10 +16,37 @@ static int sec_net_is_initialized=0;
 static void __ixc_sec_net_cache_del(void *data)
 {
     struct ixc_sec_net_rule_cache *cache=data;
-
-    if(NULL!=cache->tdata) cache->tdata->is_deleted=1;
+    struct time_data *tdata=cache->tdata;
+    
+    if(NULL!=tdata) tdata->is_deleted=1;
     // 回收内存
     free(cache);
+}
+
+static void __ixc_sec_net_src_rule_del(void *data)
+{
+    struct ixc_sec_net_src_rule *rule=data;
+    struct ixc_sec_net_dst_rule *dst_rules[2];
+    struct ixc_sec_net_dst_rule *dst_rule,*t;
+
+    dst_rules[0]=rule->v4_dst_rule_head;
+    dst_rules[1]=rule->v6_dst_rule_head;
+
+    // 首先清除所有缓存
+    map_release(rule->ip_cache,__ixc_sec_net_cache_del);
+    map_release(rule->ip6_cache,__ixc_sec_net_cache_del);
+
+    // 清除所有的的目标规则
+    for(int n=0;n<2;n++){
+        dst_rule=dst_rules[n];
+        while(NULL!=dst_rule){
+            t=dst_rule->next;
+            free(dst_rule);
+            dst_rule=t;
+        }
+    }
+
+    free(rule);   
 }
 
 static void __ixc_sec_net_cache_timeout(void *data)
@@ -31,7 +58,6 @@ static void __ixc_sec_net_cache_timeout(void *data)
     time_t now=time(NULL);
 
     if(now-cache->up_time>=IXC_SEC_NET_CACHE_TIMEOUT){
- __CACHE_DEL:
         if(cache->is_ipv6) map_del(src_rule->ip6_cache,(char *)cache->address,__ixc_sec_net_cache_del);
         else map_del(src_rule->ip_cache,(char *)cache->address,__ixc_sec_net_cache_del);
         return;
@@ -39,10 +65,13 @@ static void __ixc_sec_net_cache_timeout(void *data)
 
     tdata=time_wheel_add(&sec_net_cache_tw,cache,10);
     if(NULL==tdata){
+        cache->tdata=NULL;
+        if(cache->is_ipv6) map_del(src_rule->ip6_cache,(char *)cache->address,__ixc_sec_net_cache_del);
+        else map_del(src_rule->ip_cache,(char *)cache->address,__ixc_sec_net_cache_del);
         STDERR("cannot add to time wheel\r\n");
-        goto __CACHE_DEL;
+        return;
     }
-
+    
     cache->tdata=tdata;
 }
 
@@ -90,6 +119,7 @@ void ixc_sec_net_uninit(void)
 {
     if(!sec_net_is_initialized) return;
 
+    map_release(sec_net.rule_m,__ixc_sec_net_src_rule_del);
     sec_net_is_initialized=0;
 }
 
@@ -114,6 +144,8 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
         STDERR("cannot malloc struct ixc_sec_net_rule_cache\r\n");
         return -1;
     }
+    bzero(cache,sizeof(struct ixc_sec_net_rule_cache));
+
     memcpy(cache->address,addr,size);
 
     cache->action=action;
@@ -137,6 +169,8 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
         return -1;
     }
 
+    cache->tdata=tdata;
+
     return 0;
 }
 
@@ -150,7 +184,6 @@ static void ixc_sec_net_handle_rule(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
     char is_found;
     struct ixc_sec_net_rule_cache *cache;
     struct map *mm=m->is_ipv6?rule->ip6_cache:rule->ip_cache;
-
     
     // 首先查找缓存是否存在
     cache=map_find(mm,(char *)addr,&is_found);
@@ -273,29 +306,8 @@ void ixc_sec_net_del_src(unsigned char *hwaddr)
 {
     char is_found;
     struct ixc_sec_net_src_rule *rule=map_find(sec_net.rule_m,(char *)hwaddr,&is_found);
-    struct ixc_sec_net_dst_rule *dst_rules[2];
-    struct ixc_sec_net_dst_rule *dst_rule,*t;
-
     if(NULL==rule) return;
-
-    dst_rules[0]=rule->v4_dst_rule_head;
-    dst_rules[1]=rule->v6_dst_rule_head;
-
-    // 首先清除所有缓存
-    map_release(rule->ip_cache,__ixc_sec_net_cache_del);
-    map_release(rule->ip6_cache,__ixc_sec_net_cache_del);
-
-    // 清除所有的的目标规则
-    for(int n=0;n<2;n++){
-        dst_rule=dst_rules[n];
-        while(NULL!=dst_rule){
-            t=dst_rule->next;
-            free(dst_rule);
-            dst_rule=t;
-        }
-    }
-
-    free(rule);
+    map_del(sec_net.rule_m,(char *)hwaddr,__ixc_sec_net_src_rule_del);
 }
 
 /// 加入目标过滤规则
