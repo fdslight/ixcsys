@@ -37,44 +37,7 @@ message = RPCClient.fn_call("router", "/config", "wan_config_get")
 print(message)
 """
 
+import ixc_syslib.pylib.RPCClient as RPC
 
-# import pywind.lib.netutils as netutils
-
-# print(netutils.calc_subnet("91.108.56.0",22))
-
-def __parse_oui_corp(s: bytes):
-    """解析厂商
-    """
-    _list = s.split(b"\r\n")
-    if not _list: return None
-    ss = _list.pop(0).decode()
-    p = ss.find("(hex)")
-    prefix = ss[0:p].strip().replace("\t", "")
-    p += 5
-    corp = ss[p:].strip().replace("\t", "")
-
-    return prefix, corp
-
-
-def parse_ieee_ma_info(path: str):
-    """解析IEEE MA的厂商MAC地址分配信息
-    """
-    fdst = open(path, "rb")
-    first_line = True
-    results = {}
-    for line in fdst:
-        if first_line:
-            first_line = False
-            continue
-        s = line.decode()
-        s = s.replace("\r\n", "")
-        _list = s.split(",")
-        if len(_list) < 4: continue
-        name = _list[1].strip()
-        results[name] = _list[2]
-
-    return results
-
-
-results = parse_ieee_ma_info("ixc_syscore/DHCP/data/oui.csv")
-print(results["141AA3"])
+rules = RPC.fn_call("DNS", "/rule", "get_sec_rules")
+print(rules)

@@ -22,6 +22,7 @@ import ixc_syslib.web.route as webroute
 import ixc_syscore.DNS.handlers.dns_proxyd as dns_proxyd
 import ixc_syscore.DNS.pylib.rule as rule
 import ixc_syscore.DNS.pylib.os_resolv as os_resolv
+import ixc_syscore.DNS.pylib.sec_rule as sec_rule
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -74,6 +75,9 @@ class service(dispatcher.dispatcher):
     __dns_configs = None
     __dns_conf_path = None
 
+    __sec_rules = None
+    __sec_rule_path = None
+
     # WAN到LAN的DNS ID映射
     __id_wan2lan = None
     __matcher = None
@@ -99,6 +103,7 @@ class service(dispatcher.dispatcher):
         self.__dns_client6 = -1
 
         self.__dns_conf_path = "%s/dns.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__sec_rule_path = "%s/sec_rules.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__id_wan2lan = {}
 
@@ -122,8 +127,15 @@ class service(dispatcher.dispatcher):
     def load_configs(self):
         self.__dns_configs = conf.ini_parse_from_file(self.__dns_conf_path)
 
+    def load_sec_rules(self):
+        self.__sec_rules = sec_rule.parse_from_file(self.__sec_rule_path)
+        for rule in self.__sec_rules:
+            self.matcher.add_rule(rule, "drop", None)
+
     def start_dns(self):
         self.load_configs()
+        self.load_sec_rules()
+
         manage_addr = self.get_manage_addr()
         ipv4 = self.__dns_configs["ipv4"]
         ipv6 = self.__dns_configs["ipv6"]
@@ -162,7 +174,7 @@ class service(dispatcher.dispatcher):
 
         return dns_id
 
-    #def set_route(self, subnet: str, prefix: int, is_ipv6=False):
+    # def set_route(self, subnet: str, prefix: int, is_ipv6=False):
     #    RPCClient.fn_call("router", "/config", "add_route", subnet, prefix, None, is_ipv6=is_ipv6)
 
     def send_to_dnsserver(self, message: bytes, is_ipv6=False):
@@ -286,6 +298,10 @@ class service(dispatcher.dispatcher):
     def configs(self):
         return self.__dns_configs
 
+    @property
+    def sec_rules(self):
+        return self.__sec_rules
+
     def get_nameservers(self, is_ipv6=False):
         if is_ipv6:
             return self.get_handler(self.__dns_client6).get_nameservers()
@@ -304,8 +320,23 @@ class service(dispatcher.dispatcher):
     def get_forward(self):
         return self.get_handler(self.__dns_client).get_port()
 
+    def add_sec_rule(self, rule: str):
+        if rule in self.__sec_rules:
+            return
+        self.__sec_rules.append(rule)
+        self.matcher.add_rule(rule, "drop", None)
+
+    def del_sec_rule(self, rule: str):
+        if rule not in self.__sec_rules: return
+        self.__sec_rules.remove(rule)
+        self.matcher.del_rule(rule)
+
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)
+        self.save_sec_rules()
+
+    def save_sec_rules(self):
+        sec_rule.save_to_file(self.__sec_rules, self.__sec_rule_path)
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
@@ -329,7 +360,6 @@ class service(dispatcher.dispatcher):
 
         for _id in dels:
             del self.__id_wan2lan[_id]
-
 
     def add_ns_os_resolv(self):
         """加入nameserver到操作系统resolv中

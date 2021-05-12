@@ -21,7 +21,10 @@ class controller(rpc.controller):
             "list": self.list,
             "set_forward": self.set_forward,
             "get_forward": self.get_forward,
-            "clear": self.clear
+            "clear": self.clear,
+            "sec_rule_add": self.sec_rule_add,
+            "sec_rule_del": self.sec_rule_del,
+            "get_sec_rules": self.get_sec_rules,
         }
 
     def add(self, host: str, action_name: str, priv_data=None):
@@ -62,3 +65,16 @@ class controller(rpc.controller):
         :return:
         """
         return 0, self.__runtime.get_forward()
+
+    def sec_rule_add(self, rule: str):
+        self.__runtime.add_sec_rule(rule)
+
+        return 0, None
+
+    def sec_rule_del(self, rule: str):
+        self.__runtime.del_sec_rule(rule)
+
+        return 0, None
+
+    def get_sec_rules(self):
+        return 0, self.__runtime.sec_rules
