@@ -81,7 +81,7 @@ void map_release(struct map *m,map_del_func_t fn)
 
 	while(NULL!=node){
 		t=node->list_next;
-		if(NULL!=fn) fn(node->data);
+		if(NULL!=fn && node->is_data_node) fn(node->data);
 		free(node);
 		node=t;
 	}

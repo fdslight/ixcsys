@@ -110,10 +110,10 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         return;
     }
 
-    //ixc_sec_net_handle_from_lan(m);
+    ixc_sec_net_handle_from_lan(m);
     //DBG_FLAGS;
     // 发送数据到route
-    ixc_route_handle(m);
+    //ixc_route_handle(m);
 }
 
 void ixc_ip_handle(struct ixc_mbuf *mbuf)
