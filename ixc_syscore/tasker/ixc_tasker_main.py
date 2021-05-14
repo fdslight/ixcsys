@@ -60,13 +60,13 @@ def __start_service(debug):
 class service(dispatcher.dispatcher):
     __debug = None
 
-    __tasker_list = None
+    __taskers = None
 
     def init_func(self, debug):
         global_vars["ixcsys.tasker"] = self
 
         self.__debug = debug
-        self.__tasker_list = []
+        self.__taskers = {}
 
         RPCClient.wait_proc("router")
 
