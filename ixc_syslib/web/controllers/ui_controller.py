@@ -218,10 +218,6 @@ class controller(app_handler.handler):
         return os.getenv("IXC_MYAPP_DIR")
 
     @property
-    def app_dir(self):
-        return os.getenv("IXC_APP_DIR")
-
-    @property
     def url_prefix(self):
         """URL前缀
         :return:

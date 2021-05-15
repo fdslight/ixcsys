@@ -116,6 +116,7 @@ class service(dispatcher.dispatcher):
         # if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
         RPCClient.wait_processes(["router", "DNS", ])
+        time.sleep(5)
 
         self.load_dhcp_server_configs()
         self.load_dhcp_server_ip_bind()
