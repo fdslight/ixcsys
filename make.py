@@ -157,7 +157,6 @@ def __install_all(prefix=None):
         "pywind",
         "ixc_syslib",
         "ixc_configs_bak",
-        "ixc_apps",
         "ixc_configs"
     ]
     for x in dirs:
