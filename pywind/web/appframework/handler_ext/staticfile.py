@@ -17,6 +17,7 @@ class staticfile(app_handler.handler):
 
     __file_size = 0
     __read_size = 0
+    __no_cache = None
 
     def initialize(self):
         self.__mime_map = {"bmp": "image/bmp", "gif": "image/gif", "jpe": "image/jpeg", "jpeg": "image/jpeg",
@@ -31,6 +32,8 @@ class staticfile(app_handler.handler):
         self.__is_finish = False
         self.__is_responsed_header = False
         self.request.set_allow_methods(["GET"])
+        self.__no_cache = False
+
         self.staticfile_init()
         return True
 
@@ -62,19 +65,21 @@ class staticfile(app_handler.handler):
                 return
 
             stat = os.stat(fpath)
+            file_md5 = ""
 
-            if self.cmp_file_modify_by_mtime:
-                is_modified = self.__is_modified_by_mtime(stat.st_mtime)
-            else:
-                file_md5 = self.__calc_file_md5(fpath)
-                if_none_match = self.request.environ.get("HTTP_IF_NONE_MATCH", "")
-                is_modified = if_none_match == file_md5
+            if not self.__no_cache:
+                if self.cmp_file_modify_by_mtime:
+                    is_modified = self.__is_modified_by_mtime(stat.st_mtime)
+                else:
+                    file_md5 = self.__calc_file_md5(fpath)
+                    if_none_match = self.request.environ.get("HTTP_IF_NONE_MATCH", "")
+                    is_modified = if_none_match == file_md5
 
-            if is_modified:
-                self.set_status("304 Not Modified")
-                self.finish()
-                return
-
+                if is_modified:
+                    self.set_status("304 Not Modified")
+                    self.finish()
+                    return
+                ''''''
             self.__file_size = stat.st_size
             self.__read_size = 0
             self.__file_object = open(fpath, "rb")
@@ -83,8 +88,9 @@ class staticfile(app_handler.handler):
             self.set_headers([("Content-Length", stat.st_size,), ("Content-Type", self.__mime_map[ext_name],),
                               ("Last-Modified", self.get_header_date(stat.st_mtime),), ])
 
-            if not self.cmp_file_modify_by_mtime: self.set_header("Etag", file_md5)
-
+            if not self.__no_cache:
+                if not self.cmp_file_modify_by_mtime: self.set_header("Etag", file_md5)
+            ''''''
         byte_data = self.__async_read_file()
         self.write(byte_data)
 
@@ -146,3 +152,7 @@ class staticfile(app_handler.handler):
         if t == None: return True
 
         return t == float(mtime)
+
+    def set_no_cache(self):
+        # 是否关闭缓存功能
+        self.__no_cache = True

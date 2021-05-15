@@ -4,4 +4,5 @@ import ixc_syslib.web.controllers.staticfiles as staticfiles
 
 
 class controller(staticfiles.controller):
-    pass
+    def staticfile_init(self):
+        self.set_no_cache()
