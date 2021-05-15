@@ -19,12 +19,10 @@ must_services = [
 
 def set_pub_env():
     conf_dir = "%s/ixc_configs" % sys_dir
-    app_dir = "%s/ixc_apps" % sys_dir
     sys_py_interpreter = sys.executable
 
     os.putenv("IXC_SYS_DIR", sys_dir)
     os.putenv("IXC_CONF_DIR", conf_dir)
-    os.putenv("IXC_APP_DIR", app_dir)
     os.putenv("IXC_PYTHON", sys_py_interpreter)
     os.putenv("IXC_SYSROOT", sys_dir)
 
