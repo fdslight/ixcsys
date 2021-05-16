@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, signal, json, time
+import os, sys, signal, json, time, multiprocessing
 
 from cloudflare_ddns import CloudFlare
 
@@ -58,6 +58,24 @@ def __start_service(debug):
 
     if os.path.isfile(PID_FILE): os.remove(PID_FILE)
     sys.exit(0)
+
+
+def cf_ddns_sync(configs: dict, debug=False):
+    """cloudflare DDNS同步
+    """
+    try:
+        cf = CloudFlare(configs["email"], configs["api_key"],
+                        configs["domain"])
+        cf.sync_dns_from_my_ip()
+    except:
+        if debug:
+            print("cannot sync cloudflare DDNS")
+        else:
+            logging.print_error("cannot sync cloudflare DDNS")
+
+
+def test_proc():
+    print("hello")
 
 
 class service(dispatcher.dispatcher):
@@ -155,25 +173,21 @@ class service(dispatcher.dispatcher):
         return ipaddr
 
     def myloop(self):
-        if not self.__is_restart: return
-
         # 这里需要等待一会儿重启,因为需要向浏览器响应信息
         now = time.time()
-        if now - self.__up_time > 10:
+        if now - self.__up_time > 10 and self.__is_restart:
             self.do_restart()
+
+        if now - self.__up_time > 10:
+            p = multiprocessing.Process(target=test_proc)
+            p.start()
 
         # 如果启用DDNS并且大于同步时间那么进行同步
         if self.ddns_enabled and now - self.__ddns_up_time > self.ddns_sync_interval:
             self.__ddns_up_time = now
-            try:
-                cf = CloudFlare(self.__cloudflare_ddns_cfg["email"], self.__cloudflare_ddns_cfg["api_key"],
-                                self.__cloudflare_ddns_cfg["domain"])
-                cf.sync_dns_from_my_ip()
-            except:
-                if self.debug:
-                    print("cannot sync cloudflare DDNS")
-                else:
-                    logging.print_error("cannot sync cloudflare DDNS")
+            p = multiprocessing.Process(target=cf_ddns_sync, args=(self.cloudflare_ddns_config,),
+                                        kwargs={"debug": self.debug})
+            p.start()
 
     @property
     def debug(self):

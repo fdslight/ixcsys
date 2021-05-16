@@ -37,7 +37,16 @@ message = RPCClient.fn_call("router", "/config", "wan_config_get")
 print(message)
 """
 
-import ixc_syslib.pylib.RPCClient as RPC
+import multiprocessing, time
 
-rules = RPC.fn_call("DNS", "/rule", "get_sec_rules")
-print(rules)
+
+def func():
+    time.sleep(5)
+    print("hello")
+
+
+if __name__=="__main__":
+    p = multiprocessing.Process(target=func,args=())
+    p.start()
+    p.join()
+
