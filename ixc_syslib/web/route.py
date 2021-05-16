@@ -23,6 +23,9 @@ class app_route(object):
         p = x.find("/staticfiles")
         if p == 0: x = "/staticfiles"
 
+        p = x.find("/files")
+        if p == 0: x = "/file_browser"
+
         s = "%s/web.controllers%s" % (os.getenv("IXC_MYAPP_RELATIVE_DIR"), x)
         name = s.replace("/", ".")
 
@@ -44,6 +47,12 @@ class app_route(object):
             path_info = environ["PATH_INFO"]
 
         m = self.get_module(path_info)
+
+        # 重写文件功能的PATH_INFO
+        if path_info[0:6] == "/files":
+            path_info = path_info[6:]
+            if not path_info: path_info = "/"
+            environ["PATH_INFO"] = path_info
 
         if not m:
             start_response("404 Not Found", [])

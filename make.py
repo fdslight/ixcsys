@@ -15,7 +15,6 @@ __builds = [
     "ixc_syscore/DNS",
     "ixc_syscore/proxy",
     "ixc_syscore/init",
-    "ixc_syscore/iPXE"
 ]
 
 __helper = """

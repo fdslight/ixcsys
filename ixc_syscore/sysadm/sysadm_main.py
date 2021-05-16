@@ -74,10 +74,6 @@ def cf_ddns_sync(configs: dict, debug=False):
             logging.print_error("cannot sync cloudflare DDNS")
 
 
-def test_proc():
-    print("hello")
-
-
 class service(dispatcher.dispatcher):
     __httpd_fd = None
     __httpd_fd6 = None
@@ -100,9 +96,39 @@ class service(dispatcher.dispatcher):
     __cloudflare_ddns_cfg_path = None
     __ddns_up_time = None
 
+    __file_download_cfg_path = None
+    __file_download_cfg = None
+
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
         self.load_cloudflare_ddns_cfg()
+        self.load_file_download_cfg()
+
+    @property
+    def download_cfg(self):
+        return self.__file_download_cfg["config"]
+
+    def load_file_download_cfg(self):
+        if not os.path.isfile(self.__file_download_cfg_path):
+            o = {
+                "config": {
+                    "dir": "/tmp",
+                    "enable": 0
+                }
+            }
+        else:
+            o = cfg.ini_parse_from_file(self.__file_download_cfg_path)
+
+        self.__file_download_cfg = o
+
+    def save_file_download_cfg(self):
+        cfg.save_to_ini(self.__file_download_cfg, self.__file_download_cfg_path)
+
+    def set_file_download(self, enable: bool, d="/tmp"):
+        self.__file_download_cfg["config"] = {
+            "enable": int(enable),
+            "dir": d
+        }
 
     def write_to_configs(self):
         pass
@@ -137,9 +163,13 @@ class service(dispatcher.dispatcher):
         self.__httpd_ssl_fd = -1
         self.__httpd_ssl_fd6 = -1
         self.__debug = debug
+        self.__up_time = time.time()
 
         self.__httpd_cfg_path = "%s/httpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__cloudflare_ddns_cfg_path = "%s/cloudflare_ddns.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+
+        self.__file_download_cfg_path = "%s/file_download.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__file_download_cfg = {}
 
         self.__scgi_fd = -1
         self.__is_restart = False
@@ -178,16 +208,14 @@ class service(dispatcher.dispatcher):
         if now - self.__up_time > 10 and self.__is_restart:
             self.do_restart()
 
-        if now - self.__up_time > 10:
-            p = multiprocessing.Process(target=test_proc)
-            p.start()
-
         # 如果启用DDNS并且大于同步时间那么进行同步
         if self.ddns_enabled and now - self.__ddns_up_time > self.ddns_sync_interval:
             self.__ddns_up_time = now
             p = multiprocessing.Process(target=cf_ddns_sync, args=(self.cloudflare_ddns_config,),
                                         kwargs={"debug": self.debug})
             p.start()
+
+        self.__up_time = time.time()
 
     @property
     def debug(self):

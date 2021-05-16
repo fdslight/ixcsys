@@ -39,7 +39,7 @@ def build(base_dir, my_dir, cflags, debug=True):
     else:
         cflags += " -O3 -Wall"
 
-    # sys_build.do_compile(files, "%s/pylib/router.so" % my_dir, cflags, is_shared=True)
+    # sys_build.do_compile(file, "%s/pylib/router.so" % my_dir, cflags, is_shared=True)
     sys_build.do_compile(files, "%s/ixc_router_core" % my_dir, cflags)
 
 

@@ -1,0 +1,26 @@
+${self.inherit("base.html")}
+<%block name="title">${self.LA('file_browser')}</%block>
+
+<%block name="content">
+    <div class="container-fluid">
+        <h5 class="text-center">当前目录:&nbsp;&nbsp;${self.V['cur_dir']}</h5>
+        <table class="table">
+            <thead class="thead-dark">
+            <tr>
+                <th scope="col">类型</th>
+                <th scope="col">创建时间</th>
+                <th scope="col">修改时间</th>
+                <th scope="col">大小(字节)</th>
+                <th scope="col">名字</th>
+            </tr>
+            </thead>
+            <tbody>
+                <%
+                    for o in self.V["files"]:
+                        s="<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href='%s'>%s</a></td></tr>" % (o["type"],o["ctime"],o["mtime"],o["size"],o['path'],o["name"])
+                        self.show(s)
+                %>
+            </tbody>
+        </table>
+    </div>
+</%block>

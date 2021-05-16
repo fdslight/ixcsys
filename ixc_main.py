@@ -13,7 +13,6 @@ must_services = [
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
     "ixc_syscore/proxy",
-    "ixc_syscore/iPXE"
 ]
 
 
@@ -132,7 +131,7 @@ class ixc_main_d(object):
         """获取所有的systemctl服务
         """
         services = []
-        fdst = os.popen("systemctl list-unit-files")
+        fdst = os.popen("systemctl list-unit-file")
         for line in fdst:
             line = line.replace("\n", "")
             line = line.replace("\r", "")
