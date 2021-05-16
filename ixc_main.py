@@ -131,7 +131,7 @@ class ixc_main_d(object):
         """获取所有的systemctl服务
         """
         services = []
-        fdst = os.popen("systemctl list-unit-file")
+        fdst = os.popen("systemctl list-unit-files")
         for line in fdst:
             line = line.replace("\n", "")
             line = line.replace("\r", "")
