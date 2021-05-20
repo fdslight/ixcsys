@@ -44,4 +44,9 @@ class widget(ui_widget.widget):
         dic["cpu_count"] = os.cpu_count()
         dic["version"] = self.read_version()
 
+        fdst = os.popen("""cat /proc/cpuinfo | grep "model name" | sed -n "1p" | cut -b 14-""")
+        cpu_model = fdst.read()
+        fdst.close()
+        dic["cpu_model"] = cpu_model
+
         return True, uri, dic
