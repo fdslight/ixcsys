@@ -5,9 +5,7 @@
 #include<libgen.h>
 #include<time.h>
 
-#define _GNU_SOURCE
 #include<sched.h>
-#undef _GNU_SOURCE
 
 #define  PY_SSIZE_T_CLEAN
 #include<Python.h>

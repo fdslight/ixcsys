@@ -37,7 +37,7 @@ def build(base_dir, my_dir, cflags, debug=True):
     cflags += " -std=gnu11"
 
     if debug:
-        cflags += " -D DEBUG"
+        cflags += " -D DEBUG -D _GNU_SOURCE"
     else:
         cflags += " -O3 -Wall"
 
