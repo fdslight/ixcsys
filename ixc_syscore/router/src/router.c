@@ -1,11 +1,11 @@
-#define __USE_GNU
-
 #include<unistd.h>
 #include<signal.h>
 #include<stdlib.h>
 #include<execinfo.h>
 #include<libgen.h>
 #include<time.h>
+
+#define _GNU_SOURCE
 #include<sched.h>
 
 #define  PY_SSIZE_T_CLEAN
