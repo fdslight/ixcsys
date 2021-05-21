@@ -5,12 +5,14 @@
 #include<libgen.h>
 #include<time.h>
 
-#define _GNU_SOURCE
-#include<sched.h>
-
 #define  PY_SSIZE_T_CLEAN
 #include<Python.h>
 #include<structmember.h>
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include<sched.h>
 
 #include "mbuf.h"
 #include "router.h"
