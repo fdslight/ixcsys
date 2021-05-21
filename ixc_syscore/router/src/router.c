@@ -1,9 +1,13 @@
+#define _GNU_SOURCE
+
 #include<unistd.h>
 #include<signal.h>
 #include<stdlib.h>
 #include<execinfo.h>
 #include<libgen.h>
 #include<time.h>
+#include<sched.h>
+#include<unistd.h>
 
 #define  PY_SSIZE_T_CLEAN
 #include<Python.h>
@@ -1100,6 +1104,22 @@ static void ixc_myloop(void)
     ixc_python_loop();
 }
 
+/// 绑定进程到指定CPU,避免CPU上下文切换
+static void ixc_bind_cpu(void)
+{
+	int cpus=sysconf(_SC_NPROCESSORS_ONLN);
+
+	cpu_set_t mask;
+
+	CPU_ZERO(&mask);
+	CPU_SET(cpus-1,&mask);
+
+	if(sched_setaffinity(0,sizeof(cpu_set_t),&mask)==-1){
+		STDERR("cannot bind to cpu %d\r\n",cpus-1);
+	}
+	usleep(1000);
+}
+
 static void ixc_start(int debug)
 {
     int rs;
@@ -1108,6 +1128,8 @@ static void ixc_start(int debug)
         STDERR("process ixc_router_core exists\r\n");
         return;
     }
+
+    ixc_bind_cpu();
 
     loop_time_up=time(NULL);
 
