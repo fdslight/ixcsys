@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include<unistd.h>
 #include<signal.h>
 #include<stdlib.h>
@@ -41,6 +39,10 @@
 #include "../../../pywind/clib/ev/rpc.h"
 #include "../../../pywind/clib/pfile.h"
 #include "../../../pywind/clib/sysloop.h"
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
 /// 进程文件路径
 static char pid_path[4096];
