@@ -1,3 +1,5 @@
+#define __USE_GNU
+
 #include<unistd.h>
 #include<signal.h>
 #include<stdlib.h>
@@ -5,7 +7,6 @@
 #include<libgen.h>
 #include<time.h>
 #include<sched.h>
-#include<unistd.h>
 
 #define  PY_SSIZE_T_CLEAN
 #include<Python.h>
