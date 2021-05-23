@@ -24,6 +24,8 @@ class controller(base_controller.BaseController):
 
         https_host = self.request.get_argument("https_host", is_seq=False, is_qs=False)
 
+        self_shutdown_time = self.request.get_argument("self_shutdown_time", is_seq=False, is_qs=False)
+
         if enable:
             enable = True
         else:
@@ -42,6 +44,7 @@ class controller(base_controller.BaseController):
             i_begin_min = int(begin_min)
             i_end_hour = int(end_hour)
             i_end_min = int(end_min)
+            i_self_shutdown_time = int(self_shutdown_time)
         except ValueError:
             self.json_resp(True, "不允许的时间值")
             return
@@ -61,6 +64,10 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "不允许的分钟时间值")
             return
 
+        if i_self_shutdown_time < 0:
+            self.json_resp(True, "不允许的本机自动关机时间")
+            return
+
         day_begin_seconds = i_begin_hour * 3600 + i_begin_min * 60
         day_end_seconds = i_end_hour * 3600 + i_end_min * 60
 
@@ -77,6 +84,7 @@ class controller(base_controller.BaseController):
         cfg["begin_min"] = begin_min
         cfg["end_hour"] = end_hour
         cfg["end_min"] = end_min
+        cfg["self_shutdown_time"] = i_self_shutdown_time
 
         self.sysadm.save_auto_shutdown_cfg()
 
