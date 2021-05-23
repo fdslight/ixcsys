@@ -83,10 +83,13 @@ ${self.inherit("base.html")}
                 <div class="ixc-empty"></div>
                 <ul class="list-group">
                     <li class="list-group-item ixc-left-nav-title">
-                        <div class="ixc-left-nav-title">实用工具</div>
+                        <div class="ixc-left-nav-title">能源控制</div>
                     </li>
                     <li class="list-group-item ixc-left-menu" id="ixc-wake-on-lan">
-                        <a href="${self.url_prefix}/?show=ixc-wake-on-lan&page=wake-on-lan">远程开机</a>
+                        <a href="${self.url_prefix}/?show=ixc-wake-on-lan&page=wake-on-lan">远程开机控制</a>
+                    </li>
+                    <li class="list-group-item ixc-left-menu" id="ixc-auto-shutdown">
+                        <a href="${self.url_prefix}/?show=ixc-auto-shutdown&page=auto-shutdown">自动关机控制</a>
                     </li>
                 </ul>
 
@@ -95,10 +98,6 @@ ${self.inherit("base.html")}
                     <li class="list-group-item ixc-left-nav-title">
                         <div class="ixc-left-nav-title">系统管理</div>
                     </li>
-                    <!--
-                <li class="list-group-item ixc-left-menu" id="ixc-proc-manage">
-                    <a href="${self.url_prefix}/?show=ixc-proc-manage&page=proc-manage">进程管理</a>
-                </li>-->
                     <li class="list-group-item ixc-left-menu" id="ixc-user-info">
                         <a href="${self.url_prefix}/?show=ixc-user-info&page=user-info">用户信息</a>
                     </li>
