@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """能源监控类
 """
+import os
 import time, socket
 import pywind.lib.netutils as netutils
 import ixc_syscore.sysadm.pylib.wol as wol
@@ -33,6 +34,9 @@ class power_monitor(object):
     __https_host = None
     __enabled = None
 
+    __self_shutdown_time = None
+    __network_error_time = None
+
     def __init__(self, begin_hour: int, begin_min: int, end_hour: int, end_min: int, https_host: str, bind_ip: str,
                  port: int,
                  shutdown_type: str):
@@ -46,6 +50,8 @@ class power_monitor(object):
         self.__port = port
         self.__shutdown_type = shutdown_type
         self.__enabled = False
+        self.__self_shutdown_time = 0
+        self.__network_error_time = 0
 
     def set_time(self, begin_hour: int, begin_min: int, end_hour: int, end_min: int):
         self.__day_begin_time = begin_hour * 60 + begin_min
@@ -56,6 +62,9 @@ class power_monitor(object):
 
     def set_shutdown_type(self, _type):
         self.__shutdown_type = _type
+
+    def set_self_shutdown_time(self, minute: int):
+        self.__self_shutdown_time = minute
 
     def get_day_min(self):
         """获取一天的分钟数目
@@ -91,6 +100,7 @@ class power_monitor(object):
             self.__check_network_count = 0
         except:
             self.__check_network_count += 1
+            self.__network_error_time = self.get_day_min()
 
         if self.__check_network_count >= 3:
             return False
@@ -133,6 +143,18 @@ class power_monitor(object):
 
         return False
 
+    def is_need_self_shutdown(self):
+        if self.__shutdown_type not in ("auto", "network",):
+            return False
+
+        if self.__check_network_count == 0:
+            return False
+
+        now_min = self.get_day_min()
+        if now_min - self.__network_error_time > self.__self_shutdown_time: return True
+
+        return False
+
     def set_enable(self, enabled: bool):
         """开启或者关闭能源管理
         """
@@ -152,6 +174,11 @@ class power_monitor(object):
             self.power_on()
             is_sent_power_on = True
         # 避免发送开机又发送关机
-        if self.is_need_power_off() and not is_sent_power_on: self.power_off()
+        if self.is_need_power_off() and not is_sent_power_on:
+            self.power_off()
+
+        # 如果需要自动关机,那么自动关机
+        if self.is_need_self_shutdown():
+            os.system("halt -p")
 
         self.__up_time = now

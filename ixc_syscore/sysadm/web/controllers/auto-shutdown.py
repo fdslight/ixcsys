@@ -68,6 +68,10 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "不允许的本机自动关机时间")
             return
 
+        if i_self_shutdown_time != 0 and i_self_shutdown_time < 10:
+            self.json_resp(True, "自身自动关机时间至少需要10分钟")
+            return
+
         day_begin_seconds = i_begin_hour * 3600 + i_begin_min * 60
         day_end_seconds = i_end_hour * 3600 + i_end_min * 60
 
@@ -90,5 +94,6 @@ class controller(base_controller.BaseController):
         self.sysadm.power.set_time(i_begin_hour, i_begin_min, i_end_hour, i_end_min)
         self.sysadm.power.set_enable(enable)
         self.sysadm.power.set_https_host(https_host)
+        self.sysadm.power.set_self_shutdown_time(i_self_shutdown_time)
 
         self.json_resp(False, {})
