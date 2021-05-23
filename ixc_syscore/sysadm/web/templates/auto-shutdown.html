@@ -1,9 +1,21 @@
 <div id="ixc-auto-shutdown-view" class="ixc-menu-content" style="display: none;">
-    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form" id="ixc-auto-shutdown-form"
           enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/auto-shutdown">
         <h4>自动控制局域网及其它机器关机</h4>
         <p style="color: red;">其他机器需要安装ixc_PowerCtl程序</p>
         <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-check">
+            <label class="form-check-label">
+                <%
+                    s="""<input class="form-check-input" name="enable" value="1" type="checkbox" {}/>"""
+                    if self.V["enable"]:x=s.format("checked")
+                    else:x=s.format("")
+                    self.show(x)
+                %>
+                开启控制
+            </label>
+        </div>
         <div class="ixc-empty"></div>
         <div class="form-group">
             <label>策略选择</label>
@@ -15,12 +27,12 @@
         </div>
         <div class="form-group">
             <label for="inputEmail3">HTTPS主机</label>
-            <input type="text" class="form-control" name="http_host"
-                   value=""/>
+            <input type="text" class="form-control" name="https_host"
+                   value="${self.V['https_host']}"/>
         </div>
         <div class="form-group">
             <label for="inputEmail3">开机时间</label>
-            <select>
+            <select id="ixc-time-begin-hour" name="begin_hour">
                 <%
                     for i in range(24):
                         s="""<option value="%s">%s</option>""" % (i,i,)
@@ -28,7 +40,7 @@
                 %>
             </select>
             时
-            <select>
+            <select id="ixc-time-begin-min" name="begin_min">
                 <%
                     for i in range(60):
                         s="""<option value="%s">%s</option>""" % (i,i,)
@@ -39,7 +51,7 @@
             &nbsp;
             -
             &nbsp;
-            <select>
+            <select id="ixc-time-end-hour" name="end_hour">
                 <%
                     for i in range(24):
                         s="""<option value="%s">%s</option>""" % (i,i,)
@@ -47,7 +59,7 @@
                 %>
             </select>
             时
-            <select>
+            <select id="ixc-time-end-min" name="end_min">
                 <%
                     for i in range(60):
                         s="""<option value="%s">%s</option>""" % (i,i,)
@@ -56,10 +68,23 @@
             </select>
             分
         </div>
+
         <div class="form-group row">
             <div class="col-sm-12">
-                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+                <button type="submit" class="btn btn-primary float-lg-right" id="ixc-auto-shutdown-btn">确定</button>
             </div>
         </div>
     </form>
 </div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        /// 自动选择
+        $("#ixc-auto-shutdown-type").val("${self.V['auto_shutdown_type']}");
+        //
+        $("#ixc-time-begin-hour").val("${self.V['begin_hour']}");
+        $("#ixc-time-begin-min").val("${self.V['begin_min']}");
+        //
+        $("#ixc-time-end-hour").val("${self.V['end_hour']}");
+        $("#ixc-time-end-min").val("${self.V['end_min']}");
+    });
+</script>

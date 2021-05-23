@@ -99,10 +99,38 @@ class service(dispatcher.dispatcher):
     __file_download_cfg_path = None
     __file_download_cfg = None
 
+    __auto_shutdown_cfg = None
+    __auto_shutdown_cfg_path = None
+
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
         self.load_cloudflare_ddns_cfg()
         self.load_file_download_cfg()
+        self.load_auto_shutdown_cfg()
+
+    def load_auto_shutdown_cfg(self):
+        if not os.path.isfile(self.__auto_shutdown_cfg_path):
+            self.__auto_shutdown_cfg = {
+                "begin_hour": 0,
+                "begin_min": 0,
+                "end_hour": 23,
+                "end_min": 59,
+                "auto_shutdown_type": "network",
+                "https_host": "www.cloudflare.com"
+            }
+        with open(self.__auto_shutdown_cfg_path, "r") as f:
+            s = f.read()
+        f.close()
+        self.__auto_shutdown_cfg = json.loads(s)
+
+    def save_auto_shutdown_cfg(self):
+        with open(self.__auto_shutdown_cfg_path, "w") as f:
+            f.write(json.dumps(self.__auto_shutdown_cfg))
+        f.close()
+
+    @property
+    def auto_shutdown_cfg(self):
+        return self.__auto_shutdown_cfg
 
     @property
     def download_cfg(self):
@@ -170,6 +198,9 @@ class service(dispatcher.dispatcher):
 
         self.__file_download_cfg_path = "%s/file_download.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__file_download_cfg = {}
+
+        self.__auto_shutdown_cfg = {}
+        self.__auto_shutdown_cfg_path = "%s/auto_shutdown.json" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__scgi_fd = -1
         self.__is_restart = False

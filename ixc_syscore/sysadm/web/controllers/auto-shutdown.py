@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-import os
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
-
-import ixc_syslib.pylib.RPCClient as RPC
+from pywind.global_vars import global_vars
 
 
 class controller(base_controller.BaseController):
@@ -11,16 +9,32 @@ class controller(base_controller.BaseController):
         self.request.set_allow_methods(["POST"])
         return True
 
+    @property
+    def sysadm(self):
+        return global_vars["ixcsys.sysadm"]
+
     def handle(self):
+        enable = self.request.get_argument("enable", is_seq=False, is_qs=False)
         shutdown_type = self.request.get_argument("auto_shutdown_type", is_seq=False, is_qs=False)
-        begin_hour = self.request.get_argument("beign_hour", is_seq=False, is_qs=False)
-        begin_min = self.request.get_argument("beign_min", is_seq=False, is_qs=False)
+        begin_hour = self.request.get_argument("begin_hour", is_seq=False, is_qs=False)
+        begin_min = self.request.get_argument("begin_min", is_seq=False, is_qs=False)
 
         end_hour = self.request.get_argument("end_hour", is_seq=False, is_qs=False)
         end_min = self.request.get_argument("end_min", is_seq=False, is_qs=False)
 
+        https_host = self.request.get_argument("https_host", is_seq=False, is_qs=False)
+
+        if enable:
+            enable = True
+        else:
+            enable = False
+
         if shutdown_type not in ("auto", "network", "time",):
             self.json_resp(True, "错误的关机控制类型")
+            return
+
+        if not https_host:
+            self.json_resp(True, "HTTPS主机不能为空")
             return
 
         try:
@@ -30,6 +44,9 @@ class controller(base_controller.BaseController):
             i_end_min = int(end_min)
         except ValueError:
             self.json_resp(True, "不允许的时间值")
+            return
+        except TypeError:
+            self.json_resp(True, "不能存在为空的值")
             return
 
         if i_begin_hour < 0 or i_begin_min < 0 or i_end_hour < 0 or i_end_min < 0:
@@ -51,5 +68,16 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "结束时间必须大于开始时间,并且间隔不少于1小时")
             return
 
+        cfg = self.sysadm.auto_shutdown_cfg
+
+        cfg["enable"] = enable
+        cfg["https_host"] = https_host
+        cfg["auto_shutdown_type"] = shutdown_type
+        cfg["begin_hour"] = begin_hour
+        cfg["begin_min"] = begin_min
+        cfg["end_hour"] = end_hour
+        cfg["end_min"] = end_min
+
+        self.sysadm.save_auto_shutdown_cfg()
 
         self.json_resp(False, {})

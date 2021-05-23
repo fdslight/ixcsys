@@ -60,6 +60,12 @@
                             <label>硬件地址</label>
                             <input type="text" class="form-control" name="hwaddr"/>
                         </div>
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" name="add_to_power_ctl" value="1" type="checkbox"/>
+                                加入到自动开关机
+                            </label>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -75,6 +81,7 @@
             <th scope="col">序号</th>
             <th scope="col">机器名</th>
             <th scope="col">硬件地址</th>
+            <th scope="col">能源控制</th>
             <th scope="col">操作</th>
         </tr>
         </thead>
@@ -83,7 +90,12 @@
             x=1
             for name in self.V:
                 o=self.V[name]
+                if bool(int(o["add_to_power_ctl"])):
+                    v="√"
+                else:
+                    v=""
                 s="""<tr>
+                <td>%s</td>
                 <td>%s</td>
                 <td>%s</td>
                 <td>%s</td>
@@ -97,6 +109,7 @@
                 </tr>
                 """ % (
                 x,name,o["hwaddr"],
+                v,
                 x,"唤醒",o["hwaddr"],x,
                 x,"删除",name,x)
                 self.show(s)

@@ -35,14 +35,21 @@ class controller(base_controller.BaseController):
         """
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
         name = self.request.get_argument("name", is_seq=False, is_qs=False)
+        add_to_power_ctl = self.request.get_argument("add_to_power_ctl", is_seq=False, is_qs=False)
 
         info = self.get_info()
+
+        if not add_to_power_ctl:
+            add_to_power_ctl = 0
+        else:
+            add_to_power_ctl = 1
 
         if name in info:
             self.finish_with_json({"is_error": True, "message": "机器名已经存在"})
             return
 
-        info[name] = {"hwaddr": hwaddr}
+        info[name] = {"hwaddr": hwaddr, "add_to_power_ctl": add_to_power_ctl}
+
         self.save(info)
         self.finish_with_json({"is_error": False, "message": "添加成功"})
 
