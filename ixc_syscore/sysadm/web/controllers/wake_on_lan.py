@@ -51,6 +51,11 @@ class controller(base_controller.BaseController):
         info[name] = {"hwaddr": hwaddr, "add_to_power_ctl": add_to_power_ctl}
 
         self.save(info)
+
+        # 这里要先保存才能重新加入到能源监控
+        g = global_vars["ixcsys.sysadm"]
+        g.add_to_hwaddr_to_power_monitor()
+
         self.finish_with_json({"is_error": False, "message": "添加成功"})
 
     def delete(self):

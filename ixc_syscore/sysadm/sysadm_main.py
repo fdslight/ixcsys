@@ -18,6 +18,7 @@ import ixc_syslib.pylib.logging as logging
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syscore.sysadm.handlers.httpd as httpd
+import ixc_syscore.sysadm.pylib.power_monitor as power_monitor
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -102,6 +103,8 @@ class service(dispatcher.dispatcher):
     __auto_shutdown_cfg = None
     __auto_shutdown_cfg_path = None
 
+    __power = None
+
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
         self.load_cloudflare_ddns_cfg()
@@ -135,6 +138,10 @@ class service(dispatcher.dispatcher):
     @property
     def download_cfg(self):
         return self.__file_download_cfg["config"]
+
+    @property
+    def power(self):
+        return self.__power
 
     def load_file_download_cfg(self):
         if not os.path.isfile(self.__file_download_cfg_path):
@@ -216,6 +223,7 @@ class service(dispatcher.dispatcher):
 
         self.start_scgi()
         self.http_start()
+        self.start_power_monitor()
 
     def start_scgi(self):
         scgi_configs = {
@@ -227,6 +235,31 @@ class service(dispatcher.dispatcher):
 
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
+
+    def add_to_hwaddr_to_power_monitor(self):
+        fpath = "%s/wake_on_lan.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        conf = cfg.ini_parse_from_file(fpath)
+
+        self.__power.clear()
+
+        for name in conf:
+            o = conf[name]
+            add_to_power_ctl = bool(int(o['add_to_power_ctl']))
+            if add_to_power_ctl: self.__power.add_hwaddr(o["hwaddr"])
+
+    def start_power_monitor(self):
+        self.__power = power_monitor.power_monitor(
+            int(self.auto_shutdown_cfg["begin_hour"]),
+            int(self.auto_shutdown_cfg["begin_min"]),
+            int(self.auto_shutdown_cfg["end_hour"]),
+            int(self.auto_shutdown_cfg["end_min"]),
+            self.auto_shutdown_cfg["https_host"],
+            self.get_manage_addr(),
+            1999,
+            self.auto_shutdown_cfg["auto_shutdown_type"]
+        )
+        self.add_to_hwaddr_to_power_monitor()
+        self.__power.set_enable(self.auto_shutdown_cfg["enable"])
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
@@ -246,6 +279,7 @@ class service(dispatcher.dispatcher):
                                         kwargs={"debug": self.debug})
             p.start()
 
+        self.__power.loop()
         self.__up_time = time.time()
 
     @property

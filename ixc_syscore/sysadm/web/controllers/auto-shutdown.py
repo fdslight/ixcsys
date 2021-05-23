@@ -80,12 +80,15 @@ class controller(base_controller.BaseController):
         cfg["enable"] = enable
         cfg["https_host"] = https_host
         cfg["auto_shutdown_type"] = shutdown_type
-        cfg["begin_hour"] = begin_hour
-        cfg["begin_min"] = begin_min
-        cfg["end_hour"] = end_hour
-        cfg["end_min"] = end_min
+        cfg["begin_hour"] = i_begin_hour
+        cfg["begin_min"] = i_begin_min
+        cfg["end_hour"] = i_end_hour
+        cfg["end_min"] = i_end_min
         cfg["self_shutdown_time"] = i_self_shutdown_time
 
         self.sysadm.save_auto_shutdown_cfg()
+        self.sysadm.power.set_time(i_begin_hour, i_begin_min, i_end_hour, i_end_min)
+        self.sysadm.power.set_enable(enable)
+        self.sysadm.power.set_https_host(https_host)
 
         self.json_resp(False, {})

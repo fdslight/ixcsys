@@ -2,6 +2,8 @@
 """能源监控类
 """
 import time, socket
+import pywind.lib.netutils as netutils
+import ixc_syscore.sysadm.pylib.wol as wol
 
 
 def shutdown(bind_ip, port):
@@ -28,17 +30,29 @@ class power_monitor(object):
     __bind_ip = None
     __port = None
 
-    def __init__(self, begin_hour: int, begin_min: int, end_hour: int, end_min: int, bind_ip: str, port: int,
+    __https_host = None
+    __enabled = None
+
+    def __init__(self, begin_hour: int, begin_min: int, end_hour: int, end_min: int, https_host: str, bind_ip: str,
+                 port: int,
                  shutdown_type: str):
-        self.__hwaddrs = {}
-        self.__shutdown_type = shutdown_type
+        self.__hwaddrs = []
         self.__up_time = time.time()
-        self.__day_begin_time = begin_hour * 60 + begin_min
-        self.__day_end_time = end_hour * 60 + end_min
+        self.set_time(begin_hour, begin_min, end_hour, end_min)
         self.__check_network_count = 0
 
+        self.__https_host = https_host
         self.__bind_ip = bind_ip
         self.__port = port
+        self.__shutdown_type = shutdown_type
+        self.__enabled = False
+
+    def set_time(self, begin_hour: int, begin_min: int, end_hour: int, end_min: int):
+        self.__day_begin_time = begin_hour * 60 + begin_min
+        self.__day_end_time = end_hour * 60 + end_min
+
+    def set_https_host(self, host: str):
+        self.__https_host = host
 
     def set_shutdown_type(self, _type):
         self.__shutdown_type = _type
@@ -52,15 +66,35 @@ class power_monitor(object):
         return int(hour) * 60 + int(minute)
 
     def add_hwaddr(self, hwaddr: str):
-        pass
+        if hwaddr not in self.__hwaddrs: self.__hwaddrs.append(hwaddr)
 
     def clear(self):
-        self.__hwaddrs = {}
+        self.__hwaddrs = []
         self.__check_network_count = 0
 
     def check_network_ok(self):
         """检查网络是否成功
         """
+        is_ipv6_addr = netutils.is_ipv6_address(self.__https_host)
+
+        if is_ipv6_addr:
+            fa = socket.AF_INET6
+        else:
+            fa = socket.AF_INET
+
+        s = socket.socket(fa, socket.SOCK_STREAM)
+        s.settimeout(3)
+
+        # 超过3次都是失败那么返回网络失败
+        try:
+            s.connect((self.__https_host, 443))
+            self.__check_network_count = 0
+        except:
+            self.__check_network_count += 1
+
+        if self.__check_network_count >= 3:
+            return False
+
         return True
 
     def power_off(self):
@@ -71,7 +105,9 @@ class power_monitor(object):
     def power_on(self):
         """打开电源
         """
-        pass
+        for hwaddr in self.__hwaddrs:
+            instance = wol.wake_on_lan()
+            instance.wake(hwaddr)
 
     def is_need_power_off(self):
         day_min = self.get_day_min()
@@ -97,12 +133,18 @@ class power_monitor(object):
 
         return False
 
+    def set_enable(self, enabled: bool):
+        """开启或者关闭能源管理
+        """
+        self.__enabled = enabled
+
     def loop(self):
         """循环跳用
         """
+        if not self.__enabled: return
         now = time.time()
         # 60s执行一次
-        if now - self.__up_time < 60: return
+        if now - self.__up_time < 90: return
 
         is_sent_power_on = False
 
