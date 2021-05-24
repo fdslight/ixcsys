@@ -144,10 +144,9 @@ class power_monitor(object):
         return False
 
     def is_need_self_shutdown(self):
-        if self.__shutdown_type not in ("auto", "network",):
-            return False
-
         if self.__check_network_count == 0:
+            return False
+        if self.__self_shutdown_time == 0:
             return False
 
         now_min = self.get_day_min()
