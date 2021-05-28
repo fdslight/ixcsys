@@ -187,6 +187,7 @@ ${self.inherit("base.html")}
                             //err_ele.html(message)
                         } else {
                             alert("${self.LA('update ok')}");
+                            window.location.reload();
                         }
                     },
                     error: function () {

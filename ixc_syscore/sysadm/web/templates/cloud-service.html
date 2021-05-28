@@ -4,17 +4,32 @@
         <h4>云服务(用于远程管控路由器)</h4>
         <div class="ixc-empty"></div>
         <div class="ixc-empty"></div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">服务状态</label>
+            <div class="col-sm-10">
+                <p style="color: green;">
+                    <%
+                        if self.V["status"]=="no_conn":
+                            self.show("未连接")
+                        if self.V["status"]=="conn_ok":
+                            self.show("连接成功")
+                        if self.V["status"]=="no_enable":
+                            self.show("未启用")
+                    %>
+                </p>
+            </div>
+        </div>
 
         <div class="form-group row">
-            <label for="passwd" class="col-sm-2 col-form-label">设备ID</label>
+            <label class="col-sm-2 col-form-label">设备ID</label>
             <div class="col-sm-10">
-                <input type="password" class="form-control" name="device_id" value="${self.V['device_id']}"
+                <input type="text" class="form-control" name="device_id" value="${self.V['device_id']}"
                        placeholder="设备ID">
             </div>
         </div>
 
         <div class="form-group row">
-            <label for="passwd" class="col-sm-2 col-form-label">通信密钥</label>
+            <label class="col-sm-2 col-form-label">通信密钥</label>
             <div class="col-sm-10">
                 <input type="password" class="form-control" name="key" value="${self.V['key']}"
                        placeholder="通信密钥">
@@ -27,7 +42,7 @@
                 <div class="form-check">
                     <%
                         s="""<input class="form-check-input" type="checkbox" value="1" name="enable" {} />"""
-                        if self.V["positive_heartbeat"]:x=s.format("checked")
+                        if self.V["enable"]:x=s.format("checked")
                         else:x=s.format("{}")
                         self.show(x)
                     %>

@@ -103,13 +103,20 @@ class service(dispatcher.dispatcher):
     __auto_shutdown_cfg = None
     __auto_shutdown_cfg_path = None
 
+    __cloudservice_cfg_path = None
+    __cloudservice_cfg = None
+
     __power = None
+
+    # 云服务连接是否正常
+    __cloudservice_conn_ok = None
 
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
         self.load_cloudflare_ddns_cfg()
         self.load_file_download_cfg()
         self.load_auto_shutdown_cfg()
+        self.load_cloudservice_cfg()
 
     def load_auto_shutdown_cfg(self):
         if not os.path.isfile(self.__auto_shutdown_cfg_path):
@@ -143,6 +150,10 @@ class service(dispatcher.dispatcher):
     def power(self):
         return self.__power
 
+    @property
+    def cloud_service_cfg(self):
+        return self.__cloudservice_cfg
+
     def load_file_download_cfg(self):
         if not os.path.isfile(self.__file_download_cfg_path):
             o = {
@@ -155,6 +166,26 @@ class service(dispatcher.dispatcher):
             o = cfg.ini_parse_from_file(self.__file_download_cfg_path)
 
         self.__file_download_cfg = o
+
+    def load_cloudservice_cfg(self):
+        if not os.path.isfile(self.__cloudservice_cfg_path):
+            self.__cloudservice_cfg = {
+                "enable": False,
+                "device_id": "",
+                "key": ""
+            }
+            return
+
+        with open(self.__cloudservice_cfg_path, "r") as f:
+            s = f.read()
+        f.close()
+        self.__cloudservice_cfg = json.loads(s)
+
+    def save_cloudservice_cfg(self):
+        s = json.dumps(self.__cloudservice_cfg)
+        with open(self.__cloudservice_cfg_path, "w") as f:
+            f.write(s)
+        f.close()
 
     def save_file_download_cfg(self):
         cfg.save_to_ini(self.__file_download_cfg, self.__file_download_cfg_path)
@@ -209,9 +240,14 @@ class service(dispatcher.dispatcher):
         self.__auto_shutdown_cfg = {}
         self.__auto_shutdown_cfg_path = "%s/auto_shutdown.json" % os.getenv("IXC_MYAPP_CONF_DIR")
 
+        self.__cloudservice_cfg_path = "%s/cloud_service.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__cloudservice_cfg = {}
+
         self.__scgi_fd = -1
         self.__is_restart = False
         self.__ddns_up_time = time.time()
+
+        self.__cloudservice_conn_ok = False
 
         global_vars["ixcsys.sysadm"] = self
 
@@ -281,6 +317,15 @@ class service(dispatcher.dispatcher):
 
         self.__power.loop()
         self.__up_time = time.time()
+
+    @property
+    def cloud_service_status(self):
+        return self.__cloudservice_conn_ok
+
+    def set_cloud_service_status(self, ok: bool):
+        """设置云服务状态
+        """
+        self.__cloudservice_conn_ok = ok
 
     @property
     def debug(self):
