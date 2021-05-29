@@ -17,7 +17,9 @@ import pywind.web.handlers.scgi as scgi
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.RPCClient as RPCClient
+
 import ixc_syscore.sysadm.handlers.httpd as httpd
+import ixc_syscore.sysadm.handlers.cloud_service as cloud_service
 import ixc_syscore.sysadm.pylib.power_monitor as power_monitor
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -111,6 +113,8 @@ class service(dispatcher.dispatcher):
     # 云服务连接是否正常
     __cloudservice_conn_ok = None
 
+    __cloud_service_fd = None
+
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
         self.load_cloudflare_ddns_cfg()
@@ -153,6 +157,23 @@ class service(dispatcher.dispatcher):
     @property
     def cloud_service_cfg(self):
         return self.__cloudservice_cfg
+
+    @property
+    def cloud_service_device_id(self):
+        return self.__cloudservice_cfg["device_id"]
+
+    @property
+    def cloud_service_key(self):
+        return self.__cloudservice_cfg["key"]
+
+    def reset_cloud_service(self):
+        if self.__cloud_service_fd > 0:
+            self.delete_handler(self.__cloud_service_fd)
+            self.__cloud_service_fd = -1
+
+        if not self.__cloudservice_cfg["enable"]: return
+
+        self.__cloud_service_fd = self.create_handler(-1, cloud_service.cloud_service_client, "cloud.ixcsys.com", 443)
 
     def load_file_download_cfg(self):
         if not os.path.isfile(self.__file_download_cfg_path):
@@ -228,6 +249,7 @@ class service(dispatcher.dispatcher):
         self.__httpd_fd6 = -1
         self.__httpd_ssl_fd = -1
         self.__httpd_ssl_fd6 = -1
+        self.__cloud_service_fd = -1
         self.__debug = debug
         self.__up_time = time.time()
 
@@ -396,6 +418,9 @@ class service(dispatcher.dispatcher):
         if self.__httpd_ssl_fd6 > 0:
             self.delete_handler(self.__httpd_ssl_fd6)
             self.__httpd_ssl_fd6 = -1
+        if self.__cloud_service_fd > 0:
+            self.delete_handler(self.__cloud_service_fd)
+            self.__cloud_service_fd = -1
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
 

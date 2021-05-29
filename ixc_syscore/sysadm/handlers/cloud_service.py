@@ -6,7 +6,7 @@ import pywind.web.lib.httputils as httputils
 import pywind.web.lib.websocket as wslib
 
 import ixc_syslib.pylib.logging as logging
-import ixc_syscore.sysadm.pylib.cloud_service as cloud_service
+import ixc_syscore.sysadm.pylib.cloud_service as cloud_service_protocol
 
 
 class cloud_service_client(ssl_handler.ssl_handler):
@@ -15,10 +15,16 @@ class cloud_service_client(ssl_handler.ssl_handler):
     __port = None
     __http_handshake_key = None
 
+    __parser = None
+    __builder = None
+
     def ssl_init(self, host: str, port: int, is_ipv6=False):
         self.__http_handshake_ok = False
         self.__port = port
         self.__http_handshake_key = None
+
+        self.__parser = cloud_service_protocol.parser(self.key)
+        self.__builder = cloud_service_protocol.builder(self.key)
 
         if is_ipv6:
             fa = socket.AF_INET6
@@ -57,11 +63,15 @@ class cloud_service_client(ssl_handler.ssl_handler):
         return self.dispatcher.cloud_service_key
 
     def send_http_request(self):
-        kv_pairs = [("Connection", "Upgrade"), ("Upgrade", "websocket",), (
-            "User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:69.0) Gecko/20100101 Firefox/69.0",),
-                    ("Accept-Language", "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2"),
-                    ("Sec-WebSocket-Version", 13,), ("Sec-WebSocket-Key", self.rand_string(),),
-                    ("Sec-WebSocket-Protocol", "chat")]
+        kv_pairs = [
+            ("Connection", "Upgrade"), ("Upgrade", "websocket",), (
+                "User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:69.0) Gecko/20100101 Firefox/69.0",),
+            ("Accept-Language", "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2"),
+            ("Sec-WebSocket-Version", 13,), ("Sec-WebSocket-Key", self.rand_string(),),
+            ("Sec-WebSocket-Protocol", "cloudservice"),
+            ("X-IXC-Device-ID", self.device_id),
+            ("X-IXC-Key", self.key),
+        ]
 
         if self.__port == 443:
             host = ("Host", self.__host,)
