@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
-import socket, time, os
+import socket, time, random
 
-import pywind.evtframework.handlers.tcp_handler as tcp_handler
 import pywind.evtframework.handlers.ssl_handler as ssl_handler
+import pywind.web.lib.httputils as httputils
+import pywind.web.lib.websocket as wslib
+
+import ixc_syslib.pylib.logging as logging
+import ixc_syscore.sysadm.pylib.cloud_service as cloud_service
 
 
 class cloud_service_client(ssl_handler.ssl_handler):
+    __http_handshake_ok = None
+    __host = None
+    __port = None
+    __http_handshake_key = None
+
     def ssl_init(self, host: str, port: int, is_ipv6=False):
+        self.__http_handshake_ok = False
+        self.__port = port
+        self.__http_handshake_key = None
+
         if is_ipv6:
             fa = socket.AF_INET6
         else:
@@ -42,6 +55,84 @@ class cloud_service_client(ssl_handler.ssl_handler):
         """通信密钥
         """
         return self.dispatcher.cloud_service_key
+
+    def send_http_request(self):
+        kv_pairs = [("Connection", "Upgrade"), ("Upgrade", "websocket",), (
+            "User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:69.0) Gecko/20100101 Firefox/69.0",),
+                    ("Accept-Language", "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2"),
+                    ("Sec-WebSocket-Version", 13,), ("Sec-WebSocket-Key", self.rand_string(),),
+                    ("Sec-WebSocket-Protocol", "chat")]
+
+        if self.__port == 443:
+            host = ("Host", self.__host,)
+            origin = ("Origin", "https://%s" % self.__host)
+        else:
+            host = ("Host", "%s:%s" % self.__host, self.__port)
+            origin = ("Origin", "https://%s:%s" % self.__host, self.__port,)
+
+        kv_pairs.append(host)
+        kv_pairs.append(origin)
+
+        s = httputils.build_http1x_req_header("GET", "/", kv_pairs)
+
+        self.writer.write(s.encode("iso-8859-1"))
+        self.add_evt_write(self.fileno)
+
+    def recv_handshake(self):
+        size = self.reader.size()
+        data = self.reader.read()
+
+        p = data.find(b"\r\n\r\n")
+
+        if p < 10 and size > 2048:
+            self.delete_handler(self.fileno)
+            return
+
+        if p < 0:
+            self.reader._putvalue(data)
+            return
+        p += 4
+
+        self.reader._putvalue(data[p:])
+
+        s = data[0:p].decode("iso-8859-1")
+
+        try:
+            resp, kv_pairs = httputils.parse_http1x_response_header(s)
+        except httputils.Http1xHeaderErr:
+            self.delete_handler(self.fileno)
+            return
+
+        version, status = resp
+
+        if status.find("101") != 0:
+            self.delete_handler(self.fileno)
+            return
+
+        accept_key = self.get_http_kv_pairs("sec-websocket-accept", kv_pairs)
+        if wslib.gen_handshake_key(self.__http_handshake_key) != accept_key:
+            self.delete_handler(self.fileno)
+            return
+
+        self.__http_handshake_ok = True
+
+    def get_http_kv_pairs(self, name, kv_pairs):
+        for k, v in kv_pairs:
+            if name.lower() == k.lower():
+                return v
+            ''''''
+        return None
+
+    def rand_string(self, length=8):
+        seq = []
+        for i in range(length):
+            n = random.randint(65, 122)
+            seq.append(chr(n))
+
+        s = "".join(seq)
+        self.__http_handshake_key = s
+
+        return s
 
     def tcp_error(self):
         pass
