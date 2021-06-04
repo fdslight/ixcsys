@@ -302,6 +302,8 @@ class service(dispatcher.dispatcher):
 
         for name in conf:
             o = conf[name]
+            if "add_to_power_ctl" not in o:
+                o["add_to_power_ctl"] = 0
             add_to_power_ctl = bool(int(o['add_to_power_ctl']))
             if add_to_power_ctl: self.__power.add_hwaddr(o["hwaddr"])
 
