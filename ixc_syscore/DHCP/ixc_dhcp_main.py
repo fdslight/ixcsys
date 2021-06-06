@@ -162,6 +162,8 @@ class service(dispatcher.dispatcher):
 
     def save_tftp_configs(self):
         conf.save_to_ini(self.__tftp_configs, self.__tftp_conf_fpath)
+        self.load_tftp_configs()
+        self.start_tftp()
 
     def parse_ieee_ma_info(self, path: str):
         """解析IEEE MA的厂商MAC地址分配信息
