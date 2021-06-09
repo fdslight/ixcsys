@@ -163,6 +163,8 @@ class dhcp_server(object):
         # 如果没有67那么不加入引导选项
         if 67 not in request_list: return
         client_sys_arch = self.get_dhcp_opt_value(opts, 93)
+        # 检查是否有此字段
+        if not client_sys_arch: return
         if len(client_sys_arch) != 2: return
         arch, = struct.unpack("!H", client_sys_arch)
 
