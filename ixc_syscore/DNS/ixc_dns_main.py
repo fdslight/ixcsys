@@ -302,6 +302,9 @@ class service(dispatcher.dispatcher):
     def sec_rules(self):
         return self.__sec_rules
 
+    def is_auto(self):
+        return bool(int(self.__dns_configs["public"]["enable_auto"]))
+
     def get_nameservers(self, is_ipv6=False):
         if is_ipv6:
             return self.get_handler(self.__dns_client6).get_nameservers()
