@@ -80,7 +80,7 @@ class controller(rpc.controller):
         return 0, self.__runtime.get_nameservers(is_ipv6=is_ipv6)
 
     def set_nameservers(self, ns1: str, ns2: str, is_ipv6=False):
-        if self.__runtime.is_auto(): return 0, None
+        if not self.__runtime.is_auto(): return 0, None
         return 0, self.__runtime.set_nameservers(ns1, ns2, is_ipv6=is_ipv6)
 
     def is_auto(self):
