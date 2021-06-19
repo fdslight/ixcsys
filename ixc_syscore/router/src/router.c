@@ -1179,7 +1179,7 @@ static void ixc_start(int debug)
         return;
     }
 
-    rs=ixc_mbuf_init(512);
+    rs=ixc_mbuf_init(1024);
     if(rs<0){
         STDERR("cannot init mbuf\r\n");
         return;
