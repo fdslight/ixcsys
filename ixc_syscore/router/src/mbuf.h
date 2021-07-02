@@ -7,7 +7,7 @@
 #include "../../../pywind/clib/debug.h"
 
 #define IXC_MBUF_LOOP_TRACE_MAX_NUM 32
-#define IXC_MBUF_MAX 2048
+#define IXC_MBUF_MAX 4096
 
 struct ixc_mbuf{
     struct ixc_mbuf *next;
