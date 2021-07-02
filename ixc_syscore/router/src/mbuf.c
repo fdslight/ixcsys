@@ -74,6 +74,9 @@ struct ixc_mbuf *ixc_mbuf_get(void)
         return m;
     }
 
+    // 限制最大分配个数,防止分配过多造成系统内存不够
+    if(ixc_mbuf_used_num>=IXC_MBUF_MAX) return NULL;
+
     m=malloc(sizeof(struct ixc_mbuf));
     if(NULL==m){
         STDERR("no memory for struct ixc_mbuf\r\n");
