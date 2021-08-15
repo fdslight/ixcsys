@@ -30,7 +30,7 @@ class matcher(object):
     def __init__(self):
         self.clear()
 
-    def match(self, host: str, cb_flags=False):
+    def match(self, host: str):
         """匹配主机
         """
         _list = host.split(".")
@@ -44,11 +44,9 @@ class matcher(object):
                 break
             o = o[x]
         if is_found: return o["rule_info"]
-        if not cb_flags:
-            # 找不到那么替换子域名重新匹配一次
-            _list = host.split(".")
-            _list[0] = "*"
-            return self.match(".".join(_list), cb_flags=True)
+        # 未匹配那么查找子项所有匹配是否存在
+        if "*" in o: return o["*"]["rule_info"]
+
         return None
 
     def add_rule(self, rule: str, action: str, priv_data=None):
@@ -124,11 +122,10 @@ class matcher(object):
         self.__rules = {}
 
 
-"""
-cls = matcher()
-cls.add_rule("*.facebook.com", "drop")
-cls.add_rule("*.google.com", "this is action")
+#cls = matcher()
+#cls.add_rule("*.facebook.com", "drop")
+#cls.add_rule("*.google.com", "this is action")
+# cls.add_rule("*", "this is action")
 # print(cls.rules)
 # print(cls.rule_tree)
-print(cls.match("www.google.com"))
-"""
+#print(cls.match("zzz.zz.googlde.com"))
