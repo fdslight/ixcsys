@@ -43,9 +43,19 @@ class matcher(object):
                 is_found = False
                 break
             o = o[x]
-        if is_found: return o["rule_info"]
+
+        if is_found:
+            # 这里可能存在xxx.xx格式的域名情况,需要额外考虑
+            # o["rule_info"]可能为空
+            if o["rule_info"]: return o["rule_info"]
+            # 补全一个空元素,以便join方法形成".xxx.xx"域名
+            _list.append("")
+            _list.reverse()
+            return self.match(".".join(_list))
+
         # 未匹配那么查找子项所有匹配是否存在
-        if "*" in o: return o["*"]["rule_info"]
+        if "*" in o:
+            return o["*"]["rule_info"]
 
         return None
 
@@ -124,8 +134,8 @@ class matcher(object):
 
 #cls = matcher()
 #cls.add_rule("*.facebook.com", "drop")
-#cls.add_rule("*.google.com", "this is action")
+# cls.add_rule("*.google.com", "this is action")
 # cls.add_rule("*", "this is action")
 # print(cls.rules)
 # print(cls.rule_tree)
-#print(cls.match("zzz.zz.googlde.com"))
+#print(cls.match("www.facebook.com"))
