@@ -6,7 +6,7 @@
 #include<stdlib.h>
 
 
-void __print_time(int fd);
+void __print_time(FILE *fp);
 
 #define STDERR(...) __print_time(stderr);fprintf(stderr,"%s:%s line_no:%d   ",__FILE__,__func__,__LINE__);fprintf(stderr,__VA_ARGS__)
 #define STDOUT(...) __print_time(stdout);printf("%s:%s line_no:%d   ",__FILE__,__func__,__LINE__);printf(__VA_ARGS__)
