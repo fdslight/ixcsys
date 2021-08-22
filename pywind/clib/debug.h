@@ -6,9 +6,9 @@
 #include<time.h>
 #include<stdlib.h>
 
-char __time_buf[512];
-struct tm *__time;
-time_t __raw_time;
+static char __time_buf[512];
+static struct tm *__time;
+static time_t __raw_time;
 
 #define __TIME(fd)  time(&__raw_time);\
 __time=localtime(&__raw_time);\
