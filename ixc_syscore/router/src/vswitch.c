@@ -1,5 +1,6 @@
 
 #include<string.h>
+#include<time.h>
 
 #include "vswitch.h"
 #include "debug.h"

@@ -1,4 +1,5 @@
 #include<string.h>
+#include<time.h>
 
 #include "sec_net.h"
 #include "route.h"

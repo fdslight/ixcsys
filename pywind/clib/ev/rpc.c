@@ -7,6 +7,7 @@
 #include<errno.h>
 #include<sys/un.h>
 #include<stddef.h>
+#include<time.h>
 
 #include "rpc.h"
 #include "ev.h"

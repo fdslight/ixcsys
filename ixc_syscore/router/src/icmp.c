@@ -1,4 +1,5 @@
 #include<string.h>
+#include<time.h>
 
 #include "icmp.h"
 #include "ip.h"
