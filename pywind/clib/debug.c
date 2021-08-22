@@ -4,7 +4,7 @@
 
 #include "debug.h"
 
-void __print_time(int fd)
+void __print_time(FILE *fp)
 {
     char time_buf[512];
     struct tm *time_ptr;
@@ -12,5 +12,5 @@ void __print_time(int fd)
 
     time(&raw_time);
     time_ptr=localtime(&raw_time);
-    strftime(time_buf,512,"%Y-%m-%d %X %Z",time_ptr);fprintf(fd,"%s    ",time_buf);
+    strftime(time_buf,512,"%Y-%m-%d %X %Z",time_ptr);fprintf(fp,"%s    ",time_buf);
 }
