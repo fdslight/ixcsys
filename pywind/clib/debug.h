@@ -10,7 +10,11 @@ char __time_buf[512];
 struct tm *__time;
 time_t __raw_time;
 
-#define __TIME(fd)  time(&__raw_time);\
+#define __TIME(fd) \
+extern char __time_buf[];\
+extern struct tm *__time;\
+extern time_t __raw_time;\
+time(&__raw_time);\
 __time=localtime(&__raw_time);\
 strftime(__time_buf,512,"%Y-%m-%d %X %Z",__time);fprintf(fd,"%s    ",__time_buf)
 
