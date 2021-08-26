@@ -172,13 +172,37 @@ int ixc_route_init(void)
     }
     route.ip6_rt=m;
 
+    rs=map_new(&m,4);
+    if(rs){
+        map_release(route.ip6_rt,NULL);
+        map_release(route.ip6_rt,NULL);
+        STDERR("create IP cache map failed\r\n");
+        return -1;
+    }
+
+    route.ip_rt_cache=m;
+
+    rs=map_new(&m,16);
+    if(rs){
+        map_release(route.ip6_rt,NULL);
+        map_release(route.ip6_rt,NULL);
+        map_release(route.ip_rt_cache,NULL);
+        STDERR("create IP cache map failed\r\n");
+        return -1;
+    }
+
     return 0;
 }
 
 void ixc_route_uninit(void)
 {
+    // 注意缓存删除一定要在路由表删除之后,否则会造成内存错误
+    // 删除路由条目是会先检查路由是否被缓存,如果被缓存那么保存的路由信息不会被删除,真正会被删除的是在清除缓存后
     map_release(route.ip_rt,ixc_route_del_cb);
     map_release(route.ip6_rt,ixc_route_del_cb);
+
+    map_release(route.ip_rt_cache,ixc_route_del_cb);
+    map_release(route.ip6_rt_cache,ixc_route_del_cb);
 
     route_is_initialized=0;
 }

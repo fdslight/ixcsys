@@ -6,6 +6,9 @@
 
 #include "../../../pywind/clib/map.h"
 
+/// 路由缓存超时时间
+#define IXC_ROUTE_CACHE_TIMEOUT 1200
+
 /// 保存前缀信息
 struct ixc_route_prefix{
     struct ixc_route_prefix *next;
@@ -23,6 +26,10 @@ struct ixc_route_info{
     // 指向的网关
     unsigned char gw[16];
     int is_ipv6;
+    // 该路由是否已经无效
+    int is_invalid;
+    // 路由是否已经被缓存
+    int is_cached;
     unsigned char pad[3];
     unsigned char prefix;
 };
@@ -30,6 +37,10 @@ struct ixc_route_info{
 struct ixc_route{
     struct map *ip_rt;
     struct map *ip6_rt;
+    // IPv4路由缓存
+    struct map *ip_rt_cache;
+    // IPv6路由缓存
+    struct map *ip6_rt_cache;
     struct ixc_route_prefix *ip_pre_head;
     struct ixc_route_prefix *ip6_pre_head;
     // 是否开启IPv6透传
