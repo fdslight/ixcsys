@@ -161,7 +161,10 @@ static void ixc_route_cache_del_cb(void *data)
 
 	if(r_info->is_invalid){
 		free(r_info);
-	}
+	}else{
+        // 设置状态为未缓存
+        r_info->is_cached=0;
+    }
 	free(cache);
 }
 
@@ -200,6 +203,7 @@ static void ixc_route_cache_add(unsigned char *address,int is_ipv6,struct ixc_ro
         return;
     }
 
+    DBG("add to route cache\r\n");
 	r_info->is_cached=1;
 }
 
@@ -212,7 +216,9 @@ static struct ixc_route_info *ixc_route_cache_get(unsigned char *address,int is_
     struct time_data *tdata;
 
     if(NULL!=cache){
-        if(!cache->r_info->is_invalid) return cache->r_info;
+        if(!cache->r_info->is_invalid) {
+            return cache->r_info;
+        }
         // 路由无效那么删除相关内存
         tdata=cache->tdata;
         if(NULL!=tdata) tdata->is_deleted=1;
@@ -221,8 +227,6 @@ static struct ixc_route_info *ixc_route_cache_get(unsigned char *address,int is_
         free(cache);
         return NULL;
     }
-    
-    if(NULL!=cache) cache->r_info;
 
     return NULL;
 }
@@ -447,7 +451,10 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
     //unsigned char *t;
 
     r=ixc_route_cache_get(ip,is_ipv6);
-    if(r) return r;
+    if(r){
+        DBG("route from cache\r\n");
+        return r;
+    }
 
     while(NULL!=p){
         
@@ -628,7 +635,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     unsigned short ttl;
 
     unsigned short csum;
-
+    
     // 保留地址直接丢弃
     if(iphdr->dst_addr[0]>=224){
         ixc_mbuf_put(m);
