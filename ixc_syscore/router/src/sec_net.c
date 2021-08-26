@@ -8,6 +8,7 @@
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
+#include "../../../pywind/clib/timer.h"
 
 static struct ixc_sec_net sec_net;
 static struct time_wheel sec_net_cache_tw;

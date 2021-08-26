@@ -5,6 +5,7 @@
 #include "netif.h"
 
 #include "../../../pywind/clib/map.h"
+#include "../../../pywind/clib/timer.h"
 
 /// 路由缓存超时时间
 #define IXC_ROUTE_CACHE_TIMEOUT 1200
@@ -32,6 +33,14 @@ struct ixc_route_info{
     int is_cached;
     unsigned char pad[3];
     unsigned char prefix;
+};
+
+struct ixc_route_cache{
+	struct ixc_route_info *r_info;
+    struct time_data *tdata;
+	// 缓存地址
+	unsigned char address[16];
+	int is_ipv6;
 };
 
 struct ixc_route{

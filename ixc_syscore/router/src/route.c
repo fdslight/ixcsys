@@ -17,9 +17,12 @@
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
+#include "../../../pywind/clib/sysloop.h"
 
 static struct ixc_route route;
 static int route_is_initialized=0;
+static struct time_wheel route_cache_tw;
+static struct sysloop *route_sysloop=NULL;
 
 static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
 {
@@ -145,9 +148,103 @@ static void ixc_route_del_cb(void *data)
     struct ixc_route_info *r=data;
 
     ixc_route_prefix_del(r->prefix,r->is_ipv6);
-    free(data);
+    // 没有缓存直接删除路由
+    if(!r->is_cached) free(data);
+    // 有缓存那么设置路由无效
+    else r->is_invalid=1;
 }
 
+static void ixc_route_cache_del_cb(void *data)
+{
+	struct ixc_route_cache *cache=data;
+	struct ixc_route_info *r_info=cache->r_info;
+
+	if(r_info->is_invalid){
+		free(r_info);
+	}
+	free(cache);
+}
+
+static void ixc_route_cache_add(unsigned char *address,int is_ipv6,struct ixc_route_info *r_info)
+{
+	struct map *m=is_ipv6?route.ip6_rt_cache:route.ip_rt_cache;
+	struct ixc_route_cache *cache=malloc(sizeof(struct ixc_route_cache));
+    struct time_data *tdata;
+	int rs;
+
+	if(NULL==cache){
+		STDERR("no memory,cannot add to route cache\r\n");
+		return;
+	}
+	
+	cache->r_info=r_info;
+
+	if(is_ipv6) memcpy(cache->address,address,16);
+	else memcpy(cache->address,address,4);
+
+	cache->is_ipv6=1;
+
+	rs=map_add(m,(char *)address,cache);
+	if(0!=rs){
+		free(cache);
+		STDERR("cannot add to route cache\r\n");
+		return;
+	}
+
+	// add to time wheel
+    tdata=time_wheel_add(&route_cache_tw,cache,IXC_ROUTE_CACHE_TIMEOUT);
+    if(NULL==tdata){
+        STDERR("cannot add to time wheel\r\n");
+        map_del(m,(char *)address,NULL);
+        free(cache);
+        return;
+    }
+
+	r_info->is_cached=1;
+}
+
+/// 获取缓存
+static struct ixc_route_info *ixc_route_cache_get(unsigned char *address,int is_ipv6)
+{
+    char is_found;
+    struct map *m=is_ipv6?route.ip6_rt_cache:route.ip_rt_cache;
+    struct ixc_route_cache *cache=map_find(m,(char *)address,&is_found);
+    struct time_data *tdata;
+
+    if(NULL!=cache){
+        if(!cache->r_info->is_invalid) return cache->r_info;
+        // 路由无效那么删除相关内存
+        tdata=cache->tdata;
+        if(NULL!=tdata) tdata->is_deleted=1;
+        map_del(m,(char *)address,NULL);
+        free(cache->r_info);
+        free(cache);
+        return NULL;
+    }
+    
+    if(NULL!=cache) cache->r_info;
+
+    return NULL;
+}
+
+static void ixc_route_sysloop_fn(struct sysloop *loop)
+{
+    time_wheel_handle(&route_cache_tw);
+}
+
+static void ixc_route_cache_timeout(void *data)
+{
+    struct ixc_route_cache *cache=data;
+    struct ixc_route_info *r_info=cache->r_info;
+    struct map *m=cache->is_ipv6?route.ip6_rt_cache:route.ip_rt_cache;
+    
+    map_del(m,(char *)cache->address,NULL);
+    
+    // 如果路由指示无效,那么这里删除路由信息内存
+    if(r_info->is_invalid) free(r_info);
+
+    free(cache);
+}
 
 int ixc_route_init(void)
 {
@@ -156,8 +253,23 @@ int ixc_route_init(void)
 
     bzero(&route,sizeof(struct ixc_route));
 
+    route_sysloop=sysloop_add(ixc_route_sysloop_fn,NULL);
+    if(NULL==route_sysloop){
+        STDERR("cannot add to sysloop\r\n");
+        return -1;
+    }
+
+    rs=time_wheel_new(&route_cache_tw,(IXC_ROUTE_CACHE_TIMEOUT*2)/10,10,ixc_route_cache_timeout,128);
+    if(rs<0){
+        sysloop_del(route_sysloop);
+        STDERR("cannot create new time wheel\r\n");
+        return -1;
+    }
+
     rs=map_new(&m,5);
     if(rs){
+        sysloop_del(route_sysloop);
+        time_wheel_release(&route_cache_tw);
         STDERR("ceate ipv4 map failed\r\n");
         return -1;
     }
@@ -166,6 +278,8 @@ int ixc_route_init(void)
     
     rs=map_new(&m,17);
     if(rs){
+        sysloop_del(route_sysloop);
+        time_wheel_release(&route_cache_tw);
         map_release(route.ip_rt,NULL);
         STDERR("create ipv6 map failed\r\n");
         return -1;
@@ -174,6 +288,8 @@ int ixc_route_init(void)
 
     rs=map_new(&m,4);
     if(rs){
+        sysloop_del(route_sysloop);
+        time_wheel_release(&route_cache_tw);
         map_release(route.ip6_rt,NULL);
         map_release(route.ip6_rt,NULL);
         STDERR("create IP cache map failed\r\n");
@@ -184,6 +300,8 @@ int ixc_route_init(void)
 
     rs=map_new(&m,16);
     if(rs){
+        sysloop_del(route_sysloop);
+        time_wheel_release(&route_cache_tw);
         map_release(route.ip6_rt,NULL);
         map_release(route.ip6_rt,NULL);
         map_release(route.ip_rt_cache,NULL);
@@ -201,8 +319,8 @@ void ixc_route_uninit(void)
     map_release(route.ip_rt,ixc_route_del_cb);
     map_release(route.ip6_rt,ixc_route_del_cb);
 
-    map_release(route.ip_rt_cache,ixc_route_del_cb);
-    map_release(route.ip6_rt_cache,ixc_route_del_cb);
+    map_release(route.ip_rt_cache,ixc_route_cache_del_cb);
+    map_release(route.ip6_rt_cache,ixc_route_cache_del_cb);
 
     route_is_initialized=0;
 }
@@ -328,6 +446,9 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
     char is_found;
     //unsigned char *t;
 
+    r=ixc_route_cache_get(ip,is_ipv6);
+    if(r) return r;
+
     while(NULL!=p){
         
         //DBG_FLAGS;
@@ -349,6 +470,9 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
         if(r) break;
         p=p->next;
     }
+
+    // 此处加入到缓存中
+    ixc_route_cache_add(ip,is_ipv6,r);
 
     return r;
 }
