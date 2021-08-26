@@ -1264,7 +1264,7 @@ static void ixc_start(int debug)
         return;
     }
     // 内存缓存
-    rpc_session_pre_alloc_set(32);
+    rpc_session_pre_alloc_set(4);
   
     if(ixc_start_python()<0){
         STDERR("cannot start python helper\r\n");
