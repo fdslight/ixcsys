@@ -478,8 +478,8 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
         p=p->next;
     }
 
-    // 此处加入到缓存中
-    ixc_route_cache_add(ip,is_ipv6,r);
+    // 如果存在该路由那么将路由加入到缓存中
+    if(NULL!=r) ixc_route_cache_add(ip,is_ipv6,r);
 
     return r;
 }
