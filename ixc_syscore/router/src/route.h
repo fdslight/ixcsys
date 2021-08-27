@@ -8,7 +8,7 @@
 #include "../../../pywind/clib/timer.h"
 
 /// 路由缓存超时时间
-#define IXC_ROUTE_CACHE_TIMEOUT 1200
+#define IXC_ROUTE_CACHE_TIMEOUT 300
 
 /// 保存前缀信息
 struct ixc_route_prefix{
