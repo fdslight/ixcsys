@@ -1,6 +1,9 @@
 #ifndef IXC_ROUTER_H
 #define IXC_ROUTER_H
 
+// 系统阻塞IO等待时间,请不要修改这个值,否则可能造成内存错误
+#define IXC_IO_WAIT_TIMEOUT 10
+
 /// 表示一个ARP数据包
 #define IXC_FLAG_ARP 0
 /// 表示是一个DHCP CLIENT数据包

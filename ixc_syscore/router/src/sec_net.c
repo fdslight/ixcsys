@@ -65,7 +65,7 @@ static void __ixc_sec_net_cache_timeout(void *data)
         return;
     }
 
-    tdata=time_wheel_add(&sec_net_cache_tw,cache,10);
+    tdata=time_wheel_add(&sec_net_cache_tw,cache,IXC_IO_WAIT_TIMEOUT);
     if(NULL==tdata){
         cache->tdata=NULL;
         if(cache->is_ipv6) map_del(src_rule->ip6_cache,(char *)cache->address,__ixc_sec_net_cache_del);
@@ -95,7 +95,7 @@ int ixc_sec_net_init(void)
         return -1;
     }
 
-    rs=time_wheel_new(&sec_net_cache_tw,(IXC_SEC_NET_CACHE_TIMEOUT*2)/10,10,__ixc_sec_net_cache_timeout,128);
+    rs=time_wheel_new(&sec_net_cache_tw,(IXC_SEC_NET_CACHE_TIMEOUT*2)/IXC_IO_WAIT_TIMEOUT,IXC_IO_WAIT_TIMEOUT,__ixc_sec_net_cache_timeout,128);
     if(rs<0){
         sysloop_del(sec_net_sysloop);
         STDERR("cannot create new time wheel\r\n");
@@ -155,7 +155,7 @@ static int ixc_sec_net_add_to_cache(struct ixc_mbuf *m,struct ixc_sec_net_src_ru
     cache->is_ipv6=m->is_ipv6;
     cache->src_rule=src_rule;
 
-    tdata=time_wheel_add(&sec_net_cache_tw,cache,10);
+    tdata=time_wheel_add(&sec_net_cache_tw,cache,IXC_IO_WAIT_TIMEOUT);
     if(NULL==tdata){
         STDERR("cannot add to time wheel\r\n");
         free(cache);

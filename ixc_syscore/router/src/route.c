@@ -148,8 +148,8 @@ static void ixc_route_del_cb(void *data)
     struct ixc_route_info *r=data;
 
     ixc_route_prefix_del(r->prefix,r->is_ipv6);
-    // 没有缓存直接删除路由
-    if(!r->is_cached) free(data);
+    // 没有缓存引用直接删除路由
+    if(!r->cached_refcnt) free(data);
     // 有缓存那么设置路由无效
     else r->is_invalid=1;
 }
@@ -163,29 +163,38 @@ static void ixc_route_cache_del_cb(void *data)
 		free(r_info);
 	}else{
         // 设置状态为未缓存
-        r_info->is_cached=0;
+        r_info->cached_refcnt-=1;
     }
+
+    DBG("delete route cache\r\n");
 	free(cache);
 }
 
 static void ixc_route_cache_add(unsigned char *address,int is_ipv6,struct ixc_route_info *r_info)
 {
 	struct map *m=is_ipv6?route.ip6_rt_cache:route.ip_rt_cache;
-	struct ixc_route_cache *cache=malloc(sizeof(struct ixc_route_cache));
+	struct ixc_route_cache *cache;
     struct time_data *tdata;
 	int rs;
+
+    // 限制路由被缓存引用的数目
+    if(r_info->cached_refcnt>=0xffff) return;
+
+    cache=malloc(sizeof(struct ixc_route_cache));
 
 	if(NULL==cache){
 		STDERR("no memory,cannot add to route cache\r\n");
 		return;
 	}
+
+    bzero(cache,sizeof(struct ixc_route_cache));
 	
 	cache->r_info=r_info;
 
 	if(is_ipv6) memcpy(cache->address,address,16);
 	else memcpy(cache->address,address,4);
 
-	cache->is_ipv6=1;
+	cache->is_ipv6=is_ipv6;
 
 	rs=map_add(m,(char *)address,cache);
 	if(0!=rs){
@@ -195,7 +204,7 @@ static void ixc_route_cache_add(unsigned char *address,int is_ipv6,struct ixc_ro
 	}
 
 	// add to time wheel
-    tdata=time_wheel_add(&route_cache_tw,cache,IXC_ROUTE_CACHE_TIMEOUT);
+    tdata=time_wheel_add(&route_cache_tw,cache,IXC_IO_WAIT_TIMEOUT);
     if(NULL==tdata){
         STDERR("cannot add to time wheel\r\n");
         map_del(m,(char *)address,NULL);
@@ -204,7 +213,10 @@ static void ixc_route_cache_add(unsigned char *address,int is_ipv6,struct ixc_ro
     }
 
     DBG("add to route cache\r\n");
-	r_info->is_cached=1;
+    cache->tdata=tdata;
+    cache->up_time=time(NULL);
+
+	r_info->cached_refcnt+=1;
 }
 
 /// 获取缓存
@@ -222,9 +234,8 @@ static struct ixc_route_info *ixc_route_cache_get(unsigned char *address,int is_
         // 路由无效那么删除相关内存
         tdata=cache->tdata;
         if(NULL!=tdata) tdata->is_deleted=1;
-        map_del(m,(char *)address,NULL);
-        free(cache->r_info);
-        free(cache);
+        map_del(m,(char *)address,ixc_route_cache_del_cb);
+
         return NULL;
     }
 
@@ -238,16 +249,24 @@ static void ixc_route_sysloop_fn(struct sysloop *loop)
 
 static void ixc_route_cache_timeout(void *data)
 {
+    time_t now=time(NULL);
     struct ixc_route_cache *cache=data;
-    struct ixc_route_info *r_info=cache->r_info;
     struct map *m=cache->is_ipv6?route.ip6_rt_cache:route.ip_rt_cache;
-    
-    map_del(m,(char *)cache->address,NULL);
-    
-    // 如果路由指示无效,那么这里删除路由信息内存
-    if(r_info->is_invalid) free(r_info);
+    struct time_data *tdata;
 
-    free(cache);
+    if(now-cache->up_time>=IXC_ROUTE_CACHE_TIMEOUT){
+        map_del(m,(char *)cache->address,ixc_route_cache_del_cb);
+        return;
+    }
+
+    tdata=time_wheel_add(&route_cache_tw,cache,IXC_IO_WAIT_TIMEOUT);
+    if(NULL==tdata){
+        STDERR("cannot get time data\t\n");
+        map_del(m,(char *)cache->address,ixc_route_cache_del_cb);
+        return;
+    }
+    
+    cache->tdata=tdata;
 }
 
 int ixc_route_init(void)
@@ -263,7 +282,7 @@ int ixc_route_init(void)
         return -1;
     }
 
-    rs=time_wheel_new(&route_cache_tw,(IXC_ROUTE_CACHE_TIMEOUT*2)/10,10,ixc_route_cache_timeout,128);
+    rs=time_wheel_new(&route_cache_tw,IXC_ROUTE_CACHE_TIMEOUT*2/IXC_IO_WAIT_TIMEOUT,IXC_IO_WAIT_TIMEOUT,ixc_route_cache_timeout,256);
     if(rs<0){
         sysloop_del(route_sysloop);
         STDERR("cannot create new time wheel\r\n");
@@ -325,6 +344,10 @@ void ixc_route_uninit(void)
 
     map_release(route.ip_rt_cache,ixc_route_cache_del_cb);
     map_release(route.ip6_rt_cache,ixc_route_cache_del_cb);
+
+    sysloop_del(route_sysloop);
+
+    time_wheel_release(&route_cache_tw);
 
     route_is_initialized=0;
 }
@@ -451,7 +474,7 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
     //unsigned char *t;
 
     r=ixc_route_cache_get(ip,is_ipv6);
-    if(r){
+    if(NULL!=r){
         DBG("route from cache\r\n");
         return r;
     }

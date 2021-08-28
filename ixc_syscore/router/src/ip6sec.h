@@ -7,6 +7,7 @@
 #include "mbuf.h"
 
 #include "../../../pywind/clib/map.h"
+#include "../../../pywind/clib/timer.h"
 
 /// KEY大小
 #define IXC_IP6SEC_KEYSIZE 32
@@ -20,7 +21,7 @@ struct ixc_ip6sec{
 };
 
 struct ixc_ip6sec_info{
-    void *tdata;
+    struct time_data *tdata;
     time_t up_time;
     char key[IXC_IP6SEC_KEYSIZE];
 };

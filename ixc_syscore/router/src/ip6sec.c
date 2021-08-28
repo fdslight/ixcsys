@@ -5,6 +5,7 @@
 
 #include "ip6sec.h"
 #include "debug.h"
+#include "router.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/timer.h"
@@ -42,14 +43,14 @@ static void ixc_ip6sec_timeout_cb(void *data)
         return;
     }
 
-    tdata=time_wheel_add(&ip6sec_time_wheel,sec_info,IXC_IP6SEC_TIMEOUT-x);
+    tdata=time_wheel_add(&ip6sec_time_wheel,sec_info,IXC_IO_WAIT_TIMEOUT);
     if(NULL==tdata){
         STDERR("cannot add to time wheel for IPv6 security\r\n");
         map_del(ip6sec.m,sec_info->key,ixc_ip6sec_del_cb);
         return;
     }
 
-    sec_info->tdata=sec_info;
+    sec_info->tdata=tdata;
 }
 
 static void ixc_ip6sec_sysloop_cb(struct sysloop *loop)
@@ -116,7 +117,7 @@ int ixc_ip6sec_init(void)
         return -1;
     }
 
-    rs=time_wheel_new(&ip6sec_time_wheel,IXC_IP6SEC_TIMEOUT*2/10,10,ixc_ip6sec_timeout_cb,512);
+    rs=time_wheel_new(&ip6sec_time_wheel,IXC_IP6SEC_TIMEOUT*2/IXC_IO_WAIT_TIMEOUT,IXC_IO_WAIT_TIMEOUT,ixc_ip6sec_timeout_cb,512);
 
     if(rs!=0){
         map_release(ip6sec.m,NULL);

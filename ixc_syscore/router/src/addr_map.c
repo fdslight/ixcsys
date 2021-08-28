@@ -9,6 +9,7 @@
 #include "debug.h"
 #include "pppoe.h"
 #include "icmpv6.h"
+#include "router.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netutils.h"
@@ -56,7 +57,7 @@ static void ixc_addr_map_timeout_cb(void *data)
         return;
     }
 
-    tdata=time_wheel_add(&(addr_map.time_wheel),r,10);
+    tdata=time_wheel_add(&(addr_map.time_wheel),r,IXC_IO_WAIT_TIMEOUT);
     r->tdata=tdata;
     //tdata->data=r;
 
@@ -82,7 +83,7 @@ int ixc_addr_map_init(void)
         return -1;
     }
 
-    rs=time_wheel_new(&(addr_map.time_wheel),IXC_ADDR_MAP_TIMEOUT*2/10,10,ixc_addr_map_timeout_cb,256);
+    rs=time_wheel_new(&(addr_map.time_wheel),IXC_ADDR_MAP_TIMEOUT*2/IXC_IO_WAIT_TIMEOUT,IXC_IO_WAIT_TIMEOUT,ixc_addr_map_timeout_cb,256);
     if(rs){
         sysloop_del(addr_map_sysloop);
         STDERR("cannot create time wheel for address map\r\n");
@@ -157,7 +158,7 @@ int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hw
         return -1;
     }
 
-    tdata=time_wheel_add(&(addr_map.time_wheel),r,10);
+    tdata=time_wheel_add(&(addr_map.time_wheel),r,IXC_IO_WAIT_TIMEOUT);
     if(NULL==tdata){
         STDERR("cannot add to timer\r\n");
         map_del(map,(char *)ip,NULL);

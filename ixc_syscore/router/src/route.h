@@ -1,6 +1,8 @@
 #ifndef IXC_ROUTE_H
 #define IXC_ROUTE_H
 
+#include<sys/types.h>
+
 #include "mbuf.h"
 #include "netif.h"
 
@@ -8,7 +10,7 @@
 #include "../../../pywind/clib/timer.h"
 
 /// 路由缓存超时时间
-#define IXC_ROUTE_CACHE_TIMEOUT 300
+#define IXC_ROUTE_CACHE_TIMEOUT 180
 
 /// 保存前缀信息
 struct ixc_route_prefix{
@@ -29,8 +31,8 @@ struct ixc_route_info{
     int is_ipv6;
     // 该路由是否已经无效
     int is_invalid;
-    // 路由是否已经被缓存
-    int is_cached;
+    // 该条路由被缓存引用的次数
+    unsigned int cached_refcnt;
     unsigned char pad[3];
     unsigned char prefix;
 };
@@ -40,6 +42,7 @@ struct ixc_route_cache{
     struct time_data *tdata;
 	// 缓存地址
 	unsigned char address[16];
+    time_t up_time;
 	int is_ipv6;
 };
 

@@ -12,6 +12,7 @@
 #include "route.h"
 #include "ipunfrag.h"
 #include "port_map.h"
+#include "router.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -350,7 +351,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         }
 
         bzero(session,sizeof(struct ixc_nat_session));
-        tdata=time_wheel_add(&nat_time_wheel,session,10);
+        tdata=time_wheel_add(&nat_time_wheel,session,IXC_IO_WAIT_TIMEOUT);
 
         if(NULL==tdata){
             ixc_nat_id_put(id_set,nat_id);
@@ -495,7 +496,7 @@ static void ixc_nat_timeout_cb(void *data)
     
     //DBG_FLAGS;
     // 处理未超时的情况
-    tdata=time_wheel_add(&nat_time_wheel,session,10);
+    tdata=time_wheel_add(&nat_time_wheel,session,IXC_IO_WAIT_TIMEOUT);
 
     if(NULL!=tdata){
         //DBG_FLAGS;
@@ -535,7 +536,7 @@ int ixc_nat_init(void)
         return -1;
     }
 
-    rs=time_wheel_new(&nat_time_wheel,IXC_NAT_TIMEOUT*2/10,10,ixc_nat_timeout_cb,2048);
+    rs=time_wheel_new(&nat_time_wheel,IXC_NAT_TIMEOUT*2/10,IXC_IO_WAIT_TIMEOUT,ixc_nat_timeout_cb,2048);
 
     if(0!=rs){
         sysloop_del(nat_sysloop);

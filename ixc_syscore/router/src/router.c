@@ -1088,12 +1088,13 @@ static int ixc_start_python(void)
 static void ixc_myloop(void)
 {
     time_t now=time(NULL);
+
     sysloop_do();
     
     if(ixc_qos_have_data()){
         ixc_ev_set.wait_timeout=0;
     }else{
-        ixc_ev_set.wait_timeout=10;
+        ixc_ev_set.wait_timeout=IXC_IO_WAIT_TIMEOUT;
     }
     if(now-loop_time_up<30) return;
 
