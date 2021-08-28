@@ -159,12 +159,9 @@ static void ixc_route_cache_del_cb(void *data)
 	struct ixc_route_cache *cache=data;
 	struct ixc_route_info *r_info=cache->r_info;
 
-	if(r_info->is_invalid){
-		free(r_info);
-	}else{
-        // 设置状态为未缓存
-        r_info->cached_refcnt-=1;
-    }
+    // 路由无效并且缓存计数为0那么删除路由
+    if(r_info->is_invalid && r_info->cached_refcnt==0) free(r_info);
+    else r_info->cached_refcnt-=1;
 
     DBG("delete route cache\r\n");
 	free(cache);
