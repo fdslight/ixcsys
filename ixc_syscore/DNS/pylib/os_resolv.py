@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """处理操作系统的resolv.conf文件
 """
+import os
+
 
 class resolv(object):
     __path = None
@@ -27,6 +29,11 @@ class resolv(object):
         """
         fpath = self.__path
         _list = []
+
+        # 文件不存在首先创建一个空文件
+        if not os.path.isfile(fpath):
+            fdst = open(fpath, "w")
+            fdst.close()
 
         fdst = open(fpath, "r")
         for line in fdst:

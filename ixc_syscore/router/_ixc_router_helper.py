@@ -864,7 +864,7 @@ class helper(object):
             os.system("ip -4 route add default via %s" % lan_addr)
             # os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
 
-        # IPv6?????
+        # IPv6
         enable_static_ipv6 = bool(int(lan_ifconfig["enable_static_ipv6"]))
         enable_ipv6_pass = bool(int(lan_ifconfig["enable_ipv6_pass"]))
         enable_ipv6_security = bool(int(lan_ifconfig["enable_ipv6_security"]))
