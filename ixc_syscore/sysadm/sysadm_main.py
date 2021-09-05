@@ -115,12 +115,8 @@ class service(dispatcher.dispatcher):
 
     __cloud_service_fd = None
 
-    __diskless_cfg_path = None
     __diskless_cfg_macs_path = None
-    __diskless_cfg_users_path = None
-    __diskless_cfg = None
     __diskless_cfg_macs = None
-    __diskless_cfg_users = None
 
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
@@ -128,13 +124,7 @@ class service(dispatcher.dispatcher):
         self.load_file_download_cfg()
         self.load_auto_shutdown_cfg()
         self.load_cloudservice_cfg()
-
-    def load_diskless_cfg(self):
-        if not os.path.isfile(self.__diskless_cfg_path):
-            self.__diskless_cfg = {"public": {"auth_type": "mac"}}
-            return
-
-        self.__diskless_cfg = cfg.ini_parse_from_file(self.__diskless_cfg)
+        self.load_diskless_cfg_macs()
 
     def load_diskless_cfg_macs(self):
         if not os.path.isfile(self.__diskless_cfg_macs_path):
@@ -145,16 +135,6 @@ class service(dispatcher.dispatcher):
             s = f.read()
         f.close()
         self.__diskless_cfg_macs = json.loads(s)
-
-    def load_diskless_cfg_users(self):
-        if not os.path.isfile(self.__diskless_cfg_users_path):
-            self.__diskless_cfg_users = {}
-            return
-
-        with open(self.__diskless_cfg_users_path, "r") as f:
-            s = f.read()
-        f.close()
-        self.__diskless_cfg_users = json.loads(s)
 
     def load_auto_shutdown_cfg(self):
         if not os.path.isfile(self.__auto_shutdown_cfg_path):
@@ -236,18 +216,9 @@ class service(dispatcher.dispatcher):
         f.close()
         self.__cloudservice_cfg = json.loads(s)
 
-    def save_diskless_cfg(self):
-        cfg.save_to_ini(self.__diskless_cfg, self.__diskless_cfg_path)
-
     def save_diskless_cfg_macs(self):
         s = json.dumps(self.__diskless_cfg_macs)
         with open(self.__diskless_cfg_macs_path, "w") as f:
-            f.write(s)
-        f.close()
-
-    def save_diskless_cfg_users(self):
-        s = json.dumps(self.__diskless_cfg_users)
-        with open(self.__diskless_cfg_users_path, "w") as f:
             f.write(s)
         f.close()
 
@@ -314,9 +285,7 @@ class service(dispatcher.dispatcher):
         self.__cloudservice_cfg_path = "%s/cloud_service.json" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__cloudservice_cfg = {}
 
-        self.__diskless_cfg = "%s/diskless.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
-        self.__diskless_cfg_macs = "%s/diskless_macs.json" % os.getenv("IXC_MYAPP_CONF_DIR")
-        self.__diskless_cfg_users_path = "%s/diskless_users.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__diskless_cfg_macs_path = "%s/diskless_macs.json" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__scgi_fd = -1
         self.__is_restart = False
@@ -444,35 +413,14 @@ class service(dispatcher.dispatcher):
         }
         self.save_cloudflare_ddns_cfg()
 
-    def diskless_os_cfg_get(self, k: str, is_mac_auth=True, password=None):
+    def diskless_os_cfg_get(self, hwaddr: str):
         """获取无盘的操作系统配置
-        :param k,mac地址或者用户名
-        :param password,如果is_mac_auth为False,代表帐户认证,密码不能为空
         """
-        if is_mac_auth:
-            return self.__diskless_cfg_macs.get(k, {})
-        if not is_mac_auth and not password: return {}
-
-        result = {}
-
-        for _dict in self.__diskless_cfg_users:
-            if _dict["user"] != k: continue
-            if password != _dict["password"]: break
-            result = _dict
-
-        return result["os_config"]
+        return self.__diskless_cfg_macs.get(hwaddr, {})
 
     @property
     def diskless_cfg_macs(self):
         return self.__diskless_cfg_macs
-
-    @property
-    def diskless_cfg_users(self):
-        return self.__diskless_cfg_users
-
-    @property
-    def diskless_cfg(self):
-        return self.__diskless_cfg
 
     def do_restart(self):
         """执行路由器重启
