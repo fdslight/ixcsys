@@ -136,6 +136,8 @@ class service(dispatcher.dispatcher):
         f.close()
         self.__diskless_cfg_macs = json.loads(s)
 
+        self.reset_diskless()
+
     def load_auto_shutdown_cfg(self):
         if not os.path.isfile(self.__auto_shutdown_cfg_path):
             self.__auto_shutdown_cfg = {
@@ -295,7 +297,7 @@ class service(dispatcher.dispatcher):
 
         global_vars["ixcsys.sysadm"] = self
 
-        RPCClient.wait_processes(["router"])
+        RPCClient.wait_processes(["router", "DHCP"])
         time.sleep(10)
 
         self.load_configs()
@@ -421,6 +423,15 @@ class service(dispatcher.dispatcher):
     @property
     def diskless_cfg_macs(self):
         return self.__diskless_cfg_macs
+
+    def reset_diskless(self):
+        RPCClient.fn_call("DHCP", "/dhcp_server", "clear_boot_ext_option")
+
+        for hwaddr in self.__diskless_cfg_macs:
+            _dict = self.__diskless_cfg_macs[hwaddr]
+            vendor = _dict["vendor"]
+            RPCClient.fn_call("DHCP", "/dhcp_server", "set_boot_ext_option", hwaddr, 17, _dict["root-path"])
+            if vendor: RPCClient.fn_call("DHCP", "/dhcp_server", "set_boot_ext_option", hwaddr, 43, _dict["vendor"])
 
     def do_restart(self):
         """执行路由器重启

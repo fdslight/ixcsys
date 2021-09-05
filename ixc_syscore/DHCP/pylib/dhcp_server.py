@@ -46,6 +46,9 @@ class dhcp_server(object):
     # 引导文件映射
     __boot_file_map = None
 
+    # 额外的DHCP引导选项,根据MAC地址进行映射
+    __dhcp_ext_boot_options = None
+
     def __init__(self, runtime, my_ipaddr: str, hostname: str, hwaddr: str, addr_begin: str, addr_finish: str,
                  subnet: str, prefix: int):
         self.__runtime = runtime
@@ -53,6 +56,7 @@ class dhcp_server(object):
         self.__tmp_alloc_addrs = {}
         self.__ip_binds = {}
         self.__used_ips = {}
+        self.__dhcp_ext_boot_options = {}
 
         self.__mask_bytes = socket.inet_pton(socket.AF_INET, netutils.ip_prefix_convert(prefix))
         self.__route_bytes = socket.inet_pton(socket.AF_INET, my_ipaddr)
@@ -178,6 +182,12 @@ class dhcp_server(object):
 
         byte_boot_file = b"".join([boot_file.encode("iso-8859-1"), b"\0"])
         resp_opts.append((67, byte_boot_file))
+
+        # 加入额外的DHCP引导选项
+        s_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
+        if s_hwaddr in self.__dhcp_ext_boot_options:
+            _dict = self.__dhcp_ext_boot_options[s_hwaddr]
+            for code in _dict: resp_opts.append((code, _dict[code].encode()))
 
     def handle_dhcp_discover_req(self, opts: list):
         request_list = self.get_dhcp_opt_value(opts, 55)
@@ -483,3 +493,16 @@ class dhcp_server(object):
             results.append({"hwaddr": hwaddr, "ip": ip, "host_name": host_name})
 
         return results
+
+    def set_boot_ext_option(self, hwaddr: str, code: int, value: str):
+        _dict = None
+        if hwaddr not in self.__dhcp_ext_boot_options:
+            self.__dhcp_ext_boot_options[hwaddr] = {}
+        _dict = self.__dhcp_ext_boot_options[hwaddr]
+        _dict[code] = value
+
+    def unset_boot_ext_option(self, hwaddr: str):
+        if hwaddr in self.__dhcp_ext_boot_options: del self.__dhcp_ext_boot_options[hwaddr]
+
+    def clear_boot_ext_option(self):
+        self.__dhcp_ext_boot_options = {}

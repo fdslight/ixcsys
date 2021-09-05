@@ -1,0 +1,116 @@
+<div class="row">
+    <div class="col-sm-10"></div>
+    <div class="col-sm-2">
+        <input type="button" class="btn btn-primary" value="无盘添加" style="width: 100%;" data-toggle="modal"
+               data-target="#ixc-diskless-modal"/>
+    </div>
+</div>
+<div class="modal fade" id="ixc-diskless-modal" tabindex="-1" role="dialog"
+     aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">无盘规则添加</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="ixc-diskless-form">
+                    <div class="form-group">
+                        <label>别名</label>
+                        <input type="text" class="form-control" name="name"/>
+                    </div>
+                    <div class="form-group">
+                        <label>硬件地址</label>
+                        <input type="text" class="form-control" name="hwaddr"/>
+                    </div>
+                    <div class="form-group">
+                        <label>iSCSI initiator</label>
+                        <input type="text" class="form-control" name="iscsi_initiator_iqn"/>
+                    </div>
+                    <div class="form-group">
+                        <label>iSCSI target</label>
+                        <input type="text" class="form-control" name="iscsi_target_iqn"/>
+                    </div>
+                    <div class="form-group">
+                        <label>制造商选项(DHCP vendor option)</label>
+                        <input type="text" class="form-control" name="dhcp_vendor"/>
+                    </div>
+                    <div class="form-group">
+                        <label>iPXE脚本文件路径(相对HTTP下载目录路径)</label>
+                        <input type="text" class="form-control" name="script-path"/>
+                    </div>
+                    <input type="hidden" value="add" name="action"/>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary ixc-form-submit" id="ixc-diskless-add">添加</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ixc-diskless-view" class="ixc-menu-content" style="display: none;">
+    <form style="width: 98%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/diskless">
+        <h4>iPXE无盘(此功能需要开启HTTP文件下载)</h4>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">序号</th>
+                <th scope="col">别名</th>
+                <th scope="col">客户端网卡MAC</th>
+                <th scope="col">iSCSI Initiator</th>
+                <th scope="col">iSCSI Taget</th>
+                <th scope="col">iPXE脚本</th>
+                <th scope="col">vendor</th>
+                <th scope="col">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+                <%
+                x=1
+                for hwaddr in self.V:
+                    _dict=self.V[hwaddr]
+                    s="""<tr id="ixc-diskless-seq-%d"><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>""" % (x,x,_dict["name"],hwaddr,_dict["initiator-iqn"],_dict["root-path"],_dict["script-path"])
+                    s+="""<td>%s</td>""" % _dict["vendor"]
+                    s+="""<td><a href="#" name="%s" class="ixc-diskless-del">删除</a></td></tr>""" % hwaddr
+                    self.show(s)
+                    x+=1
+                %>
+            </tbody>
+        </table>
+    </form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(".ixc-diskless-del").click(function () {
+            let hwaddr = $(this).attr("name");
+
+            $.post("${self.url_prefix}/diskless/cfg", {"hwaddr": hwaddr, "action": "del"}, function (result) {
+                let is_error = result.is_error;
+                if (is_error) {
+                    alert(result.message);
+                } else {
+                    window.location.reload();
+                }
+            });
+        });
+
+        $("#ixc-diskless-add").click(function () {
+            let form_data = $("#ixc-diskless-form").serialize();
+
+            $.post("${self.url_prefix}/diskless/cfg", form_data, function (result) {
+                let is_error = result.is_error;
+                if (is_error) {
+                    alert(result.message);
+                } else {
+                    window.location.reload();
+                }
+            });
+        });
+
+    });
+</script>

@@ -16,6 +16,9 @@ class controller(rpc.controller):
             "enable": self.enable,
             "boot_file_set": self.boot_file_set,
             "alloc_addr_range_set": self.alloc_addr_range_set,
+            "set_boot_ext_option": self.set_boot_ext_option,
+            "unset_boot_ext_option": self.unset_boot_ext_option,
+            "clear_boot_ext_option": self.clear_boot_ext_option,
             "save": self.save,
             "add_dhcp_bind": self.add_dhcp_bind,
             "del_dhcp_bind": self.del_dhcp_bind,
@@ -51,6 +54,15 @@ class controller(rpc.controller):
 
     def get_ip_bind_configs(self):
         return 0, self.dhcp.dhcp_ip_bind
+
+    def set_boot_ext_option(self, hwaddr: str, code: int, value: str):
+        return 0, self.dhcp.server.set_boot_ext_option(hwaddr, code, value)
+
+    def unset_boot_ext_option(self, hwaddr: str):
+        return 0, self.dhcp.server.unset_boot_ext_option(hwaddr)
+
+    def clear_boot_ext_option(self):
+        return 0, self.dhcp.server.clear_boot_ext_option()
 
     def save(self):
         self.dhcp.save_dhcp_server_configs()
