@@ -1,0 +1,17 @@
+[
+  {
+    "username": "user","password": "password",
+    "os_config": {
+      "default_os": "default",
+      "os_list_wait_timeout":5,
+      "os_list":[
+        {
+          "name": "windows",
+          "root-path": "",
+          "vendor":"",
+          "script": ""
+        }
+      ]
+    }
+  }
+]

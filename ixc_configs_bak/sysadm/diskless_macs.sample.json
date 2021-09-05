@@ -1,0 +1,14 @@
+{
+    "00:00:00:00:00:00": {
+      "default_os": "default",
+      "os_list_wait_timeout":5,
+      "os_list":[
+        {
+          "name": "windows",
+          "root-path": "",
+          "vendor":"",
+          "script": ""
+        }
+      ]
+    }
+  }
