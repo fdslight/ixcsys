@@ -34,7 +34,7 @@
                         <input type="text" class="form-control" name="iscsi_target_iqn"/>
                     </div>
                     <div class="form-group">
-                        <label>iPXE脚本文件路径(相对HTTP下载目录路径)</label>
+                        <label>iPXE脚本文件路径(本地文件绝对路径)</label>
                         <input type="text" class="form-control" name="script-path"/>
                     </div>
                     <input type="hidden" value="add" name="action"/>
@@ -51,7 +51,7 @@
 <div id="ixc-diskless-view" class="ixc-menu-content" style="display: none;">
     <form style="width: 98%;margin: auto;min-width: 400px;" class="ixc-conf-form"
           enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/diskless">
-        <h4>iPXE无盘(此功能需要开启HTTP文件下载)</h4>
+        <h4>iPXE无盘</h4>
         <table class="table">
             <thead>
             <tr>
