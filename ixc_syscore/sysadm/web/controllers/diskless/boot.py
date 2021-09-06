@@ -39,4 +39,8 @@ class controller(base_controller.BaseController):
 
     def handle(self):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=True)
+        if not hwaddr:
+            self.send_exit("not set mac address")
+            return
+        hwaddr = hwaddr.lower()
         self.send_os(hwaddr)

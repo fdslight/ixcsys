@@ -71,9 +71,15 @@ class controller(base_controller.BaseController):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
         cfg_macs = self.sysadm.diskless_cfg_macs
 
+        if not hwaddr:
+            self.json_resp(True, "MAC地址不能为空")
+            return
+
         if hwaddr not in cfg_macs:
             self.json_resp(False, None)
             return
+
+        hwaddr = hwaddr.lower()
 
         del cfg_macs[hwaddr]
 
