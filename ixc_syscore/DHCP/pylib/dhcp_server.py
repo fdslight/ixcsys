@@ -185,6 +185,9 @@ class dhcp_server(object):
 
         # 加入额外的DHCP引导选项
         s_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
+
+        print(s_hwaddr, self.__dhcp_ext_boot_options)
+
         if s_hwaddr in self.__dhcp_ext_boot_options:
             _dict = self.__dhcp_ext_boot_options[s_hwaddr]
             for code in _dict: resp_opts.append((code, _dict[code].encode()))
