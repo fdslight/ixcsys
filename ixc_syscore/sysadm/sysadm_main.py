@@ -431,6 +431,7 @@ class service(dispatcher.dispatcher):
             _dict = self.__diskless_cfg_macs[hwaddr]
             RPCClient.fn_call("DHCP", "/dhcp_server", "set_boot_ext_option", hwaddr, 17, _dict["root-path"])
             RPCClient.fn_call("DHCP", "/dhcp_server", "set_boot_ext_option", hwaddr, 175, "iPXE")
+            RPCClient.fn_call("DHCP", "/dhcp_server", "set_boot_ext_option", hwaddr, 203, _dict["initiator-iqn"])
 
     def do_restart(self):
         """执行路由器重启
