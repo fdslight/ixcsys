@@ -20,6 +20,8 @@ class controller(base_controller.BaseController):
         """发送操作系统列表
         """
         os_info = self.sysadm.diskless_os_cfg_get(hwaddr)
+        print(os_info)
+
         if not os_info:
             self.send_exit("not found config for %s" % hwaddr)
             return
