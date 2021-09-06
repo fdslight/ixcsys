@@ -25,13 +25,13 @@ class controller(base_controller.BaseController):
         os_info = self.sysadm.diskless_os_cfg_get(hwaddr)
 
         if not os_info:
-            self.send_exit("not found config for %s" % hwaddr)
+            self.send_exit(reason="not found config for %s" % hwaddr)
             return
 
         script_path = os_info["script-path"]
 
         if not os.path.isfile(script_path):
-            self.send_exit("not found iPXE script %s for mac address %s" % (script_path, hwaddr,))
+            self.send_exit(reason="not found iPXE script %s for mac address %s" % (script_path, hwaddr,))
             return
 
         fd = open(script_path, "rb")
@@ -43,13 +43,20 @@ class controller(base_controller.BaseController):
     def send_exit(self, reason=None):
         """发送退出
         """
-        self.finish_with_text("")
+        _list = [
+            "#!ipxe\n\n",
+            "echo %s\n" % reason,
+            "sleep 5\n"
+        ]
+        self.finish_with_bytes("application/octet-stream", "".join(_list).encode())
 
     def handle(self):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=True)
+
         if not hwaddr:
-            self.send_exit("not set mac address")
+            self.send_exit(reason="not set mac address")
             return
+
         hwaddr = parse.unquote(hwaddr)
         hwaddr = hwaddr.lower()
 
