@@ -184,9 +184,7 @@ class dhcp_server(object):
         resp_opts.append((67, byte_boot_file))
 
         # 加入额外的DHCP引导选项
-        s_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
-
-        print(s_hwaddr, self.__dhcp_ext_boot_options)
+        s_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr).lower()
 
         if s_hwaddr in self.__dhcp_ext_boot_options:
             _dict = self.__dhcp_ext_boot_options[s_hwaddr]
@@ -499,12 +497,15 @@ class dhcp_server(object):
 
     def set_boot_ext_option(self, hwaddr: str, code: int, value: str):
         _dict = None
+        hwaddr = hwaddr.lower()
+
         if hwaddr not in self.__dhcp_ext_boot_options:
             self.__dhcp_ext_boot_options[hwaddr] = {}
         _dict = self.__dhcp_ext_boot_options[hwaddr]
         _dict[code] = value
 
     def unset_boot_ext_option(self, hwaddr: str):
+        hwaddr = hwaddr.lower()
         if hwaddr in self.__dhcp_ext_boot_options: del self.__dhcp_ext_boot_options[hwaddr]
 
     def clear_boot_ext_option(self):
