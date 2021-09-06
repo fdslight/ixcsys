@@ -7,7 +7,9 @@ from pywind.global_vars import global_vars
 
 class controller(base_controller.BaseController):
     def myinit(self):
+        self.set_auto_auth(False)
         self.request.set_allow_methods(["GET"])
+
         return True
 
     @property
