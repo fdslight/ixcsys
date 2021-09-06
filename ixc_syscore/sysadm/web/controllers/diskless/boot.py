@@ -52,5 +52,5 @@ class controller(base_controller.BaseController):
             return
         hwaddr = parse.unquote(hwaddr)
         hwaddr = hwaddr.lower()
-        print(hwaddr)
+
         self.send_os(hwaddr)
