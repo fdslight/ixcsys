@@ -429,7 +429,6 @@ class service(dispatcher.dispatcher):
 
         for hwaddr in self.__diskless_cfg_macs:
             _dict = self.__diskless_cfg_macs[hwaddr]
-            vendor = _dict["vendor"]
             RPCClient.fn_call("DHCP", "/dhcp_server", "set_boot_ext_option", hwaddr, 17, _dict["root-path"])
             RPCClient.fn_call("DHCP", "/dhcp_server", "set_boot_ext_option", hwaddr, 175, "iPXE")
 
