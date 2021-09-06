@@ -34,10 +34,6 @@
                         <input type="text" class="form-control" name="iscsi_target_iqn"/>
                     </div>
                     <div class="form-group">
-                        <label>制造商选项(DHCP vendor option)</label>
-                        <input type="text" class="form-control" name="dhcp_vendor"/>
-                    </div>
-                    <div class="form-group">
                         <label>iPXE脚本文件路径(相对HTTP下载目录路径)</label>
                         <input type="text" class="form-control" name="script-path"/>
                     </div>
@@ -65,7 +61,6 @@
                 <th scope="col">iSCSI Initiator</th>
                 <th scope="col">iSCSI Taget</th>
                 <th scope="col">iPXE脚本</th>
-                <th scope="col">vendor</th>
                 <th scope="col">操作</th>
             </tr>
             </thead>
@@ -75,7 +70,6 @@
                 for hwaddr in self.V:
                     _dict=self.V[hwaddr]
                     s="""<tr id="ixc-diskless-seq-%d"><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>""" % (x,x,_dict["name"],hwaddr,_dict["initiator-iqn"],_dict["root-path"],_dict["script-path"])
-                    s+="""<td>%s</td>""" % _dict["vendor"]
                     s+="""<td><a href="#" name="%s" class="ixc-diskless-del">删除</a></td></tr>""" % hwaddr
                     self.show(s)
                     x+=1

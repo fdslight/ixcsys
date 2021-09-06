@@ -20,7 +20,6 @@ class controller(base_controller.BaseController):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
         initiator_name = self.request.get_argument("iscsi_initiator_iqn", is_seq=False, is_qs=False)
         root_path = self.request.get_argument("iscsi_target_iqn", is_seq=False, is_qs=False)
-        dhcp_vendor = self.request.get_argument("dhcp_vendor", is_seq=False, is_qs=False)
         script_path = self.request.get_argument("script-path", is_seq=False, is_qs=False)
 
         cfg_macs = self.sysadm.diskless_cfg_macs
@@ -57,17 +56,10 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "iSCSI target长度不能超过250字节")
             return
 
-        if dhcp_vendor:
-            if len(dhcp_vendor.encode()) > 250:
-                self.json_resp(True, "vendor长度不能超过250字节")
-                return
-            ''''''
-
         cfg_macs[hwaddr] = {
             "name": name,
             "initiator-iqn": initiator_name,
             "root-path": root_path,
-            "vendor": dhcp_vendor,
             "script-path": script_path
         }
 
