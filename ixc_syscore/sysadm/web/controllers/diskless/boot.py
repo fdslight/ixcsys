@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
+from urllib import parse
 from pywind.global_vars import global_vars
 
 
@@ -20,13 +21,10 @@ class controller(base_controller.BaseController):
         """发送操作系统列表
         """
         os_info = self.sysadm.diskless_os_cfg_get(hwaddr)
-        print(os_info)
 
         if not os_info:
             self.send_exit("not found config for %s" % hwaddr)
             return
-
-        print(os_info)
 
         script_path = os_info["script-path"]
 
@@ -50,5 +48,7 @@ class controller(base_controller.BaseController):
         if not hwaddr:
             self.send_exit("not set mac address")
             return
+        hwaddr = parse.unquote(hwaddr)
         hwaddr = hwaddr.lower()
+        print(hwaddr)
         self.send_os(hwaddr)
