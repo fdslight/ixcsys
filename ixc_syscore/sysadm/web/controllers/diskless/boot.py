@@ -46,7 +46,7 @@ class controller(base_controller.BaseController):
         _list = [
             "#!ipxe\n\n",
             "echo %s\n" % reason,
-            "sleep 5\n"
+            "sleep 10\n"
         ]
         self.finish_with_bytes("application/octet-stream", "".join(_list).encode())
 

@@ -56,6 +56,8 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "iSCSI target长度不能超过250字节")
             return
 
+        hwaddr = hwaddr.lower()
+
         cfg_macs[hwaddr] = {
             "name": name,
             "initiator-iqn": initiator_name,
