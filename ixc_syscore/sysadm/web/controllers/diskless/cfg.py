@@ -81,8 +81,6 @@ class controller(base_controller.BaseController):
             self.json_resp(False, None)
             return
 
-        hwaddr = hwaddr.lower()
-
         del cfg_macs[hwaddr]
 
         self.sysadm.save_diskless_cfg_macs()
