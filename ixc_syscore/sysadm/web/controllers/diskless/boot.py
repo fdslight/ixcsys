@@ -24,6 +24,8 @@ class controller(base_controller.BaseController):
             self.send_exit("not found config for %s" % hwaddr)
             return
 
+        print(os_info)
+
         script_path = os_info["script-path"]
 
         if not os.path.isfile(script_path):
