@@ -45,7 +45,6 @@ class controller(base_controller.BaseController):
 
         _list.insert(1,
                      "prompt --key 0x02 --timeout 5000 Press Ctrl-B for the iPXE command line... && shell ||".encode())
-        _list.insert(1, "prompt --key q Press 'q' to quit && exit ||".encode())
 
         byte_s = b"\n".join(_list)
         print(byte_s)
