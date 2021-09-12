@@ -38,6 +38,15 @@ class controller(base_controller.BaseController):
         byte_s = fd.read()
         fd.close()
 
+        _list = byte_s.split(b"\n")
+        if not _list:
+            self.send_exit("the file %s is empty" % script_path)
+            return
+
+        _list.insert(1,
+                     "prompt --key 0x02 --timeout 5000 Press Ctrl-B for the iPXE command line... && shell ||".encode())
+
+        byte_s = b"\n".join(_list)
         self.finish_with_bytes("application/octet-stream", byte_s)
 
     def send_exit(self, reason=None):
