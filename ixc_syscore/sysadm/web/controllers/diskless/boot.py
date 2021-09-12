@@ -47,7 +47,6 @@ class controller(base_controller.BaseController):
                      "prompt --key 0x02 --timeout 5000 Press Ctrl-B for the iPXE command line... && shell ||".encode())
 
         byte_s = b"\n".join(_list)
-        print(byte_s)
         self.finish_with_bytes("application/octet-stream", byte_s)
 
     def send_exit(self, reason=None):
