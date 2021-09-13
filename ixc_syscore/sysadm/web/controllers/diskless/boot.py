@@ -55,7 +55,7 @@ class controller(base_controller.BaseController):
         _list = [
             "#!ipxe\n\n",
             "echo %s\n" % reason,
-            "sleep 10\n"
+            "prompt --key 0x02 --timeout 5000 Press Ctrl-B for the iPXE command line... && shell ||\n"
         ]
         self.finish_with_bytes("application/octet-stream", "".join(_list).encode())
 
