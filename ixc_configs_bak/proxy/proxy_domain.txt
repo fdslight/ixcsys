@@ -89,11 +89,13 @@ goo.gl:1
 *.snapchat.com:1
 *.parler.com:1
 *.gab.com:1
+*.twitch.tv:1
 
 # 防止skype重定向到gmw.cn
 *.skype.com:1
 
 ### 音视频媒体网站
+*.stackpathcdn.com:1
 *.nicovideo.jp:1
 *.spotify.com:1
 *.scdn.co:1
@@ -317,8 +319,3 @@ login.oracle.com:1
 *.msauth.net:1
 *.layerpanel.com:1
 *.herokuapp.com:1
-
-### xxx
-*.pornhub.com:1
-*.phncdn.com:1
-*.sdhdbd1.com:1
