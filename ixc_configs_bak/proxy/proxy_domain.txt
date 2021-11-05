@@ -95,7 +95,9 @@ goo.gl:1
 *.skype.com:1
 
 ### 音视频媒体网站
+podcasts.apple.com:1
 *.stackpathcdn.com:1
+podcasts.captivate.fm:1
 *.nicovideo.jp:1
 *.spotify.com:1
 *.scdn.co:1
