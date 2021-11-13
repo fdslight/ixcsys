@@ -619,7 +619,7 @@ class service(dispatcher.dispatcher):
         if ipaddr in self.__routes:
             self.__del_route(ipaddr, is_dynamic=True, is_ipv6=enable_ipv6)
 
-        RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", enable_ipv6)
+        RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", ipaddr, enable_ipv6)
 
         return ipaddr
 
