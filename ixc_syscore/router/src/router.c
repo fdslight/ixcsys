@@ -81,17 +81,6 @@ router_init(routerObject *self,PyObject *args,PyObject *kwds)
 }
 
 static PyObject *
-router_qos_udp_udplite_first(PyObject *self,PyObject *args)
-{
-    int enable;
-    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
-
-    ixc_qos_udp_udplite_first(enable);
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 router_netif_create(PyObject *self,PyObject *args)
 {
     const char *name;
@@ -686,15 +675,43 @@ router_net_monitor_set(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_qos_set_tunnel_first(PyObject *self,PyObject *args)
+{
+    const char *s;
+    unsigned char address[16];
+
+    int is_ipv6,rs;
+
+    if(!PyArg_ParseTuple(args,"sp",&s,&is_ipv6)) return NULL;
+
+    if(is_ipv6) rs=inet_pton(AF_INET6,s,address);
+    else rs=inet_pton(AF_INET,s,address);
+
+    if(rs<0){
+        PyErr_SetString(PyExc_ValueError,"invalid ip address");
+        return NULL;
+    }
+
+    ixc_qos_tunnel_addr_first_set(address,is_ipv6);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_qos_unset_tunnel(PyObject *self,PyObject *args)
+{
+
+    ixc_qos_tunnel_addr_first_unset();
+    Py_RETURN_NONE;
+}
+
 
 static PyMemberDef router_members[]={
     {NULL}
 };
 
 static PyMethodDef routerMethods[]={
-    //
-    {"qos_udp_udplite_first_enable",(PyCFunction)router_qos_udp_udplite_first,METH_VARARGS,"set udp or udplite first"},
-    //
     {"netif_create",(PyCFunction)router_netif_create,METH_VARARGS,"create tap device"},
     {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},
     {"netif_get_ip",(PyCFunction)router_netif_get_ip,METH_VARARGS,"get netif ip address"},
@@ -740,6 +757,10 @@ static PyMethodDef routerMethods[]={
     {"sec_net_add_dst",(PyCFunction)router_sec_net_add_dst,METH_VARARGS,"add dst security network rule"},
     //
     {"net_monitor_set",(PyCFunction)router_net_monitor_set,METH_VARARGS,"set network monitor"},
+    //
+    {"qos_set_tunnel_first",(PyCFunction)router_qos_set_tunnel_first,METH_VARARGS,"set qos tunnel traffic is first"},
+    {"qos_unset_tunnel",(PyCFunction)router_qos_unset_tunnel,METH_NOARGS,"unset qos tunnel traffic is first"},
+
     {NULL,NULL,0,NULL}
 };
 

@@ -123,7 +123,7 @@ class service(dispatcher.dispatcher):
         RPCClient.wait_processes(["router", "DNS", ])
 
         while 1:
-            rs=RPCClient.fn_call("router", "/config", "wan_ready_ok")
+            rs = RPCClient.fn_call("router", "/config", "wan_ready_ok")
             if not rs:
                 time.sleep(10)
             else:
@@ -572,6 +572,7 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__conn_fd)
 
     def tunnel_conn_fail(self):
+        RPCClient.fn_call("router", "/config", "qos_unset_tunnel")
         self.__conn_fd = -1
 
     def get_server_ip(self, host):
@@ -617,6 +618,8 @@ class service(dispatcher.dispatcher):
 
         if ipaddr in self.__routes:
             self.__del_route(ipaddr, is_dynamic=True, is_ipv6=enable_ipv6)
+
+        RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", enable_ipv6)
 
         return ipaddr
 

@@ -64,6 +64,9 @@ class rpc(object):
             "net_monitor_set": self.net_monitor_set,
             "net_monitor_config_get": self.net_monitor_config_get,
 
+            "qos_set_tunnel_first": self.qos_set_tunnel_first,
+            "qos_unset_tunnel": self.qos_unset_tunnel,
+
             "config_save": self.save
         }
 
@@ -587,6 +590,17 @@ class rpc(object):
 
     def net_monitor_config_get(self):
         return 0, self.__helper.net_monitor_configs
+
+    def qos_set_tunnel_first(self, address: str, is_ipv6: bool):
+        if is_ipv6 and not netutils.is_ipv6_address(address):
+            return RPC.ERR_ARGS, "wrong IPv6 address argument"
+        if not is_ipv6 and not netutils.is_ipv4_address(address):
+            return RPC.ERR_ARGS, "wrong IPv4 address argument"
+
+        return 0, self.__helper.router.qos_set_tunnel_first(address, is_ipv6)
+
+    def qos_unset_tunnel(self):
+        return 0, None
 
 
 class helper(object):

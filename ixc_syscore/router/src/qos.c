@@ -67,6 +67,18 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
     else ixc_qos_put(m,header->dst_addr[15],header->src_addr[13],header->src_addr[14],header->src_addr[15]);
 }
 
+static void ixc_qos_send_to_next(struct ixc_mbuf *m)
+{
+    if(IXC_MBUF_FROM_LAN==m->from){
+        //DBG_FLAGS;
+        if(m->is_ipv6) ixc_addr_map_handle(m);
+        else ixc_nat_handle(m);
+    }else{
+        //DBG_FLAGS;
+        ixc_route_handle(m);
+    }
+}
+
 int ixc_qos_init(void)
 {
     struct ixc_qos_slot *slot;
@@ -121,7 +133,7 @@ void ixc_qos_pop(void)
 
         // 这里需要创建一个临时变量,防止其他节点修改m->next导致内存访问出现问题
         t=m->next;
-
+        /**
         if(IXC_MBUF_FROM_LAN==m->from){
             //DBG_FLAGS;
             if(m->is_ipv6) ixc_addr_map_handle(m);
@@ -129,7 +141,9 @@ void ixc_qos_pop(void)
         }else{
             //DBG_FLAGS;
             ixc_route_handle(m);
-        }
+        }**/
+        ixc_qos_send_to_next(m);
+
         m=t;
         // 如果数据未发送完毕,那么跳转到下一个
         if(NULL!=m){
@@ -168,7 +182,19 @@ int ixc_qos_have_data(void)
     return 0;
 }
 
-void ixc_qos_udp_udplite_first(int enable)
+int ixc_qos_tunnel_addr_first_set(unsigned char *addr,int is_ipv6)
 {
-    ixc_qos.udp_udplite_first = enable;
+     ixc_qos.tunnel_is_ipv6=is_ipv6;
+
+    if(is_ipv6) memcpy(ixc_qos.tunnel_addr,addr,16);
+    else memcpy(ixc_qos.tunnel_addr,addr,4);
+
+    ixc_qos.tunnel_isset=1;
+
+    return 0;
+}
+
+void ixc_qos_tunnel_addr_first_unset(void)
+{
+    ixc_qos.tunnel_isset=0;
 }

@@ -18,7 +18,9 @@ struct ixc_qos_slot{
 struct ixc_qos{
     struct ixc_qos_slot *slot_objs[IXC_QOS_SLOT_NUM];
     struct ixc_qos_slot *slot_head;
-    int udp_udplite_first;
+    unsigned char tunnel_addr[16];
+    int tunnel_is_ipv6;
+    int tunnel_isset;
 };
 
 
@@ -35,8 +37,9 @@ void ixc_qos_pop(void);
 // 如果已经发送完毕那么返回0,否则返回1
 int ixc_qos_have_data(void);
 
-/// 设置为UDP和UDPLite优先,调用此函数之后那么UDP和UDPLite直接被发送而不被QOS
-/// 开启之后可减少语音和游戏等需要UDP和UDPLite场景的延迟
-void ixc_qos_udp_udplite_first(int enable);
+/// 设置隧道地址优先
+int ixc_qos_tunnel_addr_first_set(unsigned char *addr,int is_ipv6);
+/// 取消隧道地址优先
+void ixc_qos_tunnel_addr_first_unset(void);
 
 #endif
