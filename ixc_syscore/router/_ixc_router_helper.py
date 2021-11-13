@@ -48,7 +48,6 @@ class rpc(object):
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
             "pppoe_set": self.pppoe_set,
             "router_config_get": self.router_config_get,
-            "qos_set_udp_udplite_first": self.qos_set_udp_udplite_first,
             "port_map_add": self.port_map_add,
             "port_map_del": self.port_map_del,
             "port_map_configs_get": self.port_map_configs_get,
@@ -434,16 +433,6 @@ class rpc(object):
         configs = self.__helper.router_configs
 
         return 0, configs
-
-    def qos_set_udp_udplite_first(self, enable: bool):
-        configs = self.__helper.router_configs["qos"]
-        if enable:
-            configs["udp_udplite_first"] = 1
-        else:
-            configs["udp_udplite_first"] = 0
-        self.__helper.router.qos_udp_udplite_first_enable(enable)
-
-        return 0, None
 
     def save(self):
         self.__helper.save_wan_configs()
@@ -966,10 +955,6 @@ class helper(object):
         :return:
         """
         self.load_router_configs()
-        # ???QOS????
-        qos = self.__router_configs["qos"]
-        udp_udplite_first = bool(int(qos["udp_udplite_first"]))
-        self.router.qos_udp_udplite_first_enable(udp_udplite_first)
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
         self.__port_map_configs[alias_name] = {
