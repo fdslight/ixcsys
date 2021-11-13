@@ -1,6 +1,7 @@
 # !/usr/bin/env python3
 import json
 import pickle, os, socket, sys, hashlib
+import traceback
 
 import router
 
@@ -76,7 +77,12 @@ class rpc(object):
             return 0, pickle.dumps("not found function %s" % fn_name)
         fn = self.__fn_objects[fn_name]
 
-        is_error, msg = fn(*args, **kwargs)
+        try:
+            is_error, msg = fn(*args, **kwargs)
+        except:
+            expt = traceback.format_exc()
+            error = "call function %s error\r\n%s" % (fn_name, expt,)
+            return RPC.ERR_SYS, pickle.dumps(error)
 
         return is_error, pickle.dumps(msg)
 
