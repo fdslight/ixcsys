@@ -1078,7 +1078,6 @@ static int ixc_init_python(int debug)
 
     Py_XDECREF(pfunc);
     Py_XDECREF(args);
-    Py_XDECREF(v);
 
     return 0;
 }
