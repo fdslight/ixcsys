@@ -418,7 +418,7 @@ class service(dispatcher.dispatcher):
     def diskless_os_cfg_get(self, hwaddr: str):
         """获取无盘的操作系统配置
         """
-        if hwaddr in self.__diskless_cfg_macs:
+        if hwaddr not in self.__diskless_cfg_macs:
             hwaddr = "00:00:00:00:00:00"
 
         return self.__diskless_cfg_macs.get(hwaddr, {})
