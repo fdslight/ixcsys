@@ -25,13 +25,8 @@ class controller(base_controller.BaseController):
         os_info = self.sysadm.diskless_os_cfg_get(hwaddr)
 
         if not os_info:
-            # 查找默认MAC是否存在
-            hwaddr = "00:00:00:00:00:00"
-            os_info = self.sysadm.diskless_os_cfg_get(hwaddr)
-            print(hwaddr)
-            if not os_info:
-                self.send_exit(reason="not found config for %s" % hwaddr)
-                return
+            self.send_exit(reason="not found config for %s" % hwaddr)
+            return
 
         script_path = os_info["script-path"]
 
