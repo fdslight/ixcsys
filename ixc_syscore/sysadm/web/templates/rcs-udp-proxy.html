@@ -68,7 +68,7 @@
                 x=1
                 for name in self.V:
                     _dict=self.V[name]
-                    s="""<tr id="ixc-rcs-udp-proxy-seq-%d"><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>""" % (x,x,name,_dict['host'],_dict["port"],_dict["redirect_host"],_dict["redirect_port"])
+                    s="""<tr id="ixc-rcs-udp-proxy-seq-%d"><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>""" % (x,name,_dict['host'],_dict["port"],_dict["redirect_host"],_dict["redirect_port"])
                     s+="""<td><a href="#" name="%s" class="ixc-rcs-udp-proxy-del">删除</a></td></tr>""" % name
                     self.show(s)
                     x+=1

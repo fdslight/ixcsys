@@ -303,6 +303,7 @@ class service(dispatcher.dispatcher):
 
         self.__diskless_cfg_macs_path = "%s/diskless_macs.json" % os.getenv("IXC_MYAPP_CONF_DIR")
 
+        self.__udp_n2n_fds = []
         self.__udp_n2n_configs = {}
         self.__udp_n2n_conf_path = "%s/udp_n2n_client.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__udp_n2n_fwd_tb = {}
