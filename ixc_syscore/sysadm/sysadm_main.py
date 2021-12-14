@@ -324,6 +324,7 @@ class service(dispatcher.dispatcher):
         self.start_scgi()
         self.http_start()
         self.start_power_monitor()
+        self.create_udp_n2n()
 
     def start_scgi(self):
         scgi_configs = {

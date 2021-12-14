@@ -80,9 +80,9 @@
 <script type="text/javascript">
     $(document).ready(function () {
         $(".ixc-rcs-udp-proxy-del").click(function () {
-            let hwaddr = $(this).attr("name");
+            let name = $(this).attr("name");
 
-            $.post("${self.url_prefix}/rcs-udp-proxy", {"hwaddr": hwaddr, "action": "del"}, function (result) {
+            $.post("${self.url_prefix}/rcs-udp-proxy", {"name": name, "action": "del"}, function (result) {
                 let is_error = result.is_error;
                 if (is_error) {
                     alert(result.message);
