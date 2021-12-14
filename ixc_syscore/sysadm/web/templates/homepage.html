@@ -1,217 +1,220 @@
 ${self.inherit("base.html")}
 <%block name="header">
-    <link rel="stylesheet" href="${self.staticfile_prefix}/css/homepage.css"/>
+<link rel="stylesheet" href="${self.staticfile_prefix}/css/homepage.css"/>
 </%block>
 
 <%block name="title">${self.LA('homepage')}</%block>
 
 <%block name="content">
-    <div class="container-fluid" style="min-width: 1280px;padding: 0;">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="/">IXCSYS</a>
-            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-            </div>
-            <form class="form-inline">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="button" id="ixc-sys-restart">重启路由</button>
-                &nbsp;&nbsp;&nbsp;
-                <a class="btn btn-outline-success my-2 my-sm-0" href="${self.url_prefix}/signout">注销</a>
-            </form>
-        </nav>
-        <div class="row ixc-left" style="width: 90%;margin: auto;">
-            <div class="col-2">
-                <div class="ixc-empty"></div>
-                <ul class="list-group">
-                    <li class="list-group-item ixc-left-nav-title">
-                        <div class="ixc-left-nav-title">网络设置</div>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-wan-internet">
-                        <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-${self.V['cur_internet_type']}-dial&page=wan&type=${self.V['cur_internet_type']}">WAN
-                            上网设置</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-dhcp-server">
-                        <a href="${self.url_prefix}/?show=ixc-dhcp-server&page=dhcp-server">LAN DHCP设置</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-static-dhcp">
-                        <a href="${self.url_prefix}/?show=ixc-static-dhcp&page=static-dhcp">静态DHCP设置</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-dns-server">
-                        <a href="${self.url_prefix}/?show=ixc-dns-server&page=dns-server">LAN DNS设置</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-ipv6">
-                        <a href="${self.url_prefix}/?show=ixc-ipv6&page=ipv6">IPv6设置</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-port-map">
-                        <a href="${self.url_prefix}/?show=ixc-port-map&page=port-map">端口映射</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-ddns">
-                        <a href="${self.url_prefix}/?show=ixc-ddns&page=ddns">CloudFlare DDNS</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-proxy">
-                        <a href="${self.url_prefix}/?show=ixc-proxy.ixc-proxy-conn&page=proxy&type=conn">网络隧道</a>
-                    </li>
-                </ul>
-                <div class="ixc-empty"></div>
-                <ul class="list-group">
-                    <li class="list-group-item ixc-left-nav-title">
-                        <div class="ixc-left-nav-title">网络安全</div>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-sec-net-rule">
-                        <a href="${self.url_prefix}/?show=ixc-sec-net-rule&page=sec-net-rule">安全规则</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-sec-net-monitor">
-                        <a href="${self.url_prefix}/?show=ixc-sec-net-monitor&page=sec-net-monitor">流量监控</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-sec-dns-rule">
-                        <a href="${self.url_prefix}/?show=ixc-sec-dns-rule&page=sec-dns-rule">DNS拦截</a>
-                    </li>
-                </ul>
-                <div class="ixc-empty"></div>
-                <ul class="list-group">
-                    <li class="list-group-item ixc-left-nav-title">
-                        <div class="ixc-left-nav-title">服务设置</div>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-tftp-server">
-                        <a href="${self.url_prefix}/?show=ixc-tftp-server&page=tftp">LAN TFTP服务器</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-file-download">
-                        <a href="${self.url_prefix}/?show=ixc-file-download&page=file-download">HTTP文件下载</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-diskless">
-                        <a href="${self.url_prefix}/?show=ixc-diskless&page=diskless">iPXE无盘</a>
-                    </li>
-                    <!--
-                    <li class="list-group-item ixc-left-menu" id="ixc-cloud-service">
-                        <a href="${self.url_prefix}/?show=ixc-cloud-service&page=cloud-service">云服务</a>
-                    </li>
-                    -->
-                </ul>
-                <div class="ixc-empty"></div>
-                <ul class="list-group">
-                    <li class="list-group-item ixc-left-nav-title">
-                        <div class="ixc-left-nav-title">能源控制</div>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-wake-on-lan">
-                        <a href="${self.url_prefix}/?show=ixc-wake-on-lan&page=wake-on-lan">远程开机控制</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-auto-shutdown">
-                        <a href="${self.url_prefix}/?show=ixc-auto-shutdown&page=auto-shutdown">自动关机控制</a>
-                    </li>
-                </ul>
+<div class="container-fluid" style="min-width: 1280px;padding: 0;">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">IXCSYS</a>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        </div>
+        <form class="form-inline">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="button" id="ixc-sys-restart">重启路由</button>
+            &nbsp;&nbsp;&nbsp;
+            <a class="btn btn-outline-success my-2 my-sm-0" href="${self.url_prefix}/signout">注销</a>
+        </form>
+    </nav>
+    <div class="row ixc-left" style="width: 90%;margin: auto;">
+        <div class="col-2">
+            <div class="ixc-empty"></div>
+            <ul class="list-group">
+                <li class="list-group-item ixc-left-nav-title">
+                    <div class="ixc-left-nav-title">网络设置</div>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-wan-internet">
+                    <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-${self.V['cur_internet_type']}-dial&page=wan&type=${self.V['cur_internet_type']}">WAN
+                        上网设置</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-dhcp-server">
+                    <a href="${self.url_prefix}/?show=ixc-dhcp-server&page=dhcp-server">LAN DHCP设置</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-static-dhcp">
+                    <a href="${self.url_prefix}/?show=ixc-static-dhcp&page=static-dhcp">静态DHCP设置</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-dns-server">
+                    <a href="${self.url_prefix}/?show=ixc-dns-server&page=dns-server">LAN DNS设置</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-ipv6">
+                    <a href="${self.url_prefix}/?show=ixc-ipv6&page=ipv6">IPv6设置</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-port-map">
+                    <a href="${self.url_prefix}/?show=ixc-port-map&page=port-map">端口映射</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-ddns">
+                    <a href="${self.url_prefix}/?show=ixc-ddns&page=ddns">CloudFlare DDNS</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-proxy">
+                    <a href="${self.url_prefix}/?show=ixc-proxy.ixc-proxy-conn&page=proxy&type=conn">网络隧道</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-rcs-udp-proxy">
+                    <a href="${self.url_prefix}/?show=ixc-rcs-udp-proxy&page=rcs-udp-proxy">远程访问内网UDP代理</a>
+                </li>
+            </ul>
+            <div class="ixc-empty"></div>
+            <ul class="list-group">
+                <li class="list-group-item ixc-left-nav-title">
+                    <div class="ixc-left-nav-title">网络安全</div>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-sec-net-rule">
+                    <a href="${self.url_prefix}/?show=ixc-sec-net-rule&page=sec-net-rule">安全规则</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-sec-net-monitor">
+                    <a href="${self.url_prefix}/?show=ixc-sec-net-monitor&page=sec-net-monitor">流量监控</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-sec-dns-rule">
+                    <a href="${self.url_prefix}/?show=ixc-sec-dns-rule&page=sec-dns-rule">DNS拦截</a>
+                </li>
+            </ul>
+            <div class="ixc-empty"></div>
+            <ul class="list-group">
+                <li class="list-group-item ixc-left-nav-title">
+                    <div class="ixc-left-nav-title">服务设置</div>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-tftp-server">
+                    <a href="${self.url_prefix}/?show=ixc-tftp-server&page=tftp">LAN TFTP服务器</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-file-download">
+                    <a href="${self.url_prefix}/?show=ixc-file-download&page=file-download">HTTP文件下载</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-diskless">
+                    <a href="${self.url_prefix}/?show=ixc-diskless&page=diskless">iPXE无盘</a>
+                </li>
+                <!--
+                <li class="list-group-item ixc-left-menu" id="ixc-cloud-service">
+                    <a href="${self.url_prefix}/?show=ixc-cloud-service&page=cloud-service">云服务</a>
+                </li>
+                -->
+            </ul>
+            <div class="ixc-empty"></div>
+            <ul class="list-group">
+                <li class="list-group-item ixc-left-nav-title">
+                    <div class="ixc-left-nav-title">能源控制</div>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-wake-on-lan">
+                    <a href="${self.url_prefix}/?show=ixc-wake-on-lan&page=wake-on-lan">远程开机控制</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-auto-shutdown">
+                    <a href="${self.url_prefix}/?show=ixc-auto-shutdown&page=auto-shutdown">自动关机控制</a>
+                </li>
+            </ul>
 
-                <div class="ixc-empty"></div>
-                <ul class="list-group">
-                    <li class="list-group-item ixc-left-nav-title">
-                        <div class="ixc-left-nav-title">系统管理</div>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-user-info">
-                        <a href="${self.url_prefix}/?show=ixc-user-info&page=user-info">用户信息</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-system-network">
-                        <a href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&page=system-network&type=wan">系统网络</a>
-                    </li>
-                </ul>
-                <div class="ixc-empty"></div>
-                <ul class="list-group">
-                    <li class="list-group-item ixc-left-nav-title">
-                        <div class="ixc-left-nav-title">日志信息</div>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-dhcp-host">
-                        <a href="${self.url_prefix}/?show=ixc-dhcp-host&page=dhcp-host">DHCP主机信息</a>
-                    </li>
-                    <li class="list-group-item ixc-left-menu" id="ixc-syslog">
-                        <a href="${self.url_prefix}/?show=ixc-syslog&page=syslog">系统日志</a>
-                    </li>
-                </ul>
+            <div class="ixc-empty"></div>
+            <ul class="list-group">
+                <li class="list-group-item ixc-left-nav-title">
+                    <div class="ixc-left-nav-title">系统管理</div>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-user-info">
+                    <a href="${self.url_prefix}/?show=ixc-user-info&page=user-info">用户信息</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-system-network">
+                    <a href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&page=system-network&type=wan">系统网络</a>
+                </li>
+            </ul>
+            <div class="ixc-empty"></div>
+            <ul class="list-group">
+                <li class="list-group-item ixc-left-nav-title">
+                    <div class="ixc-left-nav-title">日志信息</div>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-dhcp-host">
+                    <a href="${self.url_prefix}/?show=ixc-dhcp-host&page=dhcp-host">DHCP主机信息</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-syslog">
+                    <a href="${self.url_prefix}/?show=ixc-syslog&page=syslog">系统日志</a>
+                </li>
+            </ul>
+        </div>
+        <div class="col-10" style="padding: 0;">
+            <div>
+                <p id="ixc-error"></p>
             </div>
-            <div class="col-10" style="padding: 0;">
-                <div>
-                    <p id="ixc-error"></p>
-                </div>
-                <div class="ixc-page-content">${self.widget(self.V['page'])}</div>
-            </div>
+            <div class="ixc-page-content">${self.widget(self.V['page'])}</div>
         </div>
     </div>
-    <div class="ixc-empty"></div>
-    <script type="text/javascript">
-        $(document).ready(function (e) {
-            /** 显示菜单内容 **/
-            function load_page() {
-                /// 加载页面,实现加载选定的内容并激活对应的菜单颜色
-                let url_params = new URLSearchParams(window.location.search);
-                let show = url_params.get("show");
-                if (null === show || show === "") return;
+</div>
+<div class="ixc-empty"></div>
+<script type="text/javascript">
+    $(document).ready(function (e) {
+        /** 显示菜单内容 **/
+        function load_page() {
+            /// 加载页面,实现加载选定的内容并激活对应的菜单颜色
+            let url_params = new URLSearchParams(window.location.search);
+            let show = url_params.get("show");
+            if (null === show || show === "") return;
 
-                let array = show.split(".");
-                // 左边菜单ID+"-view"表示渲染的名称
-                for (let i = 0; i < array.length; i++) {
-                    $("#" + array[i]).addClass("active");
-                    if (array.length - 1 === i) $("#" + array[i] + "-view").css("display", "block");
-                }
+            let array = show.split(".");
+            // 左边菜单ID+"-view"表示渲染的名称
+            for (let i = 0; i < array.length; i++) {
+                $("#" + array[i]).addClass("active");
+                if (array.length - 1 === i) $("#" + array[i] + "-view").css("display", "block");
             }
+        }
 
-            /** 根据左边不同的菜单显示不同的内容 **/
-            $(".ixc-left-menu").click(function () {
-                let id = $(this).attr("id");
-                let href = $(this).children("a").attr("href");
-                let text = '<iframe style="width: 100%;height: 100%;padding: 0;border: 0;"></iframe>';
-                let page = $(".ixc-page-content");
+        /** 根据左边不同的菜单显示不同的内容 **/
+        $(".ixc-left-menu").click(function () {
+            let id = $(this).attr("id");
+            let href = $(this).children("a").attr("href");
+            let text = '<iframe style="width: 100%;height: 100%;padding: 0;border: 0;"></iframe>';
+            let page = $(".ixc-page-content");
 
-                $(".ixc-left-menu").removeClass("active");
-                $(this).addClass("active");
+            $(".ixc-left-menu").removeClass("active");
+            $(this).addClass("active");
 
-                page.css("display", "none");
-                $(".ixc-menu-content").css("display", "none");
+            page.css("display", "none");
+            $(".ixc-menu-content").css("display", "none");
 
-                if (id.indexOf("ixc-app-") !== 0) {
-                    window.location.href = href;
-                    return true;
-                }
-                page.html(text);
-                page.css("display", "block");
-                return false;
+            if (id.indexOf("ixc-app-") !== 0) {
+                window.location.href = href;
+                return true;
+            }
+            page.html(text);
+            page.css("display", "block");
+            return false;
 
-            });
-
-            $(".ixc-conf-form").submit(function () {
-                let sub_content = $(this).serialize();
-                let err_ele = $("#ixc-error");
-                err_ele.html("");
-                $.ajax({
-                    type: "POST",
-                    url: $(this).attr("action"),
-                    dataType: "json",
-                    data: sub_content,
-                    success: function (result) {
-                        let is_error = result.is_error;
-                        let message = result.message;
-                        if (is_error) {
-                            alert((message));
-                            //err_ele.html(message)
-                        } else {
-                            alert("${self.LA('update ok')}");
-                            window.location.reload();
-                        }
-                    },
-                    error: function () {
-                        err_ele.html("${self.LA('unkown error')}");
-                    }
-                });
-
-                return false;
-            });
-
-            // 重启路由器
-            $("#ixc-sys-restart").click(function () {
-                $.get("${self.url_prefix}/restart", {}, function (result) {
-                    let is_error = result["is_error"];
-                    let message = result["message"];
-
-                    alert(message);
-                });
-            });
-            load_page();
         });
-    </script>
+
+        $(".ixc-conf-form").submit(function () {
+            let sub_content = $(this).serialize();
+            let err_ele = $("#ixc-error");
+            err_ele.html("");
+            $.ajax({
+                type: "POST",
+                url: $(this).attr("action"),
+                dataType: "json",
+                data: sub_content,
+                success: function (result) {
+                    let is_error = result.is_error;
+                    let message = result.message;
+                    if (is_error) {
+                        alert((message));
+                        //err_ele.html(message)
+                    } else {
+                        alert("${self.LA('update ok')}");
+                        window.location.reload();
+                    }
+                },
+                error: function () {
+                    err_ele.html("${self.LA('unkown error')}");
+                }
+            });
+
+            return false;
+        });
+
+        // 重启路由器
+        $("#ixc-sys-restart").click(function () {
+            $.get("${self.url_prefix}/restart", {}, function (result) {
+                let is_error = result["is_error"];
+                let message = result["message"];
+
+                alert(message);
+            });
+        });
+        load_page();
+    });
+</script>
 </%block>
 <%block name="footer">
 ## footer.html
