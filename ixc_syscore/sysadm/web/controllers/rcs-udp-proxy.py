@@ -11,7 +11,7 @@ class controller(base_controller.BaseController):
         return global_vars["ixcsys.sysadm"]
 
     def myinit(self):
-        self.request.set_allow_methods(["GET"])
+        self.request.set_allow_methods(["POST"])
         return True
 
     def add_proxy(self):
