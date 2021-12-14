@@ -79,7 +79,7 @@
 </div>
 <script type="text/javascript">
     $(document).ready(function () {
-        $(".ixc-diskless-del").click(function () {
+        $(".ixc-rcs-udp-proxy-del").click(function () {
             let hwaddr = $(this).attr("name");
 
             $.post("${self.url_prefix}/rcs-udp-proxy", {"hwaddr": hwaddr, "action": "del"}, function (result) {
@@ -92,7 +92,7 @@
             });
         });
 
-        $("#ixc-diskless-add").click(function () {
+        $("#ixc-rcs-udp-proxy-add").click(function () {
             let form_data = $("#ixc-rcs-udp-proxy-form").serialize();
 
             $.post("${self.url_prefix}/rcs-udp-proxy", form_data, function (result) {
