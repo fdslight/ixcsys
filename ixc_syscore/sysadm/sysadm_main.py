@@ -163,7 +163,6 @@ class service(dispatcher.dispatcher):
             fd = self.create_handler(-1, n2n_client.n2nd, ("0.0.0.0", 0), (host, port,), (redir_host, redir_port))
             self.__udp_n2n_fds.append(fd)
 
-
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
         self.load_cloudflare_ddns_cfg()
@@ -184,6 +183,10 @@ class service(dispatcher.dispatcher):
 
     def reset_udp_n2n(self):
         for fd in self.__udp_n2n_fds: self.delete_handler(fd)
+        self.create_udp_n2n()
+
+    def save_udp_n2n_configs(self):
+        cfg.save_to_ini(self.__udp_n2n_configs, self.__udp_n2n_conf_path)
 
     def load_diskless_cfg_macs(self):
         if not os.path.isfile(self.__diskless_cfg_macs_path):
