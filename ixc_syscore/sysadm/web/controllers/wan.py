@@ -85,7 +85,7 @@ class controller(base_controller.BaseController):
 
         RPC.fn_call("router", "/config", "internet_type_set", "dhcp")
         RPC.fn_call("router", "/config", "dhcp_positive_heartbeat_set", positive_heartbeat=b)
-        RPC.fn_call("router", "/config", "config_save")
+        RPC.fn_call("router", "/config", "save")
 
         self.json_resp(False, {})
 
