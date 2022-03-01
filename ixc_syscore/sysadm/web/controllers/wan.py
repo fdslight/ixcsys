@@ -27,7 +27,7 @@ class controller(base_controller.BaseController):
 
         RPC.fn_call("router", "/config", "pppoe_set", username, passwd, heartbeat=heartbeat_enable)
         RPC.fn_call("router", "/config", "internet_type_set", "pppoe")
-        RPC.fn_call("router", "/config", "save")
+        RPC.fn_call("router", "/config", "config_save")
 
         self.json_resp(False, {})
 
@@ -71,7 +71,7 @@ class controller(base_controller.BaseController):
 
         RPC.fn_call("router", "/config", "wan_addr_set", ip, mask, gw)
         RPC.fn_call("router", "/config", "internet_type_set", "static-ip")
-        RPC.fn_call("router", "/config", "save")
+        RPC.fn_call("router", "/config", "config_save")
 
         self.json_resp(False, {})
 
@@ -85,7 +85,7 @@ class controller(base_controller.BaseController):
 
         RPC.fn_call("router", "/config", "internet_type_set", "dhcp")
         RPC.fn_call("router", "/config", "dhcp_positive_heartbeat_set", positive_heartbeat=b)
-        RPC.fn_call("router", "/config", "save")
+        RPC.fn_call("router", "/config", "config_save")
 
         self.json_resp(False, {})
 
