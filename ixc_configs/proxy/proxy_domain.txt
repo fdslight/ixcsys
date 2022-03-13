@@ -120,6 +120,7 @@ podcasts.captivate.fm:1
 ###  新闻媒体
 *.dongtaiwang.com:1
 *.epochtimes.com:1
+*.ept.ms:1
 *.theepochtimes.com:1
 *.epochhk.com:1
 *.epochtimeshk.org:1
