@@ -127,7 +127,16 @@ class dhcp_server(object):
         )
         self.__runtime.send_dhcp_server_msg(link_data)
 
-    def get_resp_opts_from_request_list(self, request_list: bytes):
+    def is_from_request_list(self, code: int, request_list: bytes):
+        exists = False
+        for v in request_list:
+            if v != code: continue
+            exists = True
+            break
+
+        return exists
+
+    def get_resp_opts_from_request_list(self, req_opts, request_list: bytes):
         """通过请求列表获取响应的options
         """
         resp_opts = []
@@ -146,8 +155,6 @@ class dhcp_server(object):
             #    resp_opts.append((code, server_name))
             if code in self.__dhcp_options:
                 resp_opts.append((code, self.__dhcp_options[code]))
-            if code == 60:
-                resp_opts.append((code, b"TP-LINK"))
             ''''''
 
         # 让server id位于dhcp message type后面
@@ -157,7 +164,14 @@ class dhcp_server(object):
         resp_opts.append((51, struct.pack("!I", self.__TIMEOUT)))
         resp_opts.append((58, struct.pack("!I", int(self.__TIMEOUT * 0.5))))
         resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
-        resp_opts.append((138,self.__dns_bytes))
+
+        vendor = self.get_dhcp_opt_value(req_opts, 60)
+        if vendor and self.is_from_request_list(60):
+            resp_opts.append((60, vendor))
+
+        # DHCP server分配的DNS地址就是路由器自身的管理地址
+        if 138 not in self.__dhcp_options and self.is_from_request_list(138):
+            resp_opts.append((138, self.__dns_bytes))
 
         return resp_opts
 
@@ -219,7 +233,7 @@ class dhcp_server(object):
             resp_opts.append((61, client_id))
 
         self.add_boot_file(opts, request_list, resp_opts)
-        resp_opts += self.get_resp_opts_from_request_list(request_list)
+        resp_opts += self.get_resp_opts_from_request_list(opts, request_list)
 
         # 这里需要避免每次更新time值导致客户端认为DHCP服务器不存在
         if s_client_hwaddr not in self.__tmp_alloc_addrs:
@@ -285,7 +299,7 @@ class dhcp_server(object):
 
         resp_opts.append((53, bytes([5])))
         self.add_boot_file(opts, request_list, resp_opts)
-        resp_opts += self.get_resp_opts_from_request_list(request_list)
+        resp_opts += self.get_resp_opts_from_request_list(opts, request_list)
 
         self.__dhcp_builder.yiaddr = request_ip
 
@@ -499,6 +513,8 @@ class dhcp_server(object):
         return results
 
     def set_boot_ext_option(self, hwaddr: str, code: int, value: str):
+        """设置引导选项,只有DHCP引导请求时才会生效,注意值为字符串
+        """
         _dict = None
         hwaddr = hwaddr.lower()
 
@@ -513,3 +529,9 @@ class dhcp_server(object):
 
     def clear_boot_ext_option(self):
         self.__dhcp_ext_boot_options = {}
+
+    def set_dhcp_option(self, code: int, value: bytes):
+        if not value:
+            if code in self.__dhcp_options: del self.__dhcp_options[code]
+            return
+        self.__dhcp_options[code] = value
