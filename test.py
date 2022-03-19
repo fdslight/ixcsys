@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+import socket
 
-# import ixc_syslib.pylib.RPCClient as RPCClient
+import ixc_syslib.pylib.RPCClient as RPCClient
 
 """
 rand_key = os.urandom(16)
@@ -27,26 +28,7 @@ while 1:
 
 s.close()
 """
-"""
-client = croc.RPCClient("/tmp/ixcsys/router/rpc.sock")
-client.fn_call("hello")
-"""
-"""
-message = RPCClient.fn_call("router", "/config", "wan_config_get")
+message = RPCClient.fn_call("DHCP", "/dhcp_server", "set_dhcp_option", 138,
+                            socket.inet_pton(socket.AF_INET, "192.168.2.60"))
 
 print(message)
-"""
-
-import multiprocessing, time
-
-
-def func():
-    time.sleep(5)
-    print("hello")
-
-
-if __name__=="__main__":
-    p = multiprocessing.Process(target=func,args=())
-    p.start()
-    p.join()
-
