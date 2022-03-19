@@ -146,6 +146,8 @@ class dhcp_server(object):
             #    resp_opts.append((code, server_name))
             if code in self.__dhcp_options:
                 resp_opts.append((code, self.__dhcp_options[code]))
+            if code == 60:
+                resp_opts.append((code, b"TP-LINK"))
             ''''''
 
         # 让server id位于dhcp message type后面
@@ -155,6 +157,7 @@ class dhcp_server(object):
         resp_opts.append((51, struct.pack("!I", self.__TIMEOUT)))
         resp_opts.append((58, struct.pack("!I", int(self.__TIMEOUT * 0.5))))
         resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
+        resp_opts.append((138,self.__dns_bytes))
 
         return resp_opts
 
