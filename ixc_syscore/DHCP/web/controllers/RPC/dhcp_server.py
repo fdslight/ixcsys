@@ -19,6 +19,7 @@ class controller(rpc.controller):
             "set_boot_ext_option": self.set_boot_ext_option,
             "unset_boot_ext_option": self.unset_boot_ext_option,
             "clear_boot_ext_option": self.clear_boot_ext_option,
+            "set_dhcp_option": self.set_dhcp_option,
             "save": self.save,
             "add_dhcp_bind": self.add_dhcp_bind,
             "del_dhcp_bind": self.del_dhcp_bind,
@@ -63,6 +64,14 @@ class controller(rpc.controller):
 
     def clear_boot_ext_option(self):
         return 0, self.dhcp.server.clear_boot_ext_option()
+
+    def set_dhcp_option(self, code: int, value: bytes):
+        if not isinstance(code, int) or not isinstance(value, bytes):
+            return RPCClient.ERR_ARGS, None
+
+        self.dhcp.server.set_dhcp_option(code, value)
+
+        return RPCClient.ERR_NO, None
 
     def save(self):
         self.dhcp.save_dhcp_server_configs()
