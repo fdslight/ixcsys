@@ -165,9 +165,11 @@ class dhcp_server(object):
         resp_opts.append((58, struct.pack("!I", int(self.__TIMEOUT * 0.5))))
         resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
 
+        """
         vendor = self.get_dhcp_opt_value(req_opts, 60)
         if vendor and self.is_from_request_list(60,request_list):
             resp_opts.append((60, vendor))
+        """
 
         # DHCP server分配的DNS地址就是路由器自身的管理地址
         if 138 not in self.__dhcp_options and self.is_from_request_list(138,request_list):
