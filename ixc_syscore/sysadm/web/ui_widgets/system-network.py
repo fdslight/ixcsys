@@ -45,8 +45,6 @@ class widget(ui_widget.widget):
 
         network_shift_conf = self.get_network_shift_conf()
 
-        print(network_shift_conf)
-
         return True, "system-network.html", {"if_name": if_name, "hwaddr": hwaddr, "manage_addr": manage_addr,
                                              "mask": mask, "ip_addr": ip_addr,
                                              "net_devices": network_shift.get_available_net_devices(),
