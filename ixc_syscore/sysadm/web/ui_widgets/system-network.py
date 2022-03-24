@@ -13,6 +13,12 @@ class widget(ui_widget.widget):
         manage_addr = ""
         mask = ""
 
+        configs = RPC.fn_call("router", "/config", "wan_config_get")
+        if_wan_name = configs["public"]["phy_ifname"]
+
+        configs = RPC.fn_call("router", "/config", "lan_config_get")
+        if_lan_name = configs["if_config"]["phy_ifname"]
+
         if _type == "wan":
             configs = RPC.fn_call("router", "/config", "wan_config_get")
             public = configs["public"]
@@ -28,6 +34,14 @@ class widget(ui_widget.widget):
             mask = if_config["mask"]
             ip_addr = if_config["ip_addr"]
 
+        net_devices = osnet.get_if_net_devices()
+        devices = []
+
+        for if_name in net_devices:
+            if if_name == if_wan_name: continue
+            if if_name == if_lan_name: continue
+            devices.append(if_name)
+
         return True, "system-network.html", {"if_name": if_name, "hwaddr": hwaddr, "manage_addr": manage_addr,
                                              "mask": mask, "ip_addr": ip_addr,
-                                             "net_devices": osnet.get_if_net_devices()}
+                                             "net_devices": devices}
