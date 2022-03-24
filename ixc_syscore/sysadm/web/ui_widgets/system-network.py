@@ -43,8 +43,12 @@ class widget(ui_widget.widget):
             mask = if_config["mask"]
             ip_addr = if_config["ip_addr"]
 
+        network_shift_conf = self.get_network_shift_conf()
 
         return True, "system-network.html", {"if_name": if_name, "hwaddr": hwaddr, "manage_addr": manage_addr,
                                              "mask": mask, "ip_addr": ip_addr,
                                              "net_devices": network_shift.get_available_net_devices(),
+                                             "network_check_host": network_shift_conf["check_host"],
+                                             "network_shift_enable": network_shift_conf["enable"],
+                                             "network_shift_ifname": network_shift_conf["temp_device"]
                                              }
