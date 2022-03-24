@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-
+import json
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
 
 import ixc_syslib.pylib.RPCClient as RPC
-
 import pywind.lib.netutils as netutils
+import ixc_syscore.sysadm.pylib.network_shift as network_shift
 
 
 class controller(base_controller.BaseController):
@@ -14,12 +14,37 @@ class controller(base_controller.BaseController):
 
     def handle_wan_submit(self):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
+        enable_auto = self.request.get_argument("enable_auto", is_seq=False, is_qs=False)
+        temp_ifname = self.request.get_argument("shift_ifname", is_seq=False, is_qs=False)
+
+        if enable_auto and temp_ifname not in network_shift.get_available_net_devices():
+            self.json_resp(True, "不可用的故障切换网卡")
+            return
+
+        if enable_auto:
+            enable_auto = True
+        else:
+            enable_auto = False
+
         if not hwaddr:
-            self.json_resp(True, "wrong hardware address format")
+            self.json_resp(True, "硬件地址不能为空")
             return
         if not netutils.is_hwaddr(hwaddr):
-            self.json_resp(True, "wrong hardware address format")
+            self.json_resp(True, "错误的硬件地址格式")
             return
+
+        configs = RPC.fn_call("router", "/config", "lan_config_get")
+        lan_hwaddr = configs["if_config"]["hwaddr"]
+        if lan_hwaddr == hwaddr:
+            self.json_resp(True, "WAN与LAN的地址不能相同")
+            return
+
+        o = {
+            "enable": enable_auto,
+            "temp_device": temp_ifname,
+        }
+
+        self.save_sysadm_json_config("%s/network_shift.json" % self.my_config_dir, o)
 
         RPC.fn_call("router", "/config", "wan_hwaddr_set", hwaddr)
         RPC.fn_call("router", "/config", "config_save")
@@ -32,11 +57,18 @@ class controller(base_controller.BaseController):
         ip_addr = self.request.get_argument("ip_addr", is_seq=False, is_qs=False)
 
         if not hwaddr:
-            self.json_resp(True, "wrong hardware address format")
+            self.json_resp(True, "硬件地址不能为空")
             return
         if not netutils.is_hwaddr(hwaddr):
-            self.json_resp(True, "wrong hardware address format")
+            self.json_resp(True, "错误的硬件地址格式")
             return
+
+        configs = RPC.fn_call("router", "/config", "wan_config_get")
+        wan_hwaddr = configs["public"]["hwaddr"]
+        if wan_hwaddr == hwaddr:
+            self.json_resp(True, "WAN与LAN的地址不能相同")
+            return
+
         if not manage_addr:
             self.json_resp(True, "空的管理地址")
             return

@@ -18,3 +18,15 @@ class BaseController(base.controller):
         """响应ajax
         """
         self.finish_with_json({"is_error": is_error, "message": message})
+
+    def save_sysadm_json_config(self, path: str, o):
+        fdst = open(path, "w")
+        fdst.write(json.dumps(o))
+        fdst.close()
+
+    def get_sysadm_json_config(self, path: str):
+        fdst = open(path, "r")
+        s = fdst.read()
+        fdst.close()
+
+        return json.loads(s)
