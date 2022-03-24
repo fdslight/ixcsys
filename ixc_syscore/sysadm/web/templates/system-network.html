@@ -30,7 +30,12 @@
             <div class="col-sm-2">故障切换</div>
             <div class="col-sm-10">
                 <div class="form-check">
-
+                    <%
+                        s="""<input class="form-check-input" name="enable_auto" value="1" type="checkbox" {}/>"""
+                        if self.V["network_shift_enable"]:x=s.format("checked")
+                        else:x=s.format("")
+                        self.show(x)
+                    %>
                     <label class="form-check-label" for="gridCheck1">
                         开启
                     </label>
@@ -48,13 +53,7 @@
             <label class="col-sm-2 col-form-label">选择网卡</label>
             <div class="col-sm-10">
                 <select class="form-control" name="shift_ifname" id="ixc-shift-ifname">
-                    <%
-                        for x in self.V["net_devices"]:
-                            s="""
-                            <option value="%s">%s</option>
-                            """ % (x,x)
-                            self.show(s)
-                    %>
+
                 </select>
             </div>
         </div>
