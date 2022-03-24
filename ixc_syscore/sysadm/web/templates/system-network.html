@@ -55,9 +55,7 @@
                 <select class="form-control" name="shift_ifname" id="ixc-shift-ifname">
                     <%
                         for x in self.V["net_devices"]:
-                            s="""
-                            <option value="%s">%s</option>
-                            """ % (x,x)
+                            s="""<option value="%s">%s</option>""" % (x,x)
                             self.show(s)
                     %>
                 </select>
