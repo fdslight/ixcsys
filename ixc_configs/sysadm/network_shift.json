@@ -1,4 +1,5 @@
 {
   "enable": false,
-  "temp_device": ""
+  "temp_device": "",
+  "check_host": ""
 }

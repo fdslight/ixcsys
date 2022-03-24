@@ -25,6 +25,8 @@ class BaseController(base.controller):
         fdst.close()
 
     def get_sysadm_json_config(self, path: str):
+        if not os.path.isfile(path): return None
+
         fdst = open(path, "r")
         s = fdst.read()
         fdst.close()

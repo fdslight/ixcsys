@@ -16,6 +16,8 @@ class controller(base_controller.BaseController):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
         enable_auto = self.request.get_argument("enable_auto", is_seq=False, is_qs=False)
         temp_ifname = self.request.get_argument("shift_ifname", is_seq=False, is_qs=False)
+        check_host = self.request.get_argument("check_host", is_seq=False,
+                                               is_qs=False)
 
         if enable_auto and temp_ifname not in network_shift.get_available_net_devices():
             self.json_resp(True, "不可用的故障切换网卡")
@@ -33,6 +35,10 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的硬件地址格式")
             return
 
+        if enable_auto and not check_host:
+            self.json_resp(True, "请设置检查网络的https服务器地址")
+            return
+
         configs = RPC.fn_call("router", "/config", "lan_config_get")
         lan_hwaddr = configs["if_config"]["hwaddr"]
         if lan_hwaddr == hwaddr:
@@ -42,6 +48,7 @@ class controller(base_controller.BaseController):
         o = {
             "enable": enable_auto,
             "temp_device": temp_ifname,
+            "check_host": check_host
         }
 
         self.save_sysadm_json_config("%s/network_shift.json" % self.my_config_dir, o)
