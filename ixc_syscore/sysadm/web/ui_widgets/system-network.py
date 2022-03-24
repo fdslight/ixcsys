@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+
 import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.web.ui_widget as ui_widget
+import ixc_syslib.pylib.osnet as osnet
 
 
 class widget(ui_widget.widget):
@@ -27,4 +29,5 @@ class widget(ui_widget.widget):
             ip_addr = if_config["ip_addr"]
 
         return True, "system-network.html", {"if_name": if_name, "hwaddr": hwaddr, "manage_addr": manage_addr,
-                                             "mask": mask, "ip_addr": ip_addr}
+                                             "mask": mask, "ip_addr": ip_addr,
+                                             "net_devices": osnet.get_if_net_devices()}

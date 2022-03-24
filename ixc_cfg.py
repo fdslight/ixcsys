@@ -16,6 +16,16 @@ system reset
 help"""
 
 
+def get_if_net_devices():
+    if_names = os.listdir("/sys/class/net")
+    results = []
+    for if_name in if_names:
+        # 去除无效的网卡
+        if if_name == "lo": continue
+        results.append(if_name)
+    return results
+
+
 class ifconfig(object):
     def __init__(self, seq: list):
         if len(seq) < 2:
@@ -45,6 +55,10 @@ class ifconfig(object):
             self.lan_do_hwaddr(seq[1])
 
     def lan_do_dev(self, devname: str):
+        if devname not in get_if_net_devices():
+            print("ERROR:not found system network card %s for LAN" % devname)
+            return
+
         fpath = "%s/ixc_configs/router/lan.ini" % sys_dir
 
         conf = cfg.ini_parse_from_file(fpath)
@@ -74,6 +88,10 @@ class ifconfig(object):
             self.wan_do_hwaddr(seq[1])
 
     def wan_do_dev(self, devname: str):
+        if devname not in get_if_net_devices():
+            print("ERROR:not found system network card %s for LAN" % devname)
+            return
+
         fpath = "%s/ixc_configs/router/wan.ini" % sys_dir
 
         conf = cfg.ini_parse_from_file(fpath)
