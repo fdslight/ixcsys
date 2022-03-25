@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import os, sys, signal, json, time, multiprocessing
 import dns.resolver
+import ixc_syscore.sysadm.pylib.network_shift as network_shift
+import ixc_syslib.pylib.RPCClient as RPC
+
 from cloudflare_ddns import CloudFlare
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -120,6 +123,13 @@ class service(dispatcher.dispatcher):
 
     __udp_n2n_fds = None
 
+    # 网络切换
+    __network_shift_conf_path = None
+    __network_shift_cfg = None
+    __network = None
+    # 网络是否工作站临时网卡上
+    __network_work_on_temp = None
+
     def get_server_ip(self, host):
         """获取服务器IP
         :param host:
@@ -170,6 +180,7 @@ class service(dispatcher.dispatcher):
         self.load_auto_shutdown_cfg()
         self.load_diskless_cfg_macs()
         self.load_udp_n2n_config()
+        self.load_network_shift_config()
 
     def load_udp_n2n_config(self):
         if not os.path.isfile(self.__udp_n2n_conf_path):
@@ -177,9 +188,58 @@ class service(dispatcher.dispatcher):
             return
         self.__udp_n2n_configs = cfg.ini_parse_from_file(self.__udp_n2n_conf_path)
 
+    def start_network_shift(self):
+        self.__network_work_on_temp = False
+        self.__network = network_shift.network()
+
+        if not self.network_shift_config["enable"]: return
+        if not self.network_shift_config["is_main"]: return
+
+        self.__network_work_on_temp = True
+
+        configs = RPC.fn_call("router", "/config", "wan_config_get")
+        if_wan_name = configs["public"]["phy_ifname"]
+
+        # 如果是主网络那么数据恢复原先的配置
+        RPC.fn_call("router", "/config", "wan_ifname_set", self.network_shift_config["device_name"])
+        # 设置为DHCP模式
+        RPC.fn_call("router", "/config", "internet_type_set", self.network_shift_config["internet_type"])
+        RPC.fn_call("router", "/config", "config_save")
+
+        self.network_shift_config["is_main"] = False
+        self.network_shift_config["internet_type"] = "dhcp"
+        self.network_shift_config["device_name"] = if_wan_name
+
+        self.save_network_shift_conf()
+
+    @property
+    def network_is_work_on_temp(self):
+        return self.__network_work_on_temp
+
+    def load_network_shift_config(self):
+        if not os.path.isfile(self.__network_shift_conf_path):
+            self.__network_shift_cfg = {
+                "enable": False,
+                "device_name": "",
+                "check_host": "",
+                # 是否是主网络
+                "is_main": False,
+                "internet_type": ""
+            }
+            return
+
+        with open(self.__network_shift_conf_path, "r") as f: s = f.read()
+        f.close()
+
+        self.__network_shift_cfg = json.loads(s)
+
     @property
     def udp_n2n_configs(self):
         return self.__udp_n2n_configs
+
+    @property
+    def network_shift_config(self):
+        return self.__network_shift_cfg
 
     def reset_udp_n2n(self):
         for fd in self.__udp_n2n_fds: self.delete_handler(fd)
@@ -309,6 +369,9 @@ class service(dispatcher.dispatcher):
         self.__udp_n2n_fwd_tb = {}
         self.__udp_n2n_fwd_tb_reverse = {}
 
+        self.__network_shift_conf_path = "%s/network_shift.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__network_shift_cfg = None
+
         self.__scgi_fd = -1
         self.__is_restart = False
         self.__ddns_up_time = time.time()
@@ -325,6 +388,7 @@ class service(dispatcher.dispatcher):
         self.http_start()
         self.start_power_monitor()
         self.create_udp_n2n()
+        self.start_network_shift()
 
     def start_scgi(self):
         scgi_configs = {
@@ -383,11 +447,40 @@ class service(dispatcher.dispatcher):
             p.start()
 
         self.__power.loop()
+        if self.network_shift_config["enable"]:
+            # 网络测试不通过直行网络切换
+            if not self.__network.network_ok(self.network_shift_config["check_host"]):
+                self.do_network_shift()
+            ''''''
         self.__up_time = time.time()
 
     @property
     def debug(self):
         return self.__debug
+
+    def do_network_shift(self):
+        configs = RPC.fn_call("router", "/config", "wan_config_get")
+        if_wan_name = configs["public"]["phy_ifname"]
+        cur_internet_type = RPC.fn_call("router", "/config", "cur_internet_type_get")
+
+        RPC.fn_call("router", "/config", "wan_ifname_set", self.network_shift_config["device_name"])
+        # 设置为DHCP模式
+        RPC.fn_call("router", "/config", "internet_type_set", "dhcp")
+        RPC.fn_call("router", "/config", "config_save")
+
+        # 保留主网卡的配置
+        self.network_shift_config["device_name"] = if_wan_name
+        self.network_shift_config["internet_type"] = cur_internet_type
+        self.network_shift_config["is_main"] = True
+
+        self.save_network_shift_conf()
+        # 重启路由器
+        self.restart()
+
+    def save_network_shift_conf(self):
+        s = json.dumps(self.__network_shift_cfg)
+        with open(self.__network_shift_conf_path, "w") as f: f.write(s)
+        f.close()
 
     @property
     def ddns_enabled(self):

@@ -12,8 +12,11 @@ class widget(ui_widget.widget):
         if not os.path.isfile(fpath):
             o = {
                 "enable": False,
-                "temp_device": "",
-                "check_host": ""
+                "device_name": "",
+                "check_host": "",
+                # 是否是主网络
+                "is_main": False,
+                "internet_type": ""
             }
             return o
         with open(fpath, "r") as f: s = f.read()

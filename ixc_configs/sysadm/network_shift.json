@@ -1,5 +1,7 @@
 {
   "enable": false,
-  "temp_device": "",
-  "check_host": ""
+  "device_name": "",
+  "check_host": "",
+  "is_main": false,
+  "internet_type": ""
 }

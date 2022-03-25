@@ -35,9 +35,18 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的硬件地址格式")
             return
 
-        if enable_auto and not check_host:
-            self.json_resp(True, "请设置检查网络的https服务器地址")
-            return
+        if enable_auto:
+            if not check_host:
+                self.json_resp(True, "请设置检查网络的https服务器地址")
+                return
+            if netutils.is_ipv6_address(check_host):
+                self.json_resp(True, "不支持IPv6地址作为检查主机")
+                return
+            p = check_host.find(":")
+            if p >= 0:
+                self.json_resp(True, "地址不能携带端口号")
+                return
+            ''''''
 
         configs = RPC.fn_call("router", "/config", "lan_config_get")
         lan_hwaddr = configs["if_config"]["hwaddr"]
@@ -47,8 +56,11 @@ class controller(base_controller.BaseController):
 
         o = {
             "enable": enable_auto,
-            "temp_device": temp_ifname,
-            "check_host": check_host
+            "device_name": temp_ifname,
+            "check_host": check_host,
+            # 是否是主网络
+            "is_main": False,
+            "internet_type": "dhcp"
         }
 
         self.save_sysadm_json_config("%s/network_shift.json" % self.my_config_dir, o)

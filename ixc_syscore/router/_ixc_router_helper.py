@@ -36,6 +36,7 @@ class rpc(object):
             "lan_config_get": self.lan_config_get,
             "manage_addr_get": self.manage_addr_get,
             "wan_hwaddr_set": self.wan_hwaddr_set,
+            "wan_ifname_set": self.wan_ifname_set,
             "lan_hwaddr_set": self.lan_hwaddr_set,
             "manage_addr_set": self.manage_addr_set,
             "lan_addr_set": self.lan_addr_set,
@@ -306,6 +307,12 @@ class rpc(object):
 
         configs = self.__helper.wan_configs
         configs["public"]["hwaddr"] = hwaddr
+
+        return 0, None
+
+    def wan_ifname_set(self, ifname: str):
+        configs = self.__helper.wan_configs
+        configs["public"]["phy_ifname"] = ifname
 
         return 0, None
 
