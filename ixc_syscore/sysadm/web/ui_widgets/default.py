@@ -3,8 +3,14 @@ import platform, os, sys
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syslib.pylib.RPCClient as RPC
 
+from pywind.global_vars import global_vars
+
 
 class widget(ui_widget.widget):
+    @property
+    def sysadm(self):
+        return global_vars["ixcsys.sysadm"]
+
     def read_version(self):
         fpath = "%s/version" % self.sys_dir
         if not os.path.isfile(fpath):
@@ -48,5 +54,6 @@ class widget(ui_widget.widget):
         cpu_model = fdst.read()
         fdst.close()
         dic["cpu_model"] = cpu_model
+        dic["is_temp_network"] = self.sysadm.network_is_work_on_temp
 
         return True, uri, dic

@@ -3,8 +3,14 @@
 import json, os
 import ixc_syslib.web.controllers.ui_controller as base
 
+from pywind.global_vars import global_vars
+
 
 class BaseController(base.controller):
+    @property
+    def sysadm(self):
+        return global_vars["ixcsys.sysadm"]
+
     @property
     def user_configs(self):
         conf_path = "%s/user.json" % self.my_config_dir

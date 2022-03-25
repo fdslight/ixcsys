@@ -26,6 +26,15 @@
                 <td>${self.V["version"]}</td>
             </tr>
             <tr>
+                <td>网络类型</td>
+                <td>
+                    <%
+                        if self.V["is_temp_network"]:self.show('备用网络')
+                        else:self.show('主网络')
+                    %>
+                </td>
+            </tr>
+            <tr>
                 <td>上网方式:</td>
                 <td>${self.V["internet_type"]}</td>
             </tr>
