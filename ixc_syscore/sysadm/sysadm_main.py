@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import os, sys, signal, json, time, multiprocessing
 import dns.resolver
-import ixc_syscore.sysadm.pylib.network_shift as network_shift
-import ixc_syslib.pylib.RPCClient as RPC
 
 from cloudflare_ddns import CloudFlare
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
+
+import ixc_syscore.sysadm.pylib.network_shift as network_shift
+import ixc_syslib.pylib.RPCClient as RPC
 
 if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MYAPP_TMP_DIR"))
 
