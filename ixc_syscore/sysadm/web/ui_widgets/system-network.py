@@ -53,5 +53,5 @@ class widget(ui_widget.widget):
                                              "net_devices": network_shift.get_available_net_devices(),
                                              "network_check_host": network_shift_conf["check_host"],
                                              "network_shift_enable": network_shift_conf["enable"],
-                                             "network_shift_ifname": network_shift_conf["temp_device"]
+                                             "network_shift_ifname": network_shift_conf["device_name"]
                                              }
