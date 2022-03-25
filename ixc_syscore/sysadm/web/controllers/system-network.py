@@ -48,6 +48,9 @@ class controller(base_controller.BaseController):
                 return
             ''''''
 
+        if not check_host: check_host = ""
+        if not temp_ifname: temp_ifname = ""
+
         configs = RPC.fn_call("router", "/config", "lan_config_get")
         lan_hwaddr = configs["if_config"]["hwaddr"]
         if lan_hwaddr == hwaddr:
