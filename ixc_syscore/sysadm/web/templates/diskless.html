@@ -70,7 +70,7 @@
                 for hwaddr in self.V:
                     _dict=self.V[hwaddr]
                     s="""<tr id="ixc-diskless-seq-%d"><td>%d</td><td>%s</td><td class="hwaddr">%s</td><td class="initiator-qin">%s</td><td class="root-path">%s</td><td class="script-path">%s</td>""" % (x,x,_dict["name"],hwaddr,_dict["initiator-iqn"],_dict["root-path"],_dict["script-path"])
-                    s+="""<td><a href="#" name="%s" class="ixc-diskless-del">删除</a>&nbsp;&nbsp;&nbsp;<a href='#' class="ixc-diskless-copy">拷贝</a></td></tr>""" % hwaddr
+                    s+="""<td><a href="#" name="%s" class="ixc-diskless-del">删除</a>&nbsp;&nbsp;&nbsp;<a href='#' class="ixc-diskless-copy" name="seq-%s">拷贝</a></td></tr>""" % (hwaddr,x,)
                     self.show(s)
                     x+=1
                 %>
@@ -91,6 +91,10 @@
                     window.location.reload();
                 }
             });
+        });
+
+        $(".ixc-diskless-copy").click(function (){
+            alert($(this).attr("name"));
         });
 
         $("#ixc-diskless-add").click(function () {
