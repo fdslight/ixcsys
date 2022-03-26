@@ -69,7 +69,7 @@
                 x=1
                 for hwaddr in self.V:
                     _dict=self.V[hwaddr]
-                    s="""<tr id="ixc-diskless-seq-%d"><td>%d</td><td>%s</td><td>%s</td><td class="initiator-iqn">%s</td><td class="root-path">%s</td><td class="script-path">%s</td>""" % (x,x,_dict["name"],hwaddr,_dict["initiator-iqn"],_dict["root-path"],_dict["script-path"])
+                    s="""<tr id="ixc-diskless-seq-%d"><td>%d</td><td>%s</td><td class="hwaddr">%s</td><td class="initiator-iqn">%s</td><td class="root-path">%s</td><td class="script-path">%s</td>""" % (x,x,_dict["name"],hwaddr,_dict["initiator-iqn"],_dict["root-path"],_dict["script-path"])
                     s+="""<td><a href="#" name="%s" class="ixc-diskless-del">删除</a>&nbsp;&nbsp;&nbsp;<a href='#' class="ixc-diskless-copy" name="ixc-diskless-seq-%s">拷贝</a></td></tr>""" % (hwaddr,x,)
                     self.show(s)
                     x+=1
@@ -101,6 +101,7 @@
 
             // 填充表格
             $("#ixc-diskless-form input[name='name']").val("");
+            $("#ixc-diskless-form input[name='hwaddr']").val("");
             $("#ixc-diskless-form input[name='iscsi_initiator_iqn']").val(initiator_iqn);
             $("#ixc-diskless-form input[name='iscsi_target_iqn']").val(root_path);
             $("#ixc-diskless-form input[name='script-path']").val(script_path);
