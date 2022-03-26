@@ -40,6 +40,8 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "iSCSI target不能为空")
             return
 
+        # 统一替换为:
+        hwaddr = hwaddr.replace("-", ":")
         if not netutils.is_hwaddr(hwaddr):
             self.json_resp(True, "错误的MAC地址格式")
             return
