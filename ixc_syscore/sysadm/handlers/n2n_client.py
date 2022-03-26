@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, socket
+import os, socket, time
 import pywind.evtframework.handlers.udp_handler as udp_handler
 import ixc_syscore.sysadm.pylib.n2n as n2n
 
@@ -12,6 +12,7 @@ class n2nd(udp_handler.udp_handler):
     __builder = None
 
     __remote_address = None
+    __time = None
 
     def init_func(self, creator_fd, address, remote_addr, redir_addr, is_ipv6=False):
         self.__parser = n2n.parser()
@@ -19,6 +20,7 @@ class n2nd(udp_handler.udp_handler):
 
         self.__redirect_address = redir_addr
         self.__remote_address = remote_addr
+        self.__time = time.time()
 
         if is_ipv6:
             fa = socket.AF_INET6
@@ -90,5 +92,9 @@ class n2nd(udp_handler.udp_handler):
         self.close()
 
     def udp_timeout(self):
-        self.send_ping()
+        now_time = time.time()
+        # 每隔60s发送一次ping
+        if now_time - self.__time >= 60:
+            self.send_ping()
+            self.__time = now_time
         self.set_timeout(self.fileno, 10)
