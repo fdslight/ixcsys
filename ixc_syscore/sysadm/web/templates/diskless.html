@@ -100,7 +100,14 @@
             let root_path=$(_id).children(".root-path").html();
             let script_path=$(_id).children(".script-path").html();
 
-            alert(hwaddr);
+            // 填充表格
+            $("#ixc-diskless-form input[name='name']").val("");
+            $("#ixc-diskless-form input[name='hwaddr']").val(hwaddr);
+            $("#ixc-diskless-form input[name='iscsi_initiator_iqn']").val(initiator_iqn);
+            $("#ixc-diskless-form input[name='iscsi_target_iqn']").val(root_path);
+            $("#ixc-diskless-form input[name='script-path']").val(script_path);
+
+            $("#ixc-diskless-modal").modal();
         });
 
         $("#ixc-diskless-add").click(function () {
