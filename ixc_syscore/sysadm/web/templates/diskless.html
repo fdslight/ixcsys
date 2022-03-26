@@ -69,8 +69,8 @@
                 x=1
                 for hwaddr in self.V:
                     _dict=self.V[hwaddr]
-                    s="""<tr id="ixc-diskless-seq-%d"><td>%d</td><td>%s</td><td class="hwaddr">%s</td><td class="initiator-qin">%s</td><td class="root-path">%s</td><td class="script-path">%s</td>""" % (x,x,_dict["name"],hwaddr,_dict["initiator-iqn"],_dict["root-path"],_dict["script-path"])
-                    s+="""<td><a href="#" name="%s" class="ixc-diskless-del">删除</a>&nbsp;&nbsp;&nbsp;<a href='#' class="ixc-diskless-copy" name="seq-%s">拷贝</a></td></tr>""" % (hwaddr,x,)
+                    s="""<tr id="ixc-diskless-seq-%d"><td>%d</td><td>%s</td><td class="hwaddr">%s</td><td class="initiator-iqn">%s</td><td class="root-path">%s</td><td class="script-path">%s</td>""" % (x,x,_dict["name"],hwaddr,_dict["initiator-iqn"],_dict["root-path"],_dict["script-path"])
+                    s+="""<td><a href="#" name="%s" class="ixc-diskless-del">删除</a>&nbsp;&nbsp;&nbsp;<a href='#' class="ixc-diskless-copy" name="ixc-diskless-seq-%s">拷贝</a></td></tr>""" % (hwaddr,x,)
                     self.show(s)
                     x+=1
                 %>
@@ -94,7 +94,13 @@
         });
 
         $(".ixc-diskless-copy").click(function (){
-            alert($(this).attr("name"));
+            let _id="#"+$(this).attr("name");
+            let hwaddr=$(_id).children(".hwaddr").html();
+            let initiator_iqn=$(_id).children(".hwaddr").html();
+            let root_path=$(_id).children(".root-path").html();
+            let script_path=$(_id).children(".script-path").html();
+
+            alert(hwaddr);
         });
 
         $("#ixc-diskless-add").click(function () {
