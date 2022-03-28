@@ -334,7 +334,7 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
         m=ixc_mbuf_get();
         if(NULL==m){
             rs=-1;
-            STDERR("ERROR:cannot get mbuf\r\n");
+            //STDERR("ERROR:cannot get mbuf\r\n");
             break;
         }
 
