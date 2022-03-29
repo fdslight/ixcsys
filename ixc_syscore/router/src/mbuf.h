@@ -6,7 +6,7 @@
 #include "netif.h"
 #include "../../../pywind/clib/debug.h"
 
-#define IXC_MBUF_LOOP_TRACE_MAX_NUM 64
+#define IXC_MBUF_LOOP_TRACE_MAX_NUM 128
 #define IXC_MBUF_MAX 4096
 
 struct ixc_mbuf{
