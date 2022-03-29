@@ -39,8 +39,9 @@ static int ixc_netif_writable_fn(struct ev *ev)
     struct ixc_netif *netif=ev->data;
 
     ixc_netif_tx_data(netif);
-    
-    /// 尽快发送QOS里面的数据
+
+    // 尽快发送QOS里面的数据,此行不能放在ixc_netif_tx_data函数里,会形成死循环
+    // 因为send_data直接发送数据,qos也会直接发送数据,如此造成死循环
     if(ixc_qos_have_data()) ixc_qos_pop();
 
     return 0;

@@ -36,7 +36,7 @@ print(message)
 """
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.connect(("223.5.5.5", 53))
+s.connect(("192.168.0.1", 53))
 sent = bytes(42)
 
 while 1:
