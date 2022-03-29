@@ -202,6 +202,7 @@ void ixc_qos_pop(void)
 
 }
 
+inline
 int ixc_qos_have_data(void)
 {
     if(NULL!=ixc_qos.slot_head) return 1;

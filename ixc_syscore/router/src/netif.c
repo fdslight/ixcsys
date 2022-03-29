@@ -14,6 +14,7 @@
 #include "ip6.h"
 #include "vswitch.h"
 #include "debug.h"
+#include "qos.h"
 
 #include "../../../pywind/clib/ev/ev.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -38,6 +39,9 @@ static int ixc_netif_writable_fn(struct ev *ev)
     struct ixc_netif *netif=ev->data;
 
     ixc_netif_tx_data(netif);
+    
+    /// 尽快发送QOS里面的数据
+    if(ixc_qos_have_data()) ixc_qos_pop();
 
     return 0;
 }
@@ -370,6 +374,9 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
             ixc_ether_handle(m);
         }
     }
+    
+    // 尽快发送QOS里面的数据
+    if(ixc_qos_have_data()) ixc_qos_pop();
 
     return rs;
 }
