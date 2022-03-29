@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import socket
 
-import ixc_syslib.pylib.RPCClient as RPCClient
+# import ixc_syslib.pylib.RPCClient as RPCClient
 
 """
 rand_key = os.urandom(16)
@@ -28,7 +28,22 @@ while 1:
 
 s.close()
 """
+"""
 message = RPCClient.fn_call("DHCP", "/dhcp_server", "set_dhcp_option", 138,
                             socket.inet_pton(socket.AF_INET, "192.168.2.60"))
 
 print(message)
+"""
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("223.5.5.5", 53))
+sent = bytes(42)
+
+while 1:
+    try:
+        s.send(sent)
+    except KeyboardInterrupt:
+        break
+    except:
+        pass
+s.close()
