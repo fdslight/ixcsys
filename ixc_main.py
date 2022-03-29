@@ -5,13 +5,13 @@ sys_dir = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(sys_dir)
 
-# 必须要启动的服务
+# 必须要启动的服务,依照优先级顺序
 must_services = [
     "ixc_syscore/init",
     "ixc_syscore/router",
-    "ixc_syscore/sysadm",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
+    "ixc_syscore/sysadm",
     "ixc_syscore/proxy",
 ]
 

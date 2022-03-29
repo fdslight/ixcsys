@@ -379,7 +379,7 @@ class service(dispatcher.dispatcher):
 
         global_vars["ixcsys.sysadm"] = self
 
-        RPCClient.wait_processes(["router", "DHCP"])
+        RPCClient.wait_processes(["router", "DHCP","DNS"])
         time.sleep(10)
 
         self.load_configs()
