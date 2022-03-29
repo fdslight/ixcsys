@@ -13,6 +13,8 @@
 static struct ixc_qos ixc_qos;
 static int ixc_qos_is_initialized = 0;
 static struct sysloop *qos_sysloop=NULL;
+/// 包数目
+static unsigned long long qos_pkt_num=0;
 
 static void ixc_qos_sysloop_cb(struct sysloop *lp)
 {
@@ -37,6 +39,9 @@ static void ixc_qos_put(struct ixc_mbuf *m,unsigned char a,unsigned char b,unsig
     slot_no=ixc_qos_calc_slot(a,b,c,d);
     slot_obj=ixc_qos.slot_objs[slot_no];
 
+    // 包的数目增加1
+    qos_pkt_num+=1;
+
     if(!slot_obj->is_used){
         slot_obj->is_used=1;
         slot_obj->mbuf_first=m;
@@ -53,6 +58,8 @@ static void ixc_qos_put(struct ixc_mbuf *m,unsigned char a,unsigned char b,unsig
 
 static void ixc_qos_send_to_next(struct ixc_mbuf *m)
 {
+    qos_pkt_num-=1;
+
     if(IXC_MBUF_FROM_LAN==m->from){
         //DBG_FLAGS;
         if(m->is_ipv6) ixc_addr_map_handle(m);
@@ -102,6 +109,7 @@ int ixc_qos_init(void)
     struct ixc_qos_slot *slot;
     bzero(&ixc_qos, sizeof(struct ixc_qos));
     ixc_qos_is_initialized = 1;
+    qos_pkt_num=0;
 
     for (int n = 0; n < IXC_QOS_SLOT_NUM; n++){
         slot = malloc(sizeof(struct ixc_qos_slot));
@@ -215,4 +223,10 @@ int ixc_qos_tunnel_addr_first_set(unsigned char *addr,int is_ipv6)
 void ixc_qos_tunnel_addr_first_unset(void)
 {
     ixc_qos.tunnel_isset=0;
+}
+
+inline
+unsigned long long ixc_qos_pkt_num(void)
+{
+    return qos_pkt_num;
 }
