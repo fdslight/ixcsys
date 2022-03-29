@@ -5,7 +5,7 @@
 
 #include "../../../pywind/clib/ev/ev.h"
 
-#define IXC_NETIF_READ_NUM 32
+#define IXC_NETIF_READ_NUM 64
 #define IXC_NETIF_MAX 2
 
 #define IXC_NETIF_LAN 0

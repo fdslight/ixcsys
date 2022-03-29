@@ -328,7 +328,7 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
 {
     ssize_t rsize;
     struct ixc_mbuf *m;
-    int rs=0;
+    int rs=0,v;
     
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -374,11 +374,12 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
         }else{
             ixc_ether_handle(m);
         }
+
+        // 尽快发送QOS里面的数据
+        v=IXC_NETIF_READ_NUM / 8;
+        if(v) ixc_qos_pop();
     }
     
-    // 尽快发送QOS里面的数据
-    if(ixc_qos_have_data()) ixc_qos_pop();
-
     return rs;
 }
 
