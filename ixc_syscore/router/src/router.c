@@ -1131,11 +1131,15 @@ static void ixc_bind_cpu(void)
 	cpu_set_t mask;
 
 	CPU_ZERO(&mask);
-	CPU_SET(cpus-1,&mask);
 
-	if(sched_setaffinity(0,sizeof(cpu_set_t),&mask)==-1){
+    // 多核心CPU绑定到第二个核心,不绑定CPU0是因为避免CPU0负担过重
+    if(cpus>=2){
+        CPU_SET(1,&mask);
+        if(sched_setaffinity(0,sizeof(cpu_set_t),&mask)==-1){
 		STDERR("cannot bind to cpu %d\r\n",cpus-1);
-	}
+	    }
+    }
+
 	usleep(1000);
 }
 
