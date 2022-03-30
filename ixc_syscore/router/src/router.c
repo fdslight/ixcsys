@@ -1136,7 +1136,7 @@ static void ixc_bind_cpu(void)
     if(cpus>=2){
         CPU_SET(1,&mask);
         if(sched_setaffinity(0,sizeof(cpu_set_t),&mask)==-1){
-		    STDERR("cannot bind to cpu %d\r\n",cpus-1);
+		    STDERR("cannot bind to cpu %d\r\n",1);
 	    }
     }
 
