@@ -3,6 +3,7 @@
 import getopt, sys, os, json
 
 __helper = """
+    default              auto set default build environment
     --python3_include    python3 incldue
     --python3_lib        python3 library path
     --debug              debug mode
@@ -10,7 +11,6 @@ __helper = """
 """
 
 include_dirs = [
-
 ]
 
 lib_dirs = []
