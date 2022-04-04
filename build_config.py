@@ -70,7 +70,38 @@ def gen_build_config(debug):
     print("configure OK")
 
 
+def config_default():
+    fdst = os.popen("pkg-config python3 --libs --cflags")
+    cmd = fdst.read()
+    fdst.close()
+    cmd = cmd.replace("-I", "")
+    cmd = cmd.replace("\n", "")
+    lib_dirs = cmd.replace("include", "lib").split(" ")
+    includes = cmd.split(" ")
+
+    _list = lib_dirs[0].split("/")
+    lib_name = _list.pop()
+
+    build_config = {"debug": False,
+                    "c_includes": includes,
+                    "libs": [lib_name],
+                    "lib_dirs": lib_dirs
+                    }
+
+    fdst = open("build_config.json", "w")
+    fdst.write(json.dumps(build_config))
+    fdst.close()
+
+    print("configure OK")
+
+
 def main():
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "default":
+            config_default()
+        else:
+            print(__helper)
+        return
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["python3_include=", "python3_lib=", "with_debug", "help"])
     except getopt.GetoptError:
