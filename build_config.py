@@ -4,6 +4,7 @@ import getopt, sys, os, json
 
 __helper = """
     default              auto set default build environment
+    help                 print help
     --python3_include    python3 incldue
     --python3_lib        python3 library path
     --debug              debug mode
@@ -99,6 +100,8 @@ def main():
     if len(sys.argv) == 2:
         if sys.argv[1] == "default":
             config_default()
+        elif sys.argv[1] == "help":
+            print(__helper)
         else:
             print(__helper)
         return
