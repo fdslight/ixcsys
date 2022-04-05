@@ -53,3 +53,4 @@ dkms.conf
 
 # Pycache
 __pycache__/
+build_config.json
