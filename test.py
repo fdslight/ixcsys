@@ -39,7 +39,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.connect(("192.168.0.1", 53))
 sent = bytes(42)
 
-while 1:
+for i in range(10000000):
     try:
         s.send(sent)
     except KeyboardInterrupt:

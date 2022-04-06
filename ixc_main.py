@@ -223,8 +223,11 @@ class ixc_main_d(object):
 
         signal.signal(signal.SIGUSR1, self.sig_handle)
         signal.signal(signal.SIGTERM, self.sig_handle)
-        if self.have_update():
-            self.do_update()
+        signal.signal(signal.SIGKILL, self.sig_handle)
+        signal.signal(signal.SIGTERM, self.sig_handle)
+
+        if self.have_update(): self.do_update()
+
         self.stop_os_NetworkManager()
         time.sleep(5)
         start_all()
@@ -233,9 +236,12 @@ class ixc_main_d(object):
         if signum == signal.SIGUSR1:
             self.restart()
             return
-        if signum == signal.SIGTERM: return
-        stop_all()
-        sys.exit(0)
+
+        if signum in (signal.SIGTERM, signal.SIGKILL):
+            stop_all()
+            sys.exit(0)
+        else:
+            return
 
     def restart(self):
         """重启
