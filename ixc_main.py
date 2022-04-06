@@ -91,10 +91,10 @@ def start_main(delay=0):
     pid = os.fork()
 
     if pid != 0: sys.exit(0)
-    proc.write_pid(PID_PATH, os.getpid())
 
     if delay > 0: time.sleep(delay)
     cls = ixc_main_d()
+    proc.write_pid(PID_PATH, os.getpid())
     try:
         cls.loop()
     except KeyboardInterrupt:
