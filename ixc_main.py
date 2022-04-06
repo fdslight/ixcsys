@@ -223,8 +223,6 @@ class ixc_main_d(object):
 
         signal.signal(signal.SIGUSR1, self.sig_handle)
         signal.signal(signal.SIGTERM, self.sig_handle)
-        signal.signal(signal.SIGKILL, self.sig_handle)
-        signal.signal(signal.SIGTERM, self.sig_handle)
 
         if self.have_update(): self.do_update()
 
@@ -237,7 +235,7 @@ class ixc_main_d(object):
             self.restart()
             return
 
-        if signum in (signal.SIGTERM, signal.SIGKILL):
+        if signum in (signal.SIGTERM,):
             stop_all()
             sys.exit(0)
         else:
