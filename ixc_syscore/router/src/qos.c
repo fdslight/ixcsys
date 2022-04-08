@@ -19,7 +19,7 @@ static unsigned long long qos_pkt_num=0;
 
 static void ixc_qos_sysloop_cb(struct sysloop *lp)
 {
-    while(ixc_netif_wan_sendable && ixc_qos_have_data()) ixc_qos_pop();
+    while(ixc_netif_wan_sendable() && ixc_qos_have_data()) ixc_qos_pop();
 }
 
 inline static int ixc_qos_calc_slot(unsigned char a, unsigned char b, unsigned char c,unsigned char d)
