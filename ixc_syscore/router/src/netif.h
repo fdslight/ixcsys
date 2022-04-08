@@ -85,4 +85,7 @@ struct ixc_netif *ixc_netif_get_with_subnet_ip(unsigned char *ip,int is_ipv6);
 ///不要设置IP地址
 int ixc_netif_unset_ip(int if_idx,int is_ipv6);
 
+/// WAN是否可以发送数据
+int ixc_netif_wan_sendable(void);
+
 #endif

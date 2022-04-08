@@ -24,6 +24,8 @@
 static struct ixc_netif netif_objs[IXC_NETIF_MAX];
 static struct ev_set *netif_ev_set;
 static int netif_is_initialized=0;
+/// WAN网口是否还可以发送数据
+static int netif_wan_sendable=0;
 
 static int ixc_netif_readable_fn(struct ev *ev)
 {
@@ -39,10 +41,6 @@ static int ixc_netif_writable_fn(struct ev *ev)
     struct ixc_netif *netif=ev->data;
 
     ixc_netif_tx_data(netif);
-
-    // 尽快发送QOS里面的数据,此行不能放在ixc_netif_tx_data函数里,会形成死循环
-    // 因为send_data直接发送数据,qos也会直接发送数据,如此造成死循环
-    if(ixc_qos_have_data()) ixc_qos_pop();
 
     return 0;
 }
@@ -66,6 +64,7 @@ int ixc_netif_init(struct ev_set *ev_set)
     bzero(&netif_objs,sizeof(struct ixc_netif)*IXC_NETIF_MAX);
 
     netif_is_initialized=1;
+    netif_wan_sendable=0;
 
     return 0;
 }
@@ -294,6 +293,8 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
         return -1;
     }
 
+    if(IXC_NETIF_WAN==netif->type) netif_wan_sendable=1;
+
     while(1){
         m=netif->sent_first;
         if(NULL==m) break;
@@ -303,6 +304,7 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
 
         if(wsize<0){
             if(EAGAIN==errno){
+                if(IXC_NETIF_WAN==netif->type) netif_wan_sendable=0;
                 rs=0;
                 break;
             }else{
@@ -328,7 +330,7 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
 {
     ssize_t rsize;
     struct ixc_mbuf *m;
-    int rs=0,v;
+    int rs=0;
     
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -374,10 +376,6 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
         }else{
             ixc_ether_handle(m);
         }
-
-        // 尽快发送QOS里面的数据
-        v=IXC_NETIF_READ_NUM / 8;
-        if(v) ixc_qos_pop();
     }
     
     return rs;
@@ -472,4 +470,10 @@ int ixc_netif_unset_ip(int if_idx,int is_ipv6)
     else netif->isset_ip=0;
 
     return 0;
+}
+
+inline
+int ixc_netif_wan_sendable(void)
+{
+    return netif_wan_sendable;
 }
