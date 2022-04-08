@@ -304,13 +304,13 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
 
         if(wsize<0){
             if(EAGAIN==errno){
-                if(IXC_NETIF_WAN==netif->type) netif_wan_sendable=0;
                 rs=0;
                 break;
             }else{
                 rs=-1;
                 break;
             }
+            if(IXC_NETIF_WAN==netif->type) netif_wan_sendable=0;
         }
 
         netif->sent_first=m->next;
