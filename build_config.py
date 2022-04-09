@@ -4,6 +4,7 @@ import getopt, sys, os, json
 
 __helper = """
     default              auto set default build environment
+    default_debug        auto set default build debug environment
     help                 print help
     --python3_include    python3 incldue
     --python3_lib        python3 library path
@@ -36,6 +37,18 @@ def get_shared_object_fname(fpath: str, prefix: str):
         break
 
     return result
+
+
+def have_pkg_config():
+    """查找是否有pkg-config
+    """
+    fdst = os.popen("which pkg-config")
+    s = fdst.read()
+    fdst.close()
+
+    if not s: return False
+
+    return True
 
 
 def gen_build_config(debug):
@@ -71,7 +84,11 @@ def gen_build_config(debug):
     print("configure OK")
 
 
-def config_default():
+def config_default(debug=False):
+    if not have_pkg_config():
+        print("not found pkg-config")
+        return
+
     fdst = os.popen("pkg-config python3 --libs --cflags")
     cmd = fdst.read()
     fdst.close()
@@ -83,7 +100,7 @@ def config_default():
     _list = lib_dirs[0].split("/")
     lib_name = _list.pop()
 
-    build_config = {"debug": False,
+    build_config = {"debug": debug,
                     "c_includes": includes,
                     "libs": [lib_name],
                     "lib_dirs": lib_dirs
@@ -99,9 +116,11 @@ def config_default():
 def main():
     if len(sys.argv) == 2:
         if sys.argv[1] == "default":
-            config_default()
+            config_default(debug=False)
         elif sys.argv[1] == "help":
             print(__helper)
+        elif sys.argv[1] == "default_debug":
+            config_default(debug=True)
         else:
             print(__helper)
         return
