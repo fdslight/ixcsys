@@ -12,7 +12,6 @@
 #include "route.h"
 #include "debug.h"
 #include "ip6.h"
-#include "vswitch.h"
 #include "debug.h"
 #include "qos.h"
 
@@ -364,12 +363,8 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
         m->offset=m->begin;
         m->tail=m->offset+rsize;
         m->end=m->tail;
-        
-        if(m->from==IXC_NETIF_LAN){
-            ixc_vsw_handle(m);
-        }else{
-            ixc_ether_handle(m);
-        }
+
+        ixc_ether_handle(m);
     }
     
     return rs;

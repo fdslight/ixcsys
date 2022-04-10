@@ -27,7 +27,6 @@ class rpc(object):
             "del_route": self.del_route,
             "set_wan_ipaddr": self.set_wan_ipaddr,
             "wan_ready_ok": self.wan_ready_ok,
-            "vsw_enable": self.vsw_enable,
 
             "set_fwd_port": self.set_fwd_port,
             "unset_fwd_port": self.unset_fwd_port,
@@ -95,7 +94,6 @@ class rpc(object):
             "IXC_FLAG_DHCP_CLIENT": router.IXC_FLAG_DHCP_CLIENT,
             "IXC_FLAG_DHCP_SERVER": router.IXC_FLAG_DHCP_SERVER,
             "IXC_FLAG_ARP": router.IXC_FLAG_ARP,
-            "IXC_FLAG_VSWITCH": router.IXC_FLAG_VSWITCH,
             "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
@@ -252,13 +250,6 @@ class rpc(object):
 
     def wan_ready_ok(self):
         return 0, self.__helper.router.wan_ready_ok()
-
-    def vsw_enable(self, enable: bool):
-        """开启或者关闭虚拟交换
-        :param enable:
-        :return:
-        """
-        return 0, self.__helper.router.vsw_enable(enable)
 
     def set_fwd_port(self, flags: int, _id: bytes, fwd_port: int):
         if not isinstance(_id, bytes):

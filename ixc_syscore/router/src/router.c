@@ -28,7 +28,6 @@
 #include "ip6sec.h"
 #include "port_map.h"
 #include "global.h"
-#include "vswitch.h"
 #include "npfwd.h"
 #include "sec_net.h"
 
@@ -529,18 +528,6 @@ router_wan_ready_ok(PyObject *self,PyObject *args)
     Py_RETURN_FALSE;
 }
 
-/// 开启或者关闭vswitch
-static PyObject *
-router_vsw_enable(PyObject *self,PyObject *args)
-{
-    int enable;
-    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
-
-    ixc_vsw_enable(enable);
-
-    Py_RETURN_NONE;
-}
-
 /// 打开或者关闭网络
 static PyObject *
 router_network_enable(PyObject *self,PyObject *args)
@@ -745,7 +732,6 @@ static PyMethodDef routerMethods[]={
     //
     {"wan_ready_ok",(PyCFunction)router_wan_ready_ok,METH_NOARGS,"check wan ready ok"},
     //
-    {"vsw_enable",(PyCFunction)router_vsw_enable,METH_VARARGS,"enable or disable vswitch"},
     //
     {"network_enable",(PyCFunction)router_network_enable,METH_VARARGS,"enable or disable network"},
     //
@@ -805,7 +791,6 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_ARP);
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_CLIENT);
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_SERVER);
-    PyModule_AddIntMacro(m,IXC_FLAG_VSWITCH);
     PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
 
@@ -1195,12 +1180,6 @@ static void ixc_start(int debug)
     rs=ixc_g_init();
     if(rs<0){
         STDERR("cannot init global\r\n");
-        return;
-    }
-
-    rs=ixc_vsw_init();
-    if(rs<0){
-        STDERR("cannot init vswitch\r\n");
         return;
     }
 

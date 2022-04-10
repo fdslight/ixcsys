@@ -7,7 +7,6 @@
 #include "npfwd.h"
 #include "router.h"
 #include "ether.h"
-#include "vswitch.h"
 #include "ip.h"
 
 #include "../../../pywind/clib/debug.h"
@@ -103,10 +102,6 @@ static void ixc_npfwd_rx_data(int fd)
             case IXC_FLAG_DHCP_SERVER:
                 //DBG_FLAGS;
                 ixc_ether_send2(m);
-                break;
-            case IXC_FLAG_VSWITCH:
-                //DBG_FLAGS;
-                ixc_vsw_send2(m);
                 break;
             case IXC_FLAG_ROUTE_FWD:
                 //DBG_FLAGS;

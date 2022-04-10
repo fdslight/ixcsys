@@ -10,12 +10,10 @@
 #define IXC_FLAG_DHCP_CLIENT 1
 /// 表示是一个DHCP SERVER数据包
 #define IXC_FLAG_DHCP_SERVER 2
-/// 表示一个VSWITCH数据包
-#define IXC_FLAG_VSWITCH 3
 /// 表示一个Source filter数据包
-#define IXC_FLAG_SRC_FILTER 4
+#define IXC_FLAG_SRC_FILTER 3
 /// 表示是一个带链路层头部的路由转发包
-#define IXC_FLAG_ROUTE_FWD 5
+#define IXC_FLAG_ROUTE_FWD 4
 
 #include<sys/types.h>
 
