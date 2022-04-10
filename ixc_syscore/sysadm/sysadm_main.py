@@ -244,6 +244,7 @@ class service(dispatcher.dispatcher):
 
     def reset_udp_n2n(self):
         for fd in self.__udp_n2n_fds: self.delete_handler(fd)
+        self.__udp_n2n_fds = []
         self.create_udp_n2n()
 
     def save_udp_n2n_configs(self):
@@ -379,7 +380,7 @@ class service(dispatcher.dispatcher):
 
         global_vars["ixcsys.sysadm"] = self
 
-        RPCClient.wait_processes(["router", "DHCP","DNS"])
+        RPCClient.wait_processes(["router", "DHCP", "DNS"])
         time.sleep(10)
 
         self.load_configs()
