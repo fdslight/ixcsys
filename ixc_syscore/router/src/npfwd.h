@@ -42,7 +42,7 @@ struct ixc_npfwd{
 int ixc_npfwd_init(struct ev_set *ev_set);
 void ixc_npfwd_uninit(void);
 
-/// 发生RAW的网络数据包
+/// 发送RAW的网络数据包
 // fwd_flags为需要转发的类型
 int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char flags);
 
