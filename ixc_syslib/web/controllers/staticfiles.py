@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import pywind.web.appframework.handler_ext.staticfile as staticfile
 import os
-import ixc_syslib.pylib.logging as logging
-
 
 class controller(staticfile.staticfile):
     def staticfile_init(self):
