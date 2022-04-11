@@ -26,6 +26,7 @@ class widget(ui_widget.widget):
         """
         with os.popen("grep MemTotal /proc/meminfo | awk '{print $2 / 1024}'") as f: mem_total = os.read()
         f.close()
+        print(mem_total)
 
         return mem_total
 
@@ -35,6 +36,7 @@ class widget(ui_widget.widget):
         fdst = os.popen("""cat /proc/cpuinfo | grep "model name" | sed -n "1p" | cut -b 14-""")
         cpu_model = fdst.read()
         fdst.close()
+        print(cpu_model)
 
         return cpu_model
 
@@ -44,6 +46,7 @@ class widget(ui_widget.widget):
         cmd = "free -m | grep Mem | awk '{print $7}'"
         with os.popen(cmd) as f: mem = f.read()
         f.close()
+        print(mem)
         return mem
 
     def handle(self, *args, **kwargs):
