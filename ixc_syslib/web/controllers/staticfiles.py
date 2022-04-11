@@ -14,7 +14,4 @@ class controller(staticfile.staticfile):
         path_info = self.request.environ["PATH_INFO"]
         file_path = "%s/web%s" % (os.getenv("IXC_MYAPP_RELATIVE_DIR"), path_info)
 
-        if not os.path.isfile(file_path):
-            logging.print_error("not found static file %s" % file_path)
-
         return file_path
