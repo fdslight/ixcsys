@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket
+import socket,os
 
 # import ixc_syslib.pylib.RPCClient as RPCClient
 
@@ -34,7 +34,7 @@ message = RPCClient.fn_call("DHCP", "/dhcp_server", "set_dhcp_option", 138,
 
 print(message)
 """
-
+"""
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.connect(("192.168.0.1", 53))
 sent = bytes(42)
@@ -47,3 +47,8 @@ for i in range(10000000):
     except:
         pass
 s.close()
+"""
+cmd = "free -m | grep Mem | awk '{print $7}'"
+with os.popen(cmd) as f: mem = f.read()
+f.close()
+print(mem.encode())

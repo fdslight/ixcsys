@@ -26,9 +26,7 @@ class widget(ui_widget.widget):
         """
         with os.popen("grep MemTotal /proc/meminfo | awk '{print $2 / 1024}'") as f: mem_total = os.read()
         f.close()
-        print(mem_total)
-
-        return mem_total
+        return mem_total.replace("\n", "")
 
     def get_host_cpu_model(self):
         """获取主机CPU型号
@@ -36,9 +34,8 @@ class widget(ui_widget.widget):
         fdst = os.popen("""cat /proc/cpuinfo | grep "model name" | sed -n "1p" | cut -b 14-""")
         cpu_model = fdst.read()
         fdst.close()
-        print(cpu_model)
 
-        return cpu_model
+        return cpu_model.replace("\n", "")
 
     def get_host_available_mem(self):
         """获取主机可用内存
@@ -46,8 +43,8 @@ class widget(ui_widget.widget):
         cmd = "free -m | grep Mem | awk '{print $7}'"
         with os.popen(cmd) as f: mem = f.read()
         f.close()
-        print(mem)
-        return mem
+
+        return mem.replace("\n", "")
 
     def handle(self, *args, **kwargs):
         uri = "default.html"
