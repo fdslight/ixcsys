@@ -21,6 +21,31 @@ class widget(ui_widget.widget):
 
         return s
 
+    def get_host_mem_total(self):
+        """获取主机内存大小
+        """
+        with os.popen("grep MemTotal /proc/meminfo | awk '{print $2 / 1024}'") as f: mem_total = os.read()
+        f.close()
+
+        return mem_total
+
+    def get_host_cpu_model(self):
+        """获取主机CPU型号
+        """
+        fdst = os.popen("""cat /proc/cpuinfo | grep "model name" | sed -n "1p" | cut -b 14-""")
+        cpu_model = fdst.read()
+        fdst.close()
+
+        return cpu_model
+
+    def get_host_available_mem(self):
+        """获取主机可用内存
+        """
+        cmd = "free -m | grep Mem | awk '{print $7}'"
+        with os.popen(cmd) as f: mem = f.read()
+        f.close()
+        return mem
+
     def handle(self, *args, **kwargs):
         uri = "default.html"
         dic = {}
@@ -50,10 +75,9 @@ class widget(ui_widget.widget):
         dic["cpu_count"] = os.cpu_count()
         dic["version"] = self.read_version()
 
-        fdst = os.popen("""cat /proc/cpuinfo | grep "model name" | sed -n "1p" | cut -b 14-""")
-        cpu_model = fdst.read()
-        fdst.close()
-        dic["cpu_model"] = cpu_model
+        dic["cpu_model"] = self.get_host_cpu_model()
+        dic["total_mem"] = self.get_host_mem_total()
+        dic["available_mem"] = self.get_host_available_mem()
         dic["is_temp_network"] = self.sysadm.network_is_work_on_temp
 
         return True, uri, dic
