@@ -18,6 +18,7 @@ class staticfile(app_handler.handler):
     __file_size = 0
     __read_size = 0
     __no_cache = None
+    __debug = None
 
     def initialize(self):
         self.__mime_map = {"bmp": "image/bmp", "gif": "image/gif", "jpe": "image/jpeg", "jpeg": "image/jpeg",
@@ -33,6 +34,7 @@ class staticfile(app_handler.handler):
         self.__is_responsed_header = False
         self.request.set_allow_methods(["GET"])
         self.__no_cache = False
+        self.__debug = False
 
         self.staticfile_init()
         return True
@@ -56,6 +58,7 @@ class staticfile(app_handler.handler):
             if not os.path.isfile(fpath):
                 self.set_status("404 Not Found")
                 self.finish()
+                if self.__debug: print("not found file path %s" % fpath)
                 return
             ext_name = self.get_file_ext_name(fpath).lower()
 
@@ -156,3 +159,6 @@ class staticfile(app_handler.handler):
     def set_no_cache(self):
         # 是否关闭缓存功能
         self.__no_cache = True
+
+    def set_debug(self, bool_v: bool):
+        self.__debug = bool_v
