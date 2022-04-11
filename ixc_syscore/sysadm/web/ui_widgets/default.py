@@ -24,7 +24,7 @@ class widget(ui_widget.widget):
     def get_host_mem_total(self):
         """获取主机内存大小
         """
-        with os.popen("grep MemTotal /proc/meminfo | awk '{print $2 / 1024}'") as f: mem_total = os.read()
+        with os.popen("grep MemTotal /proc/meminfo | awk '{print $2 / 1024}'") as f: mem_total = f.read()
         f.close()
         return mem_total.replace("\n", "")
 
