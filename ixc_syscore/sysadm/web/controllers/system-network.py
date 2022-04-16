@@ -79,7 +79,7 @@ class controller(base_controller.BaseController):
         self.save_sysadm_json_config("%s/network_shift.json" % self.my_config_dir, o)
 
         RPC.fn_call("router", "/config", "wan_hwaddr_set", hwaddr)
-        RPC.fn_call("router", "/config", "wan_mtu_set", ip4_mtu)
+        RPC.fn_call("router", "/config", "wan_mtu_set", ip4_mtu, False)
         RPC.fn_call("router", "/config", "config_save")
         self.json_resp(False, "")
 
