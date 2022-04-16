@@ -45,7 +45,7 @@ class widget(ui_widget.widget):
             manage_addr = if_config["manage_addr"]
             mask = if_config["mask"]
             ip_addr = if_config["ip_addr"]
-            ip4_mtu = public.get("ip4_mtu", 1500)
+            ip4_mtu = 1500
 
         network_shift_conf = self.get_network_shift_conf()
 
