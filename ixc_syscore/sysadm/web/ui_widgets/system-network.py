@@ -35,6 +35,7 @@ class widget(ui_widget.widget):
             public = configs["public"]
             if_name = public["phy_ifname"]
             hwaddr = public["hwaddr"]
+            # 避免模板找不到变量报错
             ip_addr = ""
             ip4_mtu = public.get("ip4_mtu", 1500)
         else:
@@ -45,6 +46,7 @@ class widget(ui_widget.widget):
             manage_addr = if_config["manage_addr"]
             mask = if_config["mask"]
             ip_addr = if_config["ip_addr"]
+            # 避免模板找不到变量报错
             ip4_mtu = 1500
 
         network_shift_conf = self.get_network_shift_conf()
