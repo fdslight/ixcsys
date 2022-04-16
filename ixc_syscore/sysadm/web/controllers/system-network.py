@@ -18,6 +18,7 @@ class controller(base_controller.BaseController):
         temp_ifname = self.request.get_argument("shift_ifname", is_seq=False, is_qs=False)
         check_host = self.request.get_argument("check_host", is_seq=False,
                                                is_qs=False)
+        ip4_mtu = self.request.get_argument("ip4_mtu", is_seq=False, is_qs=False)
 
         if enable_auto and temp_ifname not in network_shift.get_available_net_devices():
             self.json_resp(True, "不可用的故障切换网卡")
@@ -47,6 +48,15 @@ class controller(base_controller.BaseController):
                 self.json_resp(True, "地址不能携带端口号")
                 return
             ''''''
+        try:
+            int(ip4_mtu)
+        except ValueError:
+            self.json_resp(True, "错误的MTU值类型")
+            return
+
+        if ip4_mtu < 576 or ip4_mtu > 1500:
+            self.json_resp(True, "MTU的取值范围为576~1500")
+            return
 
         if not check_host: check_host = ""
         if not temp_ifname: temp_ifname = ""
@@ -69,6 +79,7 @@ class controller(base_controller.BaseController):
         self.save_sysadm_json_config("%s/network_shift.json" % self.my_config_dir, o)
 
         RPC.fn_call("router", "/config", "wan_hwaddr_set", hwaddr)
+        RPC.fn_call("router", "/config", "wan_mtu_set", ip4_mtu)
         RPC.fn_call("router", "/config", "config_save")
         self.json_resp(False, "")
 

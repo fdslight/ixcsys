@@ -37,6 +37,8 @@ class rpc(object):
             "wan_hwaddr_set": self.wan_hwaddr_set,
             "wan_ifname_set": self.wan_ifname_set,
             "lan_hwaddr_set": self.lan_hwaddr_set,
+            "wan_mtu_set": self.wan_mtu_set,
+
             "manage_addr_set": self.manage_addr_set,
             "lan_addr_set": self.lan_addr_set,
             "wan_addr_set": self.wan_addr_set,
@@ -310,6 +312,16 @@ class rpc(object):
     def lan_hwaddr_set(self, hwaddr: str):
         lan_configs = self.__helper.lan_configs
         lan_configs["if_config"]["hwaddr"] = hwaddr
+
+        return 0, None
+
+    def wan_mtu_set(self, mtu: int, is_ipv6: bool):
+        wan_configs = self.__helper.wan_configs
+        public = wan_configs["public"]
+        if is_ipv6:
+            public["ip6_mtu"] = mtu
+        else:
+            public["ip4_mtu"] = mtu
 
         return 0, None
 
@@ -890,9 +902,6 @@ class helper(object):
         self.__pppoe = pppoe.pppoe(self)
         self.load_wan_configs()
 
-        wan_configs = self.__wan_configs
-        ip_cfg = wan_configs["ipv4"]
-
         wan_public = self.__wan_configs["public"]
         wan_phy_ifname = wan_public["phy_ifname"]
         wan_ifhwaddr = wan_public["hwaddr"]
@@ -910,7 +919,10 @@ class helper(object):
             pass
 
         wan_pppoe = self.__wan_configs["pppoe"]
-        internet_type = self.__wan_configs["public"]["internet_type"]
+        wan_public = self.__wan_configs["public"]
+        internet_type = wan_public["internet_type"]
+        ip4_mtu = int(wan_public.get("ip4_mtu", 1500))
+        ip6_mtu = int(wan_public.get("ip6_mtu", 1280))
 
         if internet_type == "pppoe":
             self.__pppoe_enable = True
@@ -918,13 +930,26 @@ class helper(object):
             self.__pppoe_enable = False
 
         if self.__pppoe_enable:
+            # PPPoE需要减去头部的8个字节
+            ip4_mtu -= 8
+            ip6_mtu -= 8
             self.__pppoe_user = wan_pppoe["user"]
             self.__pppoe_passwd = wan_pppoe["passwd"]
             self.__pppoe_heartbeat = bool(int(wan_pppoe["heartbeat"]))
+
             self.router.pppoe_enable(True)
             self.router.pppoe_start()
+
+            self.router.netif_set_mtu(router.IXC_NETIF_WAN, ip4_mtu, False)
+            self.router.netif_set_mtu(router.IXC_NETIF_WAN, ip6_mtu, True)
+
             return
 
+        # 设置好WAN网口的MTU值
+        self.router.netif_set_mtu(router.IXC_NETIF_WAN, ip4_mtu, False)
+        self.router.netif_set_mtu(router.IXC_NETIF_WAN, ip6_mtu, True)
+
+        # MTU设置必须在此之前,否则DHCP上网无法正确设置MTU
         if internet_type.lower() != "static-ip": return
 
         ip_addr = ipv4["address"]

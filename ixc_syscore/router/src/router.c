@@ -201,6 +201,42 @@ router_netif_set_hwaddr(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_netif_mtu_set(PyObject *self,PyObject *args)
+{
+    int if_idx,is_ipv6,rs;
+    unsigned short mtu;
+
+    if(!PyArg_ParseTuple(args,"iHp",&if_idx,&mtu,&is_ipv6)) return NULL;
+
+    if(if_idx<0 || if_idx>IXC_NETIF_MAX){
+        PyErr_SetString(PyExc_ValueError,"wrong if index value");
+        return NULL;
+    }
+
+    if(mtu>1500){
+        PyErr_SetString(PyExc_ValueError,"wrong MTU value");
+        return NULL;
+    }
+
+    if(is_ipv6 && mtu<1280){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv6 MTU value");
+        return NULL;
+    }
+
+    if(!is_ipv6 && mtu<576){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv4 MTU value");
+        return NULL;
+    }
+
+    rs=ixc_netif_mtu_set(if_idx,mtu,is_ipv6);
+    if(rs!=0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
 router_src_filter_set_ip(PyObject *self,PyObject *args)
 {
     unsigned char *subnet;
@@ -704,6 +740,7 @@ static PyMethodDef routerMethods[]={
     {"netif_get_ip",(PyCFunction)router_netif_get_ip,METH_VARARGS,"get netif ip address"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
+    {"netif_set_mtu",(PyCFunction)router_netif_mtu_set,METH_VARARGS,"set network card MTU value"},
     //
     {"src_filter_set_ip",(PyCFunction)router_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"src_filter_enable",(PyCFunction)router_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},

@@ -4,7 +4,6 @@ import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syscore.sysadm.pylib.network_shift as network_shift
 
-
 class widget(ui_widget.widget):
     def get_network_shift_conf(self):
         fpath = "%s/network_shift.json" % self.my_conf_dir
@@ -37,6 +36,7 @@ class widget(ui_widget.widget):
             if_name = public["phy_ifname"]
             hwaddr = public["hwaddr"]
             ip_addr = ""
+            ip4_mtu = public.get("ip4_mtu", 1500)
         else:
             configs = RPC.fn_call("router", "/config", "lan_config_get")
             if_config = configs["if_config"]
@@ -45,11 +45,13 @@ class widget(ui_widget.widget):
             manage_addr = if_config["manage_addr"]
             mask = if_config["mask"]
             ip_addr = if_config["ip_addr"]
+            ip4_mtu = public.get("ip4_mtu", 1500)
 
         network_shift_conf = self.get_network_shift_conf()
 
         return True, "system-network.html", {"if_name": if_name, "hwaddr": hwaddr, "manage_addr": manage_addr,
                                              "mask": mask, "ip_addr": ip_addr,
+                                             "ip4_mtu": ip4_mtu,
                                              "net_devices": network_shift.get_available_net_devices(),
                                              "network_check_host": network_shift_conf["check_host"],
                                              "network_shift_enable": network_shift_conf["enable"],

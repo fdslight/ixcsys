@@ -88,4 +88,7 @@ int ixc_netif_unset_ip(int if_idx,int is_ipv6);
 /// WAN是否可以发送数据
 int ixc_netif_wan_sendable(void);
 
+/// 设置MTU的值
+int ixc_netif_mtu_set(int if_type,unsigned short v,int is_ipv6);
+
 #endif

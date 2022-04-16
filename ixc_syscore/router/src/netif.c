@@ -473,3 +473,17 @@ int ixc_netif_wan_sendable(void)
 
     return 0;
 }
+
+int ixc_netif_mtu_set(int if_type,unsigned short v,int is_ipv6)
+{
+    struct ixc_netif *netif=ixc_netif_get(if_type);
+    if(NULL==netif) return -1;
+
+    if(v>1500) return -1;
+    if(is_ipv6 && v<1280) return -1;
+    
+    if(is_ipv6) netif->mtu_v6=v;
+    else netif->mtu_v4=v;
+
+    return 0;
+}
