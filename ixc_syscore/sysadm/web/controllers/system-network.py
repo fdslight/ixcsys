@@ -49,7 +49,7 @@ class controller(base_controller.BaseController):
                 return
             ''''''
         try:
-            int(ip4_mtu)
+            ip4_mtu = int(ip4_mtu)
         except ValueError:
             self.json_resp(True, "错误的MTU值类型")
             return
