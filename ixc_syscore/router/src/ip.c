@@ -14,6 +14,7 @@
 #include "global.h"
 #include "npfwd.h"
 #include "sec_net.h"
+#include "vswitch.h"
 
 #include "../../../pywind/clib/netutils.h"
 
@@ -89,6 +90,12 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
 
     if(!netif->isset_ip){
         ixc_mbuf_put(m);
+        return;
+    }
+
+    // 检查是否是VSWITCH的地址段,如果是的话那么发送
+    if(ixc_vsw_is_from_subnet(iphdr->src_addr,0)){
+        ixc_npfwd_send_raw(m,0,IXC_FLAG_VSWITCH);
         return;
     }
 

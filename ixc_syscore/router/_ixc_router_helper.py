@@ -98,6 +98,8 @@ class rpc(object):
             "IXC_FLAG_ARP": router.IXC_FLAG_ARP,
             "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
+            "IXC_FLAG_VSWITCH":router.IXC_FLAG_VSWITCH,
+
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
             "IXC_SEC_NET_ACT_DROP": router.IXC_SEC_NET_ACT_DROP,

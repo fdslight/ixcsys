@@ -30,7 +30,7 @@
 #include "global.h"
 #include "npfwd.h"
 #include "sec_net.h"
-
+#include "vswitch.h"
 
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
@@ -724,11 +724,40 @@ router_qos_set_tunnel_first(PyObject *self,PyObject *args)
 static PyObject *
 router_qos_unset_tunnel(PyObject *self,PyObject *args)
 {
-
     ixc_qos_tunnel_addr_first_unset();
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_vsw_enable(PyObject *self,PyObject *args)
+{
+    int enable,is_ipv6;
+    if(!PyArg_ParseTuple(args,"pp",&enable,&is_ipv6)) return NULL;
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_vsw_set_subnet(PyObject *self,PyObject *args)
+{
+    unsigned char address[16];
+    const char *s;
+    int is_ipv6,rs;
+    unsigned char prefix;
+
+    if(!PyArg_ParseTuple(args,"sbp",&s,&prefix,&is_ipv6)) return NULL;
+
+    if(is_ipv6) rs=inet_pton(AF_INET6,s,address);
+    else rs=inet_pton(AF_INET,s,address);
+
+    if(rs<0){
+        PyErr_SetString(PyExc_ValueError,"invalid ip address");
+        return NULL;
+    }
+
+    ixc_vsw_set_subnet(address,prefix,is_ipv6);
+    Py_RETURN_NONE;
+}
 
 static PyMemberDef router_members[]={
     {NULL}
@@ -783,6 +812,9 @@ static PyMethodDef routerMethods[]={
     //
     {"qos_set_tunnel_first",(PyCFunction)router_qos_set_tunnel_first,METH_VARARGS,"set qos tunnel traffic is first"},
     {"qos_unset_tunnel",(PyCFunction)router_qos_unset_tunnel,METH_NOARGS,"unset qos tunnel traffic is first"},
+    //
+    {"vsw_enable",(PyCFunction)router_vsw_enable,METH_VARARGS,"enable or disable vswitch"},
+    {"vsw_set_subnet",(PyCFunction)router_vsw_set_subnet,METH_VARARGS,"set vswitch subnet"},
 
     {NULL,NULL,0,NULL}
 };
@@ -830,6 +862,7 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_SERVER);
     PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
+    PyModule_AddIntMacro(m,IXC_FLAG_VSWITCH);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //
@@ -1286,6 +1319,11 @@ static void ixc_start(int debug)
         return;
     }
 
+    rs=ixc_vsw_init();
+    if(rs<0){
+        STDERR("cannot init vswitch\r\n");
+        return;
+    }
 
     rs=ixc_netif_init(&ixc_ev_set);
     if(rs<0){

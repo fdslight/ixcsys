@@ -14,6 +14,8 @@
 #define IXC_FLAG_SRC_FILTER 3
 /// 表示是一个带链路层头部的路由转发包
 #define IXC_FLAG_ROUTE_FWD 4
+/// 表示是一个vswitch数据包
+#define IXC_FLAG_VSWITCH 5
 
 #include<sys/types.h>
 
