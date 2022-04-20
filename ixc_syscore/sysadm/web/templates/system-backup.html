@@ -21,9 +21,9 @@
                 <%
                 x=1
                 files=self.V["backup-files"]
-                for file_info in files:
-                    s="<tr><td>%s</td><td>%s</td>" % (x,file_info,)
-                    s+="<td><a href='#' class='ixc-system-backup' name='%s'>删除</a></td></tr>" % rule
+                for file in files:
+                    s="<tr><td>%s</td><td>%s</td>" % (x,file,)
+                    s+="<td><a href='#' class='ixc-system-backup' name='%s'>删除</a></td></tr>" % file
                     self.show(s)
                 %>
             </tbody>
