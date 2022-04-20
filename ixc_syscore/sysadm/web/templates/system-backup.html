@@ -1,7 +1,7 @@
 <div class="row">
     <div class="col-sm-10"></div>
     <div class="col-sm-2">
-        <input type="button" class="btn btn-primary" value="备份当前配置" style="width: 100%;" />
+        <input type="button" class="btn btn-primary" value="备份当前配置" style="width: 100%;" id="ixc-system-backup-do" />
     </div>
 </div>
 
@@ -13,7 +13,7 @@
             <thead>
             <tr>
                 <th scope="col">序号</th>
-                <th scope="col">备份日期</th>
+                <th scope="col">备份文件</th>
                 <th scope="col">操作</th>
             </tr>
             </thead>
@@ -23,7 +23,7 @@
                 files=self.V["backup-files"]
                 for file in files:
                     s="<tr><td>%s</td><td>%s</td>" % (x,file,)
-                    s+="<td><a href='#' class='ixc-system-backup' name='%s'>删除</a></td></tr>" % file
+                    s+="<td><a href='#' class='ixc-system-backup-recovery' name='%s'>恢复</a>&nbsp;&nbsp;&nbsp;<a href='#' class='ixc-system-backup-del' name='%s'>删除</a></td></tr>" % (file,file,)
                     self.show(s)
                 %>
             </tbody>
@@ -32,5 +32,47 @@
 </div>
 <script type="text/javascript">
     $(document).ready(function () {
+        $(".ixc-system-backup-del").click(function (){
+            let file_name=$(this).attr("name");
+            $.post("${self.url_prefix}/system-backup", {"do":"delete","file":file_name}, function (result) {
+            let is_error = result["is_error"];
+            let message = result["message"];
+
+                if (is_error) {
+                    alert(message);
+                } else {
+                    window.location.reload(true);
+                }
+            });
+            return false;
+        });
+
+        $(".ixc-system-backup-recovery").click(function (){
+            let file_name=$(this).attr("name");
+            $.post("${self.url_prefix}/system-backup", {"do":"recovery","file":file_name}, function (result) {
+            let is_error = result["is_error"];
+            let message = result["message"];
+
+                if (is_error) {
+                    alert(message);
+                } else {
+                    window.location.reload(true);
+                }
+            });
+            return false;
+        });
+        $("#ixc-system-backup-do").click(function (){
+            $.post("${self.url_prefix}/system-backup", {"do":"backup"}, function (result) {
+            let is_error = result["is_error"];
+            let message = result["message"];
+
+                if (is_error) {
+                    alert(message);
+                } else {
+                    window.location.reload(true);
+                }
+            });
+            return false;
+        });
     });
 </script>
