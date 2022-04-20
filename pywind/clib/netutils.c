@@ -82,6 +82,7 @@ int subnet_calc_with_prefix(unsigned char *address,unsigned char prefix,int is_i
     return subnet_calc_with_msk(address,msk,is_ipv6,res);
 }
 
+inline 
 int subnet_calc_with_msk(unsigned char *address,unsigned char *msk,int is_ipv6,unsigned char *res)
 {
     size_t size=4;
@@ -101,6 +102,7 @@ int subnet_calc_with_msk(unsigned char *address,unsigned char *msk,int is_ipv6,u
     return 0;
 }
 
+inline 
 unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field,unsigned short old_csum)
 {
     unsigned long csum = old_csum - (~old_field & 0xFFFF) - new_field ;
