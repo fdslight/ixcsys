@@ -48,16 +48,10 @@
         });
 
         $(".ixc-system-backup-recovery").click(function (){
-            let file_name=$(this).attr("name");
-            $.post("${self.url_prefix}/system-backup", {"do":"recovery","file":file_name}, function (result) {
-            let is_error = result["is_error"];
-            let message = result["message"];
-
-                if (is_error) {
-                    alert(message);
-                } else {
-                    window.location.reload(true);
-                }
+                let file_name=$(this).attr("name");
+                $.post("${self.url_prefix}/system-backup", {"do":"recovery","file":file_name}, function (result) {
+                let message = result["message"];
+                alert(message);
             });
             return false;
         });
