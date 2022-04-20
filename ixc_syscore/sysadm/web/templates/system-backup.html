@@ -1,0 +1,36 @@
+<div class="row">
+    <div class="col-sm-10"></div>
+    <div class="col-sm-2">
+        <input type="button" class="btn btn-primary" value="备份当前配置" style="width: 100%;" />
+    </div>
+</div>
+
+<div id="ixc-sec-dns-rule-view" class="ixc-menu-content" style="display: none;">
+    <form style="width: 98%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/sec-dns-rule">
+        <h4>DNS拦截规则</h4>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">序号</th>
+                <th scope="col">备份日期</th>
+                <th scope="col">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+                <%
+                x=1
+                files=self.V["backup-files"]
+                for file_info in files:
+                    s="<tr><td>%s</td><td>%s</td>" % (x,file_info,)
+                    s+="<td><a href='#' class='ixc-system-backup' name='%s'>删除</a></td></tr>" % rule
+                    self.show(s)
+                %>
+            </tbody>
+        </table>
+    </form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+    });
+</script>
