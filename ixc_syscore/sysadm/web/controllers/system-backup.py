@@ -20,7 +20,7 @@ class controller(base_controller.BaseController):
         fpath = "/var/log/ixcsys_config_backup.%s.tar.gz" % t
         os.system("tar czf %s /opt/ixcsys/ixc_configs" % fpath)
 
-        self.json_resp(False, "")
+        self.json_resp(False, "备份成功")
 
     def handle(self):
         action = self.request.get_argument("do", is_seq=False, is_qs=False)
