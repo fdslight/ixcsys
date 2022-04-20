@@ -43,14 +43,16 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "非法的文件名")
             return
 
-        fpath = "/var/log" % file_name
+        fpath = "/var/log/%s" % file_name
         if not os.path.isfile(fpath):
             self.json_resp(True, "不存在文件%s" % file_name)
             return
 
         if action == "delete":
             os.remove(fpath)
+            msg = ""
         else:
             os.system("tar xzf %s -C /opt/ixcsys" % fpath)
+            msg = "恢复成功,请重启路由器"
 
-        self.json_resp(False, "")
+        self.json_resp(False, msg)
