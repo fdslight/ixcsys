@@ -52,7 +52,7 @@ class controller(base_controller.BaseController):
             os.remove(fpath)
             msg = ""
         else:
-            os.system("tar xzf %s -C /opt/ixcsys" % fpath)
+            os.system("tar xzf %s -C /" % fpath)
             msg = "恢复成功,请重启路由器"
 
         self.json_resp(False, msg)
