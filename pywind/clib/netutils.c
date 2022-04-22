@@ -117,21 +117,6 @@ unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field
 
 	return old_csum;
 }
-#elif defined(__aarch64__)
-inline 
-unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field,unsigned short old_csum)
-{
-	__asm__ __volatile__(
-		"notw %1;\n"
-		"subw %1,%0;\n"
-		"subsw %2,%0;\n"
-		"subsw $0,%0;\n"
-		:"=r"(old_csum)
-		:"r"(old_field),"r"(new_field),"0"(old_csum)
-	);
-
-	return old_csum;
-}
 #else
 inline 
 unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field,unsigned short old_csum)
