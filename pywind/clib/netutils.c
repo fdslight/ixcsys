@@ -102,6 +102,37 @@ int subnet_calc_with_msk(unsigned char *address,unsigned char *msk,int is_ipv6,u
     return 0;
 }
 
+#ifdef __x86_64__
+inline 
+unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field,unsigned short old_csum)
+{
+	__asm__ __volatile__(
+		"notw %1;\n"
+		"subw %1,%0;\n"
+		"sbbw %2,%0;\n"
+		"sbbw $0,%0;\n"
+		:"=r"(old_csum)
+		:"r"(old_field),"r"(new_field),"0"(old_csum)
+	);
+
+	return old_csum;
+}
+#elif defined(__aarch64__)
+inline 
+unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field,unsigned short old_csum)
+{
+	__asm__ __volatile__(
+		"notw %1;\n"
+		"subw %1,%0;\n"
+		"subsw %2,%0;\n"
+		"subsw $0,%0;\n"
+		:"=r"(old_csum)
+		:"r"(old_field),"r"(new_field),"0"(old_csum)
+	);
+
+	return old_csum;
+}
+#else
 inline 
 unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field,unsigned short old_csum)
 {
@@ -110,6 +141,7 @@ unsigned short csum_calc_incre(unsigned short old_field,unsigned short new_field
     csum +=  (csum >> 16);
     return csum;
 }
+#endif
 
 unsigned short csum_calc(unsigned short *buffer,size_t size)
 {
