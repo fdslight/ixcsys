@@ -40,7 +40,7 @@ class widget(ui_widget.widget):
     def get_host_available_mem(self):
         """获取主机可用内存
         """
-        cmd = "free -m | grep Mem | awk '{print $7}'"
+        cmd = "free -m | awk 'NR==2' | awk '{print $7}'"
         with os.popen(cmd) as f: mem = f.read()
         f.close()
 
