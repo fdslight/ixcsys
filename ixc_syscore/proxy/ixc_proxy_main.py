@@ -105,10 +105,6 @@ class service(dispatcher.dispatcher):
 
     __enable = None
 
-    __conn_vpn_fd = None
-    __vpn_tcp_crypto = None
-    __vpn_udp_crypto = None
-
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
 
@@ -579,10 +575,9 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("router", "/config", "qos_unset_tunnel")
         self.__conn_fd = -1
 
-    def get_server_ip(self, host, is_vpn=False):
+    def get_server_ip(self, host):
         """获取服务器IP
         :param host:
-        :param is_vpn:是否是远程访问隧道
         :return:
         """
         self.__server_ip = host
@@ -624,7 +619,7 @@ class service(dispatcher.dispatcher):
         if ipaddr in self.__routes:
             self.__del_route(ipaddr, is_dynamic=True, is_ipv6=enable_ipv6)
 
-        if not is_vpn: RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", ipaddr, enable_ipv6)
+        RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", ipaddr, enable_ipv6)
 
         return ipaddr
 
