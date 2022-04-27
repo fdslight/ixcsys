@@ -337,9 +337,51 @@ __NETUTIL_COPY_ADDR:
     else memcpy(iphdr->dst_addr,new_addr,4);
 }
 
-void rewrite_ip6_addr(struct netutil_ip6hdr *ip6hr,unsigned char *new_addr,int is_src)
+void rewrite_ip6_addr(struct netutil_ip6hdr *ip6hdr,unsigned char *new_addr,int is_src)
 {
-    
+    unsigned char old_addr[16];
+    unsigned char *csum_ptr;
+    unsigned short csum;
+    unsigned char *ptr=(unsigned char *)(ip6hdr);
+    unsigned short *old_u16addr,*new_u16addr=(unsigned short *)new_addr;
+
+    int flags=1;
+
+    if(is_src) {
+        memcpy(old_addr,ip6hdr->src_addr,16);
+        memcpy(ip6hdr->src_addr,new_addr,16);
+    }else{
+        memcpy(old_addr,ip6hdr->dst_addr,16);
+        memcpy(ip6hdr->dst_addr,new_addr,16);    
+    }
+
+    old_u16addr=(unsigned short *)(old_addr);
+
+    switch(ip6hdr->next_header){
+        case 6:
+            csum_ptr=ptr+46;
+            break;
+        case 17:
+            csum_ptr=ptr+56;
+            break;
+        case 58:
+            csum_ptr=ptr+42;
+            break;
+        default:
+            flags=0;
+            break;
+    }
+
+    // 不需要重写传输层校验和直接跳过
+    if(!flags) return;
+
+    memcpy(&csum,csum_ptr,2);
+
+    for(int n=0;n<8;n++){
+        csum=csum_calc_incre(*old_u16addr++,*new_u16addr++,csum);
+    }
+
+    memcpy(csum_ptr,&csum,2);
 }
 
 int is_same_subnet(unsigned char *address,unsigned char *subnet,unsigned char prefix,int is_ipv6)
