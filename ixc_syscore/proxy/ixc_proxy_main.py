@@ -104,8 +104,6 @@ class service(dispatcher.dispatcher):
     __ip_match = None
 
     __enable = None
-    # 是否与VPN合并
-    __merge_with_vpn = None
 
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
@@ -121,7 +119,6 @@ class service(dispatcher.dispatcher):
         self.__ip_match = ip_match.ip_match()
         self.__conn_fd = -1
         self.__enable = False
-        self.__merge_with_vpn = False
 
         RPCClient.wait_processes(["router", "DNS", ])
 
