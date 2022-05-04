@@ -329,6 +329,8 @@ int ixc_route_init(void)
         return -1;
     }
 
+    route.ip6_rt_cache=m;
+
     return 0;
 }
 
@@ -469,12 +471,8 @@ struct ixc_route_info *ixc_route_match(unsigned char *ip,int is_ipv6)
     struct map *m=is_ipv6?route.ip6_rt:route.ip_rt;
     char is_found;
     //unsigned char *t;
-
     r=ixc_route_cache_get(ip,is_ipv6);
-    if(NULL!=r){
-        DBG("route from cache\r\n");
-        return r;
-    }
+    if(NULL!=r) return r;
 
     while(NULL!=p){
         
@@ -579,7 +577,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
         return;
     }
 
-    if(netif->type==IXC_NETIF_WAN && route.ipv6_pass){
+    if(route.ipv6_pass){
         // 检查IPv6安全,注意需要在路由查找代码后面
         if(!ixc_ip6sec_check_ok(m)){
             //DBG_FLAGS;
@@ -591,10 +589,11 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
         return;
     }
     
-    //DBG_FLAGS;
+    //IXC_PRINT_IP6("PRINT IP6",header->dst_addr);
     r=ixc_route_match(header->dst_addr,1);
+    //DBG_FLAGS;
     // 未开启IPv6并且未开启IPv6直通那么丢弃数据包
-    if(NULL==r && !route.ipv6_pass){
+    if(NULL==r){
         IXC_PRINT_IP6("Not found route ",header->dst_addr);
         //DBG_FLAGS;
         ixc_mbuf_put(m);

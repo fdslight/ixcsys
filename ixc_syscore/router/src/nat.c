@@ -7,7 +7,6 @@
 #include "addr_map.h"
 #include "arp.h"
 #include "ip.h"
-#include "qos.h"
 #include "debug.h"
 #include "route.h"
 #include "ipunfrag.h"
@@ -126,7 +125,7 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
         offset+=data_size/8;
         cur_len+=data_size;
 
-        if(from_wan) ixc_qos_add(new_mbuf);
+        if(from_wan) ixc_route_handle(new_mbuf);
         else ixc_addr_map_handle(new_mbuf);
     }
 
@@ -452,7 +451,7 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
     }
     
     if(m->netif->mtu_v4>=m->tail-m->offset){
-        ixc_qos_add(m);
+        ixc_route_handle(m);
     }else{
         //DBG_FLAGS;
         ixc_nat_ipfrag_send(m,1);

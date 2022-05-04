@@ -13,7 +13,6 @@
 #include "debug.h"
 #include "ip6.h"
 #include "debug.h"
-#include "qos.h"
 
 #include "../../../pywind/clib/ev/ev.h"
 #include "../../../pywind/clib/netif/tuntap.h"

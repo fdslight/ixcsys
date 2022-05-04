@@ -80,7 +80,7 @@ static int ixc_ip6sec_add(const char key[],int is_tmp)
     }
 
     if(is_tmp){
-        tdata=time_wheel_add(&ip6sec_time_wheel,sec_info,IXC_IP6SEC_TIMEOUT);
+        tdata=time_wheel_add(&ip6sec_time_wheel,sec_info,IXC_IO_WAIT_TIMEOUT);
         if(NULL==tdata){
             free(sec_info);
             map_del(ip6sec.m,key,NULL);

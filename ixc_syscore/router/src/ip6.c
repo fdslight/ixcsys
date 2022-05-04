@@ -115,6 +115,7 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
         return;
     }
 
+    //DBG_FLAGS;
     if(!ixc_ip6_check_ok(mbuf)){
         ixc_mbuf_put(mbuf);
         return;
@@ -124,7 +125,8 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
     mbuf->end=mbuf->tail=mbuf->offset+ntohs(header->payload_len);
     mbuf->is_ipv6=1;
 
-    ixc_addr_map_check(header->src_addr,mbuf->src_hwaddr,1);
+    //DBG_FLAGS;
+    //ixc_addr_map_check(header->src_addr,mbuf->src_hwaddr,1);
 
     if(IXC_NETIF_WAN==netif->type){
         ixc_ip6_handle_from_wan(mbuf,header);

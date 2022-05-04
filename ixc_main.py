@@ -39,6 +39,47 @@ def stop_all():
     _list.reverse()
     for x in _list: stop(x)
 
+def force_stop_router():
+    """强制停止路由进程
+    """
+    path="/tmp/ixcsys/router"
+    stop("ixc_syscore/router")
+    spath="%s/rpc.sock" % path
+
+    if os.path.exists(spath):os.remove(spath)
+
+    # 清除未删除的设备
+    del_devices=[
+        "ixclan","ixcwan","ixclanbr","ixcwanbr",
+    ]
+    for device in del_devices:
+        fdst=os.popen("ip addr | grep %s" % device)
+        s=fdst.read()
+        s=s.replace("\n","")
+        fdst.close()
+        if not s:continue
+        os.system("ip link del %s" % device)
+
+
+
+def force_stop():
+    stop_all()
+    # 停止主进程
+    pid=proc.get_pid("/tmp/ixcsys/ixcsys.pid")
+    if pid>0:os.kill(pid,signal.SIGINT)
+
+    time.sleep(5)
+
+    # 清除多余的文件
+    _list=os.listdir("/tmp/ixcsys")
+    for x in _list:
+        path="/tmp/ixcsys/%s" % x
+        if not os.path.isdir(path):continue  
+        spath="%s/rpc.sock" % path
+        if os.path.exists(spath):os.remove(spath)
+    
+    force_stop_router()
+
 
 def start(uri: str, debug=False):
     if not debug:
@@ -310,14 +351,14 @@ class ixc_main_d(object):
 
 def main():
     __helper = """
-    start [app_uri] | stop [app_uri] | force_stop | debug app_uri | restart [app_uri] | service_start
+    start [app_uri] | stop [app_uri] | force_stop | debug app_uri | restart [app_uri] | service_start | force_stop_router
     """
     if len(sys.argv) < 2:
         print(__helper)
         return
     set_pub_env()
     action = sys.argv[1]
-    if action not in ("start", "stop", "debug", "restart", "force_stop", "service_start"):
+    if action not in ("start", "stop", "debug", "restart", "force_stop", "service_start","force_stop_router"):
         print(__helper)
         return
 
@@ -327,7 +368,11 @@ def main():
         uri = ""
 
     if action == "force_stop":
-        stop_all()
+        force_stop()
+        return
+    
+    if action=="force_stop_router":
+        force_stop_router()
         return
 
     if not uri:
