@@ -122,7 +122,8 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
     }
 
     header=(struct netutil_ip6hdr *)(mbuf->data+mbuf->offset);
-    mbuf->end=mbuf->tail=mbuf->offset+ntohs(header->payload_len);
+    // IPv6的长度不包含固定头部,这里需要加上头部
+    mbuf->end=mbuf->tail=mbuf->offset+ntohs(header->payload_len)+40;
     mbuf->is_ipv6=1;
 
     //DBG_FLAGS;

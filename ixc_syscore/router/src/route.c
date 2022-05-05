@@ -536,7 +536,7 @@ static void ixc_route_ipv6_pass_do(struct ixc_mbuf *m)
 
 static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
-    
+    //DBG_FLAGS;
     // 只支持ICMPv6协议
     if(header->next_header!=58){
         ixc_mbuf_put(m);
@@ -545,6 +545,7 @@ static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip
 
     // 如果没有开启IPv6透传那么处理ICMPv6
     if(!ixc_route_is_enabled_ipv6_pass()){
+        //DBG_FLAGS;
         ixc_icmpv6_handle(m,header);
         return;
     }
@@ -575,20 +576,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     if(!memcmp(header->dst_addr,netif->ip6addr,16)){
         ixc_route_handle_for_ipv6_local(m,header);
         return;
-    }
-
-    if(route.ipv6_pass){
-        // 检查IPv6安全,注意需要在路由查找代码后面
-        if(!ixc_ip6sec_check_ok(m)){
-            //DBG_FLAGS;
-            ixc_mbuf_put(m);
-            return;
-        }
-        // 直通数据包
-        ixc_route_ipv6_pass_do(m);
-        return;
-    }
-    
+    }    
     //IXC_PRINT_IP6("PRINT IP6",header->dst_addr);
     r=ixc_route_match(header->dst_addr,1);
     //DBG_FLAGS;

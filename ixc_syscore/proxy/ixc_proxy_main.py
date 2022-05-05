@@ -483,10 +483,14 @@ class service(dispatcher.dispatcher):
         ip_ver = (message[0] & 0xf0) >> 4
         if ip_ver not in (4, 6,): return
 
-        if ip_ver == 4:
-            host = socket.inet_ntop(socket.AF_INET, message[16:20])
-        else:
-            host = socket.inet_ntop(socket.AF_INET6, message[24:40])
+        try:
+            if ip_ver == 4:
+                host = socket.inet_ntop(socket.AF_INET, message[16:20])
+            else:
+                host = socket.inet_ntop(socket.AF_INET6, message[24:40])
+        except:
+            return
+
 
         self.__update_route_access(host)
 

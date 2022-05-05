@@ -257,17 +257,20 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     unsigned char dst_hwaddr[6];
     unsigned char dst_ipaddr[]=IXC_IP6ADDR_ALL_NODES;
 
+    //DBG_FLAGS;
     if(icmp_code!=0){
         ixc_mbuf_put(m);
         return;
     }
 
+    //DBG_FLAGS;
     // 如果是邻居冲突检测那么ICMPv6应该是24字节
     if(!memcmp(unspec_addr,iphdr->src_addr,16)) {
         is_unspec_addr=1;
         size=24;
     }
 
+    //DBG("%d %d %d %d\r\n",m->begin,m->offset,m->tail,m->end);
     if(m->tail-m->offset!=size){
         ixc_mbuf_put(m);
         return;
@@ -282,6 +285,7 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         ptr=netif->ip6_local_link_addr;
     }
 
+    //DBG_FLAGS;
     if(!memcmp(ns_hdr->target_addr,netif->ip6addr,16)){
         flags=1;
         ptr=netif->ip6addr;
@@ -291,7 +295,7 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         ixc_mbuf_put(m);
         return;
     }
-
+    //DBG_FLAGS;
     bzero(buf,32);
 
     na_header=(struct ixc_icmpv6_na_header *)buf;
