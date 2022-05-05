@@ -63,7 +63,6 @@ class service(dispatcher.dispatcher):
     __logs = None
     __log_count = None
     __log_max = None
-    __errlog_fdst = None
 
     __errlog_path = None
     __syslog_path = None
@@ -74,8 +73,7 @@ class service(dispatcher.dispatcher):
         self.__debug = debug
         self.__logs = []
         self.__log_count = 0
-        self.__log_max = 100
-        self.__errlog_fd = None
+        self.__log_max = 200
 
         self.__errlog_path = "/var/log/ixcsys_error.log"
         self.__syslog_path = "/var/log/ixcsys_syslog.log"
@@ -124,10 +122,7 @@ class service(dispatcher.dispatcher):
                 sys.stderr.write(fmt_msg)
             return
 
-        if not self.debug:
-            self.__errlog_fdst = open(self.__errlog_path, "w")
-
-        if not self.debug and level == logging.LEVEL_ERR:
+        if level == logging.LEVEL_ERR:
             self.write_err_log(name, message)
             return
 
@@ -143,8 +138,10 @@ class service(dispatcher.dispatcher):
         s1 = time.strftime("%Y-%m-%d %H:%M:%S %Z")
         w = "%s\r\napplication:%s\r\nmessage:\r\n%s\r\n" % (s1, name, message)
 
-        self.__errlog_fdst.write(w)
-        self.__errlog_fdst.flush()
+        fdst=open(self.__errlog_path,"a")
+
+        fdst.write(w)
+        fdst.close()
 
     def save_log_to_file(self):
         fpath = self.__syslog_path
@@ -171,7 +168,6 @@ class service(dispatcher.dispatcher):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
         if self.__log_fd > 0: self.delete_handler(self.__log_fd)
-        if self.__errlog_fdst: self.__errlog_fdst.close()
 
         self.save_log_to_file()
 
