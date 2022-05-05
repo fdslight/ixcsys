@@ -424,7 +424,8 @@ class service(dispatcher.dispatcher):
         if action == proto_utils.ACT_IPDATA:
             ip_ver = (message[0] & 0xf0) >> 4
             if ip_ver not in (4, 6,): return
-
+            # 检查IP数据包长度,避免程序运行出错
+            if len(message) < 20: return
             if ip_ver == 4:
                 p = message[9]
             else:
@@ -490,7 +491,6 @@ class service(dispatcher.dispatcher):
                 host = socket.inet_ntop(socket.AF_INET6, message[24:40])
         except:
             return
-
 
         self.__update_route_access(host)
 
