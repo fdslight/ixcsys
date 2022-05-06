@@ -34,8 +34,8 @@ static void ixc_ip6_sysloop_cb(struct sysloop *loop)
         ixc_icmpv6_send_rs();
     }**/
     
-    // LAN口设置了IPv6地址那么发布路由宣告
-    if(netif->isset_ip6) ixc_icmpv6_send_ra(NULL,NULL);
+    // 如果设置了IPv6并且不开启直通那么定时发送RA
+    if(netif->isset_ip6 && !ixc_route_is_enabled_ipv6_pass()) ixc_icmpv6_send_ra(NULL,NULL);
 
     ip6_up_time=time(NULL);
 }
