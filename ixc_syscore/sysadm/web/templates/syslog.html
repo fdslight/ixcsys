@@ -1,13 +1,33 @@
 <div id="ixc-syslog-view" class="ixc-menu-content">
-    <div><input type="button" class="btn float-right btn-info" value="清理"/><div class="clearfix"></div> </div>
+    <div><input type="button" class="btn float-right btn-info" value="清理" id="ixc-syslog-clear"/>
+        <div class="clearfix"></div>
+    </div>
     <h6>错误日志</h6>
     <pre style="white-space: pre-wrap;">${self.V["error"]}</pre>
     <h6>一般日志</h6>
 
-    <pre><%
+    <pre>
+        <%
         for dic in self.V["syslog"]:
             s="\r\napplication:%s\r\ntime:%s\r\nmessage:%s\r\n" % (dic["application"],dic["time"],dic["message"])
             self.show(s)
         %>
     </pre>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#ixc-syslog-clear").click(function () {
+                $.post("${self.url_prefix}/syslog", function (result) {
+                    let is_error = result["is_error"];
+                    let message = result["message"];
+
+                    if (is_error) {
+                        alert(message);
+                    } else {
+                        window.location.reload(true);
+                    }
+                });
+                $(window).reload();
+            });
+        });
+    </script>
 </div>
