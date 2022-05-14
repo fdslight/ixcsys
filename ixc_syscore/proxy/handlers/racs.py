@@ -58,7 +58,7 @@ class udp_tunnel(udp_handler.udp_handler):
         server_ip = self.dispatcher.get_racs_server_ip(self.__address[0])
 
         if not server_ip: return False
-        
+
         self.__server_address = (server_ip, self.__address[1],)
         self.__tunnel_ok = True
 
@@ -122,7 +122,7 @@ class udp_tunnel(udp_handler.udp_handler):
     def set_priv_key(self, priv_key: str):
         self.__priv_key = racs.calc_str_md5(priv_key)
 
-    def send_msg_to_tunnel(self, message: bytes):
+    def send_msg(self, message: bytes):
         if self.__server_address: return
         if self.__tunnel_ok: return
 

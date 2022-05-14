@@ -24,7 +24,7 @@ import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
 import ixc_syscore.proxy.pylib.file_parser as file_parser
 import ixc_syscore.proxy.pylib.ip_match as ip_match
 import ixc_syscore.proxy.pylib.crypto.utils as crypto_utils
-import ixc_syscore.proxy.pylib.racs as racs
+import ixc_syscore.proxy.pylib.racs_cext as racs_cext
 import ixc_syscore.proxy.handlers.tunnel as tunnel
 import ixc_syscore.proxy.handlers.netpkt as netpkt
 import ixc_syscore.proxy.handlers.dns_proxy as dns_proxy
@@ -108,6 +108,8 @@ class service(dispatcher.dispatcher):
 
     __racs_configs = None
     __racs_fd = None
+    __racs_byte_network_v4 = None
+    __racs_byte_network_v6 = None
 
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
@@ -153,6 +155,7 @@ class service(dispatcher.dispatcher):
             # 关闭src filter
             RPCClient.fn_call("router", "/config", "src_filter_enable", False)
             self.del_routes()
+        self.reset_racs()
 
     def start(self, debug):
         conn = self.__configs["connection"]
@@ -358,6 +361,19 @@ class service(dispatcher.dispatcher):
 
         network["enable_ip6"] = bool(int(conn["enable_ip6"]))
 
+        host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
+
+        self.__racs_byte_network_v4 = (
+            socket.inet_pton(socket.AF_INET, host),
+            socket.inet_pton(socket.AF_INET, netutils.ip_prefix_convert(int(prefix), is_ipv6=False))
+        )
+
+        host, prefix = netutils.parse_ip_with_prefix(network["ip6_route"])
+        self.__racs_byte_network_v6 = (
+            socket.inet_pton(socket.AF_INET6, host),
+            socket.inet_pton(socket.AF_INET6, netutils.ip_prefix_convert(int(prefix), is_ipv6=True))
+        )
+
     def save_racs_configs(self):
         conn = self.__racs_configs["connection"]
         network = self.__racs_configs["network"]
@@ -463,6 +479,41 @@ class service(dispatcher.dispatcher):
     @property
     def manage_addr(self):
         return self.__manage_addr
+
+    def handle_msg_from_local(self, message: bytes):
+        version = (message[0] & 0xf0) >> 4
+        if version not in (4, 6,): return
+
+        if not self.racs_configs["connection"]["enable"]:
+            self.send_msg_to_tunnel(proto_utils.ACT_IPDATA, message)
+            return
+
+        if version == 4:
+            dst_addr = message[16:20]
+            is_ipv6 = False
+        else:
+            dst_addr = message[24:40]
+            is_ipv6 = True
+
+        if is_ipv6 and not self.racs_configs["network"]["enable_ip6"]:
+            self.send_msg_to_tunnel(proto_utils.ACT_IPDATA, message)
+            return
+
+        if is_ipv6:
+            is_racs_network = racs_cext.is_same_subnet_with_msk(dst_addr, self.__racs_byte_network_v6[0],
+                                                                self.__racs_byte_network_v6[1], is_ipv6)
+        else:
+            is_racs_network = racs_cext.is_same_subnet_with_msk(dst_addr, self.__racs_byte_network_v4[0],
+                                                                self.__racs_byte_network_v4[1], is_ipv6)
+
+        if is_racs_network:
+            if self.__racs_fd > 0:
+                self.get_handler(self.__racs_fd).send_msg(message)
+            else:
+                return
+            ''''''
+        else:
+            self.send_msg_to_tunnel(proto_utils.ACT_IPDATA, message)
 
     def release(self):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))

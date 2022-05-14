@@ -116,7 +116,9 @@ def __build(build_name, args: list):
 
 
 def __build_all(args: list):
-    for x in __builds: __build(x, args)
+    for x in __builds:
+        print("building %s" % x)
+        __build(x, args)
 
 
 def __install(app_name: str, prefix=None):
