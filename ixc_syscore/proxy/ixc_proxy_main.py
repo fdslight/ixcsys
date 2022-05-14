@@ -348,6 +348,20 @@ class service(dispatcher.dispatcher):
     def racs_configs(self):
         return self.__racs_configs
 
+    def racs_cfg_update(self, cfg: dict):
+        fpath = "%s/racs.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+
+        conn = cfg["connection"]
+        network = cfg["network"]
+
+        conn["enable"] = int(conn["enable"])
+        conn["enable_ip6"] = int(conn["enable_ip6"])
+
+        network["enable_ip6"] = int(network["enable_ip6"])
+
+        conf.save_to_ini(cfg, fpath)
+        self.reset_racs()
+
     def load_racs_configs(self):
         fpath = "%s/racs.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
@@ -373,16 +387,6 @@ class service(dispatcher.dispatcher):
             socket.inet_pton(socket.AF_INET6, netutils.ip_prefix_convert(int(prefix), is_ipv6=True))
         )
         self.__racs_configs = configs
-
-    def save_racs_configs(self):
-        conn = self.__racs_configs["connection"]
-        network = self.__racs_configs["network"]
-
-        conn["enable"] = int(conn["enable"])
-        conn["enable_ip6"] = int(conn["enable_ip6"])
-        network["enable_ip6"] = int(conn["enable_ip6"])
-
-        self.reset_racs()
 
     def clear_racs_route(self):
         """清除远程访问路由
