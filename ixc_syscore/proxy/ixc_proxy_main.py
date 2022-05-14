@@ -28,6 +28,7 @@ import ixc_syscore.proxy.pylib.racs_cext as racs_cext
 import ixc_syscore.proxy.handlers.tunnel as tunnel
 import ixc_syscore.proxy.handlers.netpkt as netpkt
 import ixc_syscore.proxy.handlers.dns_proxy as dns_proxy
+import ixc_syscore.proxy.handlers.racs as racs
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -404,6 +405,7 @@ class service(dispatcher.dispatcher):
 
         if self.__racs_fd > 0:
             self.delete_handler(self.__racs_fd)
+        self.__racs_fd = -1
 
         self.load_racs_configs()
 
@@ -420,6 +422,11 @@ class service(dispatcher.dispatcher):
             self.set_route(host, prefix, is_ipv6=True, is_dynamic=False)
         host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
         self.set_route(host, prefix, is_ipv6=False, is_dynamic=False)
+
+        if conn["enable_ip6"]:
+            self.__racs_fd = self.create_handler(-1, racs.udp_tunnel, (conn["host"], int(conn["port"]),), is_ipv6=True)
+        else:
+            self.__racs_fd = self.create_handler(-1, racs.udp_tunnel, (conn["host"], int(conn["port"]),), is_ipv6=False)
 
     def update_domain_rule(self, text: str):
         fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
