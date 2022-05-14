@@ -106,6 +106,7 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的IPv6路由地址格式")
             return
 
+        print(kv_map)
         RPC.fn_call("proxy", "/config", "racs_cfg_update", kv_map)
 
         self.json_resp(False, {})
