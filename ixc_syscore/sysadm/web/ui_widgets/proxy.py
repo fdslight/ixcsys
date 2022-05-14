@@ -35,7 +35,6 @@ class widget(ui_widget.widget):
                 configs = self.convert_conn_cfg(configs)
                 configs["crypto_modules"] = crypto_modules
 
-            print(configs)
             uri = "proxy.html"
         else:
             configs = {}
