@@ -22,7 +22,19 @@ class controller(rpc.controller):
             "get_crypto_modules": self.get_crypto_modules,
             "get_crypto_module_conf": self.get_crypto_module_conf,
             "update_crypto_module_conf": self.update_crypto_module_conf,
+
+            "racs_enable": self.racs_enable,
+            "racs_host_set": self.racs_host_set,
+            "racs_security_set": self.racs_security_set,
+            "racs_network_route_set": self.racs_network_route_set,
+            "racs_network_ip6_enable": self.racs_network_ip6_enable,
+            "racs_save": self.racs_save,
         }
+
+    @property
+    def proxy(self):
+        g = global_vars["ixcsys.proxy"]
+        return g
 
     def config_get(self, cfg_type: str):
         if cfg_type not in ("dns", "pass-ip", "proxy-ip", "conn",):
@@ -67,3 +79,38 @@ class controller(rpc.controller):
 
     def update_crypto_module_conf(self, name: str, dic: dict):
         return 0, self.__runtime.save_crypto_module_conf(name, dic)
+
+    def racs_enable(self, enable: bool):
+        configs = self.proxy.racs_configs
+        conn = configs["connection"]
+        conn["enable"] = enable
+
+    def racs_host_set(self, host, port, enable_ipv6=False):
+        configs = self.proxy.racs_configs
+        conn = configs["connection"]
+        conn["host"] = host
+        conn["port"] = port
+        conn["enable_ip6"] = enable_ipv6
+
+    def racs_security_set(self, shared_key: str, priv_key: str):
+        configs = self.proxy.racs_configs
+        sec = configs["security"]
+        sec["shared_key"] = shared_key
+        sec["private_key"] = priv_key
+
+    def racs_network_route_set(self, subnet, prefix, is_ipv6=False):
+        configs = self.proxy.racs_configs
+        network = configs["network"]
+
+        if is_ipv6:
+            network["ip6_route"] = "%s/%s" % (subnet, prefix,)
+        else:
+            network["ip_route"] = "%s/%s" % (subnet, prefix,)
+
+    def racs_network_ip6_enable(self, enabled: bool):
+        configs = self.proxy.racs_configs
+        network = configs["network"]
+        network["enable_ip6"] = enabled
+
+    def racs_save(self):
+        self.proxy.save_racs_configs()

@@ -106,7 +106,8 @@ class service(dispatcher.dispatcher):
 
     __enable = None
 
-    __enable_racs = None
+    __racs_configs = None
+    __racs_fd = None
 
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
@@ -122,6 +123,8 @@ class service(dispatcher.dispatcher):
         self.__ip_match = ip_match.ip_match()
         self.__conn_fd = -1
         self.__enable = False
+        self.__racs_configs = {}
+        self.__racs_fd = -1
 
         RPCClient.wait_processes(["router", "DNS", ])
 
@@ -337,8 +340,70 @@ class service(dispatcher.dispatcher):
         f.close()
         return s.encode().decode("latin1")
 
+    @property
+    def racs_configs(self):
+        return self.__racs_configs
+
     def load_racs_configs(self):
-        pass
+        fpath = "%s/racs.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        with open(fpath, "r") as f: s = f.read()
+        f.close()
+
+        configs = json.loads(s)
+        conn = configs["connection"]
+        network = configs["network"]
+
+        conn["enable"] = bool(int(conn["enable"]))
+        conn["enable_ip6"] = bool(int(conn["enable_ip6"]))
+
+        network["enable_ip6"] = bool(int(conn["enable_ip6"]))
+
+    def save_racs_configs(self):
+        conn = self.__racs_configs["connection"]
+        network = self.__racs_configs["network"]
+
+        conn["enable"] = int(conn["enable"])
+        conn["enable_ip6"] = int(conn["enable_ip6"])
+        network["enable_ip6"] = int(conn["enable_ip6"])
+
+        self.reset_racs()
+
+    def clear_racs_route(self):
+        """清除远程访问路由
+        """
+        conn = self.__racs_configs["connection"]
+        network = self.__racs_configs["network"]
+
+        # 清除旧的路由记录
+        if self.__racs_configs and conn["enable"]:
+            if network["enable_ip6"]:
+                host, prefix = netutils.parse_ip_with_prefix(network["ip6_route"])
+                self.__del_route(host, prefix=prefix, is_ipv6=True, is_dynamic=False)
+            host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
+            self.__del_route(host, prefix=prefix, is_ipv6=False, is_dynamic=False)
+        return
+
+    def reset_racs(self):
+        self.clear_racs_route()
+
+        if self.__racs_fd > 0:
+            self.delete_handler(self.__racs_fd)
+
+        self.load_racs_configs()
+
+        conn = self.__racs_configs["connection"]
+        security = self.__racs_configs["security"]
+        network = self.__racs_configs["network"]
+
+        self.get_handler(self.__racs_fd).enable(conn["enable"])
+        self.get_handler(self.__racs_fd).set_key(security["shared_key"])
+        self.get_handler(self.__racs_fd).set_priv_key(security["private_key"])
+
+        if network["enable_ip6"]:
+            host, prefix = netutils.parse_ip_with_prefix(network["ip6_route"])
+            self.set_route(host, prefix, is_ipv6=True, is_dynamic=False)
+        host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
+        self.set_route(host, prefix, is_ipv6=False, is_dynamic=False)
 
     def update_domain_rule(self, text: str):
         fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
@@ -404,6 +469,10 @@ class service(dispatcher.dispatcher):
         if self.__conn_fd > 0:
             self.delete_handler(self.__conn_fd)
             self.__conn_fd = -1
+        if self.__racs_fd > 0:
+            self.clear_racs_route()
+            self.delete_handler(self.__racs_fd)
+            self.__racs_fd = -1
 
     def del_routes(self):
         dels = []
@@ -598,17 +667,30 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("router", "/config", "qos_unset_tunnel")
         self.__conn_fd = -1
 
-    def get_server_ip(self, host):
+    def get_proxy_server_ip(self, host):
+        self.__server_ip = host
+
+        enable_ipv6 = bool(int(self.__configs["connection"]["enable_ipv6"]))
+        ipaddr = self.get_server_ip(host, enable_ipv6=enable_ipv6)
+
+        if ipaddr: self.__server_ip = ipaddr
+
+        RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", ipaddr, enable_ipv6)
+
+    def get_racs_server_ip(self, host):
+        enable_ipv6 = self.__configs["connection"]["enable_ip6"]
+        ipaddr = self.get_server_ip(host, enable_ipv6=enable_ipv6)
+
+        return ipaddr
+
+    def get_server_ip(self, host, enable_ipv6=False):
         """获取服务器IP
         :param host:
         :return:
         """
-        self.__server_ip = host
-
         if netutils.is_ipv4_address(host): return host
         if netutils.is_ipv6_address(host): return host
 
-        enable_ipv6 = bool(int(self.__configs["connection"]["enable_ipv6"]))
         resolver = dns.resolver.Resolver()
 
         try:
@@ -630,7 +712,6 @@ class service(dispatcher.dispatcher):
         for anwser in rs:
             ipaddr = anwser.__str__()
             break
-        self.__server_ip = ipaddr
         if not ipaddr: return ipaddr
         # 检查路由是否冲突
         rs = self.__get_conflict_from_static_route(ipaddr, is_ipv6=enable_ipv6)
@@ -641,8 +722,6 @@ class service(dispatcher.dispatcher):
 
         if ipaddr in self.__routes:
             self.__del_route(ipaddr, is_dynamic=True, is_ipv6=enable_ipv6)
-
-        RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", ipaddr, enable_ipv6)
 
         return ipaddr
 

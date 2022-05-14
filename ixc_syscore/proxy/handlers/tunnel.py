@@ -90,7 +90,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         return self.fileno
 
     def create_tunnel(self, server_address):
-        server_ip = self.dispatcher.get_server_ip(server_address[0])
+        server_ip = self.dispatcher.get_proxy_server_ip(server_address[0])
         if not server_ip: return False
 
         try:
@@ -426,7 +426,7 @@ class udp_tunnel(udp_handler.udp_handler):
         return self.fileno
 
     def create_tunnel(self, server_address):
-        server_ip = self.dispatcher.get_server_ip(server_address[0])
+        server_ip = self.dispatcher.get_proxy_server_ip(server_address[0])
 
         if not server_ip: return False
 
