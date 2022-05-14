@@ -24,6 +24,7 @@ import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
 import ixc_syscore.proxy.pylib.file_parser as file_parser
 import ixc_syscore.proxy.pylib.ip_match as ip_match
 import ixc_syscore.proxy.pylib.crypto.utils as crypto_utils
+import ixc_syscore.proxy.pylib.racs as racs
 import ixc_syscore.proxy.handlers.tunnel as tunnel
 import ixc_syscore.proxy.handlers.netpkt as netpkt
 import ixc_syscore.proxy.handlers.dns_proxy as dns_proxy
@@ -104,6 +105,8 @@ class service(dispatcher.dispatcher):
     __ip_match = None
 
     __enable = None
+
+    __enable_racs = None
 
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
@@ -334,6 +337,9 @@ class service(dispatcher.dispatcher):
         f.close()
         return s.encode().decode("latin1")
 
+    def load_racs_configs(self):
+        pass
+
     def update_domain_rule(self, text: str):
         fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
         with open(fpath, "w") as f: f.write(text)
@@ -412,6 +418,19 @@ class service(dispatcher.dispatcher):
             dels.append((host, self.__routes[host]))
         for host, is_ipv6 in dels:
             self.__del_route(host, is_ipv6=is_ipv6)
+        ''''''
+
+    def send_to_local(self, message: bytes):
+        ip_ver = (message[0] & 0xf0) >> 4
+        if ip_ver not in (4, 6,): return
+        # 检查IP数据包长度,避免程序运行出错
+        if len(message) < 20: return
+        if ip_ver == 4:
+            p = message[9]
+        else:
+            p = message[6]
+        self.get_handler(self.__fwd_fd).send_msg(self.__consts["IXC_NETIF_LAN"], p,
+                                                 self.__consts["IXC_FLAG_ROUTE_FWD"], message)
 
     def handle_msg_from_tunnel(self, session_id: bytes, action: int, message: bytes):
         if not self.__enable: return
