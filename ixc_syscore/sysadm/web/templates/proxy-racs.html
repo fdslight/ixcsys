@@ -1,0 +1,108 @@
+<div id="ixc-racs-view" class="ixc-menu-content" style="display: block;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/racs">
+        <h4>隧道连接</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-group row">
+            <div class="col-sm-2">启用隧道</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <%
+                        if self.V['connection']['enable']:self.show("""<input class="form-check-input"
+                                                                       name="connection.enable"
+                                                                       type="checkbox" checked="checked">""")
+                        else:self.show("""<input class="form-check-input" name="connection.enable" type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">服务器地址</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" name="connection.host" value="${self.V['connection']['host']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">服务器端口</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" name="connection.port" value="${self.V['connection']['port']}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">共享密钥</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" value="${self.V['security']['shared_key']}"
+                       name="connection.username">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">私有密钥</label>
+            <div class="col-sm-10">
+                <input type="password" class="form-control"
+                       value="${self.V['security']['private_key']}" name="connection.password">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">IPv6隧道</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <%
+                        if self.V['connection']['enable_ipv6']:self.show("""<input class="form-check-input"
+                                                                               name="connection.enable_ipv6"
+                                                                               type="checkbox" checked="checked">""")
+                        else:self.show("""<input class="form-check-input" name="connection.enable_ipv6" type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">IPv4路由</label>
+            <div class="col-sm-10">
+                <input type="password" class="form-control"
+                       value="${self.V['network']['ip_route']}" name="tunnel_over_https.auth_id">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">IPv6路由</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" value="${self.V['network']['ip6_route']}"
+                       name="tunnel_over_https.https_sni_host">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">开启IPv6远程</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <%
+                        if self.V['network']['enable_ip6']:self.show("""<input class="form-check-input"
+                                                                               name="connection.enable_ipv6"
+                                                                               type="checkbox" checked="checked">""")
+                        else:self.show("""<input class="form-check-input" name="connection.enable_ipv6" type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
+        <!----->
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+    });
+</script>
