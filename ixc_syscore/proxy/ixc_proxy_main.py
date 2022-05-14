@@ -388,11 +388,12 @@ class service(dispatcher.dispatcher):
     def clear_racs_route(self):
         """清除远程访问路由
         """
+        if not self.__racs_configs: return
         conn = self.__racs_configs["connection"]
         network = self.__racs_configs["network"]
 
         # 清除旧的路由记录
-        if self.__racs_configs and conn["enable"]:
+        if conn["enable"]:
             if network["enable_ip6"]:
                 host, prefix = netutils.parse_ip_with_prefix(network["ip6_route"])
                 self.__del_route(host, prefix=prefix, is_ipv6=True, is_dynamic=False)
