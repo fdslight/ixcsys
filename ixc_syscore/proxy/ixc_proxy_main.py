@@ -350,10 +350,8 @@ class service(dispatcher.dispatcher):
 
     def load_racs_configs(self):
         fpath = "%s/racs.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
-        with open(fpath, "r") as f: s = f.read()
-        f.close()
 
-        configs = json.loads(s)
+        configs = conf.ini_parse_from_file(fpath)
         conn = configs["connection"]
         network = configs["network"]
 
@@ -374,6 +372,7 @@ class service(dispatcher.dispatcher):
             socket.inet_pton(socket.AF_INET6, host),
             socket.inet_pton(socket.AF_INET6, netutils.ip_prefix_convert(int(prefix), is_ipv6=True))
         )
+        self.__racs_configs = configs
 
     def save_racs_configs(self):
         conn = self.__racs_configs["connection"]
@@ -414,6 +413,11 @@ class service(dispatcher.dispatcher):
         security = self.__racs_configs["security"]
         network = self.__racs_configs["network"]
 
+        if conn["enable_ip6"]:
+            self.__racs_fd = self.create_handler(-1, racs.udp_tunnel, (conn["host"], int(conn["port"]),), is_ipv6=True)
+        else:
+            self.__racs_fd = self.create_handler(-1, racs.udp_tunnel, (conn["host"], int(conn["port"]),), is_ipv6=False)
+
         self.get_handler(self.__racs_fd).enable(conn["enable"])
         self.get_handler(self.__racs_fd).set_key(security["shared_key"])
         self.get_handler(self.__racs_fd).set_priv_key(security["private_key"])
@@ -423,11 +427,6 @@ class service(dispatcher.dispatcher):
             self.set_route(host, prefix, is_ipv6=True, is_dynamic=False)
         host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
         self.set_route(host, prefix, is_ipv6=False, is_dynamic=False)
-
-        if conn["enable_ip6"]:
-            self.__racs_fd = self.create_handler(-1, racs.udp_tunnel, (conn["host"], int(conn["port"]),), is_ipv6=True)
-        else:
-            self.__racs_fd = self.create_handler(-1, racs.udp_tunnel, (conn["host"], int(conn["port"]),), is_ipv6=False)
 
     def update_domain_rule(self, text: str):
         fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
@@ -732,9 +731,10 @@ class service(dispatcher.dispatcher):
         enable_ipv6 = bool(int(self.__configs["connection"]["enable_ipv6"]))
         ipaddr = self.get_server_ip(host, enable_ipv6=enable_ipv6)
 
-        if ipaddr: self.__server_ip = ipaddr
-
-        RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", ipaddr, enable_ipv6)
+        if ipaddr:
+            self.__server_ip = ipaddr
+            RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", ipaddr, enable_ipv6)
+        return ipaddr
 
     def get_racs_server_ip(self, host):
         enable_ipv6 = self.__configs["connection"]["enable_ip6"]
