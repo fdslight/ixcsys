@@ -37,7 +37,7 @@ class controller(rpc.controller):
         return g
 
     def config_get(self, cfg_type: str):
-        if cfg_type not in ("dns", "pass-ip", "proxy-ip", "conn",):
+        if cfg_type not in ("dns", "pass-ip", "proxy-ip", "conn","racs",):
             return RPC.ERR_ARGS, "wrong argument value %s" % cfg_type
 
         if cfg_type == "dns":
@@ -51,6 +51,9 @@ class controller(rpc.controller):
 
         if cfg_type == "proxy-ip":
             return 0, {"rules": self.__runtime.proxy_ip_rule_raw_get}
+
+        if cfg_type == "racs":
+            return 0, self.proxy.racs_configs
 
         return 0, {}
 

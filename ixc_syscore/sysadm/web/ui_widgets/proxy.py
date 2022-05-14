@@ -25,7 +25,7 @@ class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
         _type = self.get_argument("type", default="conn", is_qs=True, is_seq=False)
 
-        if _type not in ("conn", "dns", "pass-ip", "proxy-ip",): _type = "conn"
+        if _type not in ("conn", "dns", "pass-ip", "proxy-ip", "racs",): _type = "conn"
 
         if RPC.RPCReadyOk("proxy"):
             configs = RPC.fn_call("proxy", "/config", "config_get", _type)
@@ -33,7 +33,7 @@ class widget(ui_widget.widget):
 
             if _type == "conn":
                 configs = self.convert_conn_cfg(configs)
-            configs["crypto_modules"] = crypto_modules
+                configs["crypto_modules"] = crypto_modules
             uri = "proxy.html"
         else:
             configs = {}

@@ -17,8 +17,8 @@
            name="proxy-ip">强制使用隧道IP名单</a>
 
         <a class="flex-sm-fill text-sm-center nav-link ixc-proxy-type" id="ixc-proxy-racs"
-           href="${self.url_prefix}/?show=ixc-proxy.ixc-racs&page=proxy&type=proxy-racs"
-           name="proxy-racs">强制使用隧道IP名单</a>
+           href="${self.url_prefix}/?show=ixc-proxy.ixc-racs&page=proxy&type=racs"
+           name="proxy-racs">远程访问本地</a>
 
     </nav>
     <div class="ixc-empty"></div>
@@ -30,6 +30,7 @@
         elif self.qs('type')=="pass-ip":self.show(self.include("proxy-pass-ip.html"))
         elif self.qs('type')=="proxy-ip":self.show(self.include("proxy-ip.html"))
         elif self.qs("type")=="src-filter":self.show(self.include("proxy-src-filter.html"))
+        elif self.qs("type")=="racs":self.show(self.include("proxy-racs.html"))
         else:self.show("not found page")
     %>
     <script type="text/javascript">
