@@ -108,12 +108,11 @@ class udp_tunnel(udp_handler.udp_handler):
             self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
             self.__update_time = t
             return
-        ''''''
+        self.set_timeout(self.fileno,self.__LOOP_TIMEOUT)
 
     def udp_delete(self):
         self.unregister(self.fileno)
         self.close()
-        if not self.__server_address: return
 
     def set_key(self, key: str):
         self.__encrypt.set_key(key)
