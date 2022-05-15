@@ -75,9 +75,8 @@ class udp_tunnel(udp_handler.udp_handler):
         user_id, msg = rs
 
         if user_id != self.__priv_key: return
-        if not msg:
-            self.send_msg(message)
-            return
+        # 如果消息为空,那么说明为心跳包,丢弃
+        if not msg: return
         self.dispatcher.send_to_local(message)
 
     def udp_writable(self):
@@ -108,7 +107,7 @@ class udp_tunnel(udp_handler.udp_handler):
             self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
             self.__update_time = t
             return
-        self.set_timeout(self.fileno,self.__LOOP_TIMEOUT)
+        self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
 
     def udp_delete(self):
         self.unregister(self.fileno)
