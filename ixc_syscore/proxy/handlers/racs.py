@@ -75,7 +75,7 @@ class udp_tunnel(udp_handler.udp_handler):
         user_id, msg = rs
 
         if user_id != self.__priv_key: return
-        # 如果消息为空,那么说明为心跳包,丢弃
+        # 如果消息为空,那么说明为心跳包,丢弃,服务端会回心跳包,如果来回回,那么会造成死循环
         if not msg: return
         self.dispatcher.send_to_local(message)
 
