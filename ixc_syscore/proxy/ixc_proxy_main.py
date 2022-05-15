@@ -411,7 +411,7 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__racs_fd)
         self.__racs_fd = -1
 
-        self.load_racs_lconfigs()
+        self.load_racs_configs()
 
         conn = self.__racs_configs["connection"]
         security = self.__racs_configs["security"]
