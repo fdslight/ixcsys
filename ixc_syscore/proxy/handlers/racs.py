@@ -103,7 +103,7 @@ class udp_tunnel(udp_handler.udp_handler):
             self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
             return
 
-        if v > 60:
+        if v > 59:
             self.send_heartbeat()
             self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
             self.__update_time = t
