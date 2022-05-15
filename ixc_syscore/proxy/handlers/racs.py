@@ -76,7 +76,7 @@ class udp_tunnel(udp_handler.udp_handler):
 
         if user_id != self.__priv_key: return
         if not msg:
-            self.send_msg_to_tunnel(message)
+            self.send_msg(message)
             return
         self.dispatcher.send_to_local(message)
 
@@ -88,7 +88,7 @@ class udp_tunnel(udp_handler.udp_handler):
         self.delete_handler(self.fileno)
 
     def send_heartbeat(self):
-        self.send_msg_to_tunnel(b"")
+        self.send_msg(b"")
 
     def udp_timeout(self):
         t = time.time()
@@ -123,8 +123,11 @@ class udp_tunnel(udp_handler.udp_handler):
         self.__priv_key = racs.calc_str_md5(priv_key)
 
     def send_msg(self, message: bytes):
+        print("A")
         if self.__server_address: return
+        print("B")
         if self.__tunnel_ok: return
+        print("C")
 
         wrap_data = self.__encrypt.wrap(self.__priv_key, message)
 
