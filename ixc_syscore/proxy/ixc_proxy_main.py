@@ -741,7 +741,7 @@ class service(dispatcher.dispatcher):
         return ipaddr
 
     def get_racs_server_ip(self, host):
-        enable_ipv6 = self.__configs["connection"]["enable_ip6"]
+        enable_ipv6 = self.__racs_configs["connection"]["enable_ip6"]
         ipaddr = self.get_server_ip(host, enable_ipv6=enable_ipv6)
 
         return ipaddr

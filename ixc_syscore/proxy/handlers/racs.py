@@ -123,11 +123,9 @@ class udp_tunnel(udp_handler.udp_handler):
         self.__priv_key = racs.calc_str_md5(priv_key)
 
     def send_msg(self, message: bytes):
-        print("A")
-        if self.__server_address: return
-        print("B")
-        if self.__tunnel_ok: return
-        print("C")
+        if not self.__server_address: return
+        if not self.__tunnel_ok: return
+        if not self.__enable: return
 
         wrap_data = self.__encrypt.wrap(self.__priv_key, message)
 
