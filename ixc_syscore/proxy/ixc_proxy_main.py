@@ -372,7 +372,7 @@ class service(dispatcher.dispatcher):
         conn["enable"] = bool(int(conn["enable"]))
         conn["enable_ip6"] = bool(int(conn["enable_ip6"]))
 
-        network["enable_ip6"] = bool(int(conn["enable_ip6"]))
+        network["enable_ip6"] = bool(int(network["enable_ip6"]))
 
         host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
 
@@ -411,7 +411,7 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__racs_fd)
         self.__racs_fd = -1
 
-        self.load_racs_configs()
+        self.load_racs_lconfigs()
 
         conn = self.__racs_configs["connection"]
         security = self.__racs_configs["security"]
