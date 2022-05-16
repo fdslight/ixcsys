@@ -19,6 +19,7 @@ __builds = [
 
 __helper = """
     help                            show help
+    default                         generate default configure file
     build build_name [cflags]       build software
     build_all [cflags]              build all
     gen_update                      generate update archive
