@@ -16,7 +16,7 @@ must_services = [
     "ixc_syscore/proxy",
 ]
 
-/// 检查Python模块
+# 必需的Python模块
 must_py_modules={
     "dnspython3":"dns",
     "cryptography":"cryptograpy",
