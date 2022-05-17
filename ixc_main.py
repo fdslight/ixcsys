@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os, sys, signal, time, traceback, hashlib
+import importlib
 
 sys_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -15,6 +16,25 @@ must_services = [
     "ixc_syscore/proxy",
 ]
 
+/// 检查Python模块
+must_py_modules={
+    "dnspython3":"dns",
+    "cryptography":"cryptograpy",
+    "cloudflare-ddns":"cloudflare_ddns"
+}
+
+def check_py_modules():
+    no_modules=[]
+    for name in must_py_modules:
+        try:
+            importlib.import_module(name)
+        except ImportError:
+            no_modules.append(name)
+         ''''''
+    if not no_modules:return True
+    print("ERROR:not found python modules %s" % ",".join(no_modules))
+    return True
+            
 
 def set_pub_env():
     conf_dir = "%s/ixc_configs" % sys_dir
@@ -353,6 +373,7 @@ def main():
     __helper = """
     start [app_uri] | stop [app_uri] | force_stop | debug app_uri | restart [app_uri] | service_start | force_stop_router
     """
+    if not check_py_modules():return
     if len(sys.argv) < 2:
         print(__helper)
         return
