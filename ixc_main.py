@@ -27,7 +27,7 @@ def check_py_modules():
     no_modules=[]
     for name in must_py_modules:
         try:
-            importlib.import_module(name)
+            importlib.import_module(must_py_modules[name])
         except ImportError:
             no_modules.append(name)
         ''''''
