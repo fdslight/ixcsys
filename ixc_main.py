@@ -19,7 +19,7 @@ must_services = [
 # 必需的Python模块
 must_py_modules={
     "dnspython3":"dns.message",
-    "cryptography":"cryptograpy",
+    "cryptography":"cryptography",
     "cloudflare-ddns":"cloudflare_ddns"
 }
 
