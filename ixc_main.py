@@ -30,7 +30,7 @@ def check_py_modules():
             importlib.import_module(name)
         except ImportError:
             no_modules.append(name)
-         ''''''
+        ''''''
     if not no_modules:return True
     print("ERROR:not found python modules %s" % ",".join(no_modules))
     return True
