@@ -18,7 +18,7 @@ must_services = [
 
 # 必需的Python模块
 must_py_modules={
-    "dnspython3":"dns",
+    "dnspython3":"dns.message",
     "cryptography":"cryptograpy",
     "cloudflare-ddns":"cloudflare_ddns"
 }
@@ -33,7 +33,7 @@ def check_py_modules():
         ''''''
     if not no_modules:return True
     print("ERROR:not found python modules %s" % ",".join(no_modules))
-    return True
+    return False
             
 
 def set_pub_env():
