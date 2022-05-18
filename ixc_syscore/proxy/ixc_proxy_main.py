@@ -883,7 +883,7 @@ class service(dispatcher.dispatcher):
         """获取CA路径
         :return:
         """
-        path = "%s/ca-bundle.crt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        path = "%s/data/ca-bundle.crt" % os.getenv("IXC_MYAPP_DIR")
         return path
 
     def get_crypto_module_conf(self, name: str):
