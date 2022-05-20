@@ -22,6 +22,7 @@ __helper = """
     default                         generate default configure file
     build build_name [cflags]       build software
     build_all [cflags]              build all
+    install_lib                     install system library
     gen_update                      generate update archive
     install install_name            install software name
     install_all prefix              install all
