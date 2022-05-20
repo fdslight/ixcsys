@@ -207,8 +207,8 @@ def gen_host_info(fpath: str):
 
     o = {
         "distributor_id": dis_id.lower(),
-        "release": release,
-        "arch": platform.machine()
+        "release": release.lower(),
+        "arch": platform.machine().lower()
     }
     fdst.write(json.dumps(o))
     fdst.close()
