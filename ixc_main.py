@@ -17,24 +17,25 @@ must_services = [
 ]
 
 # 必需的Python模块
-must_py_modules={
-    "dnspython3":"dns.message",
-    "cryptography":"cryptography",
-    "cloudflare-ddns":"cloudflare_ddns"
+must_py_modules = {
+    "dnspython3": "dns.message",
+    "cryptography": "cryptography",
+    "cloudflare-ddns": "cloudflare_ddns"
 }
 
+
 def check_py_modules():
-    no_modules=[]
+    no_modules = []
     for name in must_py_modules:
         try:
             importlib.import_module(must_py_modules[name])
         except ImportError:
             no_modules.append(name)
         ''''''
-    if not no_modules:return True
+    if not no_modules: return True
     print("ERROR:not found python modules %s" % ",".join(no_modules))
     return False
-            
+
 
 def set_pub_env():
     conf_dir = "%s/ixc_configs" % sys_dir
@@ -59,45 +60,45 @@ def stop_all():
     _list.reverse()
     for x in _list: stop(x)
 
+
 def force_stop_router():
     """强制停止路由进程
     """
-    path="/tmp/ixcsys/router"
+    path = "/tmp/ixcsys/router"
     stop("ixc_syscore/router")
-    spath="%s/rpc.sock" % path
+    spath = "%s/rpc.sock" % path
 
-    if os.path.exists(spath):os.remove(spath)
+    if os.path.exists(spath): os.remove(spath)
 
     # 清除未删除的设备
-    del_devices=[
-        "ixclan","ixcwan","ixclanbr","ixcwanbr",
+    del_devices = [
+        "ixclan", "ixcwan", "ixclanbr", "ixcwanbr",
     ]
     for device in del_devices:
-        fdst=os.popen("ip addr | grep %s" % device)
-        s=fdst.read()
-        s=s.replace("\n","")
+        fdst = os.popen("ip addr | grep %s" % device)
+        s = fdst.read()
+        s = s.replace("\n", "")
         fdst.close()
-        if not s:continue
+        if not s: continue
         os.system("ip link del %s" % device)
-
 
 
 def force_stop():
     stop_all()
     # 停止主进程
-    pid=proc.get_pid("/tmp/ixcsys/ixcsys.pid")
-    if pid>0:os.kill(pid,signal.SIGINT)
+    pid = proc.get_pid("/tmp/ixcsys/ixcsys.pid")
+    if pid > 0: os.kill(pid, signal.SIGINT)
 
     time.sleep(5)
 
     # 清除多余的文件
-    _list=os.listdir("/tmp/ixcsys")
+    _list = os.listdir("/tmp/ixcsys")
     for x in _list:
-        path="/tmp/ixcsys/%s" % x
-        if not os.path.isdir(path):continue  
-        spath="%s/rpc.sock" % path
-        if os.path.exists(spath):os.remove(spath)
-    
+        path = "/tmp/ixcsys/%s" % x
+        if not os.path.isdir(path): continue
+        spath = "%s/rpc.sock" % path
+        if os.path.exists(spath): os.remove(spath)
+
     force_stop_router()
 
 
@@ -373,13 +374,16 @@ def main():
     __helper = """
     start [app_uri] | stop [app_uri] | force_stop | debug app_uri | restart [app_uri] | service_start | force_stop_router
     """
-    if not check_py_modules():return
+    if not check_py_modules(): return
+    if not os.path.isfile("/usr/bin/lsb_release"):
+        print("ERROR:print install lsb_release")
+        return
     if len(sys.argv) < 2:
         print(__helper)
         return
     set_pub_env()
     action = sys.argv[1]
-    if action not in ("start", "stop", "debug", "restart", "force_stop", "service_start","force_stop_router"):
+    if action not in ("start", "stop", "debug", "restart", "force_stop", "service_start", "force_stop_router"):
         print(__helper)
         return
 
@@ -391,8 +395,8 @@ def main():
     if action == "force_stop":
         force_stop()
         return
-    
-    if action=="force_stop_router":
+
+    if action == "force_stop_router":
         force_stop_router()
         return
 

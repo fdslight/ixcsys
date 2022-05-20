@@ -2,6 +2,7 @@
 import platform, os, sys
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syslib.pylib.RPCClient as RPC
+import ixc_syslib.pylib.os_info as os_info
 
 from pywind.global_vars import global_vars
 
@@ -79,5 +80,6 @@ class widget(ui_widget.widget):
         dic["total_mem"] = self.get_host_mem_total()
         dic["available_mem"] = self.get_host_available_mem()
         dic["is_temp_network"] = self.sysadm.network_is_work_on_temp
+        dic["host_os"] = os_info.get_os_info()[0]
 
         return True, uri, dic

@@ -234,6 +234,14 @@ def __gen_update_archive():
     print("generate update archive /tmp/ixcsys_update.tar.gz OK")
 
 
+def install_lib():
+    cmds = [
+        "cp -r pylib %s" % INSTALL_PREFIX,
+        "cp -r pywind %s" % INSTALL_PREFIX
+    ]
+    for cmd in cmds: os.system(cmd)
+
+
 def main():
     if len(sys.argv) < 2:
         print(__helper)
@@ -241,12 +249,17 @@ def main():
 
     action = sys.argv[1]
     if action not in (
-            "help", "build", "build_all", "install", "install_all", "show_builds", "gen_update", "rescue_install"):
+            "help", "build", "build_all", "install", "install_all", "show_builds", "gen_update", "rescue_install",
+            "install_lib",):
         print(__helper)
         return
 
     if action == "help":
         print(__helper)
+        return
+
+    if action == "install_lib":
+        install_lib()
         return
 
     if action == "build":

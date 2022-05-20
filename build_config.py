@@ -114,6 +114,9 @@ def config_default(debug=False):
 
 
 def main():
+    if not os.path.isfile("/usr/bin/lsb_release"):
+        print("ERROR:please install lsb_release")
+        return
     if len(sys.argv) == 2:
         if sys.argv[1] == "default":
             config_default(debug=False)

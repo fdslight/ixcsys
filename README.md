@@ -16,6 +16,7 @@ X86_64 with SSE2 or ARM64 with NEON
 5. sudo apt install libpython3-dev  
 6. sudo apt install tftpd-hpa
 7. sudo apt install pkg-config
+8. sudo apt install lsb-release
 
 # build ixcsys
 1.first you need run "python3 build_config.py" for configure your environment(for example,"python3 build_config.py default")    
