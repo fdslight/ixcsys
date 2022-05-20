@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+import json
 import os, sys, signal, time, traceback, hashlib
 import importlib
+import platform
 
 sys_dir = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(sys_dir)
+
+import ixc_syslib.pylib.os_info as os_info
 
 # 必须要启动的服务,依照优先级顺序
 must_services = [
@@ -326,6 +330,25 @@ class ixc_main_d(object):
         """
         return os.path.isfile(self.__update_file_path)
 
+    def check_os_env(self, fpath: str):
+        """检查操作系统环境
+        """
+        if not os.path.isfile(fpath): return False
+
+        with open(fpath, "r") as f:
+            s = f.read()
+        f.close()
+
+        o = json.loads(s)
+
+        dis, dis_id, release = os_info.get_os_info()
+
+        if o["distributor_id"] != dis_id.lower(): return False
+        if o["release"] != release.lower(): return False
+        if o["arch"] != platform.machine().lower(): return False
+
+        return True
+
     def do_update(self):
         d = "/tmp/ixcsys_update"
 
@@ -354,6 +377,10 @@ class ixc_main_d(object):
 
         os.system("tar xf %s -C %s" % (self.__update_file_path, d))
         os.chdir(d)
+
+        if not self.check_os_env("host_info"):
+            print("Wrong host environment")
+            return
 
         _list = os.listdir(".")
 
