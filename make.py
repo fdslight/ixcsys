@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import os, sys, importlib, json, hashlib
+import platform
 
 BASE_DIR = os.path.dirname(sys.argv[0])
 
 if not BASE_DIR: BASE_DIR = "."
 
 sys.path.append(BASE_DIR)
+
+import ixc_syslib.pylib.os_info as os_info
 
 __builds = [
     "ixc_syscore/router",
@@ -195,6 +198,22 @@ def __rescue_install():
     os.system("cp ixc_main.py %s" % INSTALL_PREFIX)
 
 
+def gen_host_info(fpath: str):
+    """生成主机信息
+    """
+    dis, dis_id, release = os_info.get_os_info()
+
+    fdst = open(fpath, "w")
+
+    o = {
+        "distributor_id": dis_id.lower(),
+        "release": release,
+        "arch": platform.machine()
+    }
+    fdst.write(json.dumps(o))
+    fdst.close()
+
+
 def __gen_update_archive():
     """生成更新归档,注意执行此函数需要先make install_all
     :return:
@@ -209,6 +228,8 @@ def __gen_update_archive():
     if not os.path.isdir(prefix):
         print("ERROR:not found install directory %s" % prefix)
         return
+
+    gen_host_info("/tmp/ixc_update_temp/host_info")
 
     cur_dir = BASE_DIR
     os.chdir(prefix)
