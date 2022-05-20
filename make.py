@@ -237,7 +237,7 @@ def __gen_update_archive():
 
 def install_lib():
     cmds = [
-        "cp -r pylib %s" % INSTALL_PREFIX,
+        "cp -r ixc_syslib %s" % INSTALL_PREFIX,
         "cp -r pywind %s" % INSTALL_PREFIX
     ]
     for cmd in cmds: os.system(cmd)
