@@ -269,6 +269,7 @@ def build_binary_install_pkg():
     """构建二进制安装包
     """
     archive_path = "/tmp/ixcsys_update.tar.gz"
+
     ver_path = "%s/version" % os.path.dirname(os.path.abspath(__file__))
     dis, dis_id, release = os_info.get_os_info()
 
