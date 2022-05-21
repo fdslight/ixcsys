@@ -98,7 +98,7 @@ class rpc(object):
             "IXC_FLAG_ARP": router.IXC_FLAG_ARP,
             "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
-            "IXC_FLAG_VSWITCH":router.IXC_FLAG_VSWITCH,
+            "IXC_FLAG_VSWITCH": router.IXC_FLAG_VSWITCH,
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
@@ -863,6 +863,8 @@ class helper(object):
             os.system("ip link set %s promisc on" % lan_phy_ifname)
             # os.system("ip link set %s promisc on" % self.__LAN_NAME)
             os.system("ip link set %s up" % lan_phy_ifname)
+            # 设置内网桥接网卡MTU为1400,目的为了本机能够被正常访问
+            os.system("ip link set dev %s mtu 1400" % self.__LAN_BR_NAME)
 
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
