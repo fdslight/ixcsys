@@ -1,9 +1,28 @@
 #!/usr/bin/env python3
 # 二进制安装器
-import sys, os
+import sys, os, hashlib
 
 
 def check_file_hash(md5_v, file_path):
+    fdst = open(file_path, "rb")
+    magic = fdst.read(7)
+    if magic != b"ixcsys\n":
+        print("ERROR:it is not ixcsys software package")
+        return False
+    md5_hash = hashlib.md5()
+    md5_val = fdst.read(16)
+
+    while 1:
+        byte_data = fdst.read(8192)
+        if not byte_data: break
+        md5_hash.update(byte_data)
+
+    fdst.close()
+
+    if md5_val != md5_hash.digest():
+        print("ERROR:wrong file hash value")
+        return False
+
     return True
 
 
@@ -34,7 +53,7 @@ def main():
         os.remove(new_file)
         return
 
-    os.system("tar xf %s /opt/ixcsys" % new_file)
+    os.system("tar xf %s -C /tmp/ixcsys_test" % new_file)
     print("install ixcsys OK")
 
 

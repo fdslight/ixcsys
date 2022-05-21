@@ -282,12 +282,15 @@ def build_binary_install_pkg():
     with open(ver_path, "r") as f:
         version = f.read()
     f.close()
+
     dis, dis_id, release = os_info.get_os_info()
-    new_file = "/tmp/ixcsys-%s-%s-%s-%s.ixcup" % (dis_id, release, platform.machine(), version,)
+
+    new_file = "/tmp/ixcsys-%s-%s-%s-%s.ixcpkg" % (dis_id, release, platform.machine(), version,)
 
     fdst_up = open(archive_path, "rb")
 
     fdst = open(new_file, "wb")
+    fdst.write(b"ixcsys\n")
     fdst.write(md5_code)
 
     while 1:
@@ -296,6 +299,7 @@ def build_binary_install_pkg():
         fdst.write(byte_data)
     fdst_up.close()
     fdst.close()
+
     print("generate %s OK" % new_file)
 
 
