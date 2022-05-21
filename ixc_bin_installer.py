@@ -44,6 +44,10 @@ def main():
         print(__helper)
         return
 
+    if action == "help":
+        print(__helper)
+        return
+
     if not os.path.isfile(PKG_FILE):
         print("ERROR:not found file %s" % sys.argv[1])
         return
