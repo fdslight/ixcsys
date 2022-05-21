@@ -270,6 +270,7 @@ def build_binary_install_pkg():
     """
     archive_path = "/tmp/ixcsys_update.tar.gz"
     ver_path = "%s/version" % os.path.dirname(os.path.abspath(__file__))
+    dis, dis_id, release = os_info.get_os_info()
 
     __gen_update_archive()
     if not os.path.isfile(archive_path):
@@ -282,8 +283,6 @@ def build_binary_install_pkg():
     with open(ver_path, "r") as f:
         version = f.read()
     f.close()
-
-    dis, dis_id, release = os_info.get_os_info()
 
     new_file = "/tmp/ixcsys-%s-%s-%s-%s.ixcpkg" % (dis_id, release, platform.machine(), version,)
 
@@ -315,7 +314,7 @@ def build_binary_install_pkg():
     fdst.write(s)
     fdst.close()
 
-    os.chdir("/tmp/ixcsys_pkg")
+    os.chdir("/tmp/ixcsys_pkg")c
 
     fname = "ixcsys-%s-%s-%s-%s.bin.install.tar.gz" % (
         dis_id, release, platform.machine(), version,)
