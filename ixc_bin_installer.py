@@ -30,6 +30,20 @@ def check_file_hash(file_path):
 
 
 def main():
+    __helper = """
+    install      install ixcsys,it will not overrite config
+    reinstall    install ixcsys,it will overrite config
+    help
+    """
+    if len(sys.argv) != 2:
+        print(__helper)
+        return
+
+    action = sys.argv[1]
+    if action not in ("install", "reinstall", "help",):
+        print(__helper)
+        return
+
     if not os.path.isfile(PKG_FILE):
         print("ERROR:not found file %s" % sys.argv[1])
         return
@@ -50,7 +64,17 @@ def main():
     fdst.close()
     fdst_temp.close()
 
+    if action == "reinstall":
+        os.system("tar xf %s -C /opt/ixcsys" % new_file)
+        return
+
+    if os.path.isdir("/opt/ixcsys/ixc_configs"):
+        os.system("mv /opt/ixcsys/ixc_configs /tmp/ixc_configs_bak")
     os.system("tar xf %s -C /opt/ixcsys" % new_file)
+    # 通过备份覆盖
+    os.system("cp -r /tmp/ixc_configs_bak/* /opt/ixcsys/ixc_configs")
+    os.system("rm -rf /tmp/ixc_configs_bak")
+
     print("install ixcsys OK")
 
 
