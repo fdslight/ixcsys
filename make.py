@@ -27,6 +27,7 @@ __helper = """
     build_all [cflags]              build all
     install_lib                     install system library
     gen_update                      generate update archive
+    gen_bin_install                 generate binary install package
     install install_name            install software name
     install_all prefix              install all
     rescue_install                  only replace ixc_main.py for update
@@ -264,6 +265,40 @@ def install_lib():
     for cmd in cmds: os.system(cmd)
 
 
+def build_binary_install_pkg():
+    """构建二进制安装包
+    """
+    archive_path = "/tmp/ixcsys_update.tar.gz"
+    ver_path = "%s/version" % os.path.dirname(os.path.abspath(__file__))
+
+    __gen_update_archive()
+    if not os.path.isfile(archive_path):
+        print("ERROR:cannot found archive file")
+        return
+    with open("/tmp/ixcsys_update_check.md5", "rb") as f:
+        md5_code = f.read()
+    f.close()
+
+    with open(ver_path, "r") as f:
+        version = f.read()
+    f.close()
+    dis, dis_id, release = os_info.get_os_info()
+    new_file = "/tmp/ixcsys-%s-%s-%s-%s.ixcup" % (dis_id, release, platform.machine(), version,)
+
+    fdst_up = open(archive_path, "rb")
+
+    fdst = open(new_file, "wb")
+    fdst.write(md5_code)
+
+    while 1:
+        byte_data = fdst_up.read(8192)
+        if not byte_data: break
+        fdst.write(byte_data)
+    fdst_up.close()
+    fdst.close()
+    print("generate %s OK" % new_file)
+
+
 def main():
     if len(sys.argv) < 2:
         print(__helper)
@@ -272,7 +307,7 @@ def main():
     action = sys.argv[1]
     if action not in (
             "help", "build", "build_all", "install", "install_all", "show_builds", "gen_update", "rescue_install",
-            "install_lib",):
+            "install_lib", "gen_bin_install"):
         print(__helper)
         return
 
@@ -282,6 +317,9 @@ def main():
 
     if action == "install_lib":
         install_lib()
+        return
+    if action == "gen_bin_install":
+        build_binary_install_pkg()
         return
 
     if action == "build":
