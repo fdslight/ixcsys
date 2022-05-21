@@ -403,7 +403,10 @@ def main():
     """
     if not check_py_modules(): return
     if not os.path.isfile("/usr/bin/lsb_release"):
-        print("ERROR:print install lsb_release")
+        print("ERROR:please install lsb_release")
+        return
+    if not os.path.isfile("/usr/sbin/in.tftpd"):
+        print("ERROR:please install tftpd")
         return
     if len(sys.argv) < 2:
         print(__helper)
