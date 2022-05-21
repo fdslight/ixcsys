@@ -68,8 +68,10 @@ def main():
         os.system("tar xf %s -C /opt/ixcsys" % new_file)
         return
 
+    # 备份配置文件
     if os.path.isdir("/opt/ixcsys/ixc_configs"):
         os.system("mv /opt/ixcsys/ixc_configs /tmp/ixc_configs_bak")
+
     os.system("tar xf %s -C /opt/ixcsys" % new_file)
     # 通过备份覆盖
     os.system("cp -r /tmp/ixc_configs_bak/* /opt/ixcsys/ixc_configs")
