@@ -2,10 +2,13 @@
 # 二进制安装器
 import sys, os, hashlib
 
+PKG_FILE = "{{PKG_FILE}}"
 
-def check_file_hash(md5_v, file_path):
+
+def check_file_hash(file_path):
     fdst = open(file_path, "rb")
     magic = fdst.read(7)
+
     if magic != b"ixcsys\n":
         print("ERROR:it is not ixcsys software package")
         return False
@@ -27,19 +30,18 @@ def check_file_hash(md5_v, file_path):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("ERROR:not found ixcsys binary file")
-        return
-
-    if not os.path.isfile(sys.argv[1]):
+    if not os.path.isfile(PKG_FILE):
         print("ERROR:not found file %s" % sys.argv[1])
         return
 
-    fdst = open(sys.argv[1], "rb")
-    md5_hash = fdst.read(16)
+    if not check_file_hash(PKG_FILE): return
 
+    fdst = open(PKG_FILE, "rb")
+    # 丢弃前面23个字节magic+md5
+    fdst.read(23)
     new_file = "/tmp/ixcsys_temp.tar.gz"
     fdst_temp = open(new_file, "wb")
+
     while 1:
         read_data = fdst.read(8192)
         if not read_data: break
@@ -48,12 +50,7 @@ def main():
     fdst.close()
     fdst_temp.close()
 
-    if not check_file_hash(md5_hash, new_file):
-        print("ERROR:wrong file md5 value")
-        os.remove(new_file)
-        return
-
-    os.system("tar xf %s -C /tmp/ixcsys_test" % new_file)
+    os.system("tar xf %s -C /opt/ixcsys" % new_file)
     print("install ixcsys OK")
 
 

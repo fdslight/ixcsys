@@ -300,7 +300,29 @@ def build_binary_install_pkg():
     fdst_up.close()
     fdst.close()
 
-    print("generate %s OK" % new_file)
+    pkg_path = "/tmp/ixcsys_pkg"
+    if not os.path.isdir(pkg_path): os.mkdir(pkg_path)
+    # 清除旧的内容
+    os.system("rm -rf %s/*" % pkg_path)
+    os.system("mv %s %s" % (new_file, pkg_path,))
+
+    os.chdir(os.path.dirname(ver_path))
+    fdst = open("ixc_bin_installer.py", "r")
+    s = fdst.read()
+    fdst.close()
+    s = s.replace("{{PKG_FILE}}", "ixcsys-%s-%s-%s-%s.ixcpkg" % (dis_id, release, platform.machine(), version,))
+    fdst = open("/tmp/ixcsys_pkg/ixc_bin_installer.py", "w")
+    fdst.write(s)
+    fdst.close()
+
+    os.chdir("/tmp/ixcsys_pkg")
+
+    fname = "ixcsys-%s-%s-%s-%s.bin.install.tar.gz" % (
+        dis_id, release, platform.machine(), version,)
+
+    os.system("tar czf /tmp/%s *" % fname)
+
+    print("generate /tmp/%s OK" % fname)
 
 
 def main():
