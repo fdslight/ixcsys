@@ -314,7 +314,7 @@ def build_binary_install_pkg():
     fdst.write(s)
     fdst.close()
 
-    os.chdir("/tmp/ixcsys_pkg")c
+    os.chdir("/tmp/ixcsys_pkg")
 
     fname = "ixcsys-%s-%s-%s-%s.bin.install.tar.gz" % (
         dis_id, release, platform.machine(), version,)
