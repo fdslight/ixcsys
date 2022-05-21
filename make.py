@@ -302,11 +302,12 @@ def build_binary_install_pkg():
 
     pkg_path = "/tmp/ixcsys_pkg"
     if not os.path.isdir(pkg_path): os.mkdir(pkg_path)
+
+    os.chdir(os.path.dirname(ver_path))
     # 清除旧的内容
     os.system("rm -rf %s/*" % pkg_path)
     os.system("mv %s %s" % (new_file, pkg_path,))
 
-    os.chdir(os.path.dirname(ver_path))
     fdst = open("ixc_bin_installer.py", "r")
     s = fdst.read()
     fdst.close()
