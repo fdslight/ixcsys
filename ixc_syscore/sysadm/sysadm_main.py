@@ -25,7 +25,6 @@ import ixc_syslib.pylib.RPCClient as RPCClient
 
 import ixc_syscore.sysadm.handlers.httpd as httpd
 import ixc_syscore.sysadm.pylib.power_monitor as power_monitor
-import ixc_syscore.sysadm.handlers.n2n_client as n2n_client
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -115,15 +114,6 @@ class service(dispatcher.dispatcher):
     __diskless_cfg_macs_path = None
     __diskless_cfg_macs = None
 
-    __udp_n2n_conf_path = None
-    __udp_n2n_configs = None
-    # 客户端到NAT服务端的映射
-    __udp_n2n_fwd_tb = None
-    # NAT服务端到客户端的映射
-    __udp_n2n_fwd_tb_reverse = None
-
-    __udp_n2n_fds = None
-
     # 网络切换
     __network_shift_conf_path = None
     __network_shift_cfg = None
@@ -160,34 +150,13 @@ class service(dispatcher.dispatcher):
 
         return ipaddr
 
-    def create_udp_n2n(self):
-        for k, v in self.__udp_n2n_configs.items():
-            host = v["host"]
-            port = int(v["port"])
-            redir_host = v["redirect_host"]
-            redir_port = int(v["redirect_port"])
-
-            host = self.get_server_ip(host)
-            if not host:
-                logging.print_alert("wrong host value %s" % host)
-                continue
-            fd = self.create_handler(-1, n2n_client.n2nd, ("0.0.0.0", 0), (host, port,), (redir_host, redir_port))
-            self.__udp_n2n_fds.append(fd)
-
     def load_configs(self):
         self.__httpd_configs = cfg.ini_parse_from_file(self.__httpd_cfg_path)
         self.load_cloudflare_ddns_cfg()
         self.load_file_download_cfg()
         self.load_auto_shutdown_cfg()
         self.load_diskless_cfg_macs()
-        self.load_udp_n2n_config()
         self.load_network_shift_config()
-
-    def load_udp_n2n_config(self):
-        if not os.path.isfile(self.__udp_n2n_conf_path):
-            self.__udp_n2n_configs = {}
-            return
-        self.__udp_n2n_configs = cfg.ini_parse_from_file(self.__udp_n2n_conf_path)
 
     def start_network_shift(self):
         self.__network_work_on_temp = False
@@ -235,20 +204,8 @@ class service(dispatcher.dispatcher):
         self.__network_shift_cfg = json.loads(s)
 
     @property
-    def udp_n2n_configs(self):
-        return self.__udp_n2n_configs
-
-    @property
     def network_shift_config(self):
         return self.__network_shift_cfg
-
-    def reset_udp_n2n(self):
-        for fd in self.__udp_n2n_fds: self.delete_handler(fd)
-        self.__udp_n2n_fds = []
-        self.create_udp_n2n()
-
-    def save_udp_n2n_configs(self):
-        cfg.save_to_ini(self.__udp_n2n_configs, self.__udp_n2n_conf_path)
 
     def load_diskless_cfg_macs(self):
         if not os.path.isfile(self.__diskless_cfg_macs_path):
@@ -365,12 +322,6 @@ class service(dispatcher.dispatcher):
 
         self.__diskless_cfg_macs_path = "%s/diskless_macs.json" % os.getenv("IXC_MYAPP_CONF_DIR")
 
-        self.__udp_n2n_fds = []
-        self.__udp_n2n_configs = {}
-        self.__udp_n2n_conf_path = "%s/udp_n2n_client.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
-        self.__udp_n2n_fwd_tb = {}
-        self.__udp_n2n_fwd_tb_reverse = {}
-
         self.__network_shift_conf_path = "%s/network_shift.json" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__network_shift_cfg = None
 
@@ -389,7 +340,6 @@ class service(dispatcher.dispatcher):
         self.start_scgi()
         self.http_start()
         self.start_power_monitor()
-        self.create_udp_n2n()
         self.start_network_shift()
 
     def start_scgi(self):
