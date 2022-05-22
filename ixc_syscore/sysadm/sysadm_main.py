@@ -400,7 +400,7 @@ class service(dispatcher.dispatcher):
 
         self.__power.loop()
         if self.network_shift_config["enable"]:
-            # 网络测试不通过直行网络切换
+            # 网络测试不通过直接网络切换
             if not self.__network.network_ok(self.network_shift_config["check_host"]):
                 self.do_network_shift()
             ''''''
