@@ -138,7 +138,7 @@ class service(dispatcher.dispatcher):
         s1 = time.strftime("%Y-%m-%d %H:%M:%S %Z")
         w = "%s\r\napplication:%s\r\nmessage:\r\n%s\r\n" % (s1, name, message)
 
-        fdst=open(self.__errlog_path,"a")
+        fdst = open(self.__errlog_path, "a")
 
         fdst.write(w)
         fdst.close()
@@ -153,11 +153,14 @@ class service(dispatcher.dispatcher):
         if not from_file: return self.__logs
 
         fpath = self.__syslog_path
-        with open(fpath, "rb") as f: byte_s = f.read()
+        if not os.path.isfile(fpath): return {}
+        with open(fpath, "rb") as f:
+            byte_s = f.read()
         f.close()
         return json.loads(byte_s.decode())
 
     def get_errlog(self):
+        if not os.path.isfile(self.__errlog_path): return ""
         with open(self.__errlog_path, "r") as f:
             s = f.read()
         f.close()
