@@ -1187,7 +1187,7 @@ static void ixc_bind_cpu(void)
 
 	CPU_ZERO(&mask);
 
-    // 多核心CPU绑定到第二个核心,不绑定CPU0是因为避免CPU0负担过重
+    // 绑定到最后一个CPU核心
     if(cpus>=2){
         CPU_SET(cpus-1,&mask);
         if(sched_setaffinity(0,sizeof(cpu_set_t),&mask)==-1){
