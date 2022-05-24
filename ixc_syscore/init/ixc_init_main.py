@@ -153,7 +153,7 @@ class service(dispatcher.dispatcher):
         if not from_file: return self.__logs
 
         fpath = self.__syslog_path
-        if not os.path.isfile(fpath): return {}
+        if not os.path.isfile(fpath): return []
         with open(fpath, "rb") as f:
             byte_s = f.read()
         f.close()
