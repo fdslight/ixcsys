@@ -32,7 +32,7 @@ class armcpu_info(object):
             s = s.replace("\n", "")
             s = s.replace("\r", "")
 
-            z = int(s)
+            z = int(s,16)
 
             _dict[cpu_no] = z
 
