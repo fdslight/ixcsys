@@ -76,22 +76,20 @@ class armcpu_info(object):
             if vendor_name not in results:
                 results[vendor_name] = []
 
-            dic = results[vendor_name]
             if part_number not in CPU_PART_NUMBER_MAP:
                 part_name = "unkown"
             else:
                 part_name = CPU_PART_NUMBER_MAP[part_number]
 
-
-            dic["vendor_id"] = vendor_id
-            dic["variant"] = variant
-            dic["arch"] = arch
-            dic["part_number"] = part_number
-            dic["revision"] = revision
-
-            dic["vendor_name"] = vendor_name
-            dic["part_name"] = part_name
-
+            dic = {
+                "vendor_id": vendor_id,
+                "variant": variant,
+                "arch": arch,
+                "part_number": part_number,
+                "revision": revision,
+                "vendor_name": vendor_name,
+                "part_name": part_name
+            }
             results[vendor_name].append(dic)
 
         print(results)
