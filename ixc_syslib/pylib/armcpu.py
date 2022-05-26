@@ -30,6 +30,7 @@ CPU_PART_NUMBER_MAP = {
     0xd0a: "Cortex-A75",
     0xd0b: "Cortex-A76",
     0xd0d: "Cortex-A77",
+    0xd44: "Cortex-X1",
     0xd47: "Cortex-A710",
     0xd4b: "Cortex-A78C",
 }
