@@ -32,7 +32,6 @@ class armcpu_info(object):
             s = s.replace("\n", "")
             s = s.replace("\r", "")
 
-            print(s)
             z = int(s, 16)
 
             results.append((cpu_no, z,))
@@ -41,11 +40,11 @@ class armcpu_info(object):
 
     def get_cpu_model(self, cpu_midr_list: list):
         for cpu_no, midr_reg in cpu_midr_list:
-            vendor_id = (cpu_no & 0xff000000) >> 24
-            variant = (cpu_no & 0xf00000) >> 16
-            arch = (cpu_no & 0x0f0000) >> 16
-            part_number = (cpu_no & 0xfff0) >> 4
-            revision = cpu_no & 0x0f
+            vendor_id = (midr_reg & 0xff000000) >> 24
+            variant = (midr_reg & 0xf00000) >> 16
+            arch = (midr_reg & 0x0f0000) >> 16
+            part_number = (midr_reg & 0xfff0) >> 4
+            revision = midr_reg & 0x0f
 
             print(hex(midr_reg),hex(vendor_id),hex(variant),hex(arch),hex(part_number),hex(revision))
 
