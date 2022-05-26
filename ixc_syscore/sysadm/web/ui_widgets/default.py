@@ -63,7 +63,7 @@ class widget(ui_widget.widget):
                 _list.append("x%s" % dic[part_name])
                 _list.append(",")
             ''''''
-        return " ".join(_list)
+        return " ".join(_list[0:-1])
 
     def get_host_available_mem(self):
         """获取主机可用内存
