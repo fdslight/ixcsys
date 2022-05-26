@@ -32,6 +32,7 @@ class armcpu_info(object):
             s = s.replace("\n", "")
             s = s.replace("\r", "")
 
+            print(s)
             z = int(s, 16)
 
             results.append((cpu_no, z,))
