@@ -3,6 +3,27 @@
 """
 import os
 
+CPU_VENDOR_ID_MAP = {
+    0x41: "ARM",
+    0x42: "Broadcom",
+    0x43: "Cavium",
+    0x44: "DigitalEquipment",
+    0x48: "HiSilicon",
+    0x49: "Infineon",
+    0x4D: "Freescale",
+    0x4E: "NVIDIA",
+    0x50: "APM",
+    0x51: "Qualcomm",
+    0x56: "Marvell",
+    0x69: "Intel"
+}
+
+CPU_PART_NUMBER_MAP = {
+    0xd03: "Cortex-A53",
+    0xd07: "Cortex-A57",
+    0xd08: "Cortex-A72"
+}
+
 
 class armcpu_info(object):
     __BASE_DIR = None
@@ -39,6 +60,7 @@ class armcpu_info(object):
         return results
 
     def get_cpu_model(self, cpu_midr_list: list):
+        results = {}
         for cpu_no, midr_reg in cpu_midr_list:
             vendor_id = (midr_reg & 0xff000000) >> 24
             variant = (midr_reg & 0xf00000) >> 16
@@ -46,7 +68,31 @@ class armcpu_info(object):
             part_number = (midr_reg & 0xfff0) >> 4
             revision = midr_reg & 0x0f
 
-            print(hex(midr_reg),hex(vendor_id),hex(variant),hex(arch),hex(part_number),hex(revision))
+            if vendor_id not in CPU_VENDOR_ID_MAP:
+                vendor_name = "unkown"
+            else:
+                vendor_name = CPU_VENDOR_ID_MAP[vendor_id]
+
+            if vendor_name not in results:
+                results[vendor_name] = {}
+
+            dic = results[vendor_name]
+            if part_number not in CPU_PART_NUMBER_MAP:
+                part_name = "unkown"
+            else:
+                part_name = CPU_PART_NUMBER_MAP[part_number]
+
+            dic["vendor_id"] = vendor_id
+            dic["variant"] = variant
+            dic["arch"] = arch
+            dic["part_number"] = part_number
+            dic["revision"] = revision
+
+            dic["vendor_name"] = vendor_name
+            dic["part_name"] = part_name
+
+        print(results)
+
 
     def cpu_info_get(self):
         midr_list = self.get_cpu_midr()
