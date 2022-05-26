@@ -15,13 +15,16 @@ CPU_VENDOR_ID_MAP = {
     0x50: "APM",
     0x51: "Qualcomm",
     0x56: "Marvell",
-    0x69: "Intel"
+    0x69: "Intel",
+    0xC0: "Ampere"
 }
 
 CPU_PART_NUMBER_MAP = {
     0xd03: "Cortex-A53",
+    0xd05: "Cortex-A55",
     0xd07: "Cortex-A57",
-    0xd08: "Cortex-A72"
+    0xd08: "Cortex-A72",
+    0xd09: "Cortex-A73"
 }
 
 
