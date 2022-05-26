@@ -99,7 +99,7 @@ class widget(ui_widget.widget):
             dic["wan_ip"] = wan_ipinfo[0]
             dic["wan_prefix"] = wan_ipinfo[1]
 
-        dic["cpu_arch"] = platform.machine().upper()
+        dic["cpu_arch"] = platform.machine()
         dic["cpu_count"] = os.cpu_count()
         dic["version"] = self.read_version()
 
