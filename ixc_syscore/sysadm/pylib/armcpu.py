@@ -10,13 +10,13 @@ class armcpu_info(object):
     def __init__(self):
         self.__BASE_DIR = "/sys/devices/system/cpu"
 
-    def get_cpu_dir(self):
+    def get_cpu_midr(self):
         """获取CPU
         """
         base_dir = self.__BASE_DIR
         _list = os.listdir(base_dir)
 
-        _dict = {}
+        results = []
         for x in _list:
             if x[0:3] != "cpu": continue
             path = "%s/%s" % (base_dir, x,)
@@ -32,14 +32,26 @@ class armcpu_info(object):
             s = s.replace("\n", "")
             s = s.replace("\r", "")
 
-            z = int(s,16)
+            z = int(s, 16)
 
-            _dict[cpu_no] = z
+            results.append((cpu_no, z,))
 
-        print(_dict)
+        return results
 
-    def arm_cpu_get(self):
-        pass
+    def get_cpu_model(self, cpu_midr_list: list):
+        for cpu_no, midr_reg in cpu_midr_list:
+            vendor_id = (cpu_no & 0xff000000) >> 24
+            variant = (cpu_no & 0xf00000) >> 16
+            arch = (cpu_no & 0x0f0000) >> 16
+            part_number = (cpu_no & 0xfff0) >> 4
+            revision = cpu_no & 0x0f
 
-cls=armcpu_info()
-cls.get_cpu_dir()
+            print(hex(vendor_id),hex(variant),hex(arch),hex(part_number),hex(revision))
+
+    def cpu_info_get(self):
+        midr_list = self.get_cpu_midr()
+        self.get_cpu_model(midr_list)
+
+
+cls = armcpu_info()
+cls.cpu_info_get()
