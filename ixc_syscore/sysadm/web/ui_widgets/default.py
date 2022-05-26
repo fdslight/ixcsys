@@ -60,7 +60,8 @@ class widget(ui_widget.widget):
             dic = results[vendor_name]
             for part_name in dic:
                 _list.append(part_name)
-                _list.append("X%s" % dic[part_name])
+                _list.append("x%s" % dic[part_name])
+                _list.append(",")
             ''''''
         return " ".join(_list)
 
