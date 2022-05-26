@@ -23,8 +23,14 @@ CPU_PART_NUMBER_MAP = {
     0xd03: "Cortex-A53",
     0xd05: "Cortex-A55",
     0xd07: "Cortex-A57",
+    0xd46: "Cortex‑A510",
+
     0xd08: "Cortex-A72",
-    0xd09: "Cortex-A73"
+    0xd09: "Cortex-A73",
+    0xd0a: "Cortex-A75",
+    0xd0b: "Cortex-A76",
+    0xd47: "Cortex-A710",
+    0xd4b: "Cortex-A78C",
 }
 
 
