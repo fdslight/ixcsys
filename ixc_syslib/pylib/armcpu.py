@@ -92,12 +92,8 @@ class armcpu_info(object):
             }
             results[vendor_name].append(dic)
 
-        print(results)
+        return results
 
     def cpu_info_get(self):
         midr_list = self.get_cpu_midr()
-        self.get_cpu_model(midr_list)
-
-
-cls = armcpu_info()
-cls.cpu_info_get()
+        return self.get_cpu_model(midr_list)

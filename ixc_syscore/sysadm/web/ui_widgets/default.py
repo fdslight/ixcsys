@@ -32,11 +32,37 @@ class widget(ui_widget.widget):
     def get_host_cpu_model(self):
         """获取主机CPU型号
         """
-        fdst = os.popen("""cat /proc/cpuinfo | grep "model name" | sed -n "1p" | cut -b 14-""")
-        cpu_model = fdst.read()
-        fdst.close()
+        if platform.machine().lower() == "x86_64":
+            fdst = os.popen("""cat /proc/cpuinfo | grep "model name" | sed -n "1p" | cut -b 14-""")
+            cpu_model = fdst.read()
+            fdst.close()
 
-        return cpu_model.replace("\n", "")
+            return cpu_model.replace("\n", "")
+
+        import ixc_syslib.pylib.armcpu as armcpu
+        inst = armcpu.armcpu_info()
+        cpus_info = inst.cpu_info_get()
+
+        results = {}
+
+        for vendor_name in cpus_info:
+            if vendor_name not in results:
+                results[vendor_name] = {}
+            dic = results[vendor_name]
+            for o in cpus_info[vendor_name]:
+                if o["part_name"] not in dic:
+                    dic[o["part_name"]] = 0
+                dic[o["part_name"]] += 1
+
+        _list = []
+        for vendor_name in results:
+            _list.append(vendor_name)
+            dic = results[vendor_name]
+            for part_name in dic:
+                _list.append(part_name)
+                _list.append("X%s" % dic[part_name])
+            ''''''
+        return " ".join(_list)
 
     def get_host_available_mem(self):
         """获取主机可用内存
