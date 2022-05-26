@@ -46,7 +46,7 @@ class armcpu_info(object):
             part_number = (cpu_no & 0xfff0) >> 4
             revision = cpu_no & 0x0f
 
-            print(hex(vendor_id),hex(variant),hex(arch),hex(part_number),hex(revision))
+            print(hex(midr_reg),hex(vendor_id),hex(variant),hex(arch),hex(part_number),hex(revision))
 
     def cpu_info_get(self):
         midr_list = self.get_cpu_midr()
