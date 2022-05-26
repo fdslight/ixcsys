@@ -22,7 +22,7 @@ class armcpu_info(object):
             path = "%s/%s" % (base_dir, x,)
             if not os.path.isdir(path): continue
             try:
-                cpu_no = x[3:]
+                cpu_no = int(x[3:])
             except ValueError:
                 continue
             midr_el1_path = "%s/%s/regs/identification/midr_el1" % (base_dir, x,)
