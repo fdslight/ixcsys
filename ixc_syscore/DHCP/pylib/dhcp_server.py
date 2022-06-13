@@ -89,7 +89,6 @@ class dhcp_server(object):
 
         self.load_dhcp_cache()
         self.load_static_dhcp_rule()
-        print("AA", self.__alloc.bind["c0:3c:59:f8:ee:22"])
 
     def get_dhcp_opt_value(self, options: list, code: int):
         rs = None
@@ -211,7 +210,6 @@ class dhcp_server(object):
         if not request_list: return
         resp_opts = []
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
-        print("BB",self.__alloc.bind)
         for i in range(10):
             ipaddr = self.__alloc.get_ipaddr(s_client_hwaddr)
             if not ipaddr: continue
