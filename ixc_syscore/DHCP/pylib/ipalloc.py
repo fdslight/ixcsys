@@ -49,6 +49,7 @@ class alloc(object):
     __prefix = None
     __is_ipv6 = None
     __subnet = None
+    __count = 0
 
     def __init__(self, addr_begin: str, addr_end: str, subnet: str, prefix: int, is_ipv6=False):
         self.__bind = {}
@@ -70,7 +71,9 @@ class alloc(object):
         :param hwaddr,硬件地址
         :param ipaddr,IP地址
         """
-        if hwaddr=="c0:3c:59:f8:ee:22" and ipaddr!="192.168.2.201":raise SystemError
+        if hwaddr == "c0:3c:59:f8:ee:22" and ipaddr != "192.168.2.201":
+            if self.__count != 0: raise SystemError
+            self.__count += 1
         self.__bind[hwaddr] = ipaddr
 
     def unbind_ipaddr(self, hwaddr: str):
