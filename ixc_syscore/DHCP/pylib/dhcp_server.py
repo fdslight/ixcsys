@@ -87,6 +87,7 @@ class dhcp_server(object):
             7: pub_configs.get("x64_efi_boot_file", None),
         }
 
+        # 这里两个函数调用不能搞错顺序,先加载缓存,如果存在冲突那么静态规则优先
         self.load_dhcp_cache()
         self.load_static_dhcp_rule()
 
