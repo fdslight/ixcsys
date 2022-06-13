@@ -211,10 +211,9 @@ class dhcp_server(object):
         if not request_list: return
         resp_opts = []
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
-
+        print("BB",self.__alloc.bind)
         for i in range(10):
             ipaddr = self.__alloc.get_ipaddr(s_client_hwaddr)
-            print(s_client_hwaddr, ipaddr)
             if not ipaddr: continue
             if ipaddr in self.__used_ips: continue
             break
@@ -291,7 +290,6 @@ class dhcp_server(object):
 
         if not request_list: request_list = b""
         resp_opts = []
-        print("XX",request_ip)
         if not request_ip: return
         # 检查是否是本机器的DHCP请求
         # if server_id != self.__my_ipaddr: return
