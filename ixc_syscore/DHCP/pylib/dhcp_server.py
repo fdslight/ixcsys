@@ -88,7 +88,9 @@ class dhcp_server(object):
         }
 
         self.load_dhcp_cache()
+        print(self.__alloc.bind)
         self.load_static_dhcp_rule()
+        print(self.__alloc.bind)
 
     def get_dhcp_opt_value(self, options: list, code: int):
         rs = None
@@ -216,9 +218,6 @@ class dhcp_server(object):
             if not ipaddr: continue
             if ipaddr in self.__used_ips: continue
             break
-
-        print(self.__alloc.bind)
-        print(ipaddr)
 
         if not ipaddr: return
         if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
