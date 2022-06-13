@@ -2,6 +2,7 @@
 import socket, struct, time, pickle, os
 
 import pywind.lib.netutils as netutils
+import pywind.lib.configfile as cfg
 
 import ixc_syscore.DHCP.pylib.dhcp as dhcp
 import ixc_syscore.DHCP.pylib.ipalloc as ipalloc
@@ -87,6 +88,7 @@ class dhcp_server(object):
         }
 
         self.load_dhcp_cache()
+        self.load_static_dhcp_rule()
 
     def get_dhcp_opt_value(self, options: list, code: int):
         rs = None
@@ -166,7 +168,7 @@ class dhcp_server(object):
         resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
 
         # DHCP server分配的DNS地址就是路由器自身的管理地址
-        if 138 not in self.__dhcp_options and self.is_from_request_list(138,request_list):
+        if 138 not in self.__dhcp_options and self.is_from_request_list(138, request_list):
             resp_opts.append((138, self.__dns_bytes))
 
         return resp_opts
@@ -531,3 +533,13 @@ class dhcp_server(object):
             if code in self.__dhcp_options: del self.__dhcp_options[code]
             return
         self.__dhcp_options[code] = value
+
+    def load_static_dhcp_rule(self):
+        path = "%s/ip_bind.ini" % self.__runtime.conf_dir
+        if not os.path.isfile(path): return
+        conf = cfg.ini_parse_from_file(path)
+        for name in conf:
+            _dict = conf[name]
+            hwaddr = _dict["hwaddr"]
+            ipaddr = _dict["address"]
+            self.__alloc.bind_ipaddr(hwaddr.lower(), ipaddr)
