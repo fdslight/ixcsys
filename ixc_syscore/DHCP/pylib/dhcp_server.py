@@ -217,6 +217,7 @@ class dhcp_server(object):
             if ipaddr in self.__used_ips: continue
             break
 
+        print(self.__alloc.bind)
         print(ipaddr)
 
         if not ipaddr: return
