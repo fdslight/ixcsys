@@ -537,6 +537,7 @@ class dhcp_server(object):
     def load_static_dhcp_rule(self):
         path = "%s/ip_bind.ini" % self.__runtime.conf_dir
         if not os.path.isfile(path): return
+        print(path)
         conf = cfg.ini_parse_from_file(path)
         for name in conf:
             _dict = conf[name]
