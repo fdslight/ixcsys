@@ -218,7 +218,7 @@ class dhcp_server(object):
             if not ipaddr: continue
             if ipaddr in self.__used_ips: continue
             break
-
+        print(self.__alloc.bind)
         if not ipaddr: return
         if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
 
