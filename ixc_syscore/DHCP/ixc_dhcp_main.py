@@ -243,7 +243,6 @@ class service(dispatcher.dispatcher):
                                         self.__rand_key, port)
         if not ok: raise SystemError(message)
 
-        self.__dhcp_server.load_dhcp_cache()
         self.__dhcp_server.set_timeout(lease_time)
         self.start_tftp()
 
