@@ -454,20 +454,10 @@ class dhcp_server(object):
             is_changed = True
         if is_changed: return
 
-        ip_bind = self.__runtime.dhcp_ip_bind
-        binds = {}
-        for name in ip_bind:
-            info = ip_bind[name]
-            hwaddr = info["hwaddr"]
-            address = info["address"]
-            binds[hwaddr] = address
-
         for hwaddr in bind:
-            if hwaddr not in binds:
-                self.__tmp_alloc_addrs[hwaddr] = {"time": time.time(), "ip": bind[hwaddr],
-                                                  "neg_ok": False, "host_name": b""}
+            self.__tmp_alloc_addrs[hwaddr] = {"time": time.time(), "ip": bind[hwaddr],
+                                              "neg_ok": False, "host_name": b""}
             self.__alloc.bind_ipaddr(hwaddr, bind[hwaddr])
-        self.__ip_binds = binds
 
     def loop(self):
         t = time.time()
@@ -533,11 +523,13 @@ class dhcp_server(object):
         self.__dhcp_options[code] = value
 
     def load_static_dhcp_rule(self):
-        path = "%s/ip_bind.ini" % self.__runtime.conf_dir
+        path = self.__runtime.dhcp_ip_bind_conf_path
         if not os.path.isfile(path): return
         conf = cfg.ini_parse_from_file(path)
         for name in conf:
             _dict = conf[name]
             hwaddr = _dict["hwaddr"]
             ipaddr = _dict["address"]
+
             self.__alloc.bind_ipaddr(hwaddr.lower(), ipaddr)
+            self.__ip_binds[hwaddr] = ipaddr
