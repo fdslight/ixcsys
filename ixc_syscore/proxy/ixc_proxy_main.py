@@ -3,6 +3,7 @@
 import sys, os, signal, time, importlib, struct, socket, json
 import dns.resolver
 
+### 启pyjoin JIT加速
 try:
     import pyjion
     pyjion.enable()
