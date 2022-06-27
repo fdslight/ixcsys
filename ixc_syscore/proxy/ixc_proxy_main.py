@@ -498,7 +498,7 @@ class service(dispatcher.dispatcher):
     def manage_addr(self):
         return self.__manage_addr
 
-    def handle_msg_from_local(self, message: bytes,is_g_ip6_tunnel=False):
+    def handle_msg_from_local(self, message: bytes):
         version = (message[0] & 0xf0) >> 4
         if version not in (4, 6,): return
 
