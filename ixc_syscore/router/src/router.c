@@ -418,6 +418,17 @@ router_route_ipv6_pass_enable(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_route_ip6_tunnel_enable(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+
+    ixc_route_ip6_tunnel_enable(enable);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 router_pppoe_enable(PyObject *self,PyObject *args)
 {
     int status;
@@ -782,6 +793,7 @@ static PyMethodDef routerMethods[]={
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
     {"route_ipv6_pass_enable",(PyCFunction)router_route_ipv6_pass_enable,METH_VARARGS,"enable/disable IPv6 pass"},
+    {"route_ip6_tunnel_enable",(PyCFunction)router_route_ip6_tunnel_enable,METH_VARARGS,"enable/disable IPv6 global tunnel"},
     //
     {"pppoe_enable",(PyCFunction)router_pppoe_enable,METH_VARARGS,"enable or disable pppoe"},
     {"pppoe_is_enabled",(PyCFunction)router_pppoe_is_enabled,METH_NOARGS,"check pppoe is enabled"},
@@ -863,6 +875,7 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
     PyModule_AddIntMacro(m,IXC_FLAG_VSWITCH);
+    PyModule_AddIntMacro(m,IXC_FLAG_IP6_TUNNEL);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //

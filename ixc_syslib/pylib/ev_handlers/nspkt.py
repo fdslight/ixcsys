@@ -9,7 +9,7 @@ class nspkt_handler(udp_handler.udp_handler):
     __id = None
     __server_port = None
 
-    def init_func(self, creator_fd):
+    def init_func(self, creator_fd, *args, **kwargs):
         self.__server_port = -1
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -19,7 +19,14 @@ class nspkt_handler(udp_handler.udp_handler):
         self.register(self.fileno)
         self.add_evt_read(self.fileno)
 
+        self.my_init(*args, **kwargs)
+
         return self.fileno
+
+    def my_init(self, *args, **kwargs):
+        """重写这个方法
+        """
+        pass
 
     def udp_readable(self, message, address):
         if address[0] != "127.0.0.1": return

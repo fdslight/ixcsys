@@ -1,4 +1,4 @@
-# !/usr/bin/env python3
+#!/usr/bin/env python3
 import json
 import pickle, os, socket, sys, hashlib
 import traceback
@@ -10,7 +10,6 @@ import ixc_syscore.router.pylib.pppoe as pppoe
 import ixc_syslib.pylib.RPCClient as RPC
 import pywind.lib.netutils as netutils
 import pywind.lib.configfile as conf
-
 
 class rpc(object):
     __fn_objects = None
@@ -99,6 +98,7 @@ class rpc(object):
             "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
             "IXC_FLAG_VSWITCH": router.IXC_FLAG_VSWITCH,
+            "IXC_FLAG_IP6_TUNNEL": router.IXC_FLAG_IP6_TUNNEL,
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
@@ -246,6 +246,11 @@ class rpc(object):
         self.__helper.router.route_del(byte_subnet, prefix, is_ipv6)
 
         return 0, (True, "")
+
+    def ip6_tunnel_enable(self, enable: bool):
+        self.__helper.router.route_ip6_tunnel_enable(enable)
+
+        return 0, None
 
     def pppoe_is_enabled(self):
         is_enabled = self.__helper.router.pppoe_is_enabled()

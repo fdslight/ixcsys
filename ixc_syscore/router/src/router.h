@@ -16,6 +16,8 @@
 #define IXC_FLAG_ROUTE_FWD 4
 /// 表示是一个vswitch数据包
 #define IXC_FLAG_VSWITCH 5
+/// IPv6隧道
+#define IXC_FLAG_IP6_TUNNEL 6
 
 #include<sys/types.h>
 

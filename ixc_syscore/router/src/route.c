@@ -23,6 +23,7 @@ static struct ixc_route route;
 static int route_is_initialized=0;
 static struct time_wheel route_cache_tw;
 static struct sysloop *route_sysloop=NULL;
+static int ip6_tunnel_enable=0;
 
 static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
 {
@@ -599,7 +600,8 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
             ixc_npfwd_send_raw(m,header->next_header,IXC_FLAG_ROUTE_FWD);
             return;
         }else{
-            netif=r->netif;
+            if(ip6_tunnel_enable) ixc_npfwd_send_raw(m,header->next_header,IXC_FLAG_IP6_TUNNEL);
+            else netif=r->netif;
         }
     }else{
         // 检查IPv6安全,注意需要在路由查找代码后面
@@ -742,5 +744,11 @@ int ixc_route_ipv6_pass_enable(int enable)
 {
     route.ipv6_pass=enable;
 
+    return 0;
+}
+
+int ixc_route_ip6_tunnel_enable(int enable)
+{
+    ip6_tunnel_enable=enable;
     return 0;
 }
