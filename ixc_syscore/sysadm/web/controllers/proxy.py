@@ -35,7 +35,7 @@ class controller(base_controller.BaseController):
         if not is_ok:
             err_msg = "规则错误,发生在 " + err_msg
 
-        self.json_resp(is_ok, err_msg)
+        self.json_resp(not is_ok, err_msg)
 
     def handle_conn(self):
         kv_map = {
