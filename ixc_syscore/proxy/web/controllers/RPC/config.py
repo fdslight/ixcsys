@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from pywind.global_vars import global_vars
-
+import pywind.lib.netutils as netutils
 import ixc_syslib.web.controllers.rpc_controller as rpc
 import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syscore.proxy.pylib.crypto.utils as crypto_utils
@@ -48,17 +48,67 @@ class controller(rpc.controller):
         return 0, {}
 
     def dns_rule_update(self, text: str):
+        is_ok, err_msg = self.__check_dns_rule(text)
+        if not is_ok:
+            return 0, (is_ok, err_msg,)
         self.__runtime.update_domain_rule(text)
-        return 0, None
+        return 0, (True, None,)
+
+    def __check_ip_rule(self, text: str):
+        _list = text.split("\n")
+        for s in _list:
+            s = s.replace("\r")
+            s = s.strip()
+            if not s: continue
+            if s[0] == "#": continue
+            if s.find("/") < 1:
+                return False, s
+            try:
+                subnet, prefix = netutils.parse_ip_with_prefix(s)
+            except:
+                return False, s
+            if not netutils.check_ipaddr(subnet, prefix, is_ipv6=False) and not netutils.check_ipaddr(subnet, prefix,
+                                                                                                      is_ipv6=True):
+                return False, s
+
+        return True, None
+
+    def __check_dns_rule(self, text: str):
+        _list = text.split("\n")
+        for s in _list:
+            s = s.replace("\r")
+            s = s.strip()
+            if not s: continue
+            if s[0] == "#": continue
+            p = s.find(":")
+            if p < 1:
+                return False, s
+            host = s[0:p]
+            p += 1
+            try:
+                action = s[p:]
+            except ValueError:
+                return False, s
+            if action not in (0, 1, 2,):
+                return False, s
+
+        return True, None
 
     def pass_ip_rule_update(self, text: str):
+        is_ok, err_msg = self.__check_ip_rule(text)
+        if not is_ok:
+            return 0, (is_ok, err_msg,)
+
         self.__runtime.update_pass_ip_rule(text)
-        return 0, None
+        return 0, (True, None)
 
     def proxy_ip_rule_update(self, text: str):
+        is_ok, err_msg = self.__check_ip_rule(text)
+        if not is_ok:
+            return 0, (is_ok, err_msg,)
         self.__runtime.update_proxy_ip_rule(text)
 
-        return 0, None
+        return 0, (True, None)
 
     def conn_cfg_update(self, dic: dict):
         self.__runtime.conn_cfg_update(dic)

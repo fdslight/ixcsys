@@ -30,9 +30,12 @@ class controller(base_controller.BaseController):
         else:
             fn = "pass_ip_rule_update"
 
-        RPC.fn_call("proxy", "/config", fn, text)
+        is_ok, err_msg = RPC.fn_call("proxy", "/config", fn, text)
 
-        self.json_resp(False, {})
+        if not is_ok:
+            err_msg = "规则错误,发生在 " + err_msg
+
+        self.json_resp(is_ok, err_msg)
 
     def handle_conn(self):
         kv_map = {
