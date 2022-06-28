@@ -590,7 +590,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     }
     //DBG_FLAGS;
     if(NULL!=r){
-        // 检查TTL
+        STDERR("-----------------%d \r\n",header->hop_limit);
         if(header->hop_limit<=1){
             ixc_icmpv6_send_time_ex_msg(netif,m->src_hwaddr,header->src_addr,0,header,m->tail-m->offset);
             ixc_mbuf_put(m);
