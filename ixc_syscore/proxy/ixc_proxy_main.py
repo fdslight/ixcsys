@@ -872,7 +872,9 @@ class service(dispatcher.dispatcher):
             del self.__routes[host]
         else:
             name = "%s/%s" % (host, prefix,)
-            del self.__static_routes[name]
+            if name in self.__static_routes:
+                del self.__static_routes[name]
+            ''''''
 
     def __update_route_access(self, host, timeout=None):
         """更新路由访问时间
