@@ -590,6 +590,12 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     }
     //DBG_FLAGS;
     if(NULL!=r){
+        // 检查TTL
+        if(header->hop_limit<=1){
+            ixc_icmpv6_send_time_ex_msg(netif,m->src_hwaddr,header->src_addr,0,header,m->tail-m->offset);
+            ixc_mbuf_put(m);
+            return;
+        }
         // 如果没有网卡,那么发送到其他应用
         if(NULL==r->netif){
             IXC_PRINT_IP6("Send to app for ipv6 address ",header->dst_addr);
@@ -600,8 +606,12 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
             ixc_npfwd_send_raw(m,header->next_header,IXC_FLAG_ROUTE_FWD);
             return;
         }else{
-            if(ip6_tunnel_enable) ixc_npfwd_send_raw(m,header->next_header,IXC_FLAG_IP6_TUNNEL);
-            else netif=r->netif;
+            if(ip6_tunnel_enable){
+                ixc_npfwd_send_raw(m,header->next_header,IXC_FLAG_IP6_TUNNEL);
+                return;
+            }else{
+                netif=r->netif;
+            }
         }
     }else{
         // 检查IPv6安全,注意需要在路由查找代码后面
