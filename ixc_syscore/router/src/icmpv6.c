@@ -560,7 +560,7 @@ void ixc_icmpv6_send_time_ex_msg(struct ixc_netif *netif,unsigned char *dst_hwad
     unsigned char buf[0xffff];
     struct netutil_icmpv6hdr *icmpv6_header=(struct netutil_icmpv6hdr *)buf;
 
-    if(data_size>0xff00) data_size=0xff00;
+    if(data_size>1200) data_size=1200;
 
     icmpv6_header->type=3;
     icmpv6_header->code=code;
