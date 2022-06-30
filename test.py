@@ -48,7 +48,29 @@ for i in range(10000000):
         pass
 s.close()
 """
-cmd = "free -m | grep Mem | awk '{print $7}'"
-with os.popen(cmd) as f: mem = f.read()
-f.close()
-print(mem.encode())
+
+def check_ip_rule(text: str):
+    import pywind.lib.netutils as netutils
+    _list = text.split("\n")
+    for s in _list:
+        s = s.replace("\r", "")
+        s = s.strip()
+        if not s: continue
+        if s[0] == "#": continue
+        if s.find("/") < 1:
+            return False, s
+        try:
+            subnet, prefix = netutils.parse_ip_with_prefix(s)
+        except:
+            return False, s
+        if not netutils.check_ipaddr(subnet, prefix, is_ipv6=False) and not netutils.check_ipaddr(subnet, prefix,
+                                                                                                  is_ipv6=True):
+            return False, s
+
+    return True, None
+
+fdst=open("ixc_configs/proxy/pass_ip.txt","r")
+text=fdst.read()
+fdst.close()
+
+print(check_ip_rule(text))

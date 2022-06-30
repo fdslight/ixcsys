@@ -48,11 +48,9 @@ class controller(rpc.controller):
         return 0, {}
 
     def dns_rule_update(self, text: str):
-        """
         is_ok, err_msg = self.__check_dns_rule(text)
         if not is_ok:
             return 0, (is_ok, err_msg,)
-        """
         self.__runtime.update_domain_rule(text)
         return 0, (True, None,)
 
@@ -97,22 +95,17 @@ class controller(rpc.controller):
         return True, None
 
     def pass_ip_rule_update(self, text: str):
-        """
         is_ok, err_msg = self.__check_ip_rule(text)
         if not is_ok:
             return 0, (is_ok, err_msg,)
-        """
 
         self.__runtime.update_pass_ip_rule(text)
         return 0, (True, None)
 
     def proxy_ip_rule_update(self, text: str):
-        """
         is_ok, err_msg = self.__check_ip_rule(text)
         if not is_ok:
             return 0, (is_ok, err_msg,)
-        """
-
         self.__runtime.update_proxy_ip_rule(text)
 
         return 0, (True, None)
