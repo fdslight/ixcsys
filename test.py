@@ -49,28 +49,30 @@ for i in range(10000000):
 s.close()
 """
 
-def check_ip_rule(text: str):
-    import pywind.lib.netutils as netutils
+
+def check_dns_rule(text: str):
     _list = text.split("\n")
     for s in _list:
         s = s.replace("\r", "")
         s = s.strip()
         if not s: continue
         if s[0] == "#": continue
-        if s.find("/") < 1:
+        p = s.find(":")
+        if p < 1:
             return False, s
+        host = s[0:p].strip()
+        p += 1
         try:
-            subnet, prefix = netutils.parse_ip_with_prefix(s)
-        except:
+            action = int(s[p:].strip())
+        except ValueError:
             return False, s
-        if not netutils.check_ipaddr(subnet, prefix, is_ipv6=False) and not netutils.check_ipaddr(subnet, prefix,
-                                                                                                  is_ipv6=True):
+        if action not in (0, 1, 2,):
             return False, s
 
     return True, None
 
-fdst=open("ixc_configs/proxy/pass_ip.txt","r")
+fdst=open("ixc_configs/proxy/proxy_domain.txt","r")
 text=fdst.read()
 fdst.close()
 
-print(check_ip_rule(text))
+print(check_dns_rule(text))

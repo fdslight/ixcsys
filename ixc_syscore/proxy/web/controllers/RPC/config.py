@@ -86,7 +86,7 @@ class controller(rpc.controller):
             host = s[0:p].strip()
             p += 1
             try:
-                action = s[p:].strip()
+                action = int(s[p:].strip())
             except ValueError:
                 return False, s
             if action not in (0, 1, 2,):
