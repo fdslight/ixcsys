@@ -108,6 +108,10 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
     offset=frag_info & 0x1fff;
     mf=frag_info & 0x2000;
 
+    memcpy(&key[0],header->src_addr,4);
+    memcpy(&key[4],header->dst_addr,4);
+    memcpy(&key[8],(char *)(&(header->id)),2);
+
     // 限制大小,避免缓冲区溢出
     if(offset * 8 > 0xff00){
         map_del(ipunfrag.m,key,ixc_ipunfrag_map_del_cb);
@@ -115,10 +119,6 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
         return NULL;
     }
     
-    memcpy(&key[0],header->src_addr,4);
-    memcpy(&key[4],header->dst_addr,4);
-    memcpy(&key[8],(char *)(&(header->id)),2);
-
     // 如果不是第一个分包检查key是否存在
     if(offset!=0){
         //DBG_FLAGS;
