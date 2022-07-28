@@ -6,7 +6,6 @@
 #include "route.h"
 #include "addr_map.h"
 #include "debug.h"
-#include "netif.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -16,11 +15,29 @@ static int ixc_qos_is_initialized = 0;
 static struct sysloop *qos_sysloop=NULL;
 /// 包数目
 static unsigned long long qos_pkt_num=0;
+/// 上一次的数据包数目
+static unsigned long long qos_pkt_num_last=0;
 
 static void ixc_qos_sysloop_cb(struct sysloop *lp)
 {
-    
-    while(ixc_netif_wan_sendable() && ixc_qos_have_data()) ixc_qos_pop();
+    unsigned long long v,z;
+
+    if(!ixc_qos_have_data()) return;
+
+    v=qos_pkt_num-qos_pkt_num_last;
+    // 首先弹出数据包
+    ixc_qos_pop();
+
+    // 如果弹出的数据包数量不足,继续弹出一定数量的数据包,避免堆积
+    // 默认保存0xff个数据包
+    while(v>0xff){
+        // 减少之后的数据包数量
+        z=qos_pkt_num-(v-0xff);
+        while(z>qos_pkt_num) ixc_qos_pop();
+    }
+    qos_pkt_num_last=qos_pkt_num;
+
+    //while(ixc_netif_wan_sendable() && ixc_qos_have_data()) ixc_qos_pop();
 }
 
 inline static int ixc_qos_calc_slot(unsigned char a, unsigned char b, unsigned char c,unsigned char d)
@@ -113,8 +130,11 @@ int ixc_qos_init(void)
 {
     struct ixc_qos_slot *slot;
     bzero(&ixc_qos, sizeof(struct ixc_qos));
+
     ixc_qos_is_initialized = 1;
+
     qos_pkt_num=0;
+    qos_pkt_num_last=0;
 
     for (int n = 0; n < IXC_QOS_SLOT_NUM; n++){
         slot = malloc(sizeof(struct ixc_qos_slot));
