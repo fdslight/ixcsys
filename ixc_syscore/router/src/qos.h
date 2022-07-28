@@ -41,7 +41,5 @@ int ixc_qos_have_data(void);
 int ixc_qos_tunnel_addr_first_set(unsigned char *addr,int is_ipv6);
 /// 取消隧道地址优先
 void ixc_qos_tunnel_addr_first_unset(void);
-/// 返回QOS数据包数目
-unsigned long long ixc_qos_pkt_num(void);
 
 #endif

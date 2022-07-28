@@ -6,6 +6,7 @@
 #include "route.h"
 #include "addr_map.h"
 #include "debug.h"
+#include "netif.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -13,31 +14,10 @@
 static struct ixc_qos ixc_qos;
 static int ixc_qos_is_initialized = 0;
 static struct sysloop *qos_sysloop=NULL;
-/// 包数目
-static unsigned long long qos_pkt_num=0;
-/// 上一次的数据包数目
-static unsigned long long qos_pkt_num_last=0;
 
 static void ixc_qos_sysloop_cb(struct sysloop *lp)
 {
-    unsigned long long v,z;
-
-    if(!ixc_qos_have_data()) return;
-
-    v=qos_pkt_num-qos_pkt_num_last;
-    // 首先弹出数据包
-    ixc_qos_pop();
-
-    // 如果弹出的数据包数量不足,继续弹出一定数量的数据包,避免堆积
-    // 默认保存1024个数据包
-    if(v>512){
-        // 减少之后的数据包数量
-        z=qos_pkt_num-(v-512);
-        while(z>qos_pkt_num) ixc_qos_pop();
-    }
-    qos_pkt_num_last=qos_pkt_num;
-
-    //while(ixc_netif_wan_sendable() && ixc_qos_have_data()) ixc_qos_pop();
+    while(ixc_netif_wan_sendable() && ixc_qos_have_data()) ixc_qos_pop();
 }
 
 inline static int ixc_qos_calc_slot(unsigned char a, unsigned char b, unsigned char c,unsigned char d)
@@ -57,9 +37,6 @@ static void ixc_qos_put(struct ixc_mbuf *m,unsigned char a,unsigned char b,unsig
     slot_no=ixc_qos_calc_slot(a,b,c,d);
     slot_obj=ixc_qos.slot_objs[slot_no];
 
-    // 包的数目增加1
-    qos_pkt_num+=1;
-
     if(!slot_obj->is_used){
         slot_obj->is_used=1;
         slot_obj->mbuf_first=m;
@@ -76,8 +53,6 @@ static void ixc_qos_put(struct ixc_mbuf *m,unsigned char a,unsigned char b,unsig
 
 static void ixc_qos_send_to_next(struct ixc_mbuf *m)
 {
-    qos_pkt_num-=1;
-
     if(IXC_MBUF_FROM_LAN==m->from){
         //DBG_FLAGS;
         if(m->is_ipv6) ixc_addr_map_handle(m);
@@ -132,9 +107,6 @@ int ixc_qos_init(void)
     bzero(&ixc_qos, sizeof(struct ixc_qos));
 
     ixc_qos_is_initialized = 1;
-
-    qos_pkt_num=0;
-    qos_pkt_num_last=0;
 
     for (int n = 0; n < IXC_QOS_SLOT_NUM; n++){
         slot = malloc(sizeof(struct ixc_qos_slot));
@@ -249,10 +221,4 @@ int ixc_qos_tunnel_addr_first_set(unsigned char *addr,int is_ipv6)
 void ixc_qos_tunnel_addr_first_unset(void)
 {
     ixc_qos.tunnel_isset=0;
-}
-
-inline
-unsigned long long ixc_qos_pkt_num(void)
-{
-    return qos_pkt_num;
 }
