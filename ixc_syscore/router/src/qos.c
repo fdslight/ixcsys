@@ -29,10 +29,10 @@ static void ixc_qos_sysloop_cb(struct sysloop *lp)
     ixc_qos_pop();
 
     // 如果弹出的数据包数量不足,继续弹出一定数量的数据包,避免堆积
-    // 默认保存0xff个数据包
-    if(v>0xff){
+    // 默认保存1024个数据包
+    if(v>512){
         // 减少之后的数据包数量
-        z=qos_pkt_num-(v-0xff);
+        z=qos_pkt_num-(v-512);
         while(z>qos_pkt_num) ixc_qos_pop();
     }
     qos_pkt_num_last=qos_pkt_num;
