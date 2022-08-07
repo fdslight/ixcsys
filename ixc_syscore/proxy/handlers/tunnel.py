@@ -266,7 +266,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             self.add_evt_write(self.fileno)
         except ssl.SSLZeroReturnError:
             self.delete_handler(self.fileno)
-            logging.print_general("SSL handshake fail")
+            logging.print_general("SSL handshake fail", self.__server_address)
         except:
             logging.print_error()
             self.delete_handler(self.fileno)
