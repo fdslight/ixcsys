@@ -194,7 +194,6 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         if self.__over_https:
             self.do_ssl_handshake()
 
-
     def evt_read(self):
         if not self.is_conn_ok():
             super().evt_read()
@@ -265,6 +264,9 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             self.add_evt_read(self.fileno)
         except ssl.SSLWantWriteError:
             self.add_evt_write(self.fileno)
+        except ssl.SSLZeroReturnError:
+            self.delete_handler(self.fileno)
+            logging.print_general("SSL handshake fail")
         except:
             logging.print_error()
             self.delete_handler(self.fileno)
