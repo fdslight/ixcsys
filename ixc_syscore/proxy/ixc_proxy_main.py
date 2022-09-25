@@ -3,13 +3,6 @@
 import sys, os, signal, time, importlib, struct, socket, json
 import dns.resolver
 
-### 启pyjoin JIT加速
-try:
-    import pyjion
-    pyjion.enable()
-except ImportError:
-    pass
-
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
 if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MYAPP_TMP_DIR"))
