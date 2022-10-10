@@ -4,11 +4,11 @@ import sys, os, signal, time, importlib, struct, socket, json
 import dns.resolver
 
 ### 启pyjoin JIT加速
-try:
-    import pyjion
-    pyjion.enable()
-except ImportError:
-    pass
+#try:
+#    import pyjion
+#    pyjion.enable()
+#except ImportError:
+#    pass
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
