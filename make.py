@@ -108,7 +108,7 @@ def __build(build_name, args: list):
         d = ""
 
     cflags = " ".join([d, include, libdir, lib, ])
-    cflags = cflags + " " + "".join(args[1:])
+    cflags = cflags + " " + "".join(args[0:])
 
     abspath = os.path.abspath(__file__)
 

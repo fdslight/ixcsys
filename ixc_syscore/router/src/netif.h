@@ -1,26 +1,17 @@
 #ifndef IXC_NETIF_H
 #define IXC_NETIF_H
 
-#if IXC_NETMAP_ENABLE
-#define NETMAP_WITH_LIBS
-#include<net/netmap_user.h>
-#endif
-
 #include "mbuf.h"
 
 #include "../../../pywind/clib/ev/ev.h"
 
 #define IXC_NETIF_READ_NUM 64
-#define IXC_NETIF_MAX 3
+#define IXC_NETIF_MAX 2
 
 #define IXC_NETIF_LAN 0
 #define IXC_NETIF_WAN 1
-#define IXC_NETIF_TUN 2
 
 struct ixc_netif{
-#if IXC_NETMAP_ENABLE
-    struct netmap_desc *nm_desc;
-#endif
     struct ixc_mbuf *sent_first;
     struct ixc_mbuf *sent_last;
     char devname[512];

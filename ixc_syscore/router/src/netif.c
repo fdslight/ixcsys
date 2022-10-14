@@ -19,25 +19,9 @@
 #include "../../../pywind/clib/netif/hwinfo.h"
 #include "../../../pywind/clib/netutils.h"
 
-
-
 static struct ixc_netif netif_objs[IXC_NETIF_MAX];
 static struct ev_set *netif_ev_set;
 static int netif_is_initialized=0;
-
-#if IXC_NETMAP_ENABLE
-
-static int ixc_netmap_create(const char *devname,int if_idx)
-{
-    struct ixc_netif *netif=&netif_objs[if_idx];
-    char nm_devname[512];
-    strcpy(nm_devname,"netmap:");
-    strcat(nm_devname,devname);
-
-    return 0;
-}
-
-#endif
 
 static int ixc_netif_readable_fn(struct ev *ev)
 {
