@@ -1,6 +1,12 @@
 #ifndef IXC_ROUTER_H
 #define IXC_ROUTER_H
 
+#ifndef IXC_NETMAP_ENABLE
+#define IXC_NETMAP_ENABLE 0
+#else
+#define IXC_NETMAP_ENABLE 1
+#endif
+
 // 系统阻塞IO等待时间,请不要修改这个值,否则可能造成内存错误
 #define IXC_IO_WAIT_TIMEOUT 10
 
