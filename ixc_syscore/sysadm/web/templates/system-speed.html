@@ -9,8 +9,7 @@
             <select class="form-control" id="ixc-system-cpu-bind" name="bind_cpu">
                 <option value="-1">自动切换</option>
                 <%
-                x=1
-                for i in self.V["cpu_num"]:
+                for i in range(self.V["cpu_num"]):
                     if i==int(self.V["configs"]["config"]["bind_cpu"]):
                         s="<option value='%s' selected='selected'>CPU %s</option>" % (i,i,)
                     else:
