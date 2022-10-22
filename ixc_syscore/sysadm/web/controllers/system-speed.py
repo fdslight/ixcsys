@@ -25,5 +25,5 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "wrong submit bind cpu value")
             return
 
-        RPC.fn_call("/config", "bind_cpu", bind_cpu)
+        RPC.fn_call("router","/config", "bind_cpu", bind_cpu)
         self.json_resp(False, {})
