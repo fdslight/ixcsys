@@ -776,7 +776,7 @@ router_cpu_num(PyObject *self,PyObject *args)
 {
     int cpus=sysconf(_SC_NPROCESSORS_ONLN);
 
-    return PyBool_FromLong(cpus);
+    return PyLong_FromLong(cpus);
 }
 
 
