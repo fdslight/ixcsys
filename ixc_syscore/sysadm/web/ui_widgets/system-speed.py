@@ -7,6 +7,7 @@ class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
         configs = RPC.fn_call("router", "/config", "router_config_get")
         system_cpus = RPC.fn_call("router", "/config", "cpu_num")
+        print(configs,system_cpus)
 
         uri = "system-speed.html"
 
