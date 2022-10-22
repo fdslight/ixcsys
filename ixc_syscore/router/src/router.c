@@ -790,17 +790,25 @@ router_bind_cpu(PyObject *self,PyObject *args)
     cpu_set_t mask;
 
     if(!PyArg_ParseTuple(args,"i",&cpu_no)) return NULL;
-    if(cpu_no<0){
-        Py_RETURN_FALSE;
-    }
 
-	CPU_ZERO(&mask);
+    CPU_ZERO(&mask);
+	
     if(cpus<=cpu_no){
         STDERR("cannot bind cpu %d,not found cpu\r\n",cpu_no);
         Py_RETURN_FALSE;
     }
 
+    if(cpu_no<0){
+        for(int n=0;n<cpus;n++){
+            CPU_ZERO(&mask);
+            CPU_CLR(n,&mask);
+            sched_setaffinity(0,sizeof(cpu_set_t),&mask);
+        }
+        Py_RETURN_TRUE;
+    }
+
     CPU_SET(cpu_no,&mask);
+
     if(sched_setaffinity(0,sizeof(cpu_set_t),&mask)==-1){
         STDERR("cannot bind to cpu %d\r\n",cpu_no);
         Py_RETURN_FALSE;
