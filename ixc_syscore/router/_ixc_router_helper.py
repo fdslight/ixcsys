@@ -11,6 +11,7 @@ import ixc_syslib.pylib.RPCClient as RPC
 import pywind.lib.netutils as netutils
 import pywind.lib.configfile as conf
 
+
 class rpc(object):
     __fn_objects = None
     __helper = None
@@ -67,6 +68,9 @@ class rpc(object):
 
             "qos_set_tunnel_first": self.qos_set_tunnel_first,
             "qos_unset_tunnel": self.qos_unset_tunnel,
+
+            "cpu_num": self.cpu_num,
+            "bind_cpu": self.bind_cpu,
 
             "config_save": self.save
         }
@@ -614,6 +618,18 @@ class rpc(object):
     def qos_unset_tunnel(self):
         return 0, None
 
+    def cpu_num(self):
+        return 0, self.__helper.router.cpu_num()
+
+    def bind_cpu(self, cpu_no: int):
+        b = self.__helper.router.bind_cpu(cpu_no)
+        if b:
+            self.__helper.router_configs["config"]["bind_cpu"] = cpu_no
+
+        self.__helper.save_router_configs()
+
+        return 0, b
+
 
 class helper(object):
     __WAN_BR_NAME = None
@@ -666,6 +682,12 @@ class helper(object):
     def load_router_configs(self):
         path = "%s/router.ini" % self.__conf_dir
         self.__router_configs = conf.ini_parse_from_file(path)
+        if "config" not in self.__router_configs:
+            self.__router_configs["config"] = {}
+        dic = self.__router_configs["config"]
+
+        if "bind_cpu" not in dic:
+            dic["bind_cpu"] = -1
 
     def load_port_map_configs(self):
         path = "%s/port_map.ini" % self.__conf_dir
@@ -993,6 +1015,21 @@ class helper(object):
         :return:
         """
         self.load_router_configs()
+
+        conf = self.__router_configs["config"]
+        try:
+            cpu_no = int(conf["bind_cpu"])
+        except ValueError:
+            cpu_no = -1
+            conf["bind_cpu"] = -1
+            self.save_router_configs()
+
+        if cpu_no < 0: return
+        if self.router.cpu_num() <= cpu_no:
+            conf["bind_cpu"] = -1
+            self.save_router_configs()
+            return
+        self.router.bind_cpu(cpu_no)
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
         self.__port_map_configs[alias_name] = {

@@ -770,6 +770,45 @@ router_vsw_set_subnet(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 返回系统的CPU总数
+static PyObject *
+router_cpu_num(PyObject *self,PyObject *args)
+{
+    int cpus=sysconf(_SC_NPROCESSORS_ONLN);
+
+    return PyBool_FromLong(cpus);
+}
+
+
+/// 绑定进程到指定CPU,避免CPU上下文切换
+static PyObject *
+router_bind_cpu(PyObject *self,PyObject *args)
+{
+	int cpus=sysconf(_SC_NPROCESSORS_ONLN);
+    int cpu_no=0;
+
+    cpu_set_t mask;
+
+    if(!PyArg_ParseTuple(args,"i",&cpu_no)) return NULL;
+    if(cpu_no<0){
+        Py_RETURN_FALSE;
+    }
+
+	CPU_ZERO(&mask);
+    if(cpus<=cpu_no){
+        STDERR("cannot bind cpu %d,not found cpu\r\n",cpu_no);
+        Py_RETURN_FALSE;
+    }
+
+    CPU_SET(cpu_no,&mask);
+    if(sched_setaffinity(0,sizeof(cpu_set_t),&mask)==-1){
+        STDERR("cannot bind to cpu %d\r\n",cpu_no);
+        Py_RETURN_FALSE;
+    }
+	usleep(1000);
+    Py_RETURN_TRUE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -827,6 +866,9 @@ static PyMethodDef routerMethods[]={
     //
     {"vsw_enable",(PyCFunction)router_vsw_enable,METH_VARARGS,"enable or disable vswitch"},
     {"vsw_set_subnet",(PyCFunction)router_vsw_set_subnet,METH_VARARGS,"set vswitch subnet"},
+    //
+    {"cpu_num",(PyCFunction)router_cpu_num,METH_NOARGS,"get cpu num"},
+    {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},
 
     {NULL,NULL,0,NULL}
 };
@@ -1191,25 +1233,6 @@ static void ixc_myloop(void)
     ixc_python_loop();
 }
 
-/// 绑定进程到指定CPU,避免CPU上下文切换
-static void ixc_bind_cpu(void)
-{
-	int cpus=sysconf(_SC_NPROCESSORS_ONLN);
-
-	cpu_set_t mask;
-
-	CPU_ZERO(&mask);
-
-    // 绑定到最后一个CPU核心
-    if(cpus>=2){
-        CPU_SET(cpus-1,&mask);
-        if(sched_setaffinity(0,sizeof(cpu_set_t),&mask)==-1){
-		    STDERR("cannot bind to cpu 1\r\n");
-	    }
-    }
-
-	usleep(1000);
-}
 
 static void ixc_start(int debug)
 {
@@ -1219,8 +1242,6 @@ static void ixc_start(int debug)
         STDERR("process ixc_router_core exists\r\n");
         return;
     }
-
-    ixc_bind_cpu();
 
     loop_time_up=time(NULL);
 

@@ -1,0 +1,32 @@
+<div id="ixc-ipv6-view" class="ixc-menu-content" style="display: none;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/system-speed">
+        <h4>CPU绑定</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-group">
+            <label>指定绑定CPU</label>
+            <select class="form-control" id="ixc-system-cpu-bind" name="bind_cpu">
+                <option value="-1">自动切换</option>
+                <%
+                x=1
+                for i in self.V["cpu_num"]:
+                    if i==int(self.V["configs"]["config"]["bind_cpu"]):
+                        s="<option value='%s' selected='selected'>CPU %s</option>" % (i,i,)
+                    else:
+                        s="<option value='%s'>CPU %s</option>" % (i,i,)
+                    self.show(s)
+                %>
+            </select>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+    });
+</script>
