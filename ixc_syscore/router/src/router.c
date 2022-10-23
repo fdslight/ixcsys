@@ -1234,10 +1234,9 @@ static void ixc_myloop(void)
     }else{
         ixc_ev_set.wait_timeout=IXC_IO_WAIT_TIMEOUT;
     }
-
-    ixc_netif_reading_until_no_data();
-    // 每隔30s调用一次python循环
     if(now-loop_time_up<30) return;
+
+    // 每隔30s调用一次python循环
     loop_time_up=now;
     ixc_python_loop();
 }
