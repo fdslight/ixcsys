@@ -14,6 +14,7 @@
 struct ixc_netif{
     struct ixc_mbuf *sent_first;
     struct ixc_mbuf *sent_last;
+    void *ev;
     char devname[512];
     int is_used;
     int type;
@@ -90,5 +91,8 @@ int ixc_netif_wan_sendable(void);
 
 /// 设置MTU的值
 int ixc_netif_mtu_set(int if_type,unsigned short v,int is_ipv6);
+
+/// 一直读取数据,直到没有数据位置,避免系统一直触发read系统调用事件导致性能下降
+void ixc_netif_reading_until_no_data(void);
 
 #endif

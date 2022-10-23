@@ -137,6 +137,7 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     netif->type=if_idx;
     netif->mtu_v4=1500;
     netif->mtu_v6=1280;
+    netif->ev=ev;
 
     bzero(netif->ipaddr,4);
     bzero(netif->ip6addr,16);
@@ -322,7 +323,8 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
 {
     ssize_t rsize;
     struct ixc_mbuf *m;
-    int rs=0;
+    int rs=0,flags=0;
+    struct ev *ev=netif->ev;
     
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -346,6 +348,9 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
             if(EAGAIN==errno){
                 ixc_mbuf_put(m);
                 rs=0;
+                flags=1;
+                // 没有任何数据时加入读事件
+                ev_modify(netif_ev_set,ev,EV_READABLE,EV_CTL_ADD);
                 break;
             }else{
                 ixc_mbuf_put(m);
@@ -365,6 +370,9 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
 
         ixc_ether_handle(m);
     }
+
+    // 未发生EAGAIN错误说明还有数据,那么就删除读事件
+    if(!flags) ev_modify(netif_ev_set,ev,EV_READABLE,EV_CTL_DEL);
     
     return rs;
 }
@@ -485,4 +493,16 @@ int ixc_netif_mtu_set(int if_type,unsigned short v,int is_ipv6)
     else netif->mtu_v4=v;
 
     return 0;
+}
+
+void ixc_netif_reading_until_no_data(void)
+{
+    struct ixc_netif *netif;
+    struct ev *ev;
+    for(int n=0;n<IXC_NETIF_MAX;n++){
+        netif=&netif_objs[n];
+        if(!netif->is_used) continue;
+        ev=(struct ev *)netif->ev;
+        ixc_netif_readable_fn(ev);
+    }
 }
