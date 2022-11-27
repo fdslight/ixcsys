@@ -23,7 +23,7 @@
                 files=self.V["backup-files"]
                 for file in files:
                     s="<tr><td>%s</td><td>%s</td>" % (x,file,)
-                    s+="<td><a href='/sysadm/?show=ixc-system-backup&page=download&file=%s'>下载</a>&nbsp;&nbsp;<a href='#' class='ixc-system-backup-recovery' name='%s'>恢复</a>&nbsp;&nbsp;&nbsp;<a href='#' class='ixc-system-backup-del' name='%s'>删除</a></td></tr>" % (file,file,file,)
+                    s+="<td><a href='#' class='ixc-system-backup-recovery' name='%s'>恢复</a>&nbsp;&nbsp;&nbsp;<a href='#' class='ixc-system-backup-del' name='%s'>删除</a></td></tr>" % (file,file,)
                     self.show(s)
                 %>
             </tbody>
