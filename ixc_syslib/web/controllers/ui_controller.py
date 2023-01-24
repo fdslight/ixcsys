@@ -266,7 +266,7 @@ class controller(app_handler.handler):
 
     def render(self, uri, content_type="text/html;charset=utf-8", **kwargs):
         s = self.get_tpl_render_result(uri, **kwargs)
-        self.finish_with_bytes(content_type, s.encode("iso-8859-1"))
+        self.finish_with_bytes(content_type, s.encode("iso-8859-1","ignore"))
 
     def get_tpl_render_result(self, uri: str, **kwargs):
         """获取模板渲染结果
