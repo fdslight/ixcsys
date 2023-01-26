@@ -186,6 +186,10 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
         self.register(self.fileno)
         self.add_evt_read(self.fileno)
+        # 发送心跳包表明自己身份
+        self.send_heartbeat()
+
+        logging.print_general("conn_ok", self.__address)
 
     def send_msg(self, message: bytes):
         if not self.__tunnel_ok: return
