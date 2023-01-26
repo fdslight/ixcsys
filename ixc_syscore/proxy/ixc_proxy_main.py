@@ -304,7 +304,9 @@ class service(dispatcher.dispatcher):
             if name in self.__routes:
                 self.__del_route(name)
             ''''''
-        ''''''
+        # 检查连接是否断开,如果断开那么重新建立连接
+        if self.__racs_configs["connection"]["enable"] and self.__racs_fd < 0:
+            self.reset_racs()
 
     @property
     def https_configs(self):
@@ -369,6 +371,9 @@ class service(dispatcher.dispatcher):
         conf.save_to_ini(cfg, fpath)
         self.reset_racs()
 
+    def tell_racs_close(self):
+        self.__racs_fd = -1
+
     def load_racs_configs(self):
         fpath = "%s/racs.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
@@ -377,6 +382,7 @@ class service(dispatcher.dispatcher):
         network = configs["network"]
 
         conn["enable"] = bool(int(conn["enable"]))
+        conn["tunnel_type"] = conn.get("tunnel_type", "udp")
         conn["enable_ip6"] = bool(int(conn["enable_ip6"]))
 
         network["enable_ip6"] = bool(int(network["enable_ip6"]))
@@ -424,12 +430,25 @@ class service(dispatcher.dispatcher):
         security = self.__racs_configs["security"]
         network = self.__racs_configs["network"]
 
-        if conn["enable_ip6"]:
-            self.__racs_fd = self.create_handler(-1, racs.udp_tunnel, (conn["host"], int(conn["port"]),), is_ipv6=True)
-        else:
-            self.__racs_fd = self.create_handler(-1, racs.udp_tunnel, (conn["host"], int(conn["port"]),), is_ipv6=False)
+        # 检查功能是否开启
+        if not conn["enable"]:
+            return
 
-        self.get_handler(self.__racs_fd).enable(conn["enable"])
+        # 默认使用UDP隧道协议
+        tunnel_type = conn.get("tunnel_type", "udp").lower()
+        if tunnel_type not in ("tcp", "udp",):
+            tunnel_type = "udp"
+
+        if tunnel_type == "tcp":
+            h = racs.tcp_tunnel
+        else:
+            h = racs.udp_tunnel
+
+        if conn["enable_ip6"]:
+            self.__racs_fd = self.create_handler(-1, h, (conn["host"], int(conn["port"]),), is_ipv6=True)
+        else:
+            self.__racs_fd = self.create_handler(-1, h, (conn["host"], int(conn["port"]),), is_ipv6=False)
+
         self.get_handler(self.__racs_fd).set_key(security["shared_key"])
         self.get_handler(self.__racs_fd).set_priv_key(security["private_key"])
 

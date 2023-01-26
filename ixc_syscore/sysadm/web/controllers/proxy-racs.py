@@ -22,6 +22,7 @@ class controller(base_controller.BaseController):
                 "enable_ip6": 0,
                 "host": "www.example.com",
                 "port": 1999,
+                "tunnel_type": "udp",
             },
             "security": {
                 "shared_key": "ixcsys",
@@ -77,6 +78,10 @@ class controller(base_controller.BaseController):
         ip_route = kv_map["network"]["ip_route"]
         ip6_route = kv_map["network"]["ip6_route"]
 
+        if kv_map["connection"]["tunnel_type"] not in ("tcp", "udp",):
+            self.json_resp(True, "不支持的隧道协议")
+            return
+
         if not ip_route or not ip6_route:
             self.json_resp(True, "空的IP路由地址或IPv6地址")
             return
@@ -109,4 +114,3 @@ class controller(base_controller.BaseController):
         RPC.fn_call("proxy", "/config", "racs_cfg_update", kv_map)
 
         self.json_resp(False, {})
-
