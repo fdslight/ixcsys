@@ -265,3 +265,4 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         self.__update_time = time.time()
         if not msg: return
         self.dispatcher.send_to_local(msg)
+        self.tcp_readable()
