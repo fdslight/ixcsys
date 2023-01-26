@@ -266,3 +266,6 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         if not msg: return
         self.dispatcher.send_to_local(msg)
         self.tcp_readable()
+
+    def tcp_writable(self):
+        self.remove_evt_write(self.fileno)
