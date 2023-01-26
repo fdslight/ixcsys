@@ -4,10 +4,10 @@ import sys, os, signal, time, importlib, struct, socket, json
 import dns.resolver
 
 ### 启pyjoin JIT加速
-#try:
+# try:
 #    import pyjion
 #    pyjion.enable()
-#except ImportError:
+# except ImportError:
 #    pass
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -304,7 +304,8 @@ class service(dispatcher.dispatcher):
             if name in self.__routes:
                 self.__del_route(name)
             ''''''
-        ''''''
+        if self.__racs_fd < 0:
+            self.reset_racs()
 
     @property
     def https_configs(self):
@@ -735,6 +736,9 @@ class service(dispatcher.dispatcher):
     def tunnel_conn_fail(self):
         RPCClient.fn_call("router", "/config", "qos_unset_tunnel")
         self.__conn_fd = -1
+
+    def tell_racs_reset(self):
+        self.__racs_fd = -1
 
     def get_proxy_server_ip(self, host):
         self.__server_ip = host

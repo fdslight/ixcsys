@@ -75,6 +75,8 @@ class udp_tunnel(udp_handler.udp_handler):
         user_id, msg = rs
 
         if user_id != self.__priv_key: return
+
+        self.__update_time = time.time()
         # 如果消息为空,那么说明为心跳包,丢弃,服务端会回心跳包,如果来回回,那么会造成死循环
         if not msg: return
         self.dispatcher.send_to_local(msg)
@@ -103,15 +105,16 @@ class udp_tunnel(udp_handler.udp_handler):
             return
 
         if v > 29:
-            self.send_heartbeat()
-            self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
-            self.__update_time = t
+            self.delete_handler(self.fileno)
             return
+
+        self.send_heartbeat()
         self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
 
     def udp_delete(self):
         self.unregister(self.fileno)
         self.close()
+        self.dispatcher.tell_racs_reset()
 
     def set_key(self, key: str):
         self.__encrypt.set_key(key)
