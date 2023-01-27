@@ -892,7 +892,6 @@ class helper(object):
             os.system("ip link set %s up" % lan_phy_ifname)
             # 设置内网桥接网卡MTU为1400,目的为了本机能够被正常访问
             os.system("ip link set dev %s mtu 1400" % self.__LAN_BR_NAME)
-
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
 
@@ -946,6 +945,8 @@ class helper(object):
             os.system("ip link set %s promisc on" % wan_phy_ifname)
             os.system("ip link set %s promisc on" % self.__WAN_NAME)
             os.system("ip link set %s up" % wan_phy_ifname)
+            # 关闭外网桥接的IPv6支持
+            os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__WAN_BR_NAME)
         else:
             pass
 
