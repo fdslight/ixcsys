@@ -8,4 +8,7 @@ class widget(ui_widget.widget):
         errlog = RPC.fn_call("init", "/syslog", "errlog_get")
         syslog = RPC.fn_call("init", "/syslog", "syslog_get")
 
+        # 按时间由大到小排序
+        syslog.reverse()
+
         return True, "syslog.html", {"error": errlog, "syslog": syslog}
