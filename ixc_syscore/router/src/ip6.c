@@ -147,8 +147,7 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
         return -1;
     }
 
-    
-    if(!netif->isset_ip6 && !ixc_route_is_enabled_ipv6_pass()){
+    if(!netif->isset_ip6){
         ixc_mbuf_put(mbuf);
         return -1;
     }
