@@ -537,7 +537,6 @@ static void ixc_route_ipv6_pass_do(struct ixc_mbuf *m)
 
 static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
-    struct ixc_mbuf *cpy_mbuf;
     //DBG_FLAGS;
     // 只支持ICMPv6协议
     if(header->next_header!=58){
