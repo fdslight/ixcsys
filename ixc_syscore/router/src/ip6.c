@@ -164,7 +164,7 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
     mbuf->from=IXC_MBUF_FROM_APP;
 
     // 和LAN网口地址不在同一个网段那么丢弃数据包
-    if(!ixc_netif_is_subnet(netif,header->dst_addr,1,0)){
+    if(!ixc_netif_is_subnet(netif,header->dst_addr,1,0) && !ixc_route_is_enabled_ipv6_pass()){
         ixc_mbuf_put(mbuf);
         return -1;
     }
