@@ -129,7 +129,7 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 /// 处理路由宣告报文
 static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,unsigned char icmp_code)
 {
-    struct ixc_netif *netif=m->netif,*if_lan;
+    struct ixc_netif *netif=m->netif;
     //struct ixc_icmpv6_ra_header *ra_header;
     struct ixc_icmpv6_opt_prefix_info *opt_prefix;
 
@@ -201,7 +201,7 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     }
 
     // 检查前缀是否符合无状态地址配置要求
-    if(opt_prefix->prefix_len>64){
+    if(opt_prefix->prefix_len>64 || opt_prefix->prefix_len < 48){
         STDERR("cannot apply to stateless address set because of RA prefix is %d\r\n",opt_prefix->prefix_len);
         ixc_mbuf_put(m);
         return;

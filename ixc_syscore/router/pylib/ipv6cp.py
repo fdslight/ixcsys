@@ -38,7 +38,7 @@ class IPv6CP(ncp.NCP):
         self.__my_ipaddr_ok = True
         self.__try_count = 0
 
-        self.pppoe.runtime.router.netif_set_ip(router.IXC_NETIF_WAN, self.__my_ipaddr_subnet, 64, True)
+        self.pppoe.runtime.router.netif_set_ip(router.IXC_NETIF_LAN, self.__my_ipaddr_subnet, 64, True)
 
     def handle_cfg_nak(self, _id: int, byte_data: bytes):
         if len(byte_data) != 10: return

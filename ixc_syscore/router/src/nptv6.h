@@ -2,6 +2,9 @@
 
 #include "mbuf.h"
 
+/// 转换方向
+
+
 int ixc_nptv6_init(void);
 void ixc_nptv6_uninit(void);
 
