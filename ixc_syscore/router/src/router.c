@@ -31,7 +31,6 @@
 #include "npfwd.h"
 #include "sec_net.h"
 #include "vswitch.h"
-#include "nptv6.h"
 
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
@@ -427,17 +426,6 @@ router_route_ip6_tunnel_enable(PyObject *self,PyObject *args)
     ixc_route_ip6_tunnel_enable(enable);
 
     Py_RETURN_NONE;
-}
-
-static PyObject *
-router_npt6_enable(PyObject *self,PyObject *args)
-{
-    int enable,rs;
-    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
-
-    rs=ixc_nptv6_set_enable(enable);
-
-    return PyBool_FromLong(rs);
 }
 
 static PyObject *
@@ -853,8 +841,6 @@ static PyMethodDef routerMethods[]={
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
     {"route_ipv6_pass_enable",(PyCFunction)router_route_ipv6_pass_enable,METH_VARARGS,"enable/disable IPv6 pass"},
     {"route_ip6_tunnel_enable",(PyCFunction)router_route_ip6_tunnel_enable,METH_VARARGS,"enable/disable IPv6 global tunnel"},
-    //
-    {"npt6_enable",(PyCFunction)router_npt6_enable,METH_VARARGS,"enable/disable NPTv6"},
     //
     {"pppoe_enable",(PyCFunction)router_pppoe_enable,METH_VARARGS,"enable or disable pppoe"},
     {"pppoe_is_enabled",(PyCFunction)router_pppoe_is_enabled,METH_NOARGS,"check pppoe is enabled"},
@@ -1330,12 +1316,6 @@ static void ixc_start(int debug)
     rs=ixc_nat_init();
     if(rs<0){
         STDERR("cannot init nat\r\n");
-        return;
-    }
-
-    rs=ixc_nptv6_init();
-    if(rs<0){
-        STDERR("cannot init nptv6\r\n");
         return;
     }
 
