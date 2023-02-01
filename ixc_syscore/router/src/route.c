@@ -580,14 +580,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     }    
     //IXC_PRINT_IP6("PRINT IP6",header->dst_addr);
     r=ixc_route_match(header->dst_addr,1);
-    //DBG_FLAGS;
-    // 未开启IPv6并且未开启IPv6直通那么丢弃数据包
-    if(NULL==r){
-        IXC_PRINT_IP6("Not found route ",header->dst_addr);
-        //DBG_FLAGS;
-        ixc_mbuf_put(m);
-        return;
-    }
+
     //DBG_FLAGS;
     if(NULL!=r){
         // 检查hop limit
@@ -622,6 +615,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
         }
         
         if(route.ipv6_pass) ixc_route_ipv6_pass_do(m);
+        else ixc_mbuf_put(m);
         return;
     }
 
