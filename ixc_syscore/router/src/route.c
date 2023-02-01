@@ -608,14 +608,15 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
             }
         }
     }else{
-        // 检查IPv6安全,注意需要在路由查找代码后面
-        if(!ixc_ip6sec_check_ok(m)){
+        if(route.ipv6_pass){
+            if(!ixc_ip6sec_check_ok(m)){
+                ixc_mbuf_put(m);
+                return;
+            }
+            ixc_route_ipv6_pass_do(m);
+        }else{
             ixc_mbuf_put(m);
-            return;
         }
-        
-        if(route.ipv6_pass) ixc_route_ipv6_pass_do(m);
-        else ixc_mbuf_put(m);
         return;
     }
 
