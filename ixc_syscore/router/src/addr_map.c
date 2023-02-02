@@ -18,6 +18,8 @@ static struct ixc_addr_map addr_map;
 static int addr_map_is_initialized=0;
 static struct sysloop *addr_map_sysloop=NULL;
 
+static FILE *debug_fd=NULL;
+
 static void ixc_addr_map_del_cb(void *data)
 {
     struct ixc_addr_map_record *r=data;
@@ -111,6 +113,8 @@ int ixc_addr_map_init(void)
     addr_map.ip6_record=m;
     addr_map_is_initialized=1;
 
+    debug_fd=fopen("/tmp/debug.txt","w");
+
     return 0;
 }
 
@@ -125,6 +129,8 @@ void ixc_addr_map_uninit(void)
     sysloop_del(addr_map_sysloop);
 
     addr_map_is_initialized=0;
+
+    fclose(debug_fd);
 }
 
 int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hwaddr,int is_ipv6)
@@ -215,13 +221,17 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
         ixc_ether_send(m,1);
         return;
     }
-   
+    
+    fputs("XA\r\n",debug_fd);
+    fflush(debug_fd);
+
     r=ixc_addr_map_get(m->next_host,1);
 
     if(NULL==r) is_sent=1;
     else{
         if(r->is_changed) is_sent=1;
     }
+    
     // 不需要发送ICMPv6的数据包直接发送
     if(!is_sent){
         memcpy(m->dst_hwaddr,r->hwaddr,6);
@@ -229,6 +239,8 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
         ixc_ether_send(m,1);
         return;
     }
+        fputs("XB\r\n",debug_fd);
+    fflush(debug_fd);
     // 找不到记录那么就发送NDP RS报文
     ixc_icmpv6_send_ns(netif,netif->ip6_local_link_addr,header->dst_addr);
     ixc_mbuf_put(m);
