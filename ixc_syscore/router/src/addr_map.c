@@ -208,6 +208,8 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     int is_sent=0;
     
 
+    fputs("XAA\r\n",debug_fd);
+    fflush(debug_fd);
     // 如果直通那么直通数据包
     if(m->passthrough){
         ixc_ether_send(m,0);
