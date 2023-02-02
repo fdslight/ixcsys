@@ -96,7 +96,7 @@ int ixc_ip6_init(void)
 
     ip6_is_initialized=1;
 
-    dbg_file=fopen("debug.txt","w");
+    dbg_file=fopen("/tmp/debug.txt","w");
 
     return 0;
 }
@@ -104,6 +104,8 @@ int ixc_ip6_init(void)
 void ixc_ip6_uninit(void)
 {
     if(!ip6_is_initialized) return;
+
+    fclose(dbg_file);
 
     sysloop_del(ip6_sysloop);
 }
