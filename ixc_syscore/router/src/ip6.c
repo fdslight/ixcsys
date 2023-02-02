@@ -22,8 +22,6 @@ static struct sysloop *ip6_sysloop=NULL;
 static time_t ip6_up_time=0;
 static int ip6_is_initialized=0;
 
-FILE *debug_fd=NULL;
-
 static void ixc_ip6_sysloop_cb(struct sysloop *loop)
 {
     time_t now_time=time(NULL);
@@ -95,7 +93,6 @@ int ixc_ip6_init(void)
     ip6_up_time=time(NULL);
 
     ip6_is_initialized=1;
-    debug_fd=fopen("/tmp/debug.txt","w");
 
     return 0;
 }
@@ -105,7 +102,6 @@ void ixc_ip6_uninit(void)
     if(!ip6_is_initialized) return;
 
     sysloop_del(ip6_sysloop);
-    fclose(debug_fd);
 }
 
 void ixc_ip6_handle(struct ixc_mbuf *mbuf)
@@ -146,26 +142,15 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
     // 强制为LAN网卡
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
 
-    char tmp[256];
-    bzero(tmp,256);
-
     if(NULL==netif){
         ixc_mbuf_put(mbuf);
         return -1;
     }
 
-    sprintf(tmp,"A %d\r\n",mbuf->passthrough);
-    fputs(tmp,debug_fd);
-    fflush(debug_fd);
-
     if(!netif->isset_ip6 && !ixc_route_is_enabled_ipv6_pass()){
         ixc_mbuf_put(mbuf);
         return -1;
     }
-
-    sprintf(tmp,"B %d\r\n",mbuf->passthrough);
-    fputs(tmp,debug_fd);
-    fflush(debug_fd);
 
     if(!ixc_ip6_check_ok(mbuf)){
         ixc_mbuf_put(mbuf);
@@ -184,9 +169,6 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
         return -1;
     }
     
-    sprintf(tmp,"C %d\r\n",mbuf->passthrough);
-    fputs(tmp,debug_fd);
-    fflush(debug_fd);
     memcpy(mbuf->next_host,header->dst_addr,16);
  
     ixc_addr_map_handle(mbuf);
