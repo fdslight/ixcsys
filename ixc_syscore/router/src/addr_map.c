@@ -206,12 +206,17 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     struct ixc_addr_map_record *r=NULL;
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
     int is_sent=0;
-    
 
+    char tmp[128];
+    bzero(tmp,128);
     fputs("XAA\r\n",debug_fd);
     fflush(debug_fd);
+    sprintf(tmp,"%x %x \r\n",header->dst_addr[0],header->dst_addr[1]);
+
     // 如果直通那么直通数据包
     if(m->passthrough){
+        fputs(tmp);
+        fflush(debug_fd);
         ixc_ether_send(m,0);
         return;
     }
