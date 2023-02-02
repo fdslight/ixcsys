@@ -96,7 +96,7 @@ int ixc_ip6_init(void)
 
     ip6_is_initialized=1;
 
-    dbg_file=fopen("/tmp/debug.txt","w");
+    dbg_file=fopen("/tmp/debug.txt","a");
 
     return 0;
 }
@@ -154,6 +154,7 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
     }
 
     fputs("A\r\n",dbg_file);
+    fflush(dbg_file);
 
     if(!netif->isset_ip6 && !ixc_route_is_enabled_ipv6_pass()){
         ixc_mbuf_put(mbuf);
@@ -161,6 +162,7 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
     }
 
     fputs("B\r\n",dbg_file);
+    fflush(dbg_file);
 
     if(!ixc_ip6_check_ok(mbuf)){
         ixc_mbuf_put(mbuf);
@@ -180,6 +182,7 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
     }
     
     fputs("C\r\n",dbg_file);
+    fflush(dbg_file);
     memcpy(mbuf->next_host,header->dst_addr,16);
  
     ixc_addr_map_handle(mbuf);
