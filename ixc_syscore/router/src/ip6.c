@@ -22,6 +22,8 @@ static struct sysloop *ip6_sysloop=NULL;
 static time_t ip6_up_time=0;
 static int ip6_is_initialized=0;
 
+static FILE *dbg_file=NULL;
+
 static void ixc_ip6_sysloop_cb(struct sysloop *loop)
 {
     time_t now_time=time(NULL);
@@ -94,6 +96,8 @@ int ixc_ip6_init(void)
 
     ip6_is_initialized=1;
 
+    dbg_file=fopen("debug.txt","w");
+
     return 0;
 }
 
@@ -147,10 +151,14 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
         return -1;
     }
 
+    fputs("A\r\n",dbg_file);
+
     if(!netif->isset_ip6 && !ixc_route_is_enabled_ipv6_pass()){
         ixc_mbuf_put(mbuf);
         return -1;
     }
+
+    fputs("B\r\n",dbg_file);
 
     if(!ixc_ip6_check_ok(mbuf)){
         ixc_mbuf_put(mbuf);
@@ -168,7 +176,8 @@ int ixc_ip6_send(struct ixc_mbuf *mbuf)
         ixc_mbuf_put(mbuf);
         return -1;
     }
-   
+    
+    fputs("C\r\n",dbg_file);
     memcpy(mbuf->next_host,header->dst_addr,16);
  
     ixc_addr_map_handle(mbuf);
