@@ -215,7 +215,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
 
     // 如果直通那么直通数据包
     if(m->passthrough){
-        fputs(tmp);
+        fputs(tmp,debug_fd);
         fflush(debug_fd);
         ixc_ether_send(m,0);
         return;
