@@ -96,7 +96,7 @@ int ixc_ip6_init(void)
 
     ip6_is_initialized=1;
 
-    dbg_file=fopen("/tmp/debug.txt","a");
+    dbg_file=fopen("/tmp/debug.txt","w");
 
     return 0;
 }
