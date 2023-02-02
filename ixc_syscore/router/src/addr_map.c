@@ -10,6 +10,7 @@
 #include "pppoe.h"
 #include "icmpv6.h"
 #include "router.h"
+#include "route.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netutils.h"
@@ -201,7 +202,6 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
     int is_sent=0;
     
-
     // 如果直通那么直通数据包
     if(m->passthrough){
         ixc_ether_send(m,0);

@@ -69,7 +69,10 @@ struct ixc_mbuf *ixc_mbuf_get(void)
 
         m->next=NULL;
         m->netif=NULL;
+        m->priv_data=NULL;
+        m->priv_flags=0;
         m->loop_trace=0;
+        m->passthrough=0;
 
         return m;
     }

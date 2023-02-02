@@ -20,8 +20,6 @@ static struct ixc_mbuf *npfwd_mbuf_first=NULL;
 static struct ixc_mbuf *npfwd_mbuf_last=NULL;
 static int npfwd_is_initialized=0;
 
-static FILE *debug_fd=NULL;
-
 static void ixc_npfwd_rx_data(int fd)
 {
     struct ixc_mbuf *m;
@@ -31,9 +29,6 @@ static void ixc_npfwd_rx_data(int fd)
     struct ixc_npfwd_header *header;
     struct ixc_npfwd_info *info;
     struct ixc_netif *netif;
-
-    char tmp[256];
-    bzero(tmp,256);
 
     for(int n=0;n<10;n++){
         m=ixc_mbuf_get();
@@ -110,10 +105,6 @@ static void ixc_npfwd_rx_data(int fd)
                 ixc_ether_send2(m);
                 break;
             case IXC_FLAG_ROUTE_FWD:
-                sprintf(tmp,"passthrough %d\r\n",m->passthrough);
-                fputs(tmp,debug_fd);
-                fflush(debug_fd);
-
                 //DBG_FLAGS;
                 ixc_ip_send(m);
                 break;
@@ -295,8 +286,6 @@ int ixc_npfwd_init(struct ev_set *ev_set)
     npfwd_is_initialized=1;
     npfwd.ev=ev;
 
-    debug_fd=fopen("/tmp/debug.txt","w");
-
     return 0;
 }
 
@@ -306,8 +295,6 @@ void ixc_npfwd_uninit(void)
 
     ev_delete(npfwd.ev_set,npfwd.ev);
     npfwd_is_initialized=0;
-
-    fclose(debug_fd);
 }
 
 int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char flags)
