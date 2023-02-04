@@ -86,7 +86,7 @@ class widget(ui_widget.widget):
         while size > 0:
             if idx >= seq_len: break
             s = "%s %s" % (size, seq[idx])
-            size = size / 1024
+            size = int(size / 1024)
             idx += 1
 
         return s
