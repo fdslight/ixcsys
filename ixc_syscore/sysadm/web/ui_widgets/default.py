@@ -78,7 +78,7 @@ class widget(ui_widget.widget):
         """获取流量大小描述
         """
         seq = (
-            "KB", "MB", "GB", "TB"
+            "KB", "MB", "GB", "TB", "PB",
         )
         s = ""
         idx = 0
