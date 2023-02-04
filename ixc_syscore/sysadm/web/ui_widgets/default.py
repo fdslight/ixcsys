@@ -94,6 +94,7 @@ class widget(ui_widget.widget):
         dic = {}
 
         rx_traffic_size, tx_traffic_size = RPC.fn_call("router", "/config", "wan_traffic_get")
+        print(rx_traffic_size,tx_traffic_size)
 
         rx_traffic_descr = self.get_traffic_size_descr(rx_traffic_size)
         tx_traffic_descr = self.get_traffic_size_descr(tx_traffic_size)
