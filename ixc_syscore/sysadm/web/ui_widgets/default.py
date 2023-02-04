@@ -74,9 +74,32 @@ class widget(ui_widget.widget):
 
         return mem.replace("\n", "")
 
+    def get_traffic_size_descr(self, size):
+        """获取流量大小描述
+        """
+        seq = (
+            "Bytes", "KB", "MB", "GB", "TB"
+        )
+        s = ""
+        idx = 0
+        while size > 0:
+            s = "%s %s" % (size, seq[idx])
+            size = size / 1024
+            idx += 1
+
+        return s
+
     def handle(self, *args, **kwargs):
         uri = "default.html"
         dic = {}
+
+        rx_traffic_size, tx_traffic_size = RPC.fn_call("router", "/config", "wan_traffic_get")
+
+        rx_traffic_descr = self.get_traffic_size_descr(rx_traffic_size)
+        tx_traffic_descr = self.get_traffic_size_descr(tx_traffic_size)
+
+        dic["rx_traffic"] = rx_traffic_descr
+        dic["tx_traffic"] = tx_traffic_descr
 
         wan_configs = RPC.fn_call("router", "/config", "wan_config_get")
         pub = wan_configs["public"]
