@@ -449,6 +449,7 @@ class service(dispatcher.dispatcher):
         else:
             self.__racs_fd = self.create_handler(-1, h, (conn["host"], int(conn["port"]),), is_ipv6=False)
 
+        # 此处可能由于查找域名失败而无法建立隧道
         if self.__racs_fd < 0: return
 
         self.get_handler(self.__racs_fd).set_key(security["shared_key"])
