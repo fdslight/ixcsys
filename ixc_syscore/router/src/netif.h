@@ -14,6 +14,11 @@
 struct ixc_netif{
     struct ixc_mbuf *sent_first;
     struct ixc_mbuf *sent_last;
+
+    // 网卡流量统计
+    unsigned long long rx_traffic;
+    unsigned long long tx_traffic;
+
     char devname[512];
     int is_used;
     int type;
@@ -90,5 +95,8 @@ int ixc_netif_wan_sendable(void);
 
 /// 设置MTU的值
 int ixc_netif_mtu_set(int if_type,unsigned short v,int is_ipv6);
+
+/// 获取网卡流量
+int ixc_netif_traffic_get(int if_type,unsigned long long *rx_traffic,unsigned long long *tx_traffic);
 
 #endif

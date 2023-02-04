@@ -38,6 +38,8 @@ class rpc(object):
             "wan_ifname_set": self.wan_ifname_set,
             "lan_hwaddr_set": self.lan_hwaddr_set,
             "wan_mtu_set": self.wan_mtu_set,
+            "wan_traffic_get": self.wan_traffic_get,
+            "lan_traffic_get": self.lan_traffic_get,
 
             "manage_addr_set": self.manage_addr_set,
             "lan_addr_set": self.lan_addr_set,
@@ -335,6 +337,16 @@ class rpc(object):
             public["ip4_mtu"] = mtu
 
         return 0, None
+
+    def wan_traffic_get(self):
+        traffic = self.__helper.router.netif_traffic_get(router.IXC_NETIF_WAN)
+
+        return 0, traffic
+
+    def lan_traffic_get(self):
+        traffic = self.__helper.router.netif_traffic_get(router.IXC_NETIF_LAN)
+
+        return 0, traffic
 
     def manage_addr_set(self, ip: str):
         lan_configs = self.__helper.lan_configs
