@@ -78,15 +78,16 @@ class widget(ui_widget.widget):
         """获取流量大小描述
         """
         seq = (
-            "Bytes", "KB", "MB", "GB", "TB"
+            "KB", "MB", "GB", "TB"
         )
         s = ""
         idx = 0
         seq_len = len(seq)
-        while size > 0.001:
+        while 1:
             if idx >= seq_len: break
-            s = "%s %s" % (size, seq[idx])
             size = size / 1024
+            s = "%.3f %s" % (size, seq[idx])
+            if size < 1024: break
             idx += 1
 
         return s
