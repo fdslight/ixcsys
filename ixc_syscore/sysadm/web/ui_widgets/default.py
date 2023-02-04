@@ -82,7 +82,9 @@ class widget(ui_widget.widget):
         )
         s = ""
         idx = 0
+        seq_len = len(seq)
         while size > 0:
+            if idx >= seq_len: break
             s = "%s %s" % (size, seq[idx])
             size = size / 1024
             idx += 1
@@ -97,8 +99,6 @@ class widget(ui_widget.widget):
 
         rx_traffic_descr = self.get_traffic_size_descr(rx_traffic_size)
         tx_traffic_descr = self.get_traffic_size_descr(tx_traffic_size)
-
-        print(rx_traffic_descr,tx_traffic_descr)
 
         dic["rx_traffic"] = rx_traffic_descr
         dic["tx_traffic"] = tx_traffic_descr
