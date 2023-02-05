@@ -46,6 +46,9 @@ static char run_dir[4096];
 /// RPC共享路径
 static char rpc_path[4096];
 
+/// 路由器运行开始时间
+static time_t run_start_time=0;
+
 static PyObject *py_helper_module=NULL;
 static PyObject *py_helper_instance=NULL;
 
@@ -836,6 +839,13 @@ router_bind_cpu(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
+/// 获取运行开始时间
+static PyObject *
+router_start_time(PyObject *self,PyObject *args)
+{
+    return PyLong_FromUnsignedLongLong(run_start_time);
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -897,6 +907,8 @@ static PyMethodDef routerMethods[]={
     //
     {"cpu_num",(PyCFunction)router_cpu_num,METH_NOARGS,"get cpu num"},
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},
+    //
+    {"router_start_time",(PyCFunction)router_start_time,METH_NOARGS,"get router start time"},
 
     {NULL,NULL,0,NULL}
 };
@@ -1275,6 +1287,8 @@ static void ixc_start(int debug)
 
     signal(SIGSEGV,ixc_signal_handle);
     signal(SIGINT,ixc_signal_handle);
+
+    run_start_time=time(NULL);
 
     // 注意这里需要最初初始化以便检查环境
     rs=ixc_init_python(debug);

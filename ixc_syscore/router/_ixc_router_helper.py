@@ -73,6 +73,7 @@ class rpc(object):
 
             "cpu_num": self.cpu_num,
             "bind_cpu": self.bind_cpu,
+            "router_start_time": self.router_start_time,
 
             "config_save": self.save
         }
@@ -641,6 +642,9 @@ class rpc(object):
         self.__helper.save_router_configs()
 
         return 0, b
+
+    def router_start_time(self):
+        return 0, self.__helper.router.router_start_time()
 
 
 class helper(object):
