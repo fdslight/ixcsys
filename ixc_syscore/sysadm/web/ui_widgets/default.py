@@ -110,7 +110,7 @@ class widget(ui_widget.widget):
         # 运行分钟数目
         run_minutes = int((v - tot_hours * 3600) / 60)
         # 运行秒数
-        run_secs = v - tot_minutes * 60
+        run_secs = int(v - tot_minutes * 60)
 
         return {
             "run_days": run_days,
