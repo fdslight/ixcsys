@@ -70,8 +70,6 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "空的硬件地址")
             return
 
-        hwaddr = hwaddr.replace("-", ":")
-
         if not netutils.is_hwaddr(hwaddr):
             self.json_resp(True, "错误的硬件地址格式")
             return
