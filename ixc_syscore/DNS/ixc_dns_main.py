@@ -23,6 +23,7 @@ import ixc_syscore.DNS.handlers.dns_proxyd as dns_proxyd
 import ixc_syscore.DNS.pylib.rule as rule
 import ixc_syscore.DNS.pylib.os_resolv as os_resolv
 import ixc_syscore.DNS.pylib.sec_rule as sec_rule
+import ixc_syscore.DNS.pylib.DNS as DNS
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -126,6 +127,9 @@ class service(dispatcher.dispatcher):
 
     def load_configs(self):
         self.__dns_configs = conf.ini_parse_from_file(self.__dns_conf_path)
+        public = self.__dns_configs["public"]
+        if "disable_aaaa" not in public:
+            public["disable_aaaa"] = 1
 
     def load_sec_rules(self):
         self.__sec_rules = sec_rule.parse_from_file(self.__sec_rule_path)
@@ -240,6 +244,10 @@ class service(dispatcher.dispatcher):
         """处理来自于DNS客户端的消息
         """
         if not self.__wan_ok: return
+        if len(message) < 15: return
+
+        public = self.__dns_configs["public"]
+        disable_aaaa = bool(int(public["disable_aaaa"]))
 
         dns_id, = struct.unpack("!H", message[0:2])
         new_dns_id = self.get_dns_id()
@@ -270,6 +278,11 @@ class service(dispatcher.dispatcher):
         logging.print_info("DNS_QUERY: %s from %s" % (host, address[0]))
 
         if not match_rs:
+            # 如果禁用了AAAA请求,那么过滤DNS数据包中的AAAA请求
+            if disable_aaaa:
+                new_msg = DNS.drop_aaaa_request(new_msg)
+                if not new_msg: return
+                if len(new_msg) < 15: return
             self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6)
             return
 

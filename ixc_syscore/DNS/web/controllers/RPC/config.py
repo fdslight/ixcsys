@@ -19,6 +19,7 @@ class controller(rpc.controller):
             "set_parent_server": self.set_parent_server,
             "forward_dns_result": self.forward_dns_result,
             "enable": self.enable,
+            "disable_aaaa": self.disable_aaaa,
             "get_nameservers": self.get_nameservers,
             "set_nameservers": self.set_nameservers,
             "is_auto": self.is_auto,
@@ -59,6 +60,16 @@ class controller(rpc.controller):
             configs["public"]["enable_auto"] = 1
         else:
             configs["public"]["enable_auto"] = 0
+        return 0, None
+
+    def disable_aaaa(self, disabled: bool):
+        """是否禁用AAAA请求
+        """
+        configs = self.__runtime.configs
+        if disabled:
+            configs["public"]["disable_aaaa"] = 1
+        else:
+            configs["public"]["disable_aaaa"] = 0
         return 0, None
 
     def forward_dns_result(self):
