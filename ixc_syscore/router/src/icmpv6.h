@@ -102,6 +102,7 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr);
 int ixc_icmpv6_send_rs(void);
 /// 发送邻居报文请求
 int ixc_icmpv6_send_ns(struct ixc_netif *netif,unsigned char *src_ipaddr,unsigned char *dst_ipaddr);
-/// 发送ICMPv6超时报文
-void ixc_icmpv6_send_time_ex_msg(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *daddr,unsigned char code,void *data,unsigned short data_size);
+/// 发送ICMPv6错误消息
+void ixc_icmpv6_send_error_msg(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *daddr,unsigned char type,unsigned char code,unsigned int pad_data,void *data,unsigned short data_size);
+
 #endif
