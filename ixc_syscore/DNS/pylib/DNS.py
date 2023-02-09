@@ -31,7 +31,8 @@ def drop_aaaa_request(dns_packet: bytes):
 
                 if query_type != 28:
                     result_list += query_list
-                questions -= 1
+                else:
+                    questions -= 1
                 query_list = []
                 continue
 
