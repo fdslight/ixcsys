@@ -13,11 +13,16 @@ class controller(base_controller.BaseController):
 
     def handle(self):
         auto = self.request.get_argument("enable_auto", is_qs=False, is_seq=False)
-
         if not auto:
             enable_auto = False
         else:
             enable_auto = True
+
+        disable_aaaa = self.request.get_argument("disable_aaaa", is_qs=False, is_seq=False)
+        if not disable_aaaa:
+            disable_aaaa = False
+        else:
+            disable_aaaa = True
 
         ipv4_main_dns = self.request.get_argument("ipv4.main_dns", is_qs=False, is_seq=False)
         ipv4_second_dns = self.request.get_argument("ipv4.second_dns", is_qs=False, is_seq=False)
@@ -61,6 +66,7 @@ class controller(base_controller.BaseController):
             RPC.fn_call("DNS", "/config", "set_parent_server", ipv6_second_dns, is_main_server=False, is_ipv6=True)
 
         RPC.fn_call("DNS", "/config", "enable", enable_auto)
+        RPC.fn_call("DNS", "/config", "disable_aaaa", disable_aaaa)
         RPC.fn_call("DNS", "/config", "save")
 
         self.json_resp(False, {})
