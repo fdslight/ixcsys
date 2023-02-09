@@ -595,7 +595,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     if(NULL!=r){
         // 检查hop limit
         if(header->hop_limit<=1){
-            ixc_icmpv6_send_error_msg(netif,m->src_hwaddr,header->src_addr,0,0,0,header,64);
+            ixc_icmpv6_send_error_msg(netif,m->src_hwaddr,header->src_addr,0,0,0,header,m->tail-m->offset);
             ixc_mbuf_put(m);
             return;
         }
