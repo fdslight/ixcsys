@@ -625,7 +625,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
             }
             ixc_route_ipv6_pass_do(m);
         }else{
-            ixc_icmpv6_send_error_msg(netif,m->src_hwaddr,header->src_addr,1,3,0,header,64);
+            ixc_icmpv6_send_error_msg(netif,m->src_hwaddr,header->src_addr,1,3,0,header,m->tail-m->offset);
             ixc_mbuf_put(m);
         }
         return;
