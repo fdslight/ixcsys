@@ -481,6 +481,7 @@ class service(dispatcher.dispatcher):
         f.close()
         self.reset()
         self.__set_rules()
+        self.reset_racs()
 
     def conn_cfg_update(self, dic: dict):
         fpath = "%s/proxy.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
