@@ -150,6 +150,7 @@ class service(dispatcher.dispatcher):
         self.create_poll()
         self.start_scgi()
         self.reset()
+        self.reset_racs()
 
     def reset(self):
         if bool(int(self.configs["connection"]["enable"])):
@@ -163,7 +164,6 @@ class service(dispatcher.dispatcher):
             # 关闭src filter
             RPCClient.fn_call("router", "/config", "src_filter_enable", False)
             self.del_routes()
-        self.reset_racs()
 
     def start(self, debug):
         conn = self.__configs["connection"]
@@ -412,9 +412,9 @@ class service(dispatcher.dispatcher):
         if conn["enable"]:
             if network["enable_ip6"]:
                 host, prefix = netutils.parse_ip_with_prefix(network["ip6_route"])
-                self.__del_route(host, prefix=prefix, is_ipv6=True, is_dynamic=False)
+                RPCClient.fn_call("router", "/config", "del_route", host, prefix, is_ipv6=True)
             host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
-            self.__del_route(host, prefix=prefix, is_ipv6=False, is_dynamic=False)
+            RPCClient.fn_call("router", "/config", "del_route", host, prefix, is_ipv6=False)
         return
 
     def reset_racs(self):
@@ -457,9 +457,10 @@ class service(dispatcher.dispatcher):
 
         if network["enable_ip6"]:
             host, prefix = netutils.parse_ip_with_prefix(network["ip6_route"])
-            self.set_route(host, prefix, is_ipv6=True, is_dynamic=False)
+            RPCClient.fn_call("router", "/config", "add_route", host, prefix, "::", is_ipv6=True)
+
         host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
-        self.set_route(host, prefix, is_ipv6=False, is_dynamic=False)
+        RPCClient.fn_call("router", "/config", "add_route", host, prefix, "0.0.0.0", is_ipv6=False)
 
     def update_domain_rule(self, text: str):
         fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
@@ -481,7 +482,6 @@ class service(dispatcher.dispatcher):
         f.close()
         self.reset()
         self.__set_rules()
-        self.reset_racs()
 
     def conn_cfg_update(self, dic: dict):
         fpath = "%s/proxy.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
