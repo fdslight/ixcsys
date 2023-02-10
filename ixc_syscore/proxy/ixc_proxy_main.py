@@ -150,6 +150,7 @@ class service(dispatcher.dispatcher):
         self.create_poll()
         self.start_scgi()
         self.reset()
+        self.reset_racs()
 
     def reset(self):
         if bool(int(self.configs["connection"]["enable"])):
