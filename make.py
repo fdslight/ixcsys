@@ -81,9 +81,14 @@ def build_config_args(insert_s: str, _list: list):
 
 
 def __build(build_name, args: list):
-    if build_name not in __builds:
+    # 临时修改测试iscsid
+    if build_name not in __builds and build_name != "ixc_syscore/iscsid":
         print("ERROR:not found build name %s" % build_name)
         return
+
+    #if build_name not in __builds":
+    #    print("ERROR:not found build name %s" % build_name)
+    #    return
 
     name = "%s.make" % build_name.replace("/", ".")
 

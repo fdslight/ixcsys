@@ -270,6 +270,7 @@ int ixc_npfwd_init(struct ev_set *ev_set)
 	}
 
     if(ev_timeout_set(ev_set,ev,10)<0){
+        ev_delete(ev_set,ev);
 		STDERR("cannot set timeout for fd %d\r\n",listenfd);
         return -1;
 	}
