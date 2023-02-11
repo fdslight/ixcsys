@@ -63,6 +63,18 @@
                 <td>DNS服务器2</td>
                 <td>${self.V["nameservers"][1]}</td>
             </tr>
+            <tr>
+                <td>接收流量</td>
+                <td>${self.V["rx_traffic"]}</td>
+            </tr>
+            <tr>
+                <td>发送流量</td>
+                <td>${self.V["tx_traffic"]}</td>
+            </tr>
+            <tr>
+                <td>运行时间</td>
+                <td>${self.V["start_time"]["run_days"]}&nbsp;天 &nbsp;${self.V["start_time"]["run_hours"]}&nbsp;小时&nbsp;${self.V["start_time"]["run_minutes"]}&nbsp;分&nbsp;${self.V["start_time"]["run_seconds"]}&nbsp;秒</td>
+            </tr>
         </table>
     </div>
 </div>

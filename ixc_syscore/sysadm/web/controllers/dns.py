@@ -13,7 +13,6 @@ class controller(base_controller.BaseController):
 
     def handle(self):
         auto = self.request.get_argument("enable_auto", is_qs=False, is_seq=False)
-
         if not auto:
             enable_auto = False
         else:

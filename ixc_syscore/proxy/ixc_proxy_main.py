@@ -150,6 +150,7 @@ class service(dispatcher.dispatcher):
         self.create_poll()
         self.start_scgi()
         self.reset()
+        self.reset_racs()
 
     def reset(self):
         if bool(int(self.configs["connection"]["enable"])):
@@ -163,7 +164,6 @@ class service(dispatcher.dispatcher):
             # 关闭src filter
             RPCClient.fn_call("router", "/config", "src_filter_enable", False)
             self.del_routes()
-        self.reset_racs()
 
     def start(self, debug):
         conn = self.__configs["connection"]
@@ -412,9 +412,9 @@ class service(dispatcher.dispatcher):
         if conn["enable"]:
             if network["enable_ip6"]:
                 host, prefix = netutils.parse_ip_with_prefix(network["ip6_route"])
-                self.__del_route(host, prefix=prefix, is_ipv6=True, is_dynamic=False)
+                RPCClient.fn_call("router", "/config", "del_route", host, prefix, is_ipv6=True)
             host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
-            self.__del_route(host, prefix=prefix, is_ipv6=False, is_dynamic=False)
+            RPCClient.fn_call("router", "/config", "del_route", host, prefix, is_ipv6=False)
         return
 
     def reset_racs(self):
@@ -449,14 +449,18 @@ class service(dispatcher.dispatcher):
         else:
             self.__racs_fd = self.create_handler(-1, h, (conn["host"], int(conn["port"]),), is_ipv6=False)
 
+        # 此处可能由于查找域名失败而无法建立隧道
+        if self.__racs_fd < 0: return
+
         self.get_handler(self.__racs_fd).set_key(security["shared_key"])
         self.get_handler(self.__racs_fd).set_priv_key(security["private_key"])
 
         if network["enable_ip6"]:
             host, prefix = netutils.parse_ip_with_prefix(network["ip6_route"])
-            self.set_route(host, prefix, is_ipv6=True, is_dynamic=False)
+            RPCClient.fn_call("router", "/config", "add_route", host, prefix, "::", is_ipv6=True)
+
         host, prefix = netutils.parse_ip_with_prefix(network["ip_route"])
-        self.set_route(host, prefix, is_ipv6=False, is_dynamic=False)
+        RPCClient.fn_call("router", "/config", "add_route", host, prefix, "0.0.0.0", is_ipv6=False)
 
     def update_domain_rule(self, text: str):
         fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")

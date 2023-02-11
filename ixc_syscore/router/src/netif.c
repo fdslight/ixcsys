@@ -137,6 +137,8 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     netif->type=if_idx;
     netif->mtu_v4=1500;
     netif->mtu_v6=1280;
+    netif->rx_traffic=0;
+    netif->tx_traffic=0;
 
     bzero(netif->ipaddr,4);
     bzero(netif->ip6addr,16);
@@ -305,6 +307,8 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
             }
         }
 
+        netif->tx_traffic+=wsize;
+
         netif->sent_first=m->next;
         if(NULL==netif->sent_first) netif->sent_last=NULL;
         ixc_mbuf_put(m);
@@ -354,6 +358,8 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
                 break;
             }
         }
+
+        netif->rx_traffic+=rsize;
 
         if(IXC_NETIF_LAN==netif->type) m->from=IXC_MBUF_FROM_LAN;
         else m->from=IXC_MBUF_FROM_WAN;
@@ -483,6 +489,17 @@ int ixc_netif_mtu_set(int if_type,unsigned short v,int is_ipv6)
     
     if(is_ipv6) netif->mtu_v6=v;
     else netif->mtu_v4=v;
+
+    return 0;
+}
+
+int ixc_netif_traffic_get(int if_type,unsigned long long *rx_traffic,unsigned long long *tx_traffic)
+{
+    struct ixc_netif *netif=ixc_netif_get(if_type);
+    if(NULL==netif) return -1;
+
+    *rx_traffic=netif->rx_traffic;
+    *tx_traffic=netif->tx_traffic;
 
     return 0;
 }

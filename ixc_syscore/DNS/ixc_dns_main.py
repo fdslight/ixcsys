@@ -240,6 +240,7 @@ class service(dispatcher.dispatcher):
         """处理来自于DNS客户端的消息
         """
         if not self.__wan_ok: return
+        if len(message) < 15: return
 
         dns_id, = struct.unpack("!H", message[0:2])
         new_dns_id = self.get_dns_id()

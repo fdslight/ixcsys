@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import platform, os, sys
+import time
+
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.pylib.os_info as os_info
@@ -74,9 +76,62 @@ class widget(ui_widget.widget):
 
         return mem.replace("\n", "")
 
+    def get_traffic_size_descr(self, size):
+        """获取流量大小描述
+        """
+        seq = (
+            "KB", "MB", "GB", "TB", "PB", "EB",
+        )
+        s = ""
+        idx = 0
+        seq_len = len(seq)
+        while 1:
+            if idx >= seq_len: break
+            size = size / 1000
+            s = "%.3f %s" % (size, seq[idx])
+            if size < 1000: break
+            idx += 1
+
+        return s
+
+    def get_format_run_time(self):
+        now_time = time.time()
+        start_time = RPC.fn_call("router", "/config", "router_start_time")
+        v = now_time - start_time
+
+        tot_days = int(v / 86400)
+        tot_hours = int(v / 3600)
+        tot_minutes = int(v / 60)
+
+        # 运行天数
+        run_days = tot_days
+        # 运行小时数目
+        run_hours = int((v - tot_days * 86400) / 3600)
+        # 运行分钟数目
+        run_minutes = int((v - tot_hours * 3600) / 60)
+        # 运行秒数
+        run_secs = int(v - tot_minutes * 60)
+
+        return {
+            "run_days": run_days,
+            "run_hours": run_hours,
+            "run_minutes": run_minutes,
+            "run_seconds": run_secs,
+        }
+
     def handle(self, *args, **kwargs):
         uri = "default.html"
         dic = {}
+
+        rx_traffic_size, tx_traffic_size = RPC.fn_call("router", "/config", "wan_traffic_get")
+
+        rx_traffic_descr = self.get_traffic_size_descr(rx_traffic_size)
+        tx_traffic_descr = self.get_traffic_size_descr(tx_traffic_size)
+
+        dic["rx_traffic"] = rx_traffic_descr
+        dic["tx_traffic"] = tx_traffic_descr
+
+        dic["start_time"] = self.get_format_run_time()
 
         wan_configs = RPC.fn_call("router", "/config", "wan_config_get")
         pub = wan_configs["public"]

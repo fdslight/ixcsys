@@ -46,6 +46,9 @@ static char run_dir[4096];
 /// RPC共享路径
 static char rpc_path[4096];
 
+/// 路由器运行开始时间
+static time_t run_start_time=0;
+
 static PyObject *py_helper_module=NULL;
 static PyObject *py_helper_instance=NULL;
 
@@ -234,6 +237,25 @@ router_netif_mtu_set(PyObject *self,PyObject *args)
     }
 
     Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_netif_traffic_get(PyObject *self,PyObject *args)
+{
+    unsigned long long rx_traffic,tx_traffic;
+    int if_type;
+    PyObject *res;
+
+    if(!PyArg_ParseTuple(args,"i",&if_type)) return NULL;
+
+    rx_traffic=0;
+    tx_traffic=0;
+
+    ixc_netif_traffic_get(if_type,&rx_traffic,&tx_traffic);
+
+    res=Py_BuildValue("(KK)",rx_traffic,tx_traffic);
+    
+    return res;
 }
 
 static PyObject *
@@ -817,6 +839,13 @@ router_bind_cpu(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
+/// 获取运行开始时间
+static PyObject *
+router_start_time(PyObject *self,PyObject *args)
+{
+    return PyLong_FromUnsignedLongLong(run_start_time);
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -828,6 +857,7 @@ static PyMethodDef routerMethods[]={
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
     {"netif_set_mtu",(PyCFunction)router_netif_mtu_set,METH_VARARGS,"set network card MTU value"},
+    {"netif_traffic_get",(PyCFunction)router_netif_traffic_get,METH_VARARGS,"get network card traffic"},
     //
     {"src_filter_set_ip",(PyCFunction)router_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"src_filter_enable",(PyCFunction)router_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
@@ -877,6 +907,8 @@ static PyMethodDef routerMethods[]={
     //
     {"cpu_num",(PyCFunction)router_cpu_num,METH_NOARGS,"get cpu num"},
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},
+    //
+    {"router_start_time",(PyCFunction)router_start_time,METH_NOARGS,"get router start time"},
 
     {NULL,NULL,0,NULL}
 };
@@ -1255,6 +1287,8 @@ static void ixc_start(int debug)
 
     signal(SIGSEGV,ixc_signal_handle);
     signal(SIGINT,ixc_signal_handle);
+
+    run_start_time=time(NULL);
 
     // 注意这里需要最初初始化以便检查环境
     rs=ixc_init_python(debug);

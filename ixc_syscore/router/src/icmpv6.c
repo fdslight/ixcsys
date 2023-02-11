@@ -555,18 +555,18 @@ int ixc_icmpv6_send_ns(struct ixc_netif *netif,unsigned char *src_ipaddr,unsigne
     return ixc_icmpv6_send(netif,dst_hwaddr,src_ipaddr,sol_addr,buf,32);
 }
 
-void ixc_icmpv6_send_time_ex_msg(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *daddr,unsigned char code,void *data,unsigned short data_size)
+void ixc_icmpv6_send_error_msg(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *daddr,unsigned char type,unsigned char code,unsigned int pad_data,void *data,unsigned short data_size)
 {
     unsigned char buf[0xffff];
     struct netutil_icmpv6hdr *icmpv6_header=(struct netutil_icmpv6hdr *)buf;
 
     if(data_size>1200) data_size=1200;
 
-    icmpv6_header->type=3;
+    icmpv6_header->type=type;
     icmpv6_header->code=code;
     icmpv6_header->checksum=0;
 
-    bzero(buf+4,4);
+    memcpy(buf+4,&pad_data,4);
     memcpy(buf+8,data,data_size);
 
     ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6addr,daddr,buf,data_size+8);
