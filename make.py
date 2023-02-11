@@ -33,6 +33,7 @@ __helper = """
     rescue_install                  only replace ixc_main.py for update
     show_builds                     show build names
     proxy_rule_update               update proxy_rule
+    app_data_update                 update application data directory
 """
 
 INSTALL_PREFIX = "/opt/ixcsys"
@@ -46,6 +47,19 @@ def update_proxy_rule():
         "ixc_configs/proxy/proxy_ip.txt",
         "ixc_configs/proxy/pass_ip.txt"
     ]
+    for fpath in files:
+        cmd = "cp %s /opt/ixcsys/%s" % (fpath, fpath,)
+        os.system(cmd)
+
+
+def app_data_update():
+    files = [
+        "ixc_syscore/proxy/data/ca-bundle.crt",
+        "ixc_syscore/DHCP/data/ipxe.efi",
+        "ixc_syscore/DHCP/data/undionly.kpxe",
+        "ixc_syscore/DHCP/data/oui.csv",
+    ]
+    
     for fpath in files:
         cmd = "cp %s /opt/ixcsys/%s" % (fpath, fpath,)
         os.system(cmd)
@@ -348,7 +362,7 @@ def main():
     action = sys.argv[1]
     if action not in (
             "help", "build", "build_all", "install", "install_all", "show_builds", "gen_update", "rescue_install",
-            "install_lib", "gen_bin_install", "proxy_rule_update"):
+            "install_lib", "gen_bin_install", "proxy_rule_update", "app_data_update"):
         print(__helper)
         return
 
@@ -395,6 +409,10 @@ def main():
 
     if action == "proxy_rule_update":
         update_proxy_rule()
+        return
+
+    if action == "app_data_update":
+        app_data_update()
         return
 
     if action == "rescue_install":

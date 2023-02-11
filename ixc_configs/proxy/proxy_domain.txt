@@ -90,6 +90,7 @@ goo.gl:1
 *.parler.com:1
 *.gab.com:1
 *.twitch.tv:1
+*.discord.com:1
 
 # 防止skype重定向到gmw.cn
 *.skype.com:1
@@ -235,6 +236,7 @@ register.mesh.com:1
 *.hpe.com:1
 *.tuneaero.com:1
 *.mega.nz:1
+*.mega.io:1
 *.mega.co.nz:1
 *.proxmox.com:1
 security.debian.org:1
