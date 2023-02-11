@@ -32,9 +32,23 @@ __helper = """
     install_all prefix              install all
     rescue_install                  only replace ixc_main.py for update
     show_builds                     show build names
+    proxy_rule_update               update proxy_rule
 """
 
 INSTALL_PREFIX = "/opt/ixcsys"
+
+
+def update_proxy_rule():
+    """更新代理规则
+    """
+    files = [
+        "ixc_configs/proxy/proxy_domain.txt",
+        "ixc_configs/proxy/proxy_ip.txt",
+        "ixc_configs/proxy/pass_ip.txt"
+    ]
+    for fpath in files:
+        cmd = "cp %s /opt/ixcsys/%s" % (fpath, fpath,)
+        os.system(cmd)
 
 
 def __get_root_dir():
@@ -334,7 +348,7 @@ def main():
     action = sys.argv[1]
     if action not in (
             "help", "build", "build_all", "install", "install_all", "show_builds", "gen_update", "rescue_install",
-            "install_lib", "gen_bin_install"):
+            "install_lib", "gen_bin_install", "proxy_rule_update"):
         print(__helper)
         return
 
@@ -377,6 +391,10 @@ def main():
 
     if action == "gen_update":
         __gen_update_archive()
+        return
+
+    if action == "proxy_rule_update":
+        update_proxy_rule()
         return
 
     if action == "rescue_install":
