@@ -205,7 +205,7 @@ static.adzerk.net:1
 register.mesh.com:1
 *.akadns.net:1
 *.mengniang.org:0
-*.v2ex.com:0
+*.v2ex.com:1
 *.uukanshu.com:1
 *.jsdelivr.net:0
 *.cloudfront.net:1
