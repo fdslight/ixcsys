@@ -16,6 +16,7 @@ def remove_file(files: list, filename: str):
 
 def build(base_dir, my_dir, cflags, debug=True):
     files = sys_build.get_c_files("%s/src" % my_dir)
+    files += sys_build.get_c_files("%s/src/iscsi" % my_dir)
     files += sys_build.get_c_files("%s/pywind/clib/ev" % base_dir)
 
     if platform.system().lower() == "linux":
