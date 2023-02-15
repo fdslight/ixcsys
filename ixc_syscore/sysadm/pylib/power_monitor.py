@@ -135,7 +135,7 @@ class power_monitor(object):
         day_min = self.get_day_min()
 
         if self.__shutdown_type in ("auto", "time",):
-            if day_min >= self.__day_begin_time or day_min <= self.__day_end_time: return True
+            if day_min >= self.__day_begin_time and day_min <= self.__day_end_time: return True
 
         if self.__shutdown_type in ("auto", "network",):
             network_ok = self.check_network_ok()
