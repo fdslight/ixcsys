@@ -19,6 +19,7 @@ class widget(ui_widget.widget):
             if p < 0: continue
             program_name = s[0:p]
             ps["NAME"] = program_name
+            ps["MEM_MB"] = str(float(int(ps["VSZ"]) / 1000))
             results.append(ps)
 
-        return True, "system-process.html", {"processes":results}
+        return True, "system-process.html", {"processes": results}
