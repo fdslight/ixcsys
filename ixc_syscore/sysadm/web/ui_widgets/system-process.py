@@ -25,4 +25,4 @@ class widget(ui_widget.widget):
             tot_mem += mem_mb
             results.append(ps)
 
-        return True, "system-process.html", {"processes": results, "tot_used_mem": str(tot_mem)}
+        return True, "system-process.html", {"processes": results, "tot_used_mem": str(round(tot_mem,2))}
