@@ -8,6 +8,7 @@ class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
         processes = process.get_process()
         results = []
+        tot_mem = 0.0
 
         for ps in processes:
             command = ps["COMMAND"]
@@ -19,7 +20,9 @@ class widget(ui_widget.widget):
             if p < 0: continue
             program_name = s[0:p]
             ps["NAME"] = program_name
-            ps["MEM_MB"] = str(float(int(ps["VSZ"]) / 1000))
+            mem_mb = float(int(ps["VSZ"]) / 1000)
+            ps["MEM_MB"] = str(mem_mb)
+            tot_mem += mem_mb
             results.append(ps)
 
-        return True, "system-process.html", {"processes": results}
+        return True, "system-process.html", {"processes": results, "tot_used_mem": str(tot_mem)}
