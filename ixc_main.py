@@ -87,6 +87,19 @@ def force_stop_router():
         os.system("ip link del %s" % device)
 
 
+def force_stop_app(uri):
+    # 对router进程特别对待,因为需要核外操作
+    if uri == "ixc_syscore/router":
+        force_stop_router()
+        return
+    _, app = uri.split("/")
+    path = "/tmp/ixcsys/proxy"
+    stop("ixc_syscore/proxy")
+    spath = "%s/rpc.sock" % path
+
+    if os.path.exists(spath): os.remove(spath)
+
+
 def force_stop():
     stop_all()
     # 停止主进程
@@ -399,7 +412,12 @@ class ixc_main_d(object):
 
 def main():
     __helper = """
-    start [app_uri] | stop [app_uri] | force_stop | debug app_uri | restart [app_uri] | service_start | force_stop_router
+    start [app_uri]
+    stop [app_uri] 
+    force_stop [app_uri]
+    debug app_uri 
+    restart [app_uri]
+    service_start
     """
     if not check_py_modules(): return
     if not os.path.isfile("/usr/bin/lsb_release"):
@@ -413,7 +431,7 @@ def main():
         return
     set_pub_env()
     action = sys.argv[1]
-    if action not in ("start", "stop", "debug", "restart", "force_stop", "service_start", "force_stop_router"):
+    if action not in ("start", "stop", "debug", "restart", "force_stop", "service_start",):
         print(__helper)
         return
 
@@ -422,20 +440,14 @@ def main():
     else:
         uri = ""
 
-    if action == "force_stop":
-        force_stop()
-        return
-
-    if action == "force_stop_router":
-        force_stop_router()
-        return
-
     if not uri:
         if action == "start":
             start_main()
         elif action == "stop":
             stop_main()
             # stop_all()
+        elif action == "force_stop":
+            force_stop()
         elif action == "service_start":
             start_main(delay=30)
         elif action == "debug":
@@ -448,12 +460,20 @@ def main():
                 os.kill(pid, signal.SIGUSR1)
         return
 
+    if uri not in must_services:
+        print("ERROR:not found application %s" % uri)
+        return
+
     if action in ("start", "debug",):
         if action == "debug":
             debug = True
         else:
             debug = False
         start(uri, debug=debug)
+        return
+
+    if action == "force_stop":
+        force_stop_app(uri)
         return
 
     if action == "restart":
