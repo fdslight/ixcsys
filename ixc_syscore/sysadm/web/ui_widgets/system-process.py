@@ -6,20 +6,19 @@ import ixc_syslib.pylib.ixc_process as process
 
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
-        print("AA")
         processes = process.get_process()
         results = []
-        print(processes)
-        for p in processes:
-            command = p["COMMAND"]
+
+        for ps in processes:
+            command = ps["COMMAND"]
             p = command.find("ixc_syscore/")
             if p < 0: continue
-            p += 1
+            p += len("ixc_syscore/")
             s = command[p:]
             p = s.find("/")
             if p < 0: continue
             program_name = s[0:p]
-            p["NAME"] = program_name
-            results.append(p)
-        print(results)
+            ps["NAME"] = program_name
+            results.append(ps)
+
         return True, "system-process.html", {"processes":results}
