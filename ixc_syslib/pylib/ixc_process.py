@@ -2,7 +2,7 @@
 import os
 
 
-def get_ixc_process():
+def get_process():
     results = []
     fdst = os.popen("ps aux | grep ixc_syscore")
 

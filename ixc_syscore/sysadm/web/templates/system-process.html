@@ -1,0 +1,22 @@
+<div id="ixc-system-speed-view" class="ixc-menu-content" style="display: none;">
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">序号</th>
+            <th scope="col">进程ID</th>
+            <th scope="col">CPU使用率(%)</th>
+            <th scope="col">内存占用</th>
+            <th scope="col">进程名</th>
+        </tr>
+        </thead>
+        <tbody>
+            <%
+            x=1
+            for o in self.V["processes"]:
+                s="""<tr><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>""" % (x,o["PID"],o["CPU_prt"],o["VSZ"],o["NAME"])
+                x+=1
+                self.show(s)
+            %>
+        </tbody>
+    </table>
+</div>
