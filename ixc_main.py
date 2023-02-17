@@ -87,38 +87,6 @@ def force_stop_router():
         os.system("ip link del %s" % device)
 
 
-def force_stop_app(uri):
-    # 对router进程特别对待,因为需要核外操作
-    if uri == "ixc_syscore/router":
-        force_stop_router()
-        return
-    _, app = uri.split("/")
-    path = "/tmp/ixcsys/proxy"
-    stop("ixc_syscore/proxy")
-    spath = "%s/rpc.sock" % path
-
-    if os.path.exists(spath): os.remove(spath)
-
-
-def force_stop():
-    stop_all()
-    # 停止主进程
-    pid = proc.get_pid("/tmp/ixcsys/ixcsys.pid")
-    if pid > 0: os.kill(pid, signal.SIGINT)
-
-    time.sleep(5)
-
-    # 清除多余的文件
-    _list = os.listdir("/tmp/ixcsys")
-    for x in _list:
-        path = "/tmp/ixcsys/%s" % x
-        if not os.path.isdir(path): continue
-        spath = "%s/rpc.sock" % path
-        if os.path.exists(spath): os.remove(spath)
-
-    force_stop_router()
-
-
 def start(uri: str, debug=False):
     if not debug:
         start_file = "sh %s/%s/start.sh" % (sys_dir, uri)
@@ -148,6 +116,11 @@ def stop(uri: str):
     name = uri[p:]
     os.putenv("IXC_MYAPP_TMP_DIR", "/tmp/ixcsys/%s" % name)
     os.system(stop_file)
+
+    path = "/tmp/ixcsys/%s" % name
+    if not os.path.isdir(path): return
+    spath = "%s/rpc.sock" % path
+    if os.path.exists(spath): os.remove(spath)
 
 
 import pywind.lib.proc as proc
@@ -412,12 +385,7 @@ class ixc_main_d(object):
 
 def main():
     __helper = """
-    start [app_uri]
-    stop [app_uri] 
-    force_stop [app_uri]
-    debug app_uri 
-    restart [app_uri]
-    service_start
+    start [app_uri] | stop [app_uri]  | debug app_uri | restart [app_uri] | service_start | force_stop_router
     """
     if not check_py_modules(): return
     if not os.path.isfile("/usr/bin/lsb_release"):
@@ -431,7 +399,7 @@ def main():
         return
     set_pub_env()
     action = sys.argv[1]
-    if action not in ("start", "stop", "debug", "restart", "force_stop", "service_start",):
+    if action not in ("start", "stop", "debug", "restart", "service_start", "force_stop_router"):
         print(__helper)
         return
 
@@ -440,14 +408,16 @@ def main():
     else:
         uri = ""
 
+    if action == "force_stop_router":
+        force_stop_router()
+        return
+
     if not uri:
         if action == "start":
             start_main()
         elif action == "stop":
             stop_main()
             # stop_all()
-        elif action == "force_stop":
-            force_stop()
         elif action == "service_start":
             start_main(delay=30)
         elif action == "debug":
@@ -460,20 +430,12 @@ def main():
                 os.kill(pid, signal.SIGUSR1)
         return
 
-    if uri not in must_services:
-        print("ERROR:not found application %s" % uri)
-        return
-
     if action in ("start", "debug",):
         if action == "debug":
             debug = True
         else:
             debug = False
         start(uri, debug=debug)
-        return
-
-    if action == "force_stop":
-        force_stop_app(uri)
         return
 
     if action == "restart":
