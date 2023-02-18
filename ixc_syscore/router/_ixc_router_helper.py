@@ -75,6 +75,9 @@ class rpc(object):
             "bind_cpu": self.bind_cpu,
             "router_start_time": self.router_start_time,
 
+            "traffic_cpy_enable": self.traffic_cpy_enable,
+            "traffic_cpy_is_enabled": self.traffic_cpy_is_enabled,
+
             "config_save": self.save
         }
 
@@ -106,10 +109,10 @@ class rpc(object):
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
             "IXC_FLAG_VSWITCH": router.IXC_FLAG_VSWITCH,
             "IXC_FLAG_IP6_TUNNEL": router.IXC_FLAG_IP6_TUNNEL,
-            "IXC_FLAG_TRAFFIC_COPY":router.IXC_FLAG_TRAFFIC_COPY,
+            "IXC_FLAG_TRAFFIC_COPY": router.IXC_FLAG_TRAFFIC_COPY,
 
-            "IXC_TRAFFIC_OUT":router.IXC_TRAFFIC_OUT,
-            "IXC_TRAFFIC_IN":router.IXC_TRAFFIC_IN,
+            "IXC_TRAFFIC_OUT": router.IXC_TRAFFIC_OUT,
+            "IXC_TRAFFIC_IN": router.IXC_TRAFFIC_IN,
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
@@ -486,6 +489,12 @@ class rpc(object):
         self.__helper.save_sec_net_configs()
 
         return 0, None
+
+    def traffic_cpy_enable(self, enable: bool):
+        return 0, self.__helper.router.traffic_copy_enable(enable)
+
+    def traffic_cpy_is_enabled(self):
+        return 0, self.__helper.router.traffic_copy_is_enabled()
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
         """端口映射添加
