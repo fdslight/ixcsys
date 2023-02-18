@@ -285,7 +285,7 @@ int ixc_netif_send(struct ixc_mbuf *m)
 
             cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+m->begin);
             cpy_pkt_header->version=1;
-            cpy_pkt_header->traffic_dir=IXC_TAFFIC_OUT;
+            cpy_pkt_header->traffic_dir=IXC_TAFFIC_IN;
             cpy_pkt_header->pkt_time=time(NULL);
 
             ixc_npfwd_send_raw(t,0,IXC_FLAG_TRAFFIC_COPY);

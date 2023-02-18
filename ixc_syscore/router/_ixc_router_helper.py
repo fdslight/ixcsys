@@ -106,6 +106,10 @@ class rpc(object):
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
             "IXC_FLAG_VSWITCH": router.IXC_FLAG_VSWITCH,
             "IXC_FLAG_IP6_TUNNEL": router.IXC_FLAG_IP6_TUNNEL,
+            "IXC_FLAG_TRAFFIC_COPY":router.IXC_FLAG_TRAFFIC_COPY,
+
+            "IXC_TRAFFIC_OUT":router.IXC_TRAFFIC_OUT,
+            "IXC_TRAFFIC_IN":router.IXC_TRAFFIC_IN,
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
