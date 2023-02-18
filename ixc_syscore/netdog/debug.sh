@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-${IXC_MYAPP_DIR}/netdog debug
+${IXC_MYAPP_DIR}/ixc_netdog debug
