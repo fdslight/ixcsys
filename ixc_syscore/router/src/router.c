@@ -55,6 +55,8 @@ static PyObject *py_helper_instance=NULL;
 static struct ev_set ixc_ev_set;
 ///循环更新事件
 static time_t loop_time_up=0;
+/// 是否开启流量拷贝
+static int traffic_copy_enable=0;
 
 typedef struct{
     PyObject_HEAD
@@ -846,6 +848,26 @@ router_start_time(PyObject *self,PyObject *args)
     return PyLong_FromUnsignedLongLong(run_start_time);
 }
 
+/// 开启或者关闭流量拷贝
+static PyObject *
+router_traffic_copy_enable(PyObject *self,PyObject *args)
+{
+    if(!PyArg_ParseTuple(args,"p",&traffic_copy_enable)) return NULL;
+
+    Py_RETURN_NONE;
+}
+
+/// 是否开启了流量拷贝
+static PyObject *
+router_traffic_copy_is_enabled(PyObject *self,PyObject *args)
+{
+    if(traffic_copy_enable){
+        Py_RETURN_TRUE;
+    }
+
+    Py_RETURN_FALSE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -909,6 +931,9 @@ static PyMethodDef routerMethods[]={
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},
     //
     {"router_start_time",(PyCFunction)router_start_time,METH_NOARGS,"get router start time"},
+    //
+    {"traffic_copy_enable",(PyCFunction)router_traffic_copy_enable,METH_VARARGS,"enable or disable traffic copy"},
+    {"traffic_copy_is_enabled",(PyCFunction)router_traffic_copy_is_enabled,METH_NOARGS,"show traffic copy is enabled"},
 
     {NULL,NULL,0,NULL}
 };
@@ -958,10 +983,15 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
     PyModule_AddIntMacro(m,IXC_FLAG_VSWITCH);
     PyModule_AddIntMacro(m,IXC_FLAG_IP6_TUNNEL);
+    PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_COPY);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //
     PyModule_AddIntMacro(m,IXC_NETIF_WAN);
+    //
+    PyModule_AddIntMacro(m,IXC_TRAFFIC_OUT);
+    PyModule_AddIntMacro(m,IXC_TRAFFIC_IN);
+
 
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_DROP);
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_ACCEPT);
@@ -1056,6 +1086,12 @@ void ixc_router_md5_calc(void *data,int size,unsigned char *res)
     Py_XDECREF(pfunc);
     Py_XDECREF(result);
     Py_XDECREF(args);
+}
+
+inline
+int ixc_router_traffic_copy_is_enabled(void)
+{
+    return traffic_copy_enable;
 }
 
 static void ixc_python_loop(void)

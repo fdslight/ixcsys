@@ -18,8 +18,23 @@
 #define IXC_FLAG_VSWITCH 5
 /// IPv6隧道
 #define IXC_FLAG_IP6_TUNNEL 6
+/// 流复制
+#define IXC_FLAG_TRAFFIC_COPY 7
 
 #include<sys/types.h>
+
+/// 流量拷贝数据包格式
+struct ixc_traffic_cpy_pkt_header{
+    // 版本号,当前固定值为1
+    int version;
+    // 流量方向
+    // 输出流量
+#define IXC_TRAFFIC_OUT 0
+    // 接收流量
+#define IXC_TRAFFIC_IN 1
+    int traffic_dir;
+    unsigned long long pkt_time;
+};
 
 /// 发送PPPoE数据包到Python
 int ixc_router_pppoe_session_send(unsigned short protocol,unsigned short length,void *data);
@@ -29,5 +44,7 @@ int ixc_router_tell(const char *content);
 void ixc_router_exit(void);
 
 void ixc_router_md5_calc(void *data,int size,unsigned char *res);
+/// 是否开启流量拷贝
+int ixc_router_traffic_copy_is_enabled(void);
 
 #endif

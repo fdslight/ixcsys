@@ -4,6 +4,7 @@
 #include<string.h>
 #include<fcntl.h>
 #include<unistd.h>
+#include<time.h>
 
 #include "netif.h"
 #include "router.h"
@@ -13,6 +14,7 @@
 #include "debug.h"
 #include "ip6.h"
 #include "debug.h"
+#include "npfwd.h"
 
 #include "../../../pywind/clib/ev/ev.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -258,6 +260,8 @@ int ixc_netif_set_hwaddr(int if_idx,unsigned char *hwaddr)
 int ixc_netif_send(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=m->netif;
+    struct ixc_mbuf *t;
+    struct ixc_traffic_cpy_pkt_header *cpy_pkt_header;
 
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -273,6 +277,21 @@ int ixc_netif_send(struct ixc_mbuf *m)
     }
 
     netif->sent_last=m;
+
+    if(IXC_NETIF_WAN==netif->type && ixc_router_traffic_copy_is_enabled()){
+        t=ixc_mbuf_clone(m);
+        if(NULL!=t){
+            t->begin-=sizeof(struct ixc_traffic_cpy_pkt_header);
+
+            cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+m->begin);
+            cpy_pkt_header->version=1;
+            cpy_pkt_header->traffic_dir=IXC_TAFFIC_OUT;
+            cpy_pkt_header->pkt_time=time(NULL);
+
+            ixc_npfwd_send_raw(t,0,IXC_FLAG_TRAFFIC_COPY);
+        }
+    }
+
     ixc_netif_tx_data(netif);
 
     return 0;
@@ -325,7 +344,8 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
 int ixc_netif_rx_data(struct ixc_netif *netif)
 {
     ssize_t rsize;
-    struct ixc_mbuf *m;
+    struct ixc_mbuf *m,*t;
+    struct ixc_traffic_cpy_pkt_header *cpy_pkt_header;
     int rs=0;
     
     if(!netif_is_initialized){
@@ -361,14 +381,30 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
 
         netif->rx_traffic+=rsize;
 
-        if(IXC_NETIF_LAN==netif->type) m->from=IXC_MBUF_FROM_LAN;
-        else m->from=IXC_MBUF_FROM_WAN;
-
         m->begin=IXC_MBUF_BEGIN;
         m->offset=m->begin;
         m->tail=m->offset+rsize;
         m->end=m->tail;
 
+        if(IXC_NETIF_LAN==netif->type){
+            m->from=IXC_MBUF_FROM_LAN;
+            if(ixc_router_traffic_copy_is_enabled()){
+                t=ixc_mbuf_clone(m);
+                if(NULL!=t){
+                    t->begin-=sizeof(struct ixc_traffic_cpy_pkt_header);
+
+                    cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+m->begin);
+                    cpy_pkt_header->version=1;
+                    cpy_pkt_header->traffic_dir=IXC_TAFFIC_OUT;
+                    cpy_pkt_header->pkt_time=time(NULL);
+
+                    ixc_npfwd_send_raw(t,0,IXC_FLAG_TRAFFIC_COPY);
+                }
+            }
+        }
+        else{
+            m->from=IXC_MBUF_FROM_WAN;
+        }
         ixc_ether_handle(m);
     }
     
