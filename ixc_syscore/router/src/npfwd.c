@@ -281,7 +281,7 @@ int ixc_npfwd_init(struct ev_set *ev_set)
 
 	if(rs<0){
 		ev_delete(ev_set,ev);
-		STDERR("cannot add to readablefor fd %d\r\n",listenfd);
+		STDERR("cannot add to readable for fd %d\r\n",listenfd);
 		return -1;
 	}
 
