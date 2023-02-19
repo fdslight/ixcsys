@@ -2,6 +2,8 @@
 #include<Python.h>
 #include<structmember.h>
 #include<libgen.h>
+#include<signal.h>
+#include<execinfo.h>
 
 #include "socket_server.h"
 
@@ -12,8 +14,6 @@
 static char pid_path[4096];
 /// 运行目录
 static char run_dir[4096];
-/// RPC共享路径
-static char rpc_path[4096];
 
 /// 设置运行环境
 static void ixc_set_run_env(char *argv[])
@@ -27,13 +27,50 @@ static void ixc_set_run_env(char *argv[])
     }
     
     dirname(run_dir);
+}
 
-    strcpy(rpc_path,"/tmp/ixcsys/netdog/rpc.sock");
+static void ixc_segfault_info()
+{
+    void *bufs[4096];
+    char **strs;
+    int nptrs;
+
+    nptrs=backtrace(bufs,4096);
+    strs=backtrace_symbols(bufs,nptrs);
+    if(NULL==strs) return;
+
+    for(int n=0;n<nptrs;n++){
+        fprintf(stderr,"%s\r\n",strs[n]);
+    }
+    free(strs);
+    exit(EXIT_FAILURE);
+}
+
+static void netdog_stop(void)
+{
+    ixc_socket_server_uninit();
+}
+
+static void ixc_signal_handle(int signum)
+{
+    switch(signum){
+        case SIGINT:
+            netdog_stop();
+            break;
+        case SIGSEGV:
+            ixc_segfault_info();
+            break;
+    }
 }
 
 static void netdog_start(void)
 {
-    int rs=ixc_socket_server_init();
+    int rs;
+
+    signal(SIGSEGV,ixc_signal_handle);
+    signal(SIGINT,ixc_signal_handle);
+
+    rs=ixc_socket_server_init();
     if(rs<0){
         STDERR("cannot init socket server\r\n");
         exit(EXIT_SUCCESS);
@@ -41,10 +78,7 @@ static void netdog_start(void)
     ixc_socket_server_ioloop();
 }
 
-static void netdog_stop(void)
-{
-    
-}
+
 
 int main(int argc,char *argv[])
 {
@@ -74,7 +108,7 @@ int main(int argc,char *argv[])
     }
 
     if(!strcmp(argv[1],"stop")){
-        netdog_stop();
+        //netdog_stop();
         return 0;
     }
 

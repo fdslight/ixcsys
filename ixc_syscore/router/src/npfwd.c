@@ -111,6 +111,9 @@ static void ixc_npfwd_rx_data(int fd)
             case IXC_FLAG_VSWITCH:
                 ixc_vsw_handle_from_user(m);
                 break;
+            case IXC_FLAG_TRAFFIC_COPY:
+                ixc_ether_send2(m);
+                break;
             default:
                 //DBG_FLAGS;
                 ixc_mbuf_put(m);
