@@ -31,23 +31,6 @@ static void ixc_set_run_env(char *argv[])
     dirname(run_dir);
 }
 
-/// 写入进程状态
-static void write_process_ok(int is_ok)
-{
-    FILE *fp;
-    if (access("/tmp/ixcsys", F_OK))
-    {
-        mkdir("/tmp/ixcsys", S_IRWXU);
-    }
-    if (access("/tmp/ixcsys/netdog", F_OK))
-    {
-        mkdir("/tmp/ixcsys/netdog", S_IRWXU);
-    }
-    fp = fopen("/tmp/ixcsys/netdog/netdog_anylized_ok.status", "w");
-    fwrite(&is_ok, sizeof(int), 1, fp);
-    fclose(fp);
-}
-
 static void ixc_segfault_info()
 {
     void *bufs[4096];
@@ -69,7 +52,6 @@ static void ixc_segfault_info()
 
 static void netdog_stop(void)
 {
-    write_process_ok(0);
     ixc_socket_server_uninit();
     exit(EXIT_SUCCESS);
 }

@@ -81,45 +81,19 @@ class service(dispatcher.dispatcher):
         self.__consts = RPCClient.fn_call("router", "/config", "get_all_consts")
 
         cmd = "%s/ixc_netdog_anylized start" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
-        print("AA")
         os.system(cmd)
-        # 等待网络分析器启动
-        print("BB")
-        ok = self.wait_netdog_anylize()
-        print(ok)
+        time.sleep(3)
         # 启动网络分析器后,进行数据转发配置,用以监控局域网流量
-        if ok:
-            mon_key, mon_port = libsys_msg.get_pkt_mon_port()
-            print(mon_key,mon_port)
-            # 首先关闭流量拷贝
-            RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
-            RPCClient.fn_call("router", "/config", "unset_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'])
-            RPCClient.fn_call("router", "/config", "set_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'], mon_key,
-                              mon_port)
+        mon_key, mon_port = libsys_msg.get_pkt_mon_port()
+        # 首先关闭流量拷贝
+        RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
+        RPCClient.fn_call("router", "/config", "unset_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'])
+        RPCClient.fn_call("router", "/config", "set_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'], mon_key,
+                          mon_port)
 
         self.create_poll()
         self.start_scgi()
         self.start_sys_msg()
-
-    def wait_netdog_anylize(self):
-        """等待netdog_anylize分析进程是否注册成功
-        """
-        fpath = "/tmp/ixcsys/netdog/netdog_anylized_ok.status"
-        t = time.time()
-        ok = False
-
-        while 1:
-            now = time.time()
-            v = now - t
-            if not os.path.isfile(fpath):
-                if v > 3.0: break
-                continue
-            fdst = open(fpath, "rb")
-            st, = struct.unpack("i", fdst.read())
-            if bool(st):
-                ok = True
-                break
-        return ok
 
     def myloop(self):
         pass
