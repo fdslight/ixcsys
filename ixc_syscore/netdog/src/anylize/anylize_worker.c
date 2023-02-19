@@ -11,7 +11,13 @@ static struct ixc_worker_context *workers[IXC_WORKER_NUM_MAX];
 
 static void *ixc_anylize_worker_start(void *thread_seq)
 {
-    STDOUT("pthread_id %ld\r\n",pthread_self());
+    struct ixc_worker_context *context;
+    int seq=*thread_seq;
+
+    context=workers[seq];
+    context->id=pthread_self();
+
+    STDOUT("pthread_id:%ld seq:%d\r\n",pthread_self(),seq);
 
     return NULL;
 }
