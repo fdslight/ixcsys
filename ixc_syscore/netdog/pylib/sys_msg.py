@@ -42,7 +42,7 @@ def get_pkt_mon_port():
     s.send(msg)
 
     resp_msg = s.recv(1024)
-
+    print(resp_msg)
     _type, msg = unwrap_sys_msg(msg)
     key, port = struct.unpack("!16sH", msg)
 
