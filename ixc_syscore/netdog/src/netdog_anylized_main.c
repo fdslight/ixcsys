@@ -85,7 +85,7 @@ static void netdog_start(int is_debug)
 
     if (!is_debug)
         pfile_write(pid_path, getpid());
-    write_process_ok(1);
+
     ixc_socket_server_ioloop();
 }
 
