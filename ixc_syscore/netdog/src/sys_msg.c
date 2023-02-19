@@ -241,6 +241,7 @@ int ixc_sys_msg_init(struct ev_set *ev_set)
 
 void ixc_sys_msg_uninit(void)
 {
+    ev_delete(sys_msg_ev_set,sys_msg_ev);
     sys_msg_is_initialized = 0;
 }
 
