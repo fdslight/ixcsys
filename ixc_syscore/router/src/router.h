@@ -26,13 +26,13 @@
 /// 流量拷贝数据包格式
 struct ixc_traffic_cpy_pkt_header{
     // 版本号,当前固定值为1
-    int version;
+    unsigned int version;
     // 流量方向
     // 输出流量
 #define IXC_TRAFFIC_OUT 0
     // 接收流量
 #define IXC_TRAFFIC_IN 1
-    int traffic_dir;
+    unsigned int traffic_dir;
     // 数据包的时间（秒）
     unsigned long long sec_time;
     // 数据包的时间（微秒）
