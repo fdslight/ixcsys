@@ -26,13 +26,12 @@ static void ixc_netpkt_gen_rand_key(void)
     int n;
     unsigned char ch;
 
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 4; i++)
     {
         srand((unsigned int)time(NULL));
         n = rand();
 
-        ch = n % 0xff;
-        netpkt_key[i] = ch;
+        memcpy(&netpkt_key[i*4],n,4);
     }
 }
 
