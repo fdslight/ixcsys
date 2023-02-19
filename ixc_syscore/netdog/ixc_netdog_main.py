@@ -81,9 +81,12 @@ class service(dispatcher.dispatcher):
         self.__consts = RPCClient.fn_call("router", "/config", "get_all_consts")
 
         cmd = "%s/ixc_netdog_anylized start" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
+        print("AA")
         os.system(cmd)
         # 等待网络分析器启动
+        print("BB")
         ok = self.wait_netdog_anylize()
+        print(ok)
         # 启动网络分析器后,进行数据转发配置,用以监控局域网流量
         if ok:
             mon_key, mon_port = libsys_msg.get_pkt_mon_port()
