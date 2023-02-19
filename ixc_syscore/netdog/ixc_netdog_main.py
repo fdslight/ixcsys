@@ -74,16 +74,20 @@ class service(dispatcher.dispatcher):
         self.__debug = debug
         self.__msg_fd = -1
         self.__configs = {}
+        self.__scgi_fd = -1
 
         RPCClient.wait_processes(["router"])
 
         self.__consts = RPCClient.fn_call("router", "/config", "get_all_consts")
 
+        cmd = "%s/ixc_netdog_anylized start" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
+        os.system(cmd)
         # 等待网络分析器启动
         ok = self.wait_netdog_anylize()
         # 启动网络分析器后,进行数据转发配置,用以监控局域网流量
         if ok:
             mon_key, mon_port = libsys_msg.get_pkt_mon_port()
+            print(mon_key,mon_port)
             # 首先关闭流量拷贝
             RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
             RPCClient.fn_call("router", "/config", "unset_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'])
@@ -150,6 +154,9 @@ class service(dispatcher.dispatcher):
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+
+        cmd = "%s/ixc_netdog_anylized stop" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
+        os.system(cmd)
 
 
 def main():

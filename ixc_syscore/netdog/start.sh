@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-${IXC_MYAPP_DIR}/ixc_netdog start
+${IXC_PYTHON} ${IXC_MYAPP_DIR}/ixc_netdog_main.py start

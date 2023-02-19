@@ -1,7 +1,7 @@
 
 
 #include "socket_server.h"
-#include "netpkt_recv.h"
+#include "netpkt.h"
 #include "sys_msg.h"
 
 #include "../../../pywind/clib/debug.h"
@@ -20,7 +20,7 @@ int ixc_socket_server_init(void)
         return -1;
     }
 
-    rs=ixc_netpkt_recv_init(&ixc_socket_ev_set);
+    rs=ixc_netpkt_init(&ixc_socket_ev_set);
     rs=ixc_sys_msg_init(&ixc_socket_ev_set);
 
     return 0;
@@ -28,7 +28,7 @@ int ixc_socket_server_init(void)
 
 void ixc_socket_server_uninit(void)
 {
-    ixc_netpkt_recv_uninit();
+    ixc_netpkt_uninit();
     ixc_sys_msg_uninit();
 }
 
