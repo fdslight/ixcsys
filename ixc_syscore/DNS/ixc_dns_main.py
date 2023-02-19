@@ -343,12 +343,13 @@ class service(dispatcher.dispatcher):
         sec_rule.save_to_file(self.__sec_rules, self.__sec_rule_path)
 
     def release(self):
-        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
-
+        if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
         if self.__dns_server > 0: self.delete_handler(self.__dns_server)
         if self.__dns_client > 0: self.delete_handler(self.__dns_client)
         if self.__dns_server6 > 0: self.delete_handler(self.__dns_server6)
         if self.__dns_client6 > 0: self.delete_handler(self.__dns_client6)
+
+        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
     def auto_clean(self):
         now_t = time.time()

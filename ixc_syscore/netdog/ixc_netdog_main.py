@@ -14,7 +14,8 @@ from pywind.global_vars import global_vars
 
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.web.route as webroute
-import ixc_syscore.init.handlers.syslog as syslog
+
+import ixc_syscore.netdog.handlers.sys_msg as sys_msg
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -28,7 +29,7 @@ def __stop_service():
 
 def __start_service(debug):
     if not debug and os.path.isfile(PID_FILE):
-        print("the ixc_init_main process exists")
+        print("the ixc_netdog_main process exists")
         return
 
     if not debug:
@@ -59,31 +60,16 @@ def __start_service(debug):
 
 class service(dispatcher.dispatcher):
     __debug = None
-    __log_fd = None
-    __logs = None
-    __log_count = None
-    __log_max = None
-
-    __errlog_path = None
-    __syslog_path = None
+    __msg_fd = None
 
     def init_func(self, debug):
-        global_vars["ixcsys.init"] = self
+        global_vars["ixcsys.netdog"] = self
 
         self.__debug = debug
-        self.__logs = []
-        self.__log_count = 0
-        self.__log_max = 200
-
-        self.__errlog_path = "/var/log/ixcsys_error.log"
-        self.__syslog_path = "/var/log/ixcsys_syslog.log"
+        self.__msg_fd = -1
 
         self.create_poll()
         self.start_scgi()
-        self.log_start()
-
-    def log_start(self):
-        self.__log_fd = self.create_handler(-1, syslog.syslogd)
 
     def myloop(self):
         pass
@@ -101,82 +87,15 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
 
-    def log_write(self, level: int, name: str, message: str):
-        t = message.replace("\n", "")
-        t = t.replace("\r", "")
-        if not t: return
-
-        level_map = {
-            logging.LEVEL_INFO: "INFO",
-            logging.LEVEL_ALERT: "ALERT",
-            logging.LEVEL_ERR: "ERROR"
-        }
-
-        if level not in level_map: return
-
-        if self.debug:
-            fmt_msg = "\r\n\r\napplication:%s\r\nlevel:%s\r\n%s" % (name, level_map[level], message,)
-            if level == logging.LEVEL_ERR:
-                sys.stdout.write(fmt_msg)
-            else:
-                sys.stderr.write(fmt_msg)
-            return
-
-        if level == logging.LEVEL_ERR:
-            self.write_err_log(name, message)
-            return
-
-        o = {"level": level_map[level], "application": name, "message": message,
-             "time": time.strftime("%Y-%m-%d %H:%M:%S %Z")}
-        if self.__log_count >= self.__log_max:
-            self.__logs.pop(0)
-        else:
-            self.__log_count += 1
-        self.__logs.append(o)
-
-    def write_err_log(self, name: str, message: str):
-        s1 = time.strftime("%Y-%m-%d %H:%M:%S %Z")
-        w = "%s\r\napplication:%s\r\nmessage:\r\n%s\r\n" % (s1, name, message)
-
-        fdst = open(self.__errlog_path, "a")
-
-        fdst.write(w)
-        fdst.close()
-
-    def save_log_to_file(self):
-        fpath = self.__syslog_path
-        s = json.dumps(self.__logs)
-        with open(fpath, "wb") as f: f.write(s.encode())
-        f.close()
-
-    def get_syslog(self, from_file=False):
-        if not from_file: return self.__logs
-
-        fpath = self.__syslog_path
-        if not os.path.isfile(fpath): return []
-        with open(fpath, "rb") as f:
-            byte_s = f.read()
-        f.close()
-        return json.loads(byte_s.decode())
-
-    def get_errlog(self):
-        if not os.path.isfile(self.__errlog_path): return ""
-        with open(self.__errlog_path, "r") as f:
-            s = f.read()
-        f.close()
-
-        return s
-
     def release(self):
+        if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
+
+
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
-
-        if self.__log_fd > 0: self.delete_handler(self.__log_fd)
-
-        self.save_log_to_file()
 
 
 def main():
-    __helper = "ixc_syscore/init helper: start | stop | debug"
+    __helper = "ixc_syscore/netdog helper: start | stop | debug"
     if len(sys.argv) != 2:
         print(__helper)
         return

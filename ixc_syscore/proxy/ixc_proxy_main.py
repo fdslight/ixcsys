@@ -557,7 +557,7 @@ class service(dispatcher.dispatcher):
             self.send_msg_to_tunnel(proto_utils.ACT_IPDATA, message)
 
     def release(self):
-        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+        if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
         if self.__conn_fd > 0:
             self.delete_handler(self.__conn_fd)
             self.__conn_fd = -1
@@ -565,6 +565,7 @@ class service(dispatcher.dispatcher):
             self.clear_racs_route()
             self.delete_handler(self.__racs_fd)
             self.__racs_fd = -1
+        if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
     def del_routes(self):
         dels = []

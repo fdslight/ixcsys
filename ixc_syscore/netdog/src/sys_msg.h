@@ -21,7 +21,7 @@ struct ixc_sys_msg{
 #define IXC_SYS_MSG_DEL_RULE 4
     unsigned char type;
     // 消息长度
-    unsigned char pad[2];
+    unsigned char pad[6];
 };
 
 int ixc_sys_msg_init(struct ev_set *ev_set);
