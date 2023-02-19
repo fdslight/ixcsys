@@ -8,17 +8,17 @@ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind(("127.0.0.1", 0))
 port = s.getsockname()[1]
 
-RPCClient.fn_call("router", "/netpkt", "unset_fwd_port", 7)
-ok, message = RPCClient.fn_call("router", "/netpkt", "set_fwd_port", 7,
+RPCClient.fn_call("router", "/config", "unset_fwd_port", 7)
+ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", 7,
                                 rand_key, port)
 
-RPCClient.fn_call("router", "/runtime", "traffic_cpy_enable", True)
+RPCClient.fn_call("router", "/config", "traffic_cpy_enable", True)
 
 while 1:
     msg, addr = s.recvfrom(4096)
     print(msg, addr)
     break
-RPCClient.fn_call("router", "/runtime", "traffic_cpy_enable", False)
+RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
 s.close()
 
 """
