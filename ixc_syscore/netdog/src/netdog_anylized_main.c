@@ -49,6 +49,7 @@ static void ixc_segfault_info()
 static void netdog_stop(void)
 {
     ixc_socket_server_uninit();
+    exit(EXIT_SUCCESS);
 }
 
 static void ixc_signal_handle(int signum)
