@@ -129,8 +129,10 @@ class service(dispatcher.dispatcher):
         self.__msg_fd = self.create_handler(-1, sys_msg.sys_msg)
 
     def release(self):
-        if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
+        print("ZZZ")
+        self.traffic_anylize_enable(False)
 
+        if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
         cmd = "%s/ixc_netdog_anylized stop" % os.getenv("IXC_MYAPP_RELATIVE_DIR")

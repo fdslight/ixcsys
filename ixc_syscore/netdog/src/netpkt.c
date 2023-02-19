@@ -37,19 +37,19 @@ static void ixc_netpkt_gen_rand_key(void)
 static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
 {
     struct ixc_netpkt_header *header=(struct ixc_netpkt_header *)(m->data+m->begin);
-    STDOUT("AAA\r\n");
+ 
     // 检查key值是否匹配
     if(memcmp(header->key,netpkt_key,16)){
         ixc_mbuf_put(m);
         return;
     }
-    STDOUT("BBB\r\n");
+ 
     // 检查端口
     if(from->sin_port!=htons(8964)){
         ixc_mbuf_put(m);
         return;
     }
-    STDOUT("CCC\r\n");
+ 
     ixc_mbuf_put(m);
 }
 
