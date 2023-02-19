@@ -16,6 +16,8 @@ struct ixc_worker_context{
     pthread_t id;
     // 线程是否正在工作
     int is_working;
+    // 当前线程索引
+    int idx;
 };
 
 int ixc_anylize_worker_init(void);

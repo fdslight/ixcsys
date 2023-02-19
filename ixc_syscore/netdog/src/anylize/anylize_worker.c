@@ -9,15 +9,12 @@ static int anylize_worker_netpkt_is_locked=0;
 static struct ixc_worker_context *workers[IXC_WORKER_NUM_MAX];
 
 
-static void *ixc_anylize_worker_start(void *thread_seq)
+static void *ixc_anylize_worker_start(void *thread_context)
 {
-    struct ixc_worker_context *context;
-    int seq=*((int *)thread_seq);
-
-    context=workers[seq];
+    struct ixc_worker_context *context=thread_context;
     context->id=pthread_self();
 
-    STDOUT("pthread_id:%ld seq:%d\r\n",pthread_self(),seq);
+    STDOUT("pthread_id:%ld seq:%d\r\n",pthread_self(),context->idx);
 
     return NULL;
 }
@@ -56,7 +53,8 @@ int ixc_anylize_create_workers(int num)
 
     for(int n=0;n<num;n++){
         context=workers[n];
-        rs=pthread_create(&id,NULL,&ixc_anylize_worker_start,&n);
+        context->idx=n;
+        rs=pthread_create(&id,NULL,&ixc_anylize_worker_start,context);
         if(rs!=0){
             STDERR("create thread error\r\n");
             return -1;
