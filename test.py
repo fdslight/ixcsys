@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket, os, struct
+import socket, os, struct, time
 
 import ixc_syslib.pylib.RPCClient as RPCClient
 
@@ -16,7 +16,8 @@ RPCClient.fn_call("router", "/config", "traffic_cpy_enable", True)
 
 while 1:
     msg, addr = s.recvfrom(4096)
-    print(msg[20],msg[21], addr)
+    x = struct.unpack("!BB6sQQ", msg[20:44]);
+    print(x, time.time(), addr)
     break
 RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
 s.close()
