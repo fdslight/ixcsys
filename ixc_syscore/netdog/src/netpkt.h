@@ -46,5 +46,8 @@ int ixc_netpkt_port_get(unsigned short *port);
 int ixc_netpkt_key_get(unsigned char *res);
 // 发送链路层据包
 void ixc_netpkt_send(struct ixc_mbuf *m);
+// 是否有数据包
+int ixc_netpkt_have(void);
+void ixc_netpkt_loop(void);
 
 #endif

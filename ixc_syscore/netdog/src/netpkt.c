@@ -4,11 +4,17 @@
 #include <errno.h>
 #include <sys/un.h>
 #include <time.h>
+#include <pthread.h>
+#include <signal.h>
 
 #include "netpkt.h"
+#include "netdog.h"
 
+#include "./anylize/ether.h"
+#include "./anylize/anylize_worker.h"
 
 #include "../../../pywind/clib/debug.h"
+#include "../../../pywind/clib/netutils.h"
 
 static int netpkt_is_initialized = 0;
 static int netpkt_fd = -1;
@@ -18,6 +24,10 @@ static struct ev *netpkt_ev;
 
 struct ixc_mbuf *netpkt_sent_first=NULL;
 struct ixc_mbuf *netpkt_sent_last=NULL;
+// 等待处理的数据包
+struct ixc_mbuf *wait_anylize_first=NULL;
+struct ixc_mbuf *wait_anylize_last=NULL;
+
 static int netpkt_add_writable=0;
 
 /// 生成随机key
@@ -32,6 +42,46 @@ static void ixc_netpkt_gen_rand_key(void)
 
         memcpy(&netpkt_key[i*4],&n,4);
     }
+}
+
+// 分配给工作线程
+static int ixc_netpkt_alloc_worker(struct ixc_mbuf *m)
+{
+    int v=0;
+    struct ixc_ether_header *eth_header=(struct ixc_ether_header *)(m->data+m->begin);
+    unsigned short *x=(unsigned short *)(eth_header->src_hwaddr);
+    
+    // 根据源MAC地址分配到相应线程
+    for(int n=0;n<3;n++) v+=*x++;
+    
+    return v % ixc_netdog_worker_num_get();
+}
+
+/// @分配数据包到对应的worker
+/// @param m 
+/// @return 能够处理返回0,不能处理返回1,故障返回-1
+static int ixc_netpkt_alloc_to_worker_handle(struct ixc_mbuf *m)
+{
+    int v=ixc_netpkt_alloc_worker(m);
+    struct ixc_worker_context *ctx=ixc_anylize_worker_get(v);
+    
+    if(NULL==ctx){
+        STDERR("cannot get worker\r\n");
+        ixc_mbuf_put(m);
+        return -1;
+    }
+
+    m->next=NULL;
+
+    if(!ctx->is_working){
+        ctx->npkt=m;
+        ctx->is_working=1;
+        ctx->npkt=m;
+        pthread_kill(ctx->id,SIGUSR1);
+        return 0;
+    }
+
+    return 1;
 }
 
 static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
@@ -51,7 +101,16 @@ static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
     }
 
     m->begin=m->offset+=sizeof(struct ixc_netpkt_header);
-    ixc_mbuf_put(m);
+    m->next=NULL;
+
+    if(ixc_netpkt_alloc_to_worker_handle(m)>0){
+        if(NULL==netpkt_sent_first){
+            netpkt_sent_first=m;
+        }else{
+            netpkt_sent_last->next=m;
+        }
+        netpkt_sent_last=m;
+    }
 }
 
 static int ixc_netpkt_rx_data(void)
@@ -291,5 +350,29 @@ void ixc_netpkt_send(struct ixc_mbuf *m)
     {
         ev_modify(netpkt_ev_set, netpkt_ev, EV_WRITABLE, EV_CTL_ADD);
         netpkt_add_writable = 1;
+    }
+}
+
+int ixc_netpkt_have(void)
+{
+    if(NULL==netpkt_sent_first) return 0;
+    return 1;
+}
+
+void ixc_netpkt_loop(void)
+{
+    struct ixc_mbuf *m,*t;
+    int rs;
+
+    m=netpkt_sent_first;
+
+    while(NULL!=m){
+        t=m->next;
+        rs=ixc_netpkt_alloc_to_worker_handle(m);
+
+        if(rs>0) continue;
+
+        m=t;
+        ///
     }
 }

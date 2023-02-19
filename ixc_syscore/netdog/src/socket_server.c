@@ -1,5 +1,3 @@
-
-
 #include "socket_server.h"
 #include "netpkt.h"
 #include "sys_msg.h"
@@ -9,6 +7,15 @@
 
 static struct ev_set ixc_socket_ev_set;
 
+static void ixc_socket_server_myloop(void)
+{    
+    if(ixc_netpkt_have()){
+        ixc_netpkt_loop();
+        ixc_socket_ev_set.wait_timeout=0;
+    }else{
+        ixc_socket_ev_set.wait_timeout=10;
+    }
+}
 
 int ixc_socket_server_init(void)
 {
@@ -28,6 +35,8 @@ int ixc_socket_server_init(void)
 
     rs=ixc_netpkt_init(&ixc_socket_ev_set);
     rs=ixc_sys_msg_init(&ixc_socket_ev_set);
+
+    ixc_socket_ev_set.myloop_fn=ixc_socket_server_myloop;
 
     return 0;
 }

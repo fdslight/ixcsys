@@ -1,29 +1,44 @@
 #include<string.h>
 #include<time.h>
 #include<unistd.h>
-#include "anylize_worker.h"
+#include<signal.h>
 
-// sys_msg是否被锁住
-static int anylize_worker_sys_msg_is_locked=0;
-// 网络数据包是否被锁住
-static int anylize_worker_netpkt_is_locked=0;
+#include "anylize_worker.h"
 
 static struct ixc_worker_context *workers[IXC_WORKER_NUM_MAX];
 
-static void ixc_anylize_worker_work(struct ixc_worker_context *context)
+__thread int worker_index=0;
+
+static void ixc_anylize_sig_handle(int signum)
+{
+    //struct ixc_worker_context *context=NULL;
+
+    if(SIGUSR1!=signum) return;
+
+}
+
+static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
 {
     while(1){
         sleep(10);
     }
 }
 
+
+
 static void *ixc_anylize_worker_start(void *thread_context)
 {
     struct ixc_worker_context *context=thread_context;
+    sigset_t mask;
+    
+    worker_index=context->idx;
+    // 屏蔽SIGINT信号
+    sigemptyset(&mask);
+    sigaddset(&mask,SIGINT);
+    pthread_sigmask(SIG_SETMASK,&mask,NULL);
 
-    STDOUT("hello\r\n");
     context->id=pthread_self();
-    ixc_anylize_worker_work(context);
+    ixc_anylize_worker_loop(context);
 
     return NULL;
 }
@@ -31,6 +46,7 @@ static void *ixc_anylize_worker_start(void *thread_context)
 int ixc_anylize_worker_init(void)
 {
     bzero(workers,sizeof(NULL)*IXC_WORKER_NUM_MAX);
+    signal(SIGUSR1,ixc_anylize_sig_handle);
     return 0;
 }
 
@@ -75,30 +91,18 @@ int ixc_anylize_create_workers(int num)
 
 void ixc_anylize_worker_uninit(void)
 {
-
+    struct ixc_worker_context *context;
+    for(int n=0;n<IXC_WORKER_NUM_MAX;n++){
+        context=workers[n];
+        if(NULL==context) break;
+        pthread_cancel(context->id);
+        free(context);
+    }
 }
 
-int ixc_anylize_worker_lock_get(int lock_flags)
+struct ixc_worker_context *ixc_anylize_worker_get(int seq)
 {
-    int *ptr;
-
-    if(IXC_ANYLIZE_WORKER_LOCK_SYS_MSG==lock_flags){
-        ptr=&anylize_worker_sys_msg_is_locked;
-    }else{
-        ptr=&anylize_worker_netpkt_is_locked;
-    }
-
-    while(1){
-        if(*ptr==0){
-            *ptr=1;
-            break;
-        }
-    }
-
-    return 0;
-}
-
-void ixc_anylize_worker_unlock(int lock_flags)
-{
+    if(seq<0 || seq>IXC_WORKER_NUM_MAX) return NULL;
     
+    return workers[seq];
 }

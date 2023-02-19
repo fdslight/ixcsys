@@ -4,6 +4,7 @@
 #include<pthread.h>
 
 #include "socket_server.h"
+#include "netdog.h"
 #include "anylize/anylize_worker.h"
 
 #include "../../../pywind/clib/pycall.h"
@@ -49,6 +50,7 @@ static void ixc_segfault_info()
     {
         fprintf(stderr, "%s\r\n", strs[n]);
     }
+
     free(strs);
     exit(EXIT_FAILURE);
 }
@@ -58,6 +60,8 @@ static void netdog_stop(void)
     if(pthread_self()!=main_thread_id) return;
 
     ixc_socket_server_uninit();
+    ixc_anylize_worker_uninit();
+
     exit(EXIT_SUCCESS);
 }
 
@@ -90,7 +94,7 @@ static void netdog_start(int is_debug)
         exit(EXIT_SUCCESS);
     }
 
-    ixc_anylize_create_workers(10);
+    ixc_anylize_create_workers(2);
 
     rs = ixc_socket_server_init();
     if (rs < 0)
@@ -123,6 +127,12 @@ static int set_worker_thread_num(int argc,char *argv[])
         return 0;
     }
     return 0;
+}
+
+inline
+int ixc_netdog_worker_num_get(void)
+{
+    return worker_thread_num;
 }
 
 int main(int argc, char *argv[])
