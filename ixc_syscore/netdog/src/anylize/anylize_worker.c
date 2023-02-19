@@ -1,4 +1,6 @@
 #include<string.h>
+#include<time.h>
+#include<unistd.h>
 #include "anylize_worker.h"
 
 // sys_msg是否被锁住
@@ -8,13 +10,20 @@ static int anylize_worker_netpkt_is_locked=0;
 
 static struct ixc_worker_context *workers[IXC_WORKER_NUM_MAX];
 
+static void ixc_anylize_worker_work(struct ixc_worker_context *context)
+{
+    while(1){
+        sleep(10);
+    }
+}
 
 static void *ixc_anylize_worker_start(void *thread_context)
 {
     struct ixc_worker_context *context=thread_context;
-    context->id=pthread_self();
 
-    STDOUT("pthread_id:%ld seq:%d\r\n",pthread_self(),context->idx);
+    STDOUT("hello\r\n");
+    context->id=pthread_self();
+    ixc_anylize_worker_work(context);
 
     return NULL;
 }
