@@ -9,6 +9,7 @@ if not os.path.isdir(os.getenv("IXC_MYAPP_TMP_DIR")): os.mkdir(os.getenv("IXC_MY
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.web.handlers.scgi as scgi
+import pywind.lib.configfile as cfg
 
 from pywind.global_vars import global_vars
 
@@ -68,8 +69,12 @@ class service(dispatcher.dispatcher):
     __consts = None
     __configs = None
 
+    __conf_path = None
+
     def init_func(self, debug):
         global_vars["ixcsys.netdog"] = self
+
+        self.__conf_path = "%s/httpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__debug = debug
         self.__msg_fd = -1
@@ -111,7 +116,7 @@ class service(dispatcher.dispatcher):
         return self.__configs
 
     def load_configs(self):
-        pass
+        conf = cfg.ini_parse_from_file(self.__conf_path)
 
     def save_configs(self):
         pass
@@ -129,7 +134,6 @@ class service(dispatcher.dispatcher):
         self.__msg_fd = self.create_handler(-1, sys_msg.sys_msg)
 
     def release(self):
-        print("ZZZ")
         self.traffic_anylize_enable(False)
 
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)

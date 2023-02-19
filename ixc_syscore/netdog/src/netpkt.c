@@ -49,7 +49,8 @@ static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
         ixc_mbuf_put(m);
         return;
     }
- 
+
+    m->begin=m->offset+=sizeof(struct ixc_netpkt_header);
     ixc_mbuf_put(m);
 }
 
