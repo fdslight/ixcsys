@@ -1094,6 +1094,21 @@ int ixc_router_traffic_copy_is_enabled(void)
     return traffic_copy_enable;
 }
 
+inline
+unsigned long long ixc_htonll(unsigned long long v)
+{
+        unsigned long t_low, t_high;  
+        t_low = htonl((long)v);  
+        t_high = htonl((long)(v >> 32));  
+  
+        v &= 0;  
+        v |= t_low;  
+        v <<= 32;   
+        v |= t_high;
+
+        return v;  
+}
+
 static void ixc_python_loop(void)
 {
     PyObject *pfunc,*result;

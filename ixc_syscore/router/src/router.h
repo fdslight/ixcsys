@@ -50,5 +50,7 @@ void ixc_router_exit(void);
 void ixc_router_md5_calc(void *data,int size,unsigned char *res);
 /// 是否开启流量拷贝
 int ixc_router_traffic_copy_is_enabled(void);
+/// 主机序转网络序
+unsigned long long ixc_htonll(unsigned long long v);
 
 #endif

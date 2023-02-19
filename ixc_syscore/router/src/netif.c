@@ -286,11 +286,11 @@ int ixc_netif_send(struct ixc_mbuf *m)
 
             t->begin-=sizeof(struct ixc_traffic_cpy_pkt_header);
 
-            cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+m->begin);
+            cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+t->begin);
             cpy_pkt_header->version=1;
             cpy_pkt_header->traffic_dir=IXC_TRAFFIC_IN;
-            cpy_pkt_header->sec_time=tv.tv_sec;
-            cpy_pkt_header->usec_time=tv.tv_usec;
+            cpy_pkt_header->sec_time=ixc_htonll(tv.tv_sec);
+            cpy_pkt_header->usec_time=ixc_htonll(tv.tv_usec);
 
             ixc_npfwd_send_raw(t,0,IXC_FLAG_TRAFFIC_COPY);
         }
@@ -400,11 +400,11 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
 
                     t->begin-=sizeof(struct ixc_traffic_cpy_pkt_header);
 
-                    cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+m->begin);
+                    cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+t->begin);
                     cpy_pkt_header->version=1;
                     cpy_pkt_header->traffic_dir=IXC_TRAFFIC_OUT;
-                    cpy_pkt_header->sec_time=tv.tv_sec;
-                    cpy_pkt_header->usec_time=tv.tv_usec;
+                    cpy_pkt_header->sec_time=ixc_htonll(tv.tv_sec);
+                    cpy_pkt_header->usec_time=ixc_htonll(tv.tv_usec);
 
                     ixc_npfwd_send_raw(t,0,IXC_FLAG_TRAFFIC_COPY);
                 }
