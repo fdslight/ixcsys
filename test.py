@@ -16,7 +16,7 @@ RPCClient.fn_call("router", "/config", "traffic_cpy_enable", True)
 
 while 1:
     msg, addr = s.recvfrom(4096)
-    print(struct.unpack("!i",msg[20:24]), addr)
+    print(struct.unpack("!I",msg[20:24]), addr)
     break
 RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
 s.close()
