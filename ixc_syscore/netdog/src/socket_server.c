@@ -19,6 +19,12 @@ int ixc_socket_server_init(void)
         STDERR("cannot init event set\r\n");
         return -1;
     }
+    rs=ixc_mbuf_init(256);
+
+    if(rs<0){
+        STDERR("cannot init mbuf\r\n");
+        return -1;
+    }
 
     rs=ixc_netpkt_init(&ixc_socket_ev_set);
     rs=ixc_sys_msg_init(&ixc_socket_ev_set);
@@ -30,6 +36,7 @@ void ixc_socket_server_uninit(void)
 {
     ixc_netpkt_uninit();
     ixc_sys_msg_uninit();
+    ixc_mbuf_uninit();
 }
 
 void ixc_socket_server_ioloop(void)
