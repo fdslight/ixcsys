@@ -85,7 +85,6 @@ class service(dispatcher.dispatcher):
         time.sleep(3)
         # 启动网络分析器后,进行数据转发配置,用以监控局域网流量
         mon_key, mon_port = libsys_msg.get_pkt_mon_port()
-        print(mon_key,mon_port)
         # 首先关闭流量拷贝
         RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
         RPCClient.fn_call("router", "/config", "unset_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'])
@@ -95,6 +94,7 @@ class service(dispatcher.dispatcher):
         self.create_poll()
         self.start_scgi()
         self.start_sys_msg()
+        self.traffic_anylize_enable(True)
 
     def myloop(self):
         pass
