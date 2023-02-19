@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, json, time
+import sys, os, signal, json, time, struct
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -97,7 +97,22 @@ class service(dispatcher.dispatcher):
     def wait_netdog_anylize(self):
         """等待netdog_anylize分析进程是否注册成功
         """
-        return True
+        fpath = "/tmp/ixcsys/netdog/netdog_anylized_ok.status"
+        t = time.time()
+        ok = False
+
+        while 1:
+            now = time.time()
+            v = now - t
+            if not os.path.isfile(fpath):
+                if v > 3.0: break
+                continue
+            fdst = open(fpath, "rb")
+            st, = struct.unpack("i", fdst.read())
+            if bool(st):
+                ok = True
+                break
+        return ok
 
     def myloop(self):
         pass
