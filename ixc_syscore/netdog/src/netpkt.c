@@ -31,7 +31,7 @@ static void ixc_netpkt_gen_rand_key(void)
         srand((unsigned int)time(NULL));
         n = rand();
 
-        memcpy(&netpkt_key[i*4],n,4);
+        memcpy(&netpkt_key[i*4],&n,4);
     }
 }
 
