@@ -3,6 +3,8 @@
 #include<structmember.h>
 #include<libgen.h>
 
+#include "socket_server.h"
+
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
 
@@ -29,6 +31,21 @@ static void ixc_set_run_env(char *argv[])
     strcpy(rpc_path,"/tmp/ixcsys/netdog/rpc.sock");
 }
 
+static void netdog_start(void)
+{
+    int rs=ixc_socket_server_init();
+    if(rs<0){
+        STDERR("cannot init socket server\r\n");
+        exit(EXIT_SUCCESS);
+    }
+    ixc_socket_server_ioloop();
+}
+
+static void netdog_stop(void)
+{
+    
+}
+
 int main(int argc,char *argv[])
 {
     const char *helper="start | stop | debug";
@@ -51,18 +68,18 @@ int main(int argc,char *argv[])
         pid=fork();
         if(pid!=0) exit(EXIT_SUCCESS);
 
-        //ixc_start(0);
+        netdog_start();
 
         return 0;
     }
 
     if(!strcmp(argv[1],"stop")){
-        //ixc_stop();
+        netdog_stop();
         return 0;
     }
 
     if(!strcmp(argv[1],"debug")){
-        //ixc_start(1);
+        netdog_start();
         return 0;
     }
 

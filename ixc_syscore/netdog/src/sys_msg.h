@@ -3,6 +3,7 @@
 #define IXC_SYS_MSG_H
 
 #include<sys/types.h>
+#include<arpa/inet.h>
 #include "../../../pywind/clib/ev/ev.h"
 
 struct ixc_sys_msg{
@@ -27,6 +28,6 @@ struct ixc_sys_msg{
 int ixc_sys_msg_init(struct ev_set *ev_set);
 void ixc_sys_msg_uninit(void);
 
-int ixc_sys_msg_send(unsigned char type,void *data,size_t size);
+int ixc_sys_msg_send(unsigned char type, void *data, unsigned short size,struct sockaddr_in *to_addr);
 
 #endif

@@ -9,6 +9,7 @@ void ixc_netpkt_recv_uninit(void);
 
 // 获取通信端口
 int ixc_netpkt_recv_port_get(unsigned short *port);
-
+// 获取通信key
+int ixc_netpkt_recv_key_get(unsigned char *res);
 
 #endif
