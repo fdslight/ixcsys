@@ -9,6 +9,7 @@
 
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
+#include "../../../pywind/clib/pfile.h"
 
 /// 进程文件路径
 static char pid_path[4096];
@@ -19,7 +20,7 @@ static char run_dir[4096];
 static void ixc_set_run_env(char *argv[])
 {
    
-    strcpy(pid_path,"/tmp/ixcsys/netdog/netdog_core.pid");
+    strcpy(pid_path,"/tmp/ixcsys/netdog/netdog_anylized.pid");
 
     if(realpath(argv[0],run_dir)==NULL){
         STDERR("cannot get run path\r\n");
@@ -64,7 +65,7 @@ static void ixc_signal_handle(int signum)
     }
 }
 
-static void netdog_start(void)
+static void netdog_start(int is_debug)
 {
     int rs;
 
@@ -76,10 +77,17 @@ static void netdog_start(void)
         STDERR("cannot init socket server\r\n");
         exit(EXIT_SUCCESS);
     }
+
+    if(!is_debug) pfile_write(pid_path,getpid());
     ixc_socket_server_ioloop();
 }
 
-
+static void send_int_sig(void)
+{
+    pid_t pid=pfile_read(pid_path);
+    if(pid<0) return;
+    kill(pid,SIGINT);
+}
 
 int main(int argc,char *argv[])
 {
@@ -103,18 +111,18 @@ int main(int argc,char *argv[])
         pid=fork();
         if(pid!=0) exit(EXIT_SUCCESS);
 
-        netdog_start();
+        netdog_start(0);
 
         return 0;
     }
 
     if(!strcmp(argv[1],"stop")){
-        //netdog_stop();
+        send_int_sig();
         return 0;
     }
 
     if(!strcmp(argv[1],"debug")){
-        netdog_start();
+        netdog_start(1);
         return 0;
     }
 
