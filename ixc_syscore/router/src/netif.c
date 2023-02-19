@@ -4,7 +4,7 @@
 #include<string.h>
 #include<fcntl.h>
 #include<unistd.h>
-#include<time.h>
+#include<sys/time.h>
 
 #include "netif.h"
 #include "router.h"
@@ -262,6 +262,7 @@ int ixc_netif_send(struct ixc_mbuf *m)
     struct ixc_netif *netif=m->netif;
     struct ixc_mbuf *t;
     struct ixc_traffic_cpy_pkt_header *cpy_pkt_header;
+    struct timeval tv;
 
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -281,12 +282,15 @@ int ixc_netif_send(struct ixc_mbuf *m)
     if(IXC_NETIF_WAN==netif->type && ixc_router_traffic_copy_is_enabled()){
         t=ixc_mbuf_clone(m);
         if(NULL!=t){
+            gettimeofday(&tv,NULL);
+
             t->begin-=sizeof(struct ixc_traffic_cpy_pkt_header);
 
             cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+m->begin);
             cpy_pkt_header->version=1;
             cpy_pkt_header->traffic_dir=IXC_TRAFFIC_IN;
-            cpy_pkt_header->pkt_time=time(NULL);
+            cpy_pkt_header->sec_time=tv.tv_sec;
+            cpy_pkt_header->usec_time=tv.tv_usec;
 
             ixc_npfwd_send_raw(t,0,IXC_FLAG_TRAFFIC_COPY);
         }
@@ -346,6 +350,7 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
     ssize_t rsize;
     struct ixc_mbuf *m,*t;
     struct ixc_traffic_cpy_pkt_header *cpy_pkt_header;
+    struct timeval tv;
     int rs=0;
     
     if(!netif_is_initialized){
@@ -391,12 +396,15 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
             if(ixc_router_traffic_copy_is_enabled()){
                 t=ixc_mbuf_clone(m);
                 if(NULL!=t){
+                    gettimeofday(&tv,NULL);
+
                     t->begin-=sizeof(struct ixc_traffic_cpy_pkt_header);
 
                     cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+m->begin);
                     cpy_pkt_header->version=1;
                     cpy_pkt_header->traffic_dir=IXC_TRAFFIC_OUT;
-                    cpy_pkt_header->pkt_time=time(NULL);
+                    cpy_pkt_header->sec_time=tv.tv_sec;
+                    cpy_pkt_header->usec_time=tv.tv_usec;
 
                     ixc_npfwd_send_raw(t,0,IXC_FLAG_TRAFFIC_COPY);
                 }

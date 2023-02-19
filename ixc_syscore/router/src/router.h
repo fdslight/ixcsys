@@ -33,7 +33,10 @@ struct ixc_traffic_cpy_pkt_header{
     // 接收流量
 #define IXC_TRAFFIC_IN 1
     int traffic_dir;
-    unsigned long long pkt_time;
+    // 数据包的时间（秒）
+    unsigned long long sec_time;
+    // 数据包的时间（微秒）
+    unsigned long long usec_time;
 };
 
 /// 发送PPPoE数据包到Python
