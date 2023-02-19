@@ -66,6 +66,7 @@ class service(dispatcher.dispatcher):
 
     __errlog_path = None
     __syslog_path = None
+    __scgi_fd = None
 
     def init_func(self, debug):
         global_vars["ixcsys.init"] = self

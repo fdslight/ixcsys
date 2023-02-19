@@ -13,9 +13,11 @@ import pywind.web.handlers.scgi as scgi
 from pywind.global_vars import global_vars
 
 import ixc_syslib.pylib.logging as logging
+import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
 
 import ixc_syscore.netdog.handlers.sys_msg as sys_msg
+import ixc_syscore.netdog.pylib.sys_msg as libsys_msg
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -61,15 +63,41 @@ def __start_service(debug):
 class service(dispatcher.dispatcher):
     __debug = None
     __msg_fd = None
+    __scgi_fd = None
+
+    __consts = None
+    __configs = None
 
     def init_func(self, debug):
         global_vars["ixcsys.netdog"] = self
 
         self.__debug = debug
         self.__msg_fd = -1
+        self.__configs = {}
+
+        RPCClient.wait_processes(["router"])
+
+        self.__consts = RPCClient.fn_call("router", "/config", "get_all_consts")
+
+        # 等待网络分析器启动
+        ok = self.wait_netdog_anylize()
+        # 启动网络分析器后,进行数据转发配置,用以监控局域网流量
+        if ok:
+            mon_key, mon_port = libsys_msg.get_pkt_mon_port()
+            # 首先关闭流量拷贝
+            RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
+            RPCClient.fn_call("router", "/config", "unset_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'])
+            RPCClient.fn_call("router", "/config", "set_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'], mon_key,
+                              mon_port)
 
         self.create_poll()
         self.start_scgi()
+        self.start_sys_msg()
+
+    def wait_netdog_anylize(self):
+        """等待netdog_anylize分析进程是否注册成功
+        """
+        return True
 
     def myloop(self):
         pass
@@ -77,6 +105,19 @@ class service(dispatcher.dispatcher):
     @property
     def debug(self):
         return self.__debug
+
+    def traffic_anylize_enable(self, enable: bool):
+        RPCClient.fn_call("router", "/config", "traffic_cpy_enable", enable)
+
+    @property
+    def configs(self):
+        return self.__configs
+
+    def load_configs(self):
+        pass
+
+    def save_configs(self):
+        pass
 
     def start_scgi(self):
         scgi_configs = {
@@ -87,9 +128,11 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
 
+    def start_sys_msg(self):
+        self.__msg_fd = self.create_handler(-1, sys_msg.sys_msg)
+
     def release(self):
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
-
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
