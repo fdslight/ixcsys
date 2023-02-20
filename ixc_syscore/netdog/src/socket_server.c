@@ -9,7 +9,6 @@ static struct ev_set ixc_socket_ev_set;
 
 static void ixc_socket_server_myloop(void)
 {    
-    STDERR("------------\r\n");
     if(ixc_netpkt_have()){
         ixc_netpkt_loop();
         ixc_socket_ev_set.wait_timeout=0;
@@ -35,7 +34,16 @@ int ixc_socket_server_init(void)
     }
 
     rs=ixc_netpkt_init(&ixc_socket_ev_set);
+    if(rs<0){
+        STDERR("cannot init netpkt\r\n");
+        return -1;
+    }
+
     rs=ixc_sys_msg_init(&ixc_socket_ev_set);
+    if(rs<0){
+        STDERR("cannot init sys_msg\r\n");
+        return -1;
+    }
 
     ixc_socket_ev_set.myloop_fn=ixc_socket_server_myloop;
 

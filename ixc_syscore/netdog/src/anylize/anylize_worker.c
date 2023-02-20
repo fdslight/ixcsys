@@ -18,7 +18,7 @@ static void ixc_anylize_netpkt(void)
     while(r->is_used){
         m=r->npkt;
         ixc_mbuf_put(m);
-
+        STDERR("AAA\r\n");
 
         r->is_used=0;
         r=r->next;
@@ -31,7 +31,6 @@ static void ixc_anylize_sig_handle(int signum)
 {
     struct ixc_worker_context *ctx=workers[worker_index];
 
-    STDERR("thread index %d\r\n",worker_index);
     if(SIGUSR1!=signum) return;
 
     ctx->is_working=1;
@@ -40,11 +39,11 @@ static void ixc_anylize_sig_handle(int signum)
 
 static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
 {
-    while(1){
+    while(1) {
+        STDERR("BBB\r\n");
         sleep(10);
     }
 }
-
 
 
 static void *ixc_anylize_worker_start(void *thread_context)

@@ -116,6 +116,7 @@ static void ixc_netpkt_delivery_task(void)
             new_last->next=m;
         }
         new_last=m;
+        STDERR("CCC\r\n");
     }
 
     // 这里可能next不为空,需要清除
