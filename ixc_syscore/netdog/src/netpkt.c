@@ -77,7 +77,7 @@ static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_se
         ring=ring->next;
         // 检查它的下一个mbuf是否在使用
         if(ring->is_used){
-            DBG("Work slowly\r\n");
+            STDERR("Work slowly\r\n");
             ixc_mbuf_put(m);
             return -1;
         }
