@@ -23,6 +23,7 @@ static void ixc_anylize_netpkt(void)
         cnt++;
 
         if(!r->is_used){
+            STDERR("XXX\r\n");
             r=r->next;
             continue;
         }
