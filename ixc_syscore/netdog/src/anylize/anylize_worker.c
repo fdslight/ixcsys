@@ -21,11 +21,12 @@ static void ixc_anylize_netpkt(void)
 
         r->is_used=0;
         r=r->next;
-        STDERR("SSSS\r\n");
     }
 
     ctx->ring_head=r;
     ctx->is_working=0;
+
+    STDERR("handle data\r\n");
 }
 
 static void ixc_anylize_sig_handle(int signum)
