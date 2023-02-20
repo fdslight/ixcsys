@@ -125,9 +125,8 @@ static void ixc_netpkt_delivery_task(void)
     for(int n=0;n<IXC_WORKER_NUM_MAX;n++){
         ctx=ixc_anylize_worker_get(n);
         if(NULL==ctx) break;
-        if(!ctx->is_working) {
+        if(!ctx->is_working && NULL!=ctx->npkt) {
             ctx->is_working=1;
-            STDERR("SEND AA\r\n");
             pthread_kill(ctx->id,SIGUSR1);
         }
     }
