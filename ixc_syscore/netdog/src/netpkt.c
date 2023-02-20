@@ -111,8 +111,8 @@ static void ixc_netpkt_delivery_task(void)
         v=ixc_netpkt_alloc_worker(m);
         ixc_netpkt_delivery_to_worker_handle(m,v);
         m=t;
-        
-        STDERR("CCC\r\n");
+
+        STDERR("CCC %ld\r\n",(unsigned long long)m);
     }
     
     wait_anylize_first=NULL;
