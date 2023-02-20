@@ -88,7 +88,7 @@ static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_se
 /// @param  
 static void ixc_netpkt_delivery_task(void)
 {
-    struct ixc_mbuf *m,*t,*new_first=NULL,*new_last;
+    struct ixc_mbuf *m,*t,*new_first=NULL,*new_last=NULL;
     struct ixc_worker_context *ctx;
     int v;
 
