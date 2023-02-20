@@ -15,12 +15,15 @@ static void ixc_anylize_netpkt(void)
     struct ixc_worker_mbuf_ring *r=ctx->ring_head;
     struct ixc_mbuf *m;
     
-    STDERR("thread index %d\r\n",worker_index);
     while(r->is_used){
         m=r->npkt;
         ixc_mbuf_put(m);
+
+
         r->is_used=0;
+        r=r->next;
     }
+    STDERR("--------------handle data OK\r\n");
     ctx->is_working=0;
 }
 
@@ -31,7 +34,6 @@ static void ixc_anylize_sig_handle(int signum)
     STDERR("thread index %d\r\n",worker_index);
     if(SIGUSR1!=signum) return;
 
-    STDERR("thread index %d\r\n",worker_index);
     ctx->is_working=1;
     ixc_anylize_netpkt();
 }
@@ -71,7 +73,6 @@ static void *ixc_anylize_worker_start(void *thread_context)
         prev=ring;
     }
 
-    STDERR("thread id %d\r\n",worker_index);
     prev->next=context->ring_head;
     //
 
