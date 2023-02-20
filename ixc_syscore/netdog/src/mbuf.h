@@ -60,5 +60,7 @@ struct ixc_mbuf *ixc_mbuf_get(void);
 void ixc_mbuf_put(struct ixc_mbuf *m);
 /// 克隆mbuf
 struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m);
+/// 一次性回收
+void ixc_mbuf_puts(struct ixc_mbuf *m_head);
 
 #endif

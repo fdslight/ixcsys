@@ -197,3 +197,15 @@ struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m)
 
     return new_m;
 }
+
+void ixc_mbuf_puts(struct ixc_mbuf *m_head)
+{
+    struct ixc_mbuf *m=m_head,*t;
+    __ixc_mbuf_lock();
+    while(NULL!=m){
+        t=m->next;
+        __ixc_mbuf_put(m);
+        m=t;
+    }
+    __ixc_mbuf_unlock();
+}

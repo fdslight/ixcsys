@@ -14,9 +14,13 @@ static void ixc_anylize_netpkt(void)
     struct ixc_worker_context *ctx=workers[worker_index];
     struct ixc_worker_mbuf_ring *r=ctx->ring_head;
     struct ixc_mbuf *m;
+
+    ctx->recycle=NULL;
     
     while(r->is_used){
         m=r->npkt;
+        m->next=NULL;
+
         ixc_mbuf_put(m);
 
         r->is_used=0;
@@ -25,6 +29,10 @@ static void ixc_anylize_netpkt(void)
 
     ctx->ring_head=r;
     ctx->is_working=0;
+
+    // 回收mbuf
+    ixc_mbuf_puts(ctx->recycle);
+    ctx->recycle=NULL;
 
     STDERR("handle data\r\n");
 }
