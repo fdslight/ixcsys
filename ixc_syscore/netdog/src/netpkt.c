@@ -95,7 +95,10 @@ static void ixc_netpkt_delivery_task(void)
     m=wait_anylize_first;
 
     while(1){
-        if(NULL==m) break;
+        if(NULL==m) {
+            STDERR("AAAA\r\n");
+            break;
+        }
 
         t=m->next;
         m->next=NULL;
@@ -411,6 +414,5 @@ int ixc_netpkt_have(void)
 
 void ixc_netpkt_loop(void)
 {
-    STDERR("ZZZX\r\n");
     ixc_netpkt_delivery_task();
 }
