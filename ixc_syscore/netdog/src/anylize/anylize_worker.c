@@ -21,8 +21,9 @@ static void ixc_anylize_netpkt(void)
 
         r->is_used=0;
         r=r->next;
+        STDERR("SSSS\r\n");
     }
-    STDERR("--------------handle data OK\r\n");
+   
     ctx->is_working=0;
 }
 
