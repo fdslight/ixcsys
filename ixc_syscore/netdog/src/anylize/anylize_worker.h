@@ -18,9 +18,10 @@ struct ixc_worker_mbuf_ring{
 struct ixc_worker_context{
     // 需要回收的mbuf
     struct ixc_mbuf *recycle;
-    struct ixc_worker_mbuf_ring *ring;
+    // 有数据的开始位置
+    struct ixc_worker_mbuf_ring *ring_head;
     // ring 最后一个有数据的位置
-    struct ixc_worker_mbuf_ring *ring_data_last;
+    struct ixc_worker_mbuf_ring *ring_last;
 #define IXC_WORKER_MBUF_RING_SIZE 128
     struct ixc_worker_mbuf_ring ring_data[IXC_WORKER_MBUF_RING_SIZE];
     pthread_t id;

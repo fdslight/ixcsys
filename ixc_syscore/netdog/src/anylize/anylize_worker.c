@@ -9,12 +9,30 @@ static struct ixc_worker_context *workers[IXC_WORKER_NUM_MAX];
 
 __thread int worker_index=0;
 
+static void ixc_anylize_netpkt(void)
+{
+    struct ixc_worker_context *ctx=workers[worker_index];
+    struct ixc_worker_mbuf_ring *r=ctx->ring_head;
+    struct ixc_mbuf *m;
+    
+    STDERR("thread index %d\r\n",worker_index);
+    while(r->is_used){
+        m=r->npkt;
+        ixc_mbuf_put(m);
+        r->is_used=0;
+    }
+}
+
 static void ixc_anylize_sig_handle(int signum)
 {
-    //struct ixc_worker_context *context=NULL;
+    struct ixc_worker_context *ctx=workers[worker_index];
 
+    STDERR("thread index %d\r\n",worker_index);
     if(SIGUSR1!=signum) return;
 
+    STDERR("thread index %d\r\n",worker_index);
+    ctx->is_working=1;
+    ixc_anylize_netpkt();
 }
 
 static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
@@ -41,10 +59,10 @@ static void *ixc_anylize_worker_start(void *thread_context)
 
     context->id=pthread_self();
     // 初始化ring
-    context->ring=&context->ring_data[0];
-    context->ring_data_last=&context->ring_data[0];
+    context->ring_head=&context->ring_data[0];
+    context->ring_last=&context->ring_data[0];
 
-    prev=context->ring;
+    prev=context->ring_head;
 
     for(int n=1;n<IXC_WORKER_MBUF_RING_SIZE;n++){
         ring=&context->ring_data[n];
@@ -52,7 +70,7 @@ static void *ixc_anylize_worker_start(void *thread_context)
         prev=ring;
     }
 
-    prev->next=context->ring;
+    prev->next=context->ring_head;
     //
 
     ixc_anylize_worker_loop(context);
