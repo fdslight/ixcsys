@@ -101,7 +101,9 @@ static void ixc_netpkt_delivery_task(void)
         m->next=NULL;
         
         v=ixc_netpkt_alloc_worker(m);
+        STDERR("V1 %d\r\n",v);
         v=ixc_netpkt_delivery_to_worker_handle(m,v);
+        STDERR("V2 %d\r\n",v);
 
         if(v>0){
             if(NULL==new_first){
@@ -128,7 +130,6 @@ static void ixc_netpkt_delivery_task(void)
         if(!ctx->is_working && NULL!=ctx->npkt) {
             ctx->is_working=1;
             v=pthread_kill(ctx->id,SIGUSR1);
-            STDERR("signal %d\r\n",v);
         }
     }
 }
