@@ -10,8 +10,13 @@
 
 struct ixc_mbuf{
     struct ixc_mbuf *next;
-    // 目标发送地址
-    unsigned char to_addr[64];
+
+    union{
+            // 目标发送地址
+        unsigned char to_addr[64];
+        unsigned char from_addr[64];
+    };
+
     int is_ipv6;
     // 开始位置
 #define IXC_MBUF_BEGIN 512

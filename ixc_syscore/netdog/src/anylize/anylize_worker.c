@@ -30,6 +30,7 @@ static void *ixc_anylize_worker_start(void *thread_context)
 {
     struct ixc_worker_context *context=thread_context;
     struct ixc_worker_mbuf_ring *ring,*prev;
+    
     sigset_t mask;
     
     worker_index=context->idx;

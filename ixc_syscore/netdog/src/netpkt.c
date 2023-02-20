@@ -60,10 +60,10 @@ static int ixc_netpkt_alloc_worker(struct ixc_mbuf *m)
 /// @分配数据包到对应的worker
 /// @param m 
 /// @return 能够处理返回0,不能处理返回1,故障返回-1
-static int ixc_netpkt_alloc_to_worker_handle(struct ixc_mbuf *m)
+static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_seq)
 {
-    int v=ixc_netpkt_alloc_worker(m);
-    struct ixc_worker_context *ctx=ixc_anylize_worker_get(v);
+    struct ixc_worker_context *ctx=ixc_anylize_worker_get(worker_seq);
+    struct ixc_worker_mbuf_ring *ring=ctx->ring_data_last;
     
     if(NULL==ctx){
         STDERR("cannot get worker\r\n");
@@ -73,15 +73,55 @@ static int ixc_netpkt_alloc_to_worker_handle(struct ixc_mbuf *m)
 
     m->next=NULL;
 
-    if(!ctx->is_working){
-        //ctx->npkt=m;
-        ctx->is_working=1;
-        //ctx->npkt=m;
-        pthread_kill(ctx->id,SIGUSR1);
-        return 0;
+    if(ring->is_used){
+        ring=ring->next;
+        // 检查它的下一个mbuf是否在使用
+        if(ring->is_used) return 1;
+        ring->npkt=m;
+    }else{
+        ring->npkt=m;
     }
 
-    return 1;
+    ring->is_used=1;
+
+    return 0;
+}
+
+/// @投递任务
+/// @param  
+static void ixc_netpkt_delivery_task(void)
+{
+    struct ixc_mbuf *m,*t;
+    struct ixc_mbuf *new_first=NULL,*new_last=NULL;
+    int v;
+
+    m=wait_anylize_first;
+
+    while(1){
+        if(NULL==m) break;
+
+        t=m->next;
+        
+        v=ixc_netpkt_alloc_worker(m);
+        v=ixc_netpkt_delivery_to_worker_handle(m,v);
+        
+        if(v < 1){
+            m=t;
+            continue;
+        }
+        if(NULL==new_first){
+            new_first=m;
+        }else{
+            new_last->next=m;
+        }
+        new_last=m;
+    }
+
+    // 这里可能next不为空,需要清除
+    if(NULL!=new_last) new_last->next=NULL;
+    
+    wait_anylize_first=new_first;
+    wait_anylize_last=new_last;
 }
 
 static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
@@ -103,24 +143,22 @@ static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
     m->begin=m->offset+=sizeof(struct ixc_netpkt_header);
     m->next=NULL;
 
-    if(ixc_netpkt_alloc_to_worker_handle(m)>0){
-        if(NULL==netpkt_sent_first){
-            netpkt_sent_first=m;
-        }else{
-            netpkt_sent_last->next=m;
-        }
-        netpkt_sent_last=m;
+    if(NULL==wait_anylize_first){
+        wait_anylize_first=m;
+    }else{
+        wait_anylize_last->next=m;
     }
+    wait_anylize_last=m;
 }
 
 static int ixc_netpkt_rx_data(void)
 {
     struct ixc_mbuf *m;
     ssize_t recv_size;
-    struct sockaddr from;
+    struct sockaddr_in from;
     socklen_t fromlen;
 
-    for (int n = 0; n < 10; n++)
+    for (int n = 0; n < 16 * ixc_netdog_worker_num_get(); n++)
     {
         m = ixc_mbuf_get();
         if (NULL == m)
@@ -151,8 +189,11 @@ static int ixc_netpkt_rx_data(void)
         m->tail = IXC_MBUF_BEGIN + recv_size;
         m->end = m->tail;
 
-        ixc_netpkt_handle(m, (struct sockaddr_in *)&from);
+        memcpy(m->from_addr,&from,sizeof(struct sockaddr_in));
+
+        ixc_netpkt_handle(m,&from);
     }
+
     return 0;
 }
 
@@ -222,6 +263,7 @@ static int ixc_netpkt_del_fn(struct ev *ev)
     close(ev->fileno);
     return 0;
 }
+
 
 int ixc_netpkt_init(struct ev_set *ev_set)
 {
@@ -355,24 +397,11 @@ void ixc_netpkt_send(struct ixc_mbuf *m)
 
 int ixc_netpkt_have(void)
 {
-    if(NULL==netpkt_sent_first) return 0;
+    if(NULL==wait_anylize_first) return 0;
     return 1;
 }
 
 void ixc_netpkt_loop(void)
 {
-    struct ixc_mbuf *m,*t;
-    int rs;
-
-    m=netpkt_sent_first;
-
-    while(NULL!=m){
-        t=m->next;
-        rs=ixc_netpkt_alloc_to_worker_handle(m);
-
-        if(rs>0) continue;
-
-        m=t;
-        ///
-    }
+    ixc_netpkt_delivery_task();
 }

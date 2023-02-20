@@ -8,13 +8,16 @@
 #define IXC_WORKER_NUM_MAX 256
 
 struct ixc_worker_mbuf_ring{
-    struct ixc_mbuf *next;
+    struct ixc_mbuf *npkt;
+    struct ixc_worker_mbuf_ring *next;
     int is_used;
     int pad[4];
 };
 
 // 线程上下文环境
 struct ixc_worker_context{
+    // 需要回收的mbuf
+    struct ixc_mbuf *recycle;
     struct ixc_worker_mbuf_ring *ring;
     // ring 最后一个有数据的位置
     struct ixc_worker_mbuf_ring *ring_data_last;
