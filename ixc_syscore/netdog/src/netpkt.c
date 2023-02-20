@@ -76,7 +76,11 @@ static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_se
     if(ring->is_used){
         ring=ring->next;
         // 检查它的下一个mbuf是否在使用
-        if(ring->is_used) return 1;
+        if(ring->is_used){
+            DBG("Work slowly\r\n");
+            ixc_mbuf_put(m);
+            return -1;
+        }
         ring->npkt=m;
         ctx->ring_last=ring;
     }else{
@@ -93,7 +97,6 @@ static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_se
 static void ixc_netpkt_delivery_task(void)
 {
     struct ixc_mbuf *m,*t;
-    struct ixc_mbuf *new_first=NULL,*new_last=NULL;
     struct ixc_worker_context *ctx;
     int v;
 
@@ -106,27 +109,14 @@ static void ixc_netpkt_delivery_task(void)
         m->next=NULL;
         
         v=ixc_netpkt_alloc_worker(m);
-        v=ixc_netpkt_delivery_to_worker_handle(m,v);
-        
-        if(v < 1){
-            m=t;
-            continue;
-        }
-        if(NULL==new_first){
-            new_first=m;
-        }else{
-            new_last->next=m;
-        }
-        new_last=m;
+        ixc_netpkt_delivery_to_worker_handle(m,v);
         m=t;
+        
         STDERR("CCC\r\n");
     }
-
-    // 这里可能next不为空,需要清除
-    if(NULL!=new_last) new_last->next=NULL;
     
-    wait_anylize_first=new_first;
-    wait_anylize_last=new_last;
+    wait_anylize_first=NULL;
+    wait_anylize_last=NULL;
 
     // 如果有线程需要唤醒,那么发送信号
     for(int n=0;n<IXC_WORKER_NUM_MAX;n++){
