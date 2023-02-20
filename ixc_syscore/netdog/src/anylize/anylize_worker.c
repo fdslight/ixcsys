@@ -21,6 +21,12 @@ static void ixc_anylize_netpkt(void)
     for (int n = 0; r->is_used || n < IXC_WORKER_MBUF_RING_SIZE; n++)
     {
         cnt++;
+
+        if(!r->is_used){
+            r=r->next;
+            continue;
+        }
+
         m = r->npkt;
         m->next = NULL;
 
