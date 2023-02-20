@@ -63,7 +63,7 @@ static int ixc_netpkt_alloc_worker(struct ixc_mbuf *m)
 static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_seq)
 {
     struct ixc_worker_context *ctx=ixc_anylize_worker_get(worker_seq);
-    struct ixc_worker_mbuf_ring *ring=ctx->ring_head;
+    struct ixc_worker_mbuf_ring *ring=ctx->ring_last;
     
     if(NULL==ctx){
         STDERR("cannot get worker\r\n");
@@ -78,6 +78,7 @@ static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_se
         // 检查它的下一个mbuf是否在使用
         if(ring->is_used) return 1;
         ring->npkt=m;
+        ctx->ring_last=ring;
     }else{
         ring->npkt=m;
     }

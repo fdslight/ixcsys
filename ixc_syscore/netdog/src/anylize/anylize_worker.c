@@ -23,7 +23,8 @@ static void ixc_anylize_netpkt(void)
         r=r->next;
         STDERR("SSSS\r\n");
     }
-   
+
+    ctx->ring_head=r;
     ctx->is_working=0;
 }
 
