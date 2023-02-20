@@ -104,6 +104,7 @@ static void ixc_netpkt_delivery_task(void)
         v=ixc_netpkt_delivery_to_worker_handle(m,v);
 
         if(v>0){
+            STDERR("MXXX %d\r\n",v);
             if(NULL==new_first){
                 new_first=m;
             }else{
