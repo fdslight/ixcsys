@@ -411,5 +411,6 @@ int ixc_netpkt_have(void)
 
 void ixc_netpkt_loop(void)
 {
+    DBG("DEE\r\n");
     ixc_netpkt_delivery_task();
 }
