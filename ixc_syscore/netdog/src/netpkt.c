@@ -102,6 +102,7 @@ static void ixc_netpkt_delivery_task(void)
         if(NULL==m) break;
 
         t=m->next;
+        m->next=NULL;
         
         v=ixc_netpkt_alloc_worker(m);
         v=ixc_netpkt_delivery_to_worker_handle(m,v);
