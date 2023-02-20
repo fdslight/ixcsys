@@ -111,8 +111,6 @@ static void ixc_netpkt_delivery_task(void)
         v=ixc_netpkt_alloc_worker(m);
         ixc_netpkt_delivery_to_worker_handle(m,v);
         m=t;
-
-        STDERR("CCC %ld\r\n",(unsigned long long)m);
     }
     
     wait_anylize_first=NULL;
@@ -122,7 +120,8 @@ static void ixc_netpkt_delivery_task(void)
     for(int n=0;n<IXC_WORKER_NUM_MAX;n++){
         ctx=ixc_anylize_worker_get(n);
         if(NULL==ctx) break;
-        if(!ctx->is_working) pthread_kill(ctx->id,SIGUSR1);
+        //if(!ctx->is_working) pthread_kill(ctx->id,SIGUSR1);
+        pthread_kill(ctx->id,SIGUSR1);
     }
 
 }
