@@ -18,16 +18,8 @@ static void ixc_anylize_netpkt(void)
 
     ctx->recycle = NULL;
 
-    for (int n = 0; r->is_used || n < IXC_WORKER_MBUF_RING_SIZE; n++)
-    {
+    while(r->is_used){
         cnt++;
-
-        if(!r->is_used){
-            STDERR("XXX\r\n");
-            r=r->next;
-            continue;
-        }
-
         m = r->npkt;
         m->next = NULL;
 
@@ -43,10 +35,9 @@ static void ixc_anylize_netpkt(void)
             ctx->recycle = NULL;
             cnt = 0;
         }
-        STDERR("ZZZ\r\n");
     }
 
-    ctx->ring_head = r;
+    ctx->ring_head = ctx->ring_last;
     ctx->is_working = 0;
 
     STDERR("handle data\r\n");
