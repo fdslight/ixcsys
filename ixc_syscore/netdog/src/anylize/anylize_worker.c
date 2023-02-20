@@ -29,6 +29,7 @@ static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
 static void *ixc_anylize_worker_start(void *thread_context)
 {
     struct ixc_worker_context *context=thread_context;
+    struct ixc_worker_mbuf_ring *ring,*prev;
     sigset_t mask;
     
     worker_index=context->idx;
@@ -38,6 +39,21 @@ static void *ixc_anylize_worker_start(void *thread_context)
     pthread_sigmask(SIG_SETMASK,&mask,NULL);
 
     context->id=pthread_self();
+    // 初始化ring
+    context->ring=&context->ring_data[0];
+    context->ring_data_last=&context->ring_data[0];
+
+    prev=context->ring;
+
+    for(int n=1;n<IXC_WORKER_MBUF_RING_SIZE;n++){
+        ring=&context->ring_data[n];
+        prev->next=ring;
+        prev=ring;
+    }
+
+    prev->next=context->ring;
+    //
+
     ixc_anylize_worker_loop(context);
 
     return NULL;
@@ -46,7 +62,10 @@ static void *ixc_anylize_worker_start(void *thread_context)
 int ixc_anylize_worker_init(void)
 {
     bzero(workers,sizeof(NULL)*IXC_WORKER_NUM_MAX);
+ 
     signal(SIGUSR1,ixc_anylize_sig_handle);
+
+
     return 0;
 }
 

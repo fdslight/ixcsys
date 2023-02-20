@@ -74,9 +74,9 @@ static int ixc_netpkt_alloc_to_worker_handle(struct ixc_mbuf *m)
     m->next=NULL;
 
     if(!ctx->is_working){
-        ctx->npkt=m;
+        //ctx->npkt=m;
         ctx->is_working=1;
-        ctx->npkt=m;
+        //ctx->npkt=m;
         pthread_kill(ctx->id,SIGUSR1);
         return 0;
     }
