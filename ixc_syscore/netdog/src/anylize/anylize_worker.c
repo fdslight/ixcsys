@@ -33,6 +33,7 @@ static void ixc_anylize_netpkt(void)
 
         ixc_mbuf_put(m);
 
+        r->npkt=NULL;
         r->is_used = 0;
         r = r->next;
 
