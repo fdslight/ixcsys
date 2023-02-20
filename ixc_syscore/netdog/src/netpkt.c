@@ -111,7 +111,6 @@ static void ixc_netpkt_delivery_task(void)
         v=ixc_netpkt_alloc_worker(m);
         ixc_netpkt_delivery_to_worker_handle(m,v);
         m=t;
-        STDERR("CCC\r\n");
     }
     
     wait_anylize_first=NULL;
@@ -121,8 +120,7 @@ static void ixc_netpkt_delivery_task(void)
     for(int n=0;n<IXC_WORKER_NUM_MAX;n++){
         ctx=ixc_anylize_worker_get(n);
         if(NULL==ctx) break;
-        //if(!ctx->is_working) pthread_kill(ctx->id,SIGUSR1);
-        pthread_kill(ctx->id,SIGUSR1);
+        if(!ctx->is_working) pthread_kill(ctx->id,SIGUSR1);
     }
 
 }
@@ -400,6 +398,14 @@ void ixc_netpkt_send(struct ixc_mbuf *m)
 
 int ixc_netpkt_have(void)
 {
+    struct ixc_worker_context *ctx;
+    // 如果有线程需要唤醒,那么发送信号
+    for(int n=0;n<IXC_WORKER_NUM_MAX;n++){
+        ctx=ixc_anylize_worker_get(n);
+        if(NULL==ctx) break;
+        if(!ctx->is_working && ctx->ring_last->is_used) return 1;
+    }
+
     if(NULL==wait_anylize_first) return 0;
     return 1;
 }
