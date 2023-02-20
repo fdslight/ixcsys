@@ -17,7 +17,8 @@ static void ixc_anylize_netpkt(void)
 
     ctx->recycle=NULL;
     
-    while(r->is_used){
+    for(int i=0;i<32;i++){
+        if(!r->is_used) break;
         m=r->npkt;
         m->next=NULL;
 
