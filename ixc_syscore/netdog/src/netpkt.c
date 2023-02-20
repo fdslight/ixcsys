@@ -95,10 +95,7 @@ static void ixc_netpkt_delivery_task(void)
     m=wait_anylize_first;
 
     while(1){
-        if(NULL==m) {
-            STDERR("AAAA\r\n");
-            break;
-        }
+        if(NULL==m) break;
 
         t=m->next;
         m->next=NULL;
@@ -118,7 +115,6 @@ static void ixc_netpkt_delivery_task(void)
         }
 
         m=t;
-        STDERR("MA\r\n");
     }
     
     wait_anylize_first=new_first;
