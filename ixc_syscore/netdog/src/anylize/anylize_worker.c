@@ -35,6 +35,7 @@ static void ixc_anylize_netpkt(void)
             ctx->recycle = NULL;
             cnt = 0;
         }
+        STDERR("ZZZ\r\n");
     }
 
     ctx->ring_head = ctx->ring_last;
