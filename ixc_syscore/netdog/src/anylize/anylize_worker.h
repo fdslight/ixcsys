@@ -7,33 +7,18 @@
 // 最大线程数目
 #define IXC_WORKER_NUM_MAX 256
 
-struct ixc_worker_mbuf_ring{
-    struct ixc_mbuf *npkt;
-    struct ixc_worker_mbuf_ring *next;
-    int is_used;
-    int pad[4];
-};
-
 // 线程上下文环境
 struct ixc_worker_context{
     // 需要回收的mbuf
     struct ixc_mbuf *recycle;
-    // 有数据的开始位置
-    struct ixc_worker_mbuf_ring *ring_head;
-    // ring 最后一个有数据的位置
-    struct ixc_worker_mbuf_ring *ring_last;
-#define IXC_WORKER_MBUF_RING_SIZE 128
-    struct ixc_worker_mbuf_ring ring_data[IXC_WORKER_MBUF_RING_SIZE];
+    struct ixc_mbuf *npkt;
+    struct ixc_mbuf *npkt_last;
     pthread_t id;
     // 线程是否正在工作
     int is_working;
     // 当前线程索引
     int idx;
 };
-
-#if(IXC_WORKER_MBUF_RING_SIZE < 8)
-#error the value of IXC_WORKER_MBUF_RING_SIZE is at last 8
-#endif
 
 int ixc_anylize_worker_init(void);
 int ixc_anylize_create_workers(int num);

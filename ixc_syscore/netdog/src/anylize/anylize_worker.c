@@ -12,33 +12,30 @@ __thread int worker_index = 0;
 static void ixc_anylize_netpkt(void)
 {
     struct ixc_worker_context *ctx = workers[worker_index];
-    struct ixc_worker_mbuf_ring *r = ctx->ring_head;
-    struct ixc_mbuf *m;
+    struct ixc_mbuf *m=ctx->npkt,*t;
     int cnt = 0;
 
     ctx->recycle = NULL;
-
-    while(r->is_used){
+    
+    while(NULL!=m){
         cnt++;
-        m = r->npkt;
+        t=m->next;
         m->next = NULL;
 
         ixc_mbuf_put(m);
+        m=t;
 
-        r->npkt=NULL;
-        r->is_used = 0;
-        r = r->next;
-
-        if (cnt > 8)
-        {
+        if (cnt > 8){
             ixc_mbuf_puts(ctx->recycle);
             ctx->recycle = NULL;
             cnt = 0;
         }
+        
         STDERR("ZZZ\r\n");
     }
 
-    ctx->ring_head = ctx->ring_last;
+    ctx->npkt=NULL;
+    ctx->npkt_last=NULL;
     ctx->is_working = 0;
 
     STDERR("handle data\r\n");
@@ -46,12 +43,9 @@ static void ixc_anylize_netpkt(void)
 
 static void ixc_anylize_sig_handle(int signum)
 {
-    struct ixc_worker_context *ctx = workers[worker_index];
-
     if (SIGUSR1 != signum)
         return;
 
-    ctx->is_working = 1;
     ixc_anylize_netpkt();
 }
 
@@ -66,7 +60,6 @@ static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
 static void *ixc_anylize_worker_start(void *thread_context)
 {
     struct ixc_worker_context *context = thread_context;
-    struct ixc_worker_mbuf_ring *ring, *prev;
 
     sigset_t mask;
 
@@ -77,22 +70,6 @@ static void *ixc_anylize_worker_start(void *thread_context)
     pthread_sigmask(SIG_SETMASK, &mask, NULL);
 
     context->id = pthread_self();
-    // 初始化ring
-    context->ring_head = &context->ring_data[0];
-    context->ring_last = &context->ring_data[0];
-
-    prev = context->ring_head;
-
-    for (int n = 1; n < IXC_WORKER_MBUF_RING_SIZE; n++)
-    {
-        ring = &context->ring_data[n];
-        prev->next = ring;
-        prev = ring;
-    }
-
-    ring->next = context->ring_head;
-    //
-
     ixc_anylize_worker_loop(context);
 
     return NULL;

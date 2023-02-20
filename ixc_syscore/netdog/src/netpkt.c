@@ -63,7 +63,6 @@ static int ixc_netpkt_alloc_worker(struct ixc_mbuf *m)
 static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_seq)
 {
     struct ixc_worker_context *ctx=ixc_anylize_worker_get(worker_seq);
-    struct ixc_worker_mbuf_ring *ring=ctx->ring_last;
     
     if(NULL==ctx){
         STDERR("cannot get worker\r\n");
@@ -71,23 +70,16 @@ static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_se
         return -1;
     }
 
+    if(ctx->is_working) return 1;    
+
     m->next=NULL;
 
-    if(ring->is_used){
-        ring=ring->next;
-        // 检查它的下一个mbuf是否在使用
-        if(ring->is_used){
-            STDERR("Work slowly\r\n");
-            ixc_mbuf_put(m);
-            return -1;
-        }
-        ring->npkt=m;
-        ctx->ring_last=ring;
+    if(NULL==ctx->npkt){
+        ctx->npkt=m;
     }else{
-        ring->npkt=m;
+        ctx->npkt_last->next=m;
     }
-
-    ring->is_used=1;
+    ctx->npkt_last=m;
 
     return 0;
 }
@@ -96,7 +88,7 @@ static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_se
 /// @param  
 static void ixc_netpkt_delivery_task(void)
 {
-    struct ixc_mbuf *m,*t;
+    struct ixc_mbuf *m,*t,*new_first=NULL,*new_last;
     struct ixc_worker_context *ctx;
     int v;
 
@@ -109,21 +101,35 @@ static void ixc_netpkt_delivery_task(void)
         m->next=NULL;
         
         v=ixc_netpkt_alloc_worker(m);
-        ixc_netpkt_delivery_to_worker_handle(m,v);
+        v=ixc_netpkt_delivery_to_worker_handle(m,v);
+
+        if(v>0){
+            if(NULL==new_first){
+                new_first=m;
+            }else{
+                new_last->next=m;
+            }
+            new_last=m;
+            m=t;
+            continue;
+        }
+
         m=t;
         STDERR("MA\r\n");
     }
     
-    wait_anylize_first=NULL;
-    wait_anylize_last=NULL;
+    wait_anylize_first=new_first;
+    wait_anylize_last=new_last;
 
     // 如果有线程需要唤醒,那么发送信号
     for(int n=0;n<IXC_WORKER_NUM_MAX;n++){
         ctx=ixc_anylize_worker_get(n);
         if(NULL==ctx) break;
-        if(!ctx->is_working) pthread_kill(ctx->id,SIGUSR1);
+        if(!ctx->is_working) {
+            ctx->is_working=1;
+            pthread_kill(ctx->id,SIGUSR1);
+        }
     }
-
 }
 
 static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
@@ -399,14 +405,6 @@ void ixc_netpkt_send(struct ixc_mbuf *m)
 
 int ixc_netpkt_have(void)
 {
-    struct ixc_worker_context *ctx;
-    // 如果有线程需要唤醒,那么发送信号
-    for(int n=0;n<IXC_WORKER_NUM_MAX;n++){
-        ctx=ixc_anylize_worker_get(n);
-        if(NULL==ctx) break;
-        if(!ctx->is_working && ctx->ring_last->is_used) return 1;
-    }
-
     if(NULL==wait_anylize_first) return 0;
     return 1;
 }
