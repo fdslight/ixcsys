@@ -127,6 +127,7 @@ static void ixc_netpkt_delivery_task(void)
         if(NULL==ctx) break;
         if(!ctx->is_working) {
             ctx->is_working=1;
+            STDERR("SEND AA\r\n");
             pthread_kill(ctx->id,SIGUSR1);
         }
     }
