@@ -18,7 +18,6 @@ static void ixc_anylize_netpkt(void)
     while(r->is_used){
         m=r->npkt;
         ixc_mbuf_put(m);
-        STDERR("AAA\r\n");
 
         r->is_used=0;
         r=r->next;
@@ -40,7 +39,6 @@ static void ixc_anylize_sig_handle(int signum)
 static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
 {
     while(1) {
-        STDERR("BBB\r\n");
         sleep(10);
     }
 }

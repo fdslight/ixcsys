@@ -116,6 +116,7 @@ static void ixc_netpkt_delivery_task(void)
             new_last->next=m;
         }
         new_last=m;
+        m=t;
         STDERR("CCC\r\n");
     }
 
