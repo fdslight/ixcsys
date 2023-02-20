@@ -21,6 +21,7 @@ static void ixc_anylize_netpkt(void)
         ixc_mbuf_put(m);
         r->is_used=0;
     }
+    ctx->is_working=0;
 }
 
 static void ixc_anylize_sig_handle(int signum)
@@ -70,6 +71,7 @@ static void *ixc_anylize_worker_start(void *thread_context)
         prev=ring;
     }
 
+    STDERR("thread id %d\r\n",worker_index);
     prev->next=context->ring_head;
     //
 
