@@ -983,7 +983,10 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
     PyModule_AddIntMacro(m,IXC_FLAG_VSWITCH);
     PyModule_AddIntMacro(m,IXC_FLAG_IP6_TUNNEL);
-    PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_COPY);
+    PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_COPY_MIN);
+    PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_COPY_MAX);
+    
+    PyModule_AddIntMacro(m,IXC_TRAFFIC_COPY_TASK_MAX);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //
@@ -1107,6 +1110,11 @@ unsigned long long ixc_htonll(unsigned long long v)
         v |= t_high;
 
         return v;  
+}
+
+int ixc_router_traffic_copy_worker_num_get(void)
+{
+    return 1;
 }
 
 static void ixc_python_loop(void)

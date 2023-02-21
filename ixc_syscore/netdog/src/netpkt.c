@@ -4,7 +4,6 @@
 #include <errno.h>
 #include <sys/un.h>
 #include <time.h>
-#include <pthread.h>
 #include <signal.h>
 
 #include "netpkt.h"
@@ -44,96 +43,6 @@ static void ixc_netpkt_gen_rand_key(void)
     }
 }
 
-// 分配给工作线程
-static int ixc_netpkt_alloc_worker(struct ixc_mbuf *m)
-{
-    int v=0;
-    struct ixc_ether_header *eth_header=(struct ixc_ether_header *)(m->data+m->begin);
-    unsigned short *x=(unsigned short *)(eth_header->src_hwaddr);
-    
-    // 根据源MAC地址分配到相应线程
-    for(int n=0;n<3;n++) v+=*x++;
-    
-    return v % ixc_netdog_worker_num_get();
-}
-
-/// @分配数据包到对应的worker
-/// @param m 
-/// @return 能够处理返回0,不能处理返回1,故障返回-1
-static int ixc_netpkt_delivery_to_worker_handle(struct ixc_mbuf *m,int worker_seq)
-{
-    struct ixc_worker_context *ctx=ixc_anylize_worker_get(worker_seq);
-    
-    if(NULL==ctx){
-        STDERR("cannot get worker\r\n");
-        ixc_mbuf_put(m);
-        return -1;
-    }
-
-    if(ctx->is_working) return 1;    
-
-    m->next=NULL;
-
-    if(NULL==ctx->npkt){
-        ctx->npkt=m;
-    }else{
-        ctx->npkt_last->next=m;
-    }
-    ctx->npkt_last=m;
-
-    return 0;
-}
-
-/// @投递任务
-/// @param  
-static void ixc_netpkt_delivery_task(void)
-{
-    struct ixc_mbuf *m,*t,*new_first=NULL,*new_last=NULL;
-    struct ixc_worker_context *ctx;
-    int v;
-
-    m=wait_anylize_first;
-
-    while(1){
-        if(NULL==m) break;
-
-        STDERR("ZSFS\r\n");
-        t=m->next;
-        m->next=NULL;
-        
-        v=ixc_netpkt_alloc_worker(m);
-        v=ixc_netpkt_delivery_to_worker_handle(m,v);
-
-        if(v>0){
-            STDERR("ZAUSE\r\n");
-            if(NULL==new_first){
-                new_first=m;
-            }else{
-                new_last->next=m;
-            }
-            new_last=m;
-            m=t;
-            continue;
-        }
-
-        m=t;
-    }
-    
-    wait_anylize_first=new_first;
-    wait_anylize_last=new_last;
-
-    // 如果有线程需要唤醒,那么发送信号
-    for(int n=0;n<IXC_WORKER_NUM_MAX;n++){
-        ctx=ixc_anylize_worker_get(n);
-        if(NULL==ctx) break;
-        if(!ctx->is_working && NULL!=ctx->npkt) {
-            ctx->is_working=1;
-            STDERR("XXXXzz\r\n");
-            v=pthread_kill(ctx->id,SIGUSR1);
-        }
-    }
-}
-
 static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
 {
     struct ixc_netpkt_header *header=(struct ixc_netpkt_header *)(m->data+m->begin);
@@ -153,12 +62,7 @@ static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
     m->begin=m->offset+=sizeof(struct ixc_netpkt_header);
     m->next=NULL;
 
-    if(NULL==wait_anylize_first){
-        wait_anylize_first=m;
-    }else{
-        wait_anylize_last->next=m;
-    }
-    wait_anylize_last=m;
+    ixc_anylize_netpkt(m);
 }
 
 static int ixc_netpkt_rx_data(void)
@@ -168,7 +72,7 @@ static int ixc_netpkt_rx_data(void)
     struct sockaddr_in from;
     socklen_t fromlen;
 
-    for (int n = 0; n < 16 * ixc_netdog_worker_num_get(); n++)
+    for (int n = 0; n < 32; n++)
     {
         m = ixc_mbuf_get();
         if (NULL == m)
@@ -407,11 +311,10 @@ void ixc_netpkt_send(struct ixc_mbuf *m)
 
 int ixc_netpkt_have(void)
 {
-    if(NULL==wait_anylize_first) return 0;
-    return 1;
+    return 0;
 }
 
 void ixc_netpkt_loop(void)
 {
-    ixc_netpkt_delivery_task();
+
 }

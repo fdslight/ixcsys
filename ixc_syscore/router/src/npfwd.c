@@ -91,6 +91,11 @@ static void ixc_npfwd_rx_data(int fd)
 
         m->netif=netif;
 
+        if(header->flags>=IXC_FLAG_TRAFFIC_COPY_MIN && header->flags<=IXC_FLAG_TRAFFIC_COPY_MAX){
+            ixc_ether_send2(m);
+            return;
+        }
+
         switch(header->flags){
             case IXC_FLAG_ARP:
                 //DBG_FLAGS;
@@ -110,9 +115,6 @@ static void ixc_npfwd_rx_data(int fd)
                 break;
             case IXC_FLAG_VSWITCH:
                 ixc_vsw_handle_from_user(m);
-                break;
-            case IXC_FLAG_TRAFFIC_COPY:
-                ixc_ether_send2(m);
                 break;
             default:
                 //DBG_FLAGS;

@@ -7,7 +7,7 @@
 
 #include "../../../pywind/clib/ev/ev.h"
 
-#define IXC_NPFWD_INFO_MAX 10
+#define IXC_NPFWD_INFO_MAX 128
 
 struct ixc_npfwd_info{
     unsigned char key[16];

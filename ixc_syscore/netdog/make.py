@@ -25,7 +25,7 @@ def build(base_dir, mydir, cflags, debug=True):
 
     files += sys_build.get_c_files("%s/pywind/clib" % base_dir)
 
-    cflags += " -std=gnu11 -lpthread"
+    cflags += " -std=gnu11"
 
     if debug:
         cflags += " -D DEBUG -D _GNU_SOURCE"

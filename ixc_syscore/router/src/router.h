@@ -19,7 +19,11 @@
 /// IPv6隧道
 #define IXC_FLAG_IP6_TUNNEL 6
 /// 流复制
-#define IXC_FLAG_TRAFFIC_COPY 7
+#define IXC_FLAG_TRAFFIC_COPY_MIN 32
+#define IXC_FLAG_TRAFFIC_COPY_MAX 127
+
+/// 最大允许96个任务分担执行
+#define IXC_TRAFFIC_COPY_TASK_MAX 96
 
 #include<sys/types.h>
 
@@ -52,5 +56,7 @@ void ixc_router_md5_calc(void *data,int size,unsigned char *res);
 int ixc_router_traffic_copy_is_enabled(void);
 /// 主机序转网络序
 unsigned long long ixc_htonll(unsigned long long v);
+/// 获取netpkt拷贝进程数目
+int ixc_router_traffic_copy_worker_num_get(void);
 
 #endif

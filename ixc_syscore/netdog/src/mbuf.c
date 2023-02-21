@@ -61,23 +61,7 @@ void ixc_mbuf_uninit(void)
     }
 }
 
-static void __ixc_mbuf_lock(void)
-{
-    while (1)
-    {
-        if (ixc_mbuf_lock)
-            continue;
-        ixc_mbuf_lock = 1;
-        break;
-    }
-}
-
-static void __ixc_mbuf_unlock(void)
-{
-    ixc_mbuf_lock = 0;
-}
-
-static struct ixc_mbuf *__ixc_mbuf_get(void)
+struct ixc_mbuf *ixc_mbuf_get(void)
 {
     struct ixc_mbuf *m;
 
@@ -119,7 +103,7 @@ static struct ixc_mbuf *__ixc_mbuf_get(void)
     return m;
 }
 
-static void __ixc_mbuf_put(struct ixc_mbuf *m)
+void ixc_mbuf_put(struct ixc_mbuf *m)
 {
     if (!ixc_mbuf_is_initialized)
     {
@@ -142,7 +126,7 @@ static void __ixc_mbuf_put(struct ixc_mbuf *m)
     ixc_mbuf_empty_head = m;
 }
 
-static struct ixc_mbuf *__ixc_mbuf_clone(struct ixc_mbuf *m)
+struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m)
 {
     struct ixc_mbuf *new_mbuf;
 
@@ -169,43 +153,4 @@ static struct ixc_mbuf *__ixc_mbuf_clone(struct ixc_mbuf *m)
     memcpy(new_mbuf->data + new_mbuf->begin, m->data + m->begin, m->end - m->begin);
 
     return new_mbuf;
-}
-
-struct ixc_mbuf *ixc_mbuf_get(void)
-{
-    struct ixc_mbuf *m=NULL;
-    __ixc_mbuf_lock();
-    m=__ixc_mbuf_get();
-    __ixc_mbuf_unlock();
-
-    return m;
-}
-
-void ixc_mbuf_put(struct ixc_mbuf *m)
-{
-    __ixc_mbuf_lock();
-    __ixc_mbuf_put(m);
-    __ixc_mbuf_unlock();
-}
-
-struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m)
-{
-    struct ixc_mbuf *new_m=NULL;
-    __ixc_mbuf_lock();
-    new_m=__ixc_mbuf_clone(m);
-    __ixc_mbuf_unlock();
-
-    return new_m;
-}
-
-void ixc_mbuf_puts(struct ixc_mbuf *m_head)
-{
-    struct ixc_mbuf *m=m_head,*t;
-    __ixc_mbuf_lock();
-    while(NULL!=m){
-        t=m->next;
-        __ixc_mbuf_put(m);
-        m=t;
-    }
-    __ixc_mbuf_unlock();
 }

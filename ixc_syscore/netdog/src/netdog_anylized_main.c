@@ -1,7 +1,6 @@
 #include <libgen.h>
 #include <signal.h>
 #include <execinfo.h>
-#include<pthread.h>
 
 #include "socket_server.h"
 #include "netdog.h"
@@ -15,10 +14,6 @@
 static char pid_path[4096];
 /// 运行目录
 static char run_dir[4096];
-/// 工作线程数目
-static int worker_thread_num=0;
-// 主线程ID
-static pthread_t main_thread_id=0;
 
 /// 设置运行环境
 static void ixc_set_run_env(char *argv[])
@@ -57,8 +52,6 @@ static void ixc_segfault_info()
 
 static void netdog_stop(void)
 {
-    if(pthread_self()!=main_thread_id) return;
-
     ixc_socket_server_uninit();
     ixc_anylize_worker_uninit();
 
@@ -81,8 +74,7 @@ static void ixc_signal_handle(int signum)
 static void netdog_start(int is_debug)
 {
     int rs;
-    
-    main_thread_id=pthread_self();
+
 
     signal(SIGSEGV, ixc_signal_handle);
     signal(SIGINT, ixc_signal_handle);
@@ -93,8 +85,6 @@ static void netdog_start(int is_debug)
         STDERR("cannot init anylize worker\r\n");
         exit(EXIT_SUCCESS);
     }
-
-    ixc_anylize_create_workers(2);
 
     rs = ixc_socket_server_init();
     if (rs < 0)
@@ -115,24 +105,6 @@ static void send_int_sig(void)
     if (pid < 0)
         return;
     kill(pid, SIGINT);
-}
-
-/// @设置工作线程数目
-/// @param  
-/// @return 
-static int set_worker_thread_num(int argc,char *argv[])
-{
-    if(argc!=3){
-        worker_thread_num=1;
-        return 0;
-    }
-    return 0;
-}
-
-inline
-int ixc_netdog_worker_num_get(void)
-{
-    return worker_thread_num;
 }
 
 int main(int argc, char *argv[])
@@ -161,7 +133,6 @@ int main(int argc, char *argv[])
         if (pid != 0)
             exit(EXIT_SUCCESS);
 
-        set_worker_thread_num(argc,argv);
         netdog_start(0);
 
         return 0;
@@ -175,7 +146,6 @@ int main(int argc, char *argv[])
 
     if (!strcmp(argv[1], "debug"))
     {
-        set_worker_thread_num(argc,argv);
         netdog_start(1);
         return 0;
     }
