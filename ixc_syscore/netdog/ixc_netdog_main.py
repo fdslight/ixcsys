@@ -17,9 +17,6 @@ import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
 
-import ixc_syscore.netdog.handlers.sys_msg as sys_msg
-import ixc_syscore.netdog.pylib.sys_msg as libsys_msg
-
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
 
@@ -88,18 +85,13 @@ class service(dispatcher.dispatcher):
         cmd = "%s/ixc_netdog_anylized start" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
         os.system(cmd)
         time.sleep(3)
-        # 启动网络分析器后,进行数据转发配置,用以监控局域网流量
-        mon_key, mon_port = libsys_msg.get_pkt_mon_port()
         # 首先关闭流量拷贝
         RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
-        RPCClient.fn_call("router", "/config", "unset_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'])
-        RPCClient.fn_call("router", "/config", "set_fwd_port", self.__consts['IXC_FLAG_TRAFFIC_COPY'], mon_key,
-                          mon_port)
 
         self.create_poll()
         self.start_scgi()
         self.start_sys_msg()
-        self.traffic_anylize_enable(True)
+        #self.traffic_anylize_enable(True)
 
     def myloop(self):
         pass

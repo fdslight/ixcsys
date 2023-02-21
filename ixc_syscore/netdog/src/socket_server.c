@@ -1,6 +1,5 @@
 #include "socket_server.h"
 #include "netpkt.h"
-#include "sys_msg.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/ev/ev.h"
@@ -39,12 +38,6 @@ int ixc_socket_server_init(void)
         return -1;
     }
 
-    rs=ixc_sys_msg_init(&ixc_socket_ev_set);
-    if(rs<0){
-        STDERR("cannot init sys_msg\r\n");
-        return -1;
-    }
-
     ixc_socket_ev_set.myloop_fn=ixc_socket_server_myloop;
 
     return 0;
@@ -53,7 +46,6 @@ int ixc_socket_server_init(void)
 void ixc_socket_server_uninit(void)
 {
     ixc_netpkt_uninit();
-    ixc_sys_msg_uninit();
     ixc_mbuf_uninit();
 }
 
