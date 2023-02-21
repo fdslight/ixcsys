@@ -67,28 +67,34 @@ class service(dispatcher.dispatcher):
     __configs = None
 
     __conf_path = None
+    # 包分析器工作数目
+    __worker_num = None
 
     def init_func(self, debug):
         global_vars["ixcsys.netdog"] = self
 
-        self.__conf_path = "%s/httpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__conf_path = "%s/netdog.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__debug = debug
         self.__msg_fd = -1
         self.__configs = {}
         self.__scgi_fd = -1
+        self.__worker_num = 2
 
         RPCClient.wait_processes(["router"])
 
         self.__consts = RPCClient.fn_call("router", "/config", "get_all_consts")
         RPCClient.fn_call("router", "/config", "traffic_copy_peer_num_set", 1)
 
-        cmd = "%s/ixc_netdog_anylized start 0" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
-        os.system(cmd)
-        time.sleep(3)
+        for i in range(self.__worker_num):
+            cmd = "%s/ixc_netdog_anylized start %s" % (os.getenv("IXC_MYAPP_RELATIVE_DIR"), i)
+            os.system(cmd)
+            time.sleep(3)
         # 首先关闭流量拷贝
         self.create_poll()
         self.start_scgi()
+
+        self.traffic_anylize_enable(True)
 
     def myloop(self):
         pass
@@ -122,11 +128,12 @@ class service(dispatcher.dispatcher):
     def release(self):
         self.traffic_anylize_enable(False)
 
+        for i in range(self.__worker_num):
+            cmd = "%s/ixc_netdog_anylized stop %s" % (os.getenv("IXC_MYAPP_RELATIVE_DIR"), i)
+            os.system(cmd)
+
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
-
-        cmd = "%s/ixc_netdog_anylized stop 0" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
-        os.system(cmd)
 
 
 def main():

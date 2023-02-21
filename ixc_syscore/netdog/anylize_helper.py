@@ -25,9 +25,6 @@ class helper(object):
 
         RPCClient.wait_processes(["router"])
 
-    def traffic_anylize_enable(self, enable: bool):
-        RPCClient.fn_call("router", "/config", "traffic_cpy_enable", enable)
-
     def start(self):
         key, port = self.__npkt_anylize.message_id_with_router_get()
         work_no = self.__npkt_anylize.worker_no_get()
@@ -39,8 +36,6 @@ class helper(object):
         RPCClient.fn_call("router", "/config", "unset_fwd_port", flags)
         key, port = RPCClient.fn_call("router", "/config", "set_fwd_port", flags,
                                       key, port)
-        self.traffic_anylize_enable(True)
+
     def release(self):
         RPCClient.fn_call("router", "/config", "unset_fwd_port", self.__msg_flags)
-        self.traffic_anylize_enable(False)
-
