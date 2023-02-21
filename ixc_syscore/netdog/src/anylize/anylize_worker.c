@@ -45,7 +45,7 @@ static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
     int sig;
 
     sigemptyset(&sgset);
-    sigaddset(&sgset,SIGRTMIN+2);
+    sigaddset(&sgset,SIGUSR1);
 
     while (1)
     {

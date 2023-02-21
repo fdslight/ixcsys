@@ -127,7 +127,7 @@ static void ixc_netpkt_delivery_task(void)
         if(!ctx->is_working && NULL!=ctx->npkt) {
             ctx->is_working=1;
             STDERR("send signal\r\n");
-            v=pthread_kill(ctx->id,SIGRTMIN+2);
+            v=pthread_kill(ctx->id,SIGUSR1);
         }
     }
 }
