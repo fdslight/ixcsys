@@ -86,12 +86,9 @@ class service(dispatcher.dispatcher):
         os.system(cmd)
         time.sleep(3)
         # 首先关闭流量拷贝
-        RPCClient.fn_call("router", "/config", "traffic_cpy_enable", False)
-
         self.create_poll()
         self.start_scgi()
         self.start_sys_msg()
-        #self.traffic_anylize_enable(True)
 
     def myloop(self):
         pass
@@ -99,9 +96,6 @@ class service(dispatcher.dispatcher):
     @property
     def debug(self):
         return self.__debug
-
-    def traffic_anylize_enable(self, enable: bool):
-        RPCClient.fn_call("router", "/config", "traffic_cpy_enable", enable)
 
     @property
     def configs(self):
