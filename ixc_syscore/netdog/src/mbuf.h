@@ -10,6 +10,10 @@
 
 struct ixc_mbuf{
     struct ixc_mbuf *next;
+    // 数据包的时间（秒）
+    unsigned long long sec_time;
+    // 数据包的时间（微秒）
+    unsigned long long usec_time;
 
     union{
             // 目标发送地址
@@ -18,6 +22,8 @@ struct ixc_mbuf{
     };
 
     int is_ipv6;
+    // 流量方向
+    int traffic_dir;
     // 开始位置
 #define IXC_MBUF_BEGIN 512
     int begin;

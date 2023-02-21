@@ -21,7 +21,7 @@ struct ixc_netpkt_header{
     unsigned char ipproto;
     // 标志
     unsigned char flags;
-        // 版本号,当前固定值为1
+    // 版本号,当前固定值为1
     unsigned char version;
     // 流量方向
     // 输出流量

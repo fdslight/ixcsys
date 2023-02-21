@@ -5,6 +5,7 @@
 #include <libgen.h>
 #include <signal.h>
 #include <execinfo.h>
+#include<arpa/inet.h>
 
 #include "socket_server.h"
 #include "netdog.h"
@@ -312,6 +313,20 @@ static void send_int_sig(void)
     if (pid < 0)
         return;
     kill(pid, SIGINT);
+}
+
+unsigned long long ixc_ntohll(unsigned long long v)
+{
+        unsigned long t_low, t_high;  
+        t_low = ntohl((long)v);  
+        t_high = ntohl((long)(v >> 32));  
+  
+        v &= 0;  
+        v |= t_low;  
+        v <<= 32;   
+        v |= t_high;
+
+        return v;  
 }
 
 int main(int argc, char *argv[])

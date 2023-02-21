@@ -61,6 +61,12 @@ static void ixc_netpkt_handle(struct ixc_mbuf *m,struct sockaddr_in *from)
 
     m->begin=m->offset+=sizeof(struct ixc_netpkt_header);
     m->next=NULL;
+    m->traffic_dir=header->traffic_dir;
+
+    m->sec_time=ixc_ntohll(header->sec_time);
+    m->usec_time=ixc_ntohll(header->usec_time);
+
+    STDERR("packet receive time %lld\r\n",m->sec_time);
 
     ixc_anylize_netpkt(m);
 }

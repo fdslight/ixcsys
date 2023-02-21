@@ -6,7 +6,6 @@
 #include "anylize_worker.h"
 
 
-
 int ixc_anylize_worker_init(void)
 {
     return 0;
