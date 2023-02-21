@@ -30,6 +30,7 @@ static void ixc_anylize_netpkt(void)
             ctx->recycle = NULL;
             cnt = 0;
         }
+        STDERR("ZVCS\r\n");
     }
 
     ctx->npkt=NULL;
@@ -55,9 +56,9 @@ static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
             STDERR("ZZZAAA\r\n");
             ixc_anylize_netpkt();
         }else{
-            sleep(10);
+           
         }
-        
+        usleep(1);
     }
 }
 
