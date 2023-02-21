@@ -13,6 +13,7 @@ class helper(object):
 
     def start(self):
         print(self.__npkt_anylize.worker_no_get())
+        print(self.__npkt_anylize.message_id_with_router_get())
 
     def release(self):
         pass

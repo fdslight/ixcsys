@@ -8,6 +8,8 @@
 
 #include "socket_server.h"
 #include "netdog.h"
+#include "netpkt.h"
+
 #include "anylize/anylize_worker.h"
 
 #include "../../../pywind/clib/pycall.h"
@@ -57,12 +59,25 @@ anylize_worker_no_get(PyObject *self,PyObject *args)
     return PyLong_FromLong(anylize_worker_no);
 }
 
+static PyObject *
+anylize_message_id_with_router_get(PyObject *self,PyObject *args)
+{
+    unsigned char id[16];
+    unsigned short port;
+
+    ixc_netpkt_key_get(id);
+    ixc_netpkt_port_get(&port);
+
+    return Py_BuildValue("(y#H)",id,16,port);
+}
+
 static PyMemberDef anylize_members[]={
     {NULL}
 };
 
 static PyMethodDef anylize_methods[]={
     {"worker_no_get",(PyCFunction)anylize_worker_no_get,METH_NOARGS,"get worker no"},
+    {"message_id_with_router_get",(PyCFunction)anylize_message_id_with_router_get,METH_NOARGS,"get router message id"},
     {NULL,NULL,0,NULL}
 };
 

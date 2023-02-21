@@ -277,7 +277,7 @@ int ixc_netpkt_port_get(unsigned short *port)
 
     getsockname(netpkt_fd, (void *)&addr, &socklen);
 
-    *port = addr.sin_port;
+    *port = ntohs(addr.sin_port);
 
     return 0;
 }
