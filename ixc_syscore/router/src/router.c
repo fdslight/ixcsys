@@ -57,6 +57,8 @@ static struct ev_set ixc_ev_set;
 static time_t loop_time_up=0;
 /// 是否开启流量拷贝
 static int traffic_copy_enable=0;
+/// 流量拷贝的进程数目
+static int traffic_copy_peer_num=1;
 
 typedef struct{
     PyObject_HEAD
@@ -868,6 +870,18 @@ router_traffic_copy_is_enabled(PyObject *self,PyObject *args)
     Py_RETURN_FALSE;
 }
 
+/// 设置流量对端数目
+static PyObject *
+router_traffic_copy_peer_num_set(PyObject *self,PyObject *args)
+{
+    if(!PyArg_ParseTuple(args,"B",&traffic_copy_peer_num)) return NULL;
+    if(traffic_copy_peer_num<1 || traffic_copy_peer_num>IXC_TRAFFIC_COPY_TASK_MAX){
+        traffic_copy_peer_num=1;
+        Py_RETURN_FALSE;
+    }
+    Py_RETURN_TRUE;
+}
+
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -934,6 +948,7 @@ static PyMethodDef routerMethods[]={
     //
     {"traffic_copy_enable",(PyCFunction)router_traffic_copy_enable,METH_VARARGS,"enable or disable traffic copy"},
     {"traffic_copy_is_enabled",(PyCFunction)router_traffic_copy_is_enabled,METH_NOARGS,"show traffic copy is enabled"},
+    {"traffic_copy_peer_num_set",(PyCFunction)router_traffic_copy_peer_num_set,METH_VARARGS,"set copy peer num"},
 
     {NULL,NULL,0,NULL}
 };
@@ -1112,9 +1127,10 @@ unsigned long long ixc_htonll(unsigned long long v)
         return v;  
 }
 
+inline
 int ixc_router_traffic_copy_worker_num_get(void)
 {
-    return 1;
+    return traffic_copy_peer_num;
 }
 
 static void ixc_python_loop(void)

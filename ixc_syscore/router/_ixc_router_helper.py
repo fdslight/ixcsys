@@ -77,6 +77,7 @@ class rpc(object):
 
             "traffic_cpy_enable": self.traffic_cpy_enable,
             "traffic_cpy_is_enabled": self.traffic_cpy_is_enabled,
+            "traffic_copy_peer_num_set": self.traffic_copy_peer_num_set,
 
             "config_save": self.save
         }
@@ -113,7 +114,7 @@ class rpc(object):
             "IXC_FLAG_TRAFFIC_COPY_MIN": router.IXC_FLAG_TRAFFIC_COPY_MIN,
             "IXC_FLAG_TRAFFIC_COPY_MAX": router.IXC_FLAG_TRAFFIC_COPY_MAX,
 
-            "IXC_TRAFFIC_COPY_TASK_MAX":router.IXC_TRAFFIC_COPY_TASK_MAX,
+            "IXC_TRAFFIC_COPY_TASK_MAX": router.IXC_TRAFFIC_COPY_TASK_MAX,
 
             "IXC_TRAFFIC_OUT": router.IXC_TRAFFIC_OUT,
             "IXC_TRAFFIC_IN": router.IXC_TRAFFIC_IN,
@@ -499,6 +500,9 @@ class rpc(object):
 
     def traffic_cpy_is_enabled(self):
         return 0, self.__helper.router.traffic_copy_is_enabled()
+
+    def traffic_copy_peer_num_set(self, num: int):
+        return 0, self.__helper.router.traffic_copy_peer_num_set(num)
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
         """端口映射添加
