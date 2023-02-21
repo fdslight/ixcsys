@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
 
     ixc_set_run_env(argv);
 
-    if(!access(pid_path,F_OK)){
+    if(!access(pid_path,F_OK) && memcmp("stop",argv[1])){
         printf("error:anylize process %s exists\r\n",argv[2]);
         return -1;
     }
