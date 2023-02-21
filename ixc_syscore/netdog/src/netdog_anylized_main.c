@@ -207,6 +207,29 @@ static void ixc_python_release(void)
     Py_XDECREF(result);
 }
 
+void ixc_netdog_python_loop()
+{
+    PyObject *pfunc,*result;
+
+    pfunc=PyObject_GetAttrString(py_anylize_inst,"loop");
+    
+    if(NULL==pfunc){
+        DBG("cannot found python function loop\r\n");
+        return;
+    }
+
+    result=PyObject_CallObject(pfunc, NULL);
+
+    if(NULL==result){
+        PyErr_Print();
+    }
+
+    Py_XDECREF(pfunc);
+    Py_XDECREF(result);
+
+    return;
+}
+
 /// 设置运行环境
 static void ixc_set_run_env(char *argv[])
 {

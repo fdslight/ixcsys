@@ -37,5 +37,8 @@ class helper(object):
         key, port = RPCClient.fn_call("router", "/config", "set_fwd_port", flags,
                                       key, port)
 
+    def loop(self):
+        pass
+
     def release(self):
         RPCClient.fn_call("router", "/config", "unset_fwd_port", self.__msg_flags)

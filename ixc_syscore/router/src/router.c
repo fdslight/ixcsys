@@ -1139,7 +1139,7 @@ static void ixc_python_loop(void)
 
     pfunc=PyObject_GetAttrString(py_helper_instance,"loop");
     if(NULL==pfunc){
-        DBG("cannot found python function tell\r\n");
+        DBG("cannot found python function loop\r\n");
         return;
     }
 
@@ -1297,6 +1297,11 @@ static int ixc_init_python(int debug)
 
     pfunc=PyObject_GetAttrString(py_module,"helper");
     cls=PyObject_CallObject(pfunc, args);
+
+    if(NULL==cls){
+        PyErr_Print();
+        return -1;
+    }
 
     py_helper_module=py_module;
     py_helper_instance=cls;

@@ -79,7 +79,7 @@ class service(dispatcher.dispatcher):
         self.__msg_fd = -1
         self.__configs = {}
         self.__scgi_fd = -1
-        self.__worker_num = 2
+        self.__worker_num = 1
 
         RPCClient.wait_processes(["router"])
 
