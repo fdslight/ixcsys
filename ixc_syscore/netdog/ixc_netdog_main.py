@@ -81,14 +81,14 @@ class service(dispatcher.dispatcher):
         RPCClient.wait_processes(["router"])
 
         self.__consts = RPCClient.fn_call("router", "/config", "get_all_consts")
+        RPCClient.fn_call("router", "/config", "traffic_copy_peer_num_set", 1)
 
-        cmd = "%s/ixc_netdog_anylized start" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
+        cmd = "%s/ixc_netdog_anylized start 0" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
         os.system(cmd)
         time.sleep(3)
         # 首先关闭流量拷贝
         self.create_poll()
         self.start_scgi()
-        self.start_sys_msg()
 
     def myloop(self):
         pass
@@ -100,6 +100,9 @@ class service(dispatcher.dispatcher):
     @property
     def configs(self):
         return self.__configs
+
+    def traffic_anylize_enable(self, enable: bool):
+        RPCClient.fn_call("router", "/config", "traffic_cpy_enable", enable)
 
     def load_configs(self):
         conf = cfg.ini_parse_from_file(self.__conf_path)
@@ -116,16 +119,13 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
 
-    def start_sys_msg(self):
-        self.__msg_fd = self.create_handler(-1, sys_msg.sys_msg)
-
     def release(self):
         self.traffic_anylize_enable(False)
 
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-        cmd = "%s/ixc_netdog_anylized stop" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
+        cmd = "%s/ixc_netdog_anylized stop 0" % os.getenv("IXC_MYAPP_RELATIVE_DIR")
         os.system(cmd)
 
 
