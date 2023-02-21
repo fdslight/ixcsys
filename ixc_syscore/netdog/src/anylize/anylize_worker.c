@@ -39,19 +39,19 @@ static void ixc_anylize_netpkt(void)
     STDERR("handle data\r\n");
 }
 
-static void ixc_anylize_sig_handle(int signum)
-{
-    if (SIGUSR1 != signum)
-        return;
-
-    ixc_anylize_netpkt();
-}
-
 static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
 {
+    sigset_t sgset;
+    int sig;
+
+    sigemptyset(&sgset);
+    sigaddset(&sgset,SIGRTMIN+2);
+
     while (1)
     {
-        sleep(10);
+        sigwait(&sgset,&sig);
+        STDERR("reive signal\r\n");
+        ixc_anylize_netpkt();
     }
 }
 
@@ -76,8 +76,6 @@ static void *ixc_anylize_worker_start(void *thread_context)
 int ixc_anylize_worker_init(void)
 {
     bzero(workers, sizeof(NULL) * IXC_WORKER_NUM_MAX);
-
-    signal(SIGUSR1, ixc_anylize_sig_handle);
 
     return 0;
 }
