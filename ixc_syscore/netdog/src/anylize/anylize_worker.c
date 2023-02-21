@@ -43,8 +43,6 @@ static void ixc_anylize_sig_handle(int signum)
 {
     if (SIGUSR1 != signum)
         return;
-
-    
 }
 
 static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
@@ -54,6 +52,7 @@ static void ixc_anylize_worker_loop(struct ixc_worker_context *context)
     while (1)
     {
         if(ctx->is_working){
+            STDERR("ZZZAAA\r\n");
             ixc_anylize_netpkt();
         }else{
             sleep(10);

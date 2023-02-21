@@ -97,6 +97,7 @@ static void ixc_netpkt_delivery_task(void)
     while(1){
         if(NULL==m) break;
 
+        STDERR("ZSFS\r\n");
         t=m->next;
         m->next=NULL;
         
@@ -126,6 +127,7 @@ static void ixc_netpkt_delivery_task(void)
         if(NULL==ctx) break;
         if(!ctx->is_working && NULL!=ctx->npkt) {
             ctx->is_working=1;
+            STDERR("XXXXzz\r\n");
             v=pthread_kill(ctx->id,SIGUSR1);
         }
     }
