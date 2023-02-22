@@ -30,7 +30,6 @@
 #include "global.h"
 #include "npfwd.h"
 #include "sec_net.h"
-#include "vswitch.h"
 
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
@@ -55,10 +54,6 @@ static PyObject *py_helper_instance=NULL;
 static struct ev_set ixc_ev_set;
 ///循环更新事件
 static time_t loop_time_up=0;
-/// 是否开启流量拷贝
-static int traffic_copy_enable=0;
-/// 流量拷贝的进程数目
-static int traffic_copy_peer_num=1;
 
 typedef struct{
     PyObject_HEAD
@@ -765,37 +760,6 @@ router_qos_unset_tunnel(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-router_vsw_enable(PyObject *self,PyObject *args)
-{
-    int enable,is_ipv6;
-    if(!PyArg_ParseTuple(args,"pp",&enable,&is_ipv6)) return NULL;
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-router_vsw_set_subnet(PyObject *self,PyObject *args)
-{
-    unsigned char address[16];
-    const char *s;
-    int is_ipv6,rs;
-    unsigned char prefix;
-
-    if(!PyArg_ParseTuple(args,"sbp",&s,&prefix,&is_ipv6)) return NULL;
-
-    if(is_ipv6) rs=inet_pton(AF_INET6,s,address);
-    else rs=inet_pton(AF_INET,s,address);
-
-    if(rs<0){
-        PyErr_SetString(PyExc_ValueError,"invalid ip address");
-        return NULL;
-    }
-
-    ixc_vsw_set_subnet(address,prefix,is_ipv6);
-    Py_RETURN_NONE;
-}
-
 /// 返回系统的CPU总数
 static PyObject *
 router_cpu_num(PyObject *self,PyObject *args)
@@ -850,37 +814,6 @@ router_start_time(PyObject *self,PyObject *args)
     return PyLong_FromUnsignedLongLong(run_start_time);
 }
 
-/// 开启或者关闭流量拷贝
-static PyObject *
-router_traffic_copy_enable(PyObject *self,PyObject *args)
-{
-    if(!PyArg_ParseTuple(args,"p",&traffic_copy_enable)) return NULL;
-
-    Py_RETURN_NONE;
-}
-
-/// 是否开启了流量拷贝
-static PyObject *
-router_traffic_copy_is_enabled(PyObject *self,PyObject *args)
-{
-    if(traffic_copy_enable){
-        Py_RETURN_TRUE;
-    }
-
-    Py_RETURN_FALSE;
-}
-
-/// 设置流量对端数目
-static PyObject *
-router_traffic_copy_peer_num_set(PyObject *self,PyObject *args)
-{
-    if(!PyArg_ParseTuple(args,"B",&traffic_copy_peer_num)) return NULL;
-    if(traffic_copy_peer_num<1 || traffic_copy_peer_num>IXC_TRAFFIC_COPY_TASK_MAX){
-        traffic_copy_peer_num=1;
-        Py_RETURN_FALSE;
-    }
-    Py_RETURN_TRUE;
-}
 
 static PyMemberDef router_members[]={
     {NULL}
@@ -938,17 +871,10 @@ static PyMethodDef routerMethods[]={
     {"qos_set_tunnel_first",(PyCFunction)router_qos_set_tunnel_first,METH_VARARGS,"set qos tunnel traffic is first"},
     {"qos_unset_tunnel",(PyCFunction)router_qos_unset_tunnel,METH_NOARGS,"unset qos tunnel traffic is first"},
     //
-    {"vsw_enable",(PyCFunction)router_vsw_enable,METH_VARARGS,"enable or disable vswitch"},
-    {"vsw_set_subnet",(PyCFunction)router_vsw_set_subnet,METH_VARARGS,"set vswitch subnet"},
-    //
     {"cpu_num",(PyCFunction)router_cpu_num,METH_NOARGS,"get cpu num"},
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},
     //
     {"router_start_time",(PyCFunction)router_start_time,METH_NOARGS,"get router start time"},
-    //
-    {"traffic_copy_enable",(PyCFunction)router_traffic_copy_enable,METH_VARARGS,"enable or disable traffic copy"},
-    {"traffic_copy_is_enabled",(PyCFunction)router_traffic_copy_is_enabled,METH_NOARGS,"show traffic copy is enabled"},
-    {"traffic_copy_peer_num_set",(PyCFunction)router_traffic_copy_peer_num_set,METH_VARARGS,"set copy peer num"},
 
     {NULL,NULL,0,NULL}
 };
@@ -996,19 +922,10 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_SERVER);
     PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
-    PyModule_AddIntMacro(m,IXC_FLAG_VSWITCH);
-    PyModule_AddIntMacro(m,IXC_FLAG_IP6_TUNNEL);
-    PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_COPY_MIN);
-    PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_COPY_MAX);
-    
-    PyModule_AddIntMacro(m,IXC_TRAFFIC_COPY_TASK_MAX);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //
     PyModule_AddIntMacro(m,IXC_NETIF_WAN);
-    //
-    PyModule_AddIntMacro(m,IXC_TRAFFIC_OUT);
-    PyModule_AddIntMacro(m,IXC_TRAFFIC_IN);
 
 
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_DROP);
@@ -1104,33 +1021,6 @@ void ixc_router_md5_calc(void *data,int size,unsigned char *res)
     Py_XDECREF(pfunc);
     Py_XDECREF(result);
     Py_XDECREF(args);
-}
-
-inline
-int ixc_router_traffic_copy_is_enabled(void)
-{
-    return traffic_copy_enable;
-}
-
-inline
-unsigned long long ixc_htonll(unsigned long long v)
-{
-        unsigned long t_low, t_high;  
-        t_low = htonl((long)v);  
-        t_high = htonl((long)(v >> 32));  
-  
-        v &= 0;  
-        v |= t_low;  
-        v <<= 32;   
-        v |= t_high;
-
-        return v;  
-}
-
-inline
-int ixc_router_traffic_copy_worker_num_get(void)
-{
-    return traffic_copy_peer_num;
 }
 
 static void ixc_python_loop(void)
@@ -1472,12 +1362,6 @@ static void ixc_start(int debug)
     rs=ixc_ipunfrag_init();
     if(rs<0){
         STDERR("cannot init ipunfrag\r\n");
-        return;
-    }
-
-    rs=ixc_vsw_init();
-    if(rs<0){
-        STDERR("cannot init vswitch\r\n");
         return;
     }
 

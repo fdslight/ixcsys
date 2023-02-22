@@ -9,18 +9,11 @@
 #include "router.h"
 #include "debug.h"
 #include "npfwd.h"
-#include "vswitch.h"
 
 static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 {
     struct ixc_netif *netif=mbuf->netif;
     //unsigned char brd[]={0xff,0xff,0xff,0xff,0xff,0xff};
-
-    // 检查是否是VSWITCH的地址段,如果是的话那么发送
-    if(ixc_vsw_is_from_subnet(arp->src_ipaddr,0)){
-        ixc_npfwd_send_raw(mbuf,0,IXC_FLAG_VSWITCH);
-        return;
-    }
     
     // 检查是否是本机的IP地址,不是本机的IP地址那么丢弃ARP请求
     if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){

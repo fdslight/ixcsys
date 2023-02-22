@@ -25,23 +25,6 @@ static struct ixc_netif netif_objs[IXC_NETIF_MAX];
 static struct ev_set *netif_ev_set;
 static int netif_is_initialized=0;
 
-// 分配给工作线程
-static int ixc_netif_netpkt_mon_alloc_worker(struct ixc_mbuf *m,int is_out)
-{
-    int v=0;
-    struct ixc_ether_header *eth_header=(struct ixc_ether_header *)(m->data+m->begin);
-    unsigned short *x;
-
-    if(is_out){
-        x=(unsigned short *)(eth_header->src_hwaddr);
-    }else{
-        x=(unsigned short *)(eth_header->dst_hwaddr);
-    }
-    // 根据源MAC地址分配到相应线程
-    for(int n=0;n<3;n++) v+=*x++;
-    
-    return v % ixc_router_traffic_copy_worker_num_get();
-}
 
 static int ixc_netif_readable_fn(struct ev *ev)
 {
@@ -278,10 +261,6 @@ int ixc_netif_set_hwaddr(int if_idx,unsigned char *hwaddr)
 int ixc_netif_send(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=m->netif;
-    struct ixc_mbuf *t;
-    struct ixc_traffic_cpy_pkt_header *cpy_pkt_header;
-    struct timeval tv;
-    int v;
 
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -297,24 +276,6 @@ int ixc_netif_send(struct ixc_mbuf *m)
     }
 
     netif->sent_last=m;
-
-    if(IXC_NETIF_LAN==netif->type && ixc_router_traffic_copy_is_enabled()){
-        t=ixc_mbuf_clone(m);
-        if(NULL!=t){
-            gettimeofday(&tv,NULL);
-
-            t->begin-=sizeof(struct ixc_traffic_cpy_pkt_header);
-
-            cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+t->begin);
-            cpy_pkt_header->version=1;
-            cpy_pkt_header->traffic_dir=IXC_TRAFFIC_IN;
-            cpy_pkt_header->sec_time=ixc_htonll(tv.tv_sec);
-            cpy_pkt_header->usec_time=ixc_htonll(tv.tv_usec);
-
-            v=ixc_netif_netpkt_mon_alloc_worker(t,0);
-            ixc_npfwd_send_raw(t,0,IXC_FLAG_TRAFFIC_COPY_MIN+v);
-        }
-    }
 
     ixc_netif_tx_data(netif);
 
@@ -368,9 +329,7 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
 int ixc_netif_rx_data(struct ixc_netif *netif)
 {
     ssize_t rsize;
-    struct ixc_mbuf *m,*t;
-    struct ixc_traffic_cpy_pkt_header *cpy_pkt_header;
-    struct timeval tv;
+    struct ixc_mbuf *m;
     int rs=0;
     
     if(!netif_is_initialized){
@@ -413,22 +372,6 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
 
         if(IXC_NETIF_LAN==netif->type){
             m->from=IXC_MBUF_FROM_LAN;
-            if(ixc_router_traffic_copy_is_enabled()){
-                t=ixc_mbuf_clone(m);
-                if(NULL!=t){
-                    gettimeofday(&tv,NULL);
-
-                    t->begin-=sizeof(struct ixc_traffic_cpy_pkt_header);
-
-                    cpy_pkt_header=(struct ixc_traffic_cpy_pkt_header *)(t->data+t->begin);
-                    cpy_pkt_header->version=1;
-                    cpy_pkt_header->traffic_dir=IXC_TRAFFIC_OUT;
-                    cpy_pkt_header->sec_time=ixc_htonll(tv.tv_sec);
-                    cpy_pkt_header->usec_time=ixc_htonll(tv.tv_usec);
-
-                    ixc_npfwd_send_raw(t,0,IXC_FLAG_TRAFFIC_COPY_MIN+ixc_netif_netpkt_mon_alloc_worker(m,1));
-                }
-            }
         }
         else{
             m->from=IXC_MBUF_FROM_WAN;

@@ -610,12 +610,7 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
             ixc_npfwd_send_raw(m,header->next_header,IXC_FLAG_ROUTE_FWD);
             return;
         }else{
-            if(ip6_tunnel_enable){
-                ixc_npfwd_send_raw(m,header->next_header,IXC_FLAG_IP6_TUNNEL);
-                return;
-            }else{
-                netif=r->netif;
-            }
+            netif=r->netif;
         }
     }else{
         if(route.ipv6_pass){

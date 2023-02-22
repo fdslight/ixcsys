@@ -8,7 +8,6 @@
 #include "router.h"
 #include "ether.h"
 #include "ip.h"
-#include "vswitch.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/ev/ev.h"
@@ -91,11 +90,6 @@ static void ixc_npfwd_rx_data(int fd)
 
         m->netif=netif;
 
-        if(header->flags>=IXC_FLAG_TRAFFIC_COPY_MIN && header->flags<=IXC_FLAG_TRAFFIC_COPY_MAX){
-            ixc_ether_send2(m);
-            return;
-        }
-
         switch(header->flags){
             case IXC_FLAG_ARP:
                 //DBG_FLAGS;
@@ -112,9 +106,6 @@ static void ixc_npfwd_rx_data(int fd)
             case IXC_FLAG_ROUTE_FWD:
                 //DBG_FLAGS;
                 ixc_ip_send(m);
-                break;
-            case IXC_FLAG_VSWITCH:
-                ixc_vsw_handle_from_user(m);
                 break;
             default:
                 //DBG_FLAGS;

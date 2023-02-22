@@ -11,7 +11,6 @@
 #include "addr_map.h"
 #include "global.h"
 #include "sec_net.h"
-#include "vswitch.h"
 #include "router.h"
 #include "npfwd.h"
 
@@ -67,12 +66,6 @@ static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
 
 static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
-    // 检查是否是VSWITCH的地址段,如果是的话那么发送
-    if(ixc_vsw_is_from_subnet(header->src_addr,1)){
-        ixc_npfwd_send_raw(m,0,IXC_FLAG_VSWITCH);
-        return;
-    }
-
     if(!ixc_g_network_is_enabled()){
         ixc_mbuf_put(m);
         return;
