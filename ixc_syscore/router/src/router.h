@@ -12,7 +12,7 @@
 #define IXC_FLAG_DHCP_SERVER 2
 /// 表示一个Source filter数据包
 #define IXC_FLAG_SRC_FILTER 3
-/// 表示是一个带链路层头部的路由转发包
+/// 路由转发包
 #define IXC_FLAG_ROUTE_FWD 4
 
 #include<sys/types.h>
