@@ -75,10 +75,6 @@ class rpc(object):
             "bind_cpu": self.bind_cpu,
             "router_start_time": self.router_start_time,
 
-            "traffic_cpy_enable": self.traffic_cpy_enable,
-            "traffic_cpy_is_enabled": self.traffic_cpy_is_enabled,
-            "traffic_copy_peer_num_set": self.traffic_copy_peer_num_set,
-
             "config_save": self.save
         }
 
@@ -108,16 +104,6 @@ class rpc(object):
             "IXC_FLAG_ARP": router.IXC_FLAG_ARP,
             "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
-            "IXC_FLAG_VSWITCH": router.IXC_FLAG_VSWITCH,
-            "IXC_FLAG_IP6_TUNNEL": router.IXC_FLAG_IP6_TUNNEL,
-
-            "IXC_FLAG_TRAFFIC_COPY_MIN": router.IXC_FLAG_TRAFFIC_COPY_MIN,
-            "IXC_FLAG_TRAFFIC_COPY_MAX": router.IXC_FLAG_TRAFFIC_COPY_MAX,
-
-            "IXC_TRAFFIC_COPY_TASK_MAX": router.IXC_TRAFFIC_COPY_TASK_MAX,
-
-            "IXC_TRAFFIC_OUT": router.IXC_TRAFFIC_OUT,
-            "IXC_TRAFFIC_IN": router.IXC_TRAFFIC_IN,
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
@@ -265,11 +251,6 @@ class rpc(object):
         self.__helper.router.route_del(byte_subnet, prefix, is_ipv6)
 
         return 0, (True, "")
-
-    def ip6_tunnel_enable(self, enable: bool):
-        self.__helper.router.route_ip6_tunnel_enable(enable)
-
-        return 0, None
 
     def pppoe_is_enabled(self):
         is_enabled = self.__helper.router.pppoe_is_enabled()
@@ -494,15 +475,6 @@ class rpc(object):
         self.__helper.save_sec_net_configs()
 
         return 0, None
-
-    def traffic_cpy_enable(self, enable: bool):
-        return 0, self.__helper.router.traffic_copy_enable(enable)
-
-    def traffic_cpy_is_enabled(self):
-        return 0, self.__helper.router.traffic_copy_is_enabled()
-
-    def traffic_copy_peer_num_set(self, num: int):
-        return 0, self.__helper.router.traffic_copy_peer_num_set(num)
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
         """端口映射添加
