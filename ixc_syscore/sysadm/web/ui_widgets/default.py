@@ -133,8 +133,11 @@ class widget(ui_widget.widget):
 
         rx_speed, tx_speed = RPC.fn_call("router", "/config", "wan_traffic_speed_get")
 
-        dic["rx_speed"] = rx_speed
-        dic["tx_speed"] = tx_speed
+        # 按照Bit方式显示速度
+        rx_speed_descr=self.get_traffic_size_descr(rx_speed * 8)
+        tx_speed_descr=self.get_traffic_size_descr(tx_speed * 8)
+        dic["rx_speed"] = rx_speed_descr+"it"
+        dic["tx_speed"] = tx_speed_descr+"it"
 
         dic["start_time"] = self.get_format_run_time()
 
