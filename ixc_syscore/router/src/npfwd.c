@@ -87,7 +87,6 @@ static void ixc_npfwd_rx_data(int fd)
 
         //DBG_FLAGS;
         m->begin=m->offset=m->begin+20;
-
         m->netif=netif;
 
         switch(header->flags){

@@ -21,6 +21,7 @@ void ixc_ip6_uninit(void);
 
 void ixc_ip6_handle(struct ixc_mbuf *mbuf);
 int ixc_ip6_send(struct ixc_mbuf *mbuf);
+int ixc_ip6_send_from_nm(struct ixc_mbuf *mbuf);
 
 /// 获取EUI64规范名的后64位地址
 int ixc_ip6_eui64_get(unsigned char *hwaddr,unsigned char *result);

@@ -23,7 +23,6 @@ static struct ixc_route route;
 static int route_is_initialized=0;
 static struct time_wheel route_cache_tw;
 static struct sysloop *route_sysloop=NULL;
-static int ip6_tunnel_enable=0;
 
 static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
 {
@@ -756,11 +755,5 @@ int ixc_route_ipv6_pass_enable(int enable)
 {
     route.ipv6_pass=enable;
 
-    return 0;
-}
-
-int ixc_route_ip6_tunnel_enable(int enable)
-{
-    ip6_tunnel_enable=enable;
     return 0;
 }

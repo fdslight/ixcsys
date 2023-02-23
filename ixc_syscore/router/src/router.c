@@ -458,17 +458,6 @@ router_route_ipv6_pass_enable(PyObject *self,PyObject *args)
 }
 
 static PyObject *
-router_route_ip6_tunnel_enable(PyObject *self,PyObject *args)
-{
-    int enable;
-    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
-
-    ixc_route_ip6_tunnel_enable(enable);
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 router_pppoe_enable(PyObject *self,PyObject *args)
 {
     int status;
@@ -859,7 +848,6 @@ static PyMethodDef routerMethods[]={
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
     {"route_ipv6_pass_enable",(PyCFunction)router_route_ipv6_pass_enable,METH_VARARGS,"enable/disable IPv6 pass"},
-    {"route_ip6_tunnel_enable",(PyCFunction)router_route_ip6_tunnel_enable,METH_VARARGS,"enable/disable IPv6 global tunnel"},
     //
     {"pppoe_enable",(PyCFunction)router_pppoe_enable,METH_VARARGS,"enable or disable pppoe"},
     {"pppoe_is_enabled",(PyCFunction)router_pppoe_is_enabled,METH_NOARGS,"check pppoe is enabled"},
@@ -1284,19 +1272,19 @@ static void ixc_start(int debug)
     rs=ixc_init_python(debug);
     if(rs<0){
         STDERR("cannot init python helper instance\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     if(rs<0){
        ixc_netif_uninit();
        STDERR("cannot start python\r\n");
-       return;
+       exit(EXIT_SUCCESS);
     }
 
     rs=ev_set_init(&ixc_ev_set,0);
     if(rs<0){
         STDERR("cannot init event\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     ixc_ev_set.myloop_fn=ixc_myloop;
@@ -1304,99 +1292,99 @@ static void ixc_start(int debug)
     rs=sysloop_init();
     if(rs<0){
         STDERR("cannot init sysloop\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_sec_net_init();
     if(rs<0){
         STDERR("cannot init sec net\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_g_init();
     if(rs<0){
         STDERR("cannot init global\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_mbuf_init(1024);
     if(rs<0){
         STDERR("cannot init mbuf\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_port_map_init();
     if(rs<0){
         STDERR("cannot init port_map\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_ip6sec_init();
     if(rs<0){
         STDERR("cannot init ip6sec\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_nat_init();
     if(rs<0){
         STDERR("cannot init nat\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_addr_map_init();
     if(rs<0){
         STDERR("cannot init addr map\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_qos_init();
     if(rs<0){
         STDERR("cannot init qos\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_route_init();
     if(rs<0){
         STDERR("cannot init route\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_src_filter_init();
     if(rs<0){
         STDERR("cannot init P2P\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_pppoe_init();
     if(rs<0){
         STDERR("cannot init pppoe\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_ip6_init();
     if(rs<0){
         STDERR("cannot init ICMPv6\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_ipunfrag_init();
     if(rs<0){
         STDERR("cannot init ipunfrag\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_netif_init(&ixc_ev_set);
     if(rs<0){
         STDERR("cannot init netif\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
 
     rs=ixc_npfwd_init(&ixc_ev_set);
     if(rs<0){
         STDERR("cannot init npfwd\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
-  
+    
     rs=rpc_create(&ixc_ev_set,rpc_path,ixc_rpc_fn_req);
     if(rs<0){
         STDERR("cannot create rpc\r\n");
