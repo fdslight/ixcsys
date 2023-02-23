@@ -271,7 +271,7 @@ router_netif_traffic_speed_get(PyObject *self,PyObject *args)
 
     ixc_netif_traffic_speed_get(if_type,&rx_speed,&tx_speed);
 
-    res=Py_BuildValue("(KK)",rx_traffic,tx_traffic);
+    res=Py_BuildValue("(KK)",rx_speed,tx_speed);
     
     return res;
 }
