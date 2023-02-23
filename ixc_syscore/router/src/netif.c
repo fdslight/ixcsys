@@ -59,23 +59,18 @@ static int ixc_netif_del_fn(struct ev *ev)
 
 static void ixc_netif_calc_speed(struct ixc_netif *netif)
 {
-    struct timeval tv;
-    unsigned long long old_sec,old_usec;
-    unsigned long long n_sec,n_usec;
+    unsigned long long old_sec;
+    unsigned long long n_sec;
     unsigned long long v,speed;
 
     // 获取现在的时间
-    gettimeofday(&tv,NULL);
+    n_sec=time(NULL);
 
     old_sec=netif->sec_time;
-    old_usec=netif->usec_time;
 
-    n_sec=tv.tv_sec;
-    n_usec=tv.tv_usec;
+    v= n_sec-old_sec;
 
-    v= (n_sec-old_sec) * 1000000 + (n_usec-old_usec);
-    v=v / 1000000;
-
+    // 小于5s不采集
     if(v < 5) return;
 
     speed= (netif->rx_traffic-netif->rx_traffic_old)/v;
@@ -88,7 +83,6 @@ static void ixc_netif_calc_speed(struct ixc_netif *netif)
     netif->tx_traffic_old=netif->tx_traffic;
 
     netif->sec_time=n_sec;
-    netif->usec_time=n_usec;
 
 }
 
@@ -120,8 +114,6 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     struct ixc_netif *netif=NULL;
     struct ev *ev;
     int fd=-1,rs;
-
-    struct timeval tv;
 
     if(if_idx<0 || if_idx>IXC_NETIF_MAX){
         STDERR("wrong if index value\r\n");
@@ -183,9 +175,7 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     bzero(netif->ipaddr,4);
     bzero(netif->ip6addr,16);
 
-    gettimeofday(&tv,NULL);
-    netif->sec_time=tv.tv_sec;
-    netif->usec_time=tv.tv_usec;
+    netif->sec_time=time(NULL);
 
     return fd;
 }

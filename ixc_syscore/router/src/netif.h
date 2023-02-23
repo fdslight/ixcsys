@@ -25,8 +25,6 @@ struct ixc_netif{
     // 时间
     // 秒
     unsigned long long sec_time;
-    // 微秒
-    unsigned long long usec_time;
     // 网络速度
     unsigned long long rx_speed;
     unsigned long long tx_speed;
