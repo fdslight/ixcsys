@@ -63,7 +63,6 @@ static void ixc_netif_calc_speed(struct ixc_netif *netif)
     unsigned long long old_sec,old_usec;
     unsigned long long n_sec,n_usec;
     unsigned long long v,speed;
-    float usec;
 
     // 获取现在的时间
     gettimeofday(&tv,NULL);
@@ -75,16 +74,14 @@ static void ixc_netif_calc_speed(struct ixc_netif *netif)
     n_usec=tv.tv_usec;
 
     v= (n_sec-old_sec) * 1000000 + (n_usec-old_usec);
+    v=v / 1000000;
 
-    // 如果时间少于1秒,不计算
-    if(v < 999000) return;
+    if(v < 5) return;
 
-    usec= v / 1000000;
-
-    speed= (netif->rx_traffic-netif->rx_traffic_old)/usec;
+    speed= (netif->rx_traffic-netif->rx_traffic_old)/v;
     netif->rx_speed=speed;
 
-    speed=(netif->tx_traffic-netif->tx_traffic_old)/usec;
+    speed=(netif->tx_traffic-netif->tx_traffic_old)/v;
     netif->tx_speed=speed;
 
     netif->rx_traffic_old=netif->rx_traffic;
