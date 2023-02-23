@@ -57,6 +57,44 @@ static int ixc_netif_del_fn(struct ev *ev)
     return 0;
 }
 
+static void ixc_netif_calc_speed(struct ixc_netif *netif)
+{
+    struct timeval tv;
+    unsigned long long old_sec,old_usec;
+    unsigned long long n_sec,n_usec;
+    unsigned long long v,speed;
+    float usec;
+
+    // 获取现在的时间
+    gettimeofday(&tv,NULL);
+
+    old_sec=netif->sec_time;
+    old_usec=netif->usec_time;
+
+    n_sec=tv.tv_sec;
+    n_usec=tv.tv_usec;
+
+    v= (n_sec-old_sec) * 1000000 + (n_usec-old_usec);
+
+    // 如果时间少于1秒,不计算
+    if(v < 999000) return;
+
+    usec= v / 1000000;
+
+    speed= (netif->rx_traffic-netif->rx_traffic_old)/usec;
+    netif->rx_speed=speed;
+
+    speed=(netif->tx_traffic-netif->tx_traffic_old)/usec;
+    netif->tx_speed=speed;
+
+    netif->rx_traffic_old=netif->rx_traffic;
+    netif->tx_traffic_old=netif->tx_traffic;
+
+    netif->sec_time=n_sec;
+    netif->usec_time=n_usec;
+
+}
+
 int ixc_netif_init(struct ev_set *ev_set)
 {
     netif_ev_set=ev_set;
@@ -85,6 +123,8 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
     struct ixc_netif *netif=NULL;
     struct ev *ev;
     int fd=-1,rs;
+
+    struct timeval tv;
 
     if(if_idx<0 || if_idx>IXC_NETIF_MAX){
         STDERR("wrong if index value\r\n");
@@ -145,6 +185,10 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
 
     bzero(netif->ipaddr,4);
     bzero(netif->ip6addr,16);
+
+    gettimeofday(&tv,NULL);
+    netif->sec_time=tv.tv_sec;
+    netif->usec_time=tv.tv_usec;
 
     return fd;
 }
@@ -323,6 +367,8 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
     // 如果没有数据可写那么删除写事件
     if(NULL==netif->sent_first) ev_modify(netif_ev_set,ev,EV_WRITABLE,EV_CTL_DEL);
 
+    ixc_netif_calc_speed(netif);
+
     return rs;
 }
 
@@ -378,6 +424,8 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
         }
         ixc_ether_handle(m);
     }
+
+    ixc_netif_calc_speed(netif);
     
     return rs;
 }
@@ -507,6 +555,17 @@ int ixc_netif_traffic_get(int if_type,unsigned long long *rx_traffic,unsigned lo
 
     *rx_traffic=netif->rx_traffic;
     *tx_traffic=netif->tx_traffic;
+
+    return 0;
+}
+
+int ixc_netif_traffic_speed_get(int if_type,unsigned long long *rx_speed,unsigned long long *tx_speed)
+{
+    struct ixc_netif *netif=ixc_netif_get(if_type);
+    if(NULL==netif) return -1;
+
+    *rx_speed=netif->rx_speed;
+    *tx_speed=netif->tx_speed;
 
     return 0;
 }

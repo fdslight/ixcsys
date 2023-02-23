@@ -258,6 +258,25 @@ router_netif_traffic_get(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_netif_traffic_speed_get(PyObject *self,PyObject *args)
+{
+    unsigned long long rx_speed,tx_speed;
+    int if_type;
+    PyObject *res;
+
+    if(!PyArg_ParseTuple(args,"i",&if_type)) return NULL;
+
+    rx_speed=0;
+    tx_speed=0;
+
+    ixc_netif_traffic_speed_get(if_type,&rx_speed,&tx_speed);
+
+    res=Py_BuildValue("(KK)",rx_traffic,tx_traffic);
+    
+    return res;
+}
+
+static PyObject *
 router_src_filter_set_ip(PyObject *self,PyObject *args)
 {
     unsigned char *subnet;
@@ -827,6 +846,7 @@ static PyMethodDef routerMethods[]={
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
     {"netif_set_mtu",(PyCFunction)router_netif_mtu_set,METH_VARARGS,"set network card MTU value"},
     {"netif_traffic_get",(PyCFunction)router_netif_traffic_get,METH_VARARGS,"get network card traffic"},
+    {"netif_traffic_speed_get",(PyCFunction)router_netif_traffic_speed_get,METH_VARARGS,"get network card traffic speed"},
     //
     {"src_filter_set_ip",(PyCFunction)router_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"src_filter_enable",(PyCFunction)router_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},

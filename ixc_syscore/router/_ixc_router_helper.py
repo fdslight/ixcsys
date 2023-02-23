@@ -40,6 +40,8 @@ class rpc(object):
             "wan_mtu_set": self.wan_mtu_set,
             "wan_traffic_get": self.wan_traffic_get,
             "lan_traffic_get": self.lan_traffic_get,
+            "wan_traffic_speed_get": self.wan_traffic_speed_get,
+            "lan_traffic_speed_get": self.lan_traffic_speed_get,
 
             "manage_addr_set": self.manage_addr_set,
             "lan_addr_set": self.lan_addr_set,
@@ -341,6 +343,14 @@ class rpc(object):
         traffic = self.__helper.router.netif_traffic_get(router.IXC_NETIF_LAN)
 
         return 0, traffic
+
+    def wan_traffic_speed_get(self):
+        speed_info = self.__helper.router.netif_traffic_speed_get(router.IXC_NETIF_WAN)
+        return 0, speed_info
+
+    def lan_traffic_speed_get(self):
+        speed_info = self.__helper.router.netif_traffic_speed_get(router.IXC_NETIF_LAN)
+        return 0, speed_info
 
     def manage_addr_set(self, ip: str):
         lan_configs = self.__helper.lan_configs

@@ -131,6 +131,11 @@ class widget(ui_widget.widget):
         dic["rx_traffic"] = rx_traffic_descr
         dic["tx_traffic"] = tx_traffic_descr
 
+        rx_speed, tx_speed = RPC.fn_call("router", "/config", "wan_traffic_speed_get")
+
+        dic["rx_speed"] = rx_speed
+        dic["tx_speed"] = tx_speed
+
         dic["start_time"] = self.get_format_run_time()
 
         wan_configs = RPC.fn_call("router", "/config", "wan_config_get")
