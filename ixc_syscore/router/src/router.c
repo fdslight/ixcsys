@@ -1395,7 +1395,7 @@ static void ixc_start(int debug)
   
     if(ixc_start_python()<0){
         STDERR("cannot start python helper\r\n");
-        return;
+        EXIT(EXIT_SUCCESS);
     }
 
     if(!debug) pfile_write(pid_path,getpid());
