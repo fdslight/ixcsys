@@ -1388,14 +1388,14 @@ static void ixc_start(int debug)
     rs=rpc_create(&ixc_ev_set,rpc_path,ixc_rpc_fn_req);
     if(rs<0){
         STDERR("cannot create rpc\r\n");
-        return;
+        exit(EXIT_SUCCESS);
     }
     // 内存缓存
     rpc_session_pre_alloc_set(4);
   
     if(ixc_start_python()<0){
         STDERR("cannot start python helper\r\n");
-        EXIT(EXIT_SUCCESS);
+        exit(EXIT_SUCCESS);
     }
 
     if(!debug) pfile_write(pid_path,getpid());
