@@ -74,13 +74,22 @@ static void ixc_netif_calc_speed(struct ixc_netif *netif)
     if(v < 5) return;
 
     speed= (netif->rx_traffic-netif->rx_traffic_old)/v;
-    netif->rx_speed=speed;
+    netif->rx_traffic_speed=speed;
 
     speed=(netif->tx_traffic-netif->tx_traffic_old)/v;
-    netif->tx_speed=speed;
+    netif->tx_traffic_speed=speed;
+    
+    speed=(netif->rx_npkt_cnt-netif->rx_npkt_cnt_old)/v;
+    netif->rx_npkt_speed=speed;
+
+    speed=(netif->tx_npkt_cnt-netif->tx_npkt_cnt_old)/v;
+    netif->tx_npkt_speed=speed;
 
     netif->rx_traffic_old=netif->rx_traffic;
     netif->tx_traffic_old=netif->tx_traffic;
+
+    netif->rx_npkt_cnt_old=netif->rx_npkt_cnt;
+    netif->tx_npkt_cnt_old=netif->tx_npkt_cnt;
 
     netif->sec_time=n_sec;
 
@@ -343,6 +352,7 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
         }
 
         netif->tx_traffic+=wsize;
+        netif->tx_npkt_cnt+=1;
 
         netif->sent_first=m->next;
         if(NULL==netif->sent_first) netif->sent_last=NULL;
@@ -397,6 +407,7 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
         }
 
         netif->rx_traffic+=rsize;
+        netif->rx_npkt_cnt+=1;
 
         m->begin=IXC_MBUF_BEGIN;
         m->offset=m->begin;
@@ -546,13 +557,19 @@ int ixc_netif_traffic_get(int if_type,unsigned long long *rx_traffic,unsigned lo
     return 0;
 }
 
-int ixc_netif_traffic_speed_get(int if_type,unsigned long long *rx_speed,unsigned long long *tx_speed)
+int ixc_netif_traffic_speed_get(int if_type,\
+unsigned long long *rx_traffic_speed,unsigned long long *tx_traffic_speed,\
+unsigned long long *rx_npkt_speed,unsigned long long *tx_npkt_speed\
+)
 {
     struct ixc_netif *netif=ixc_netif_get(if_type);
     if(NULL==netif) return -1;
 
-    *rx_speed=netif->rx_speed;
-    *tx_speed=netif->tx_speed;
+    *rx_traffic_speed=netif->rx_traffic_speed;
+    *tx_traffic_speed=netif->tx_traffic_speed;
+
+    *rx_npkt_speed=netif->rx_npkt_speed;
+    *tx_npkt_speed=netif->tx_npkt_speed;
 
     return 0;
 }

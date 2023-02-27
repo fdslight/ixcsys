@@ -260,18 +260,20 @@ router_netif_traffic_get(PyObject *self,PyObject *args)
 static PyObject *
 router_netif_traffic_speed_get(PyObject *self,PyObject *args)
 {
-    unsigned long long rx_speed,tx_speed;
+    unsigned long long rx_traffic_speed,tx_traffic_speed,rx_npkt_speed,tx_npkt_speed;
     int if_type;
     PyObject *res;
 
     if(!PyArg_ParseTuple(args,"i",&if_type)) return NULL;
 
-    rx_speed=0;
-    tx_speed=0;
+    rx_traffic_speed=0;
+    tx_traffic_speed=0;
+    rx_npkt_speed=0;
+    tx_npkt_speed=0;
 
-    ixc_netif_traffic_speed_get(if_type,&rx_speed,&tx_speed);
+    ixc_netif_traffic_speed_get(if_type,&rx_traffic_speed,&tx_traffic_speed,&rx_npkt_speed,&tx_npkt_speed);
 
-    res=Py_BuildValue("(KK)",rx_speed,tx_speed);
+    res=Py_BuildValue("(KKKK)",rx_traffic_speed,tx_traffic_speed,rx_npkt_speed,tx_npkt_speed);
     
     return res;
 }

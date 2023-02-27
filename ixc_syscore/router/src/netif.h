@@ -22,12 +22,20 @@ struct ixc_netif{
     unsigned long long rx_traffic;
     unsigned long long tx_traffic;
 
+    //包计数
+    unsigned long long rx_npkt_cnt_old;
+    unsigned long long tx_npkt_cnt_old;
+    unsigned long long rx_npkt_cnt;
+    unsigned long long tx_npkt_cnt;
     // 时间
     // 秒
     unsigned long long sec_time;
     // 网络速度
-    unsigned long long rx_speed;
-    unsigned long long tx_speed;
+    unsigned long long rx_traffic_speed;
+    unsigned long long tx_traffic_speed;
+    // 包速度
+    unsigned long long rx_npkt_speed;
+    unsigned long long tx_npkt_speed;
 
     char devname[512];
     int is_used;
@@ -109,6 +117,9 @@ int ixc_netif_mtu_set(int if_type,unsigned short v,int is_ipv6);
 /// 获取网卡流量
 int ixc_netif_traffic_get(int if_type,unsigned long long *rx_traffic,unsigned long long *tx_traffic);
 /// 获取网卡当前速度
-int ixc_netif_traffic_speed_get(int if_type,unsigned long long *rx_speed,unsigned long long *tx_speed);
+int ixc_netif_traffic_speed_get(int if_type,\
+unsigned long long *rx_traffic_speed,unsigned long long *tx_traffic_speed,\
+unsigned long long *rx_npkt_speed,unsigned long long *tx_npkt_speed\
+);
 
 #endif
