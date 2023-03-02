@@ -14,6 +14,12 @@ class widget(ui_widget.widget):
     def sysadm(self):
         return global_vars["ixcsys.sysadm"]
 
+    def have_update(self):
+        """检查更新是否存在
+        """
+        fpath = "/tmp/ixcsys_update.tar.gz"
+        return os.path.isfile(fpath)
+
     def read_version(self):
         fpath = "%s/version" % self.sys_dir
         if not os.path.isfile(fpath):
@@ -122,6 +128,8 @@ class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
         uri = "default.html"
         dic = {}
+
+        dic["have_data"] = self.have_update()
 
         rx_traffic_size, tx_traffic_size = RPC.fn_call("router", "/config", "wan_traffic_get")
 
