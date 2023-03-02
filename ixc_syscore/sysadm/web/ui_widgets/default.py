@@ -129,7 +129,7 @@ class widget(ui_widget.widget):
         uri = "default.html"
         dic = {}
 
-        dic["have_data"] = self.have_update()
+        dic["have_update"] = self.have_update()
 
         rx_traffic_size, tx_traffic_size = RPC.fn_call("router", "/config", "wan_traffic_get")
 
