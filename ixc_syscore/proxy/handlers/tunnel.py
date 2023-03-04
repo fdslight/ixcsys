@@ -252,8 +252,8 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             self.socket.do_handshake()
             self.__ssl_handshake_ok = True
 
-            # 如果开启SNI那么匹配证书
-            if self.__enable_https_sni:
+            # 如果开启严格HTTPS那么匹配对端证书
+            if self.__strict_https:
                 cert = self.socket.getpeercert()
                 ssl.match_hostname(cert, self.__https_sni_host)
 
