@@ -221,6 +221,9 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             if self.handler_exists(self.fileno): self.delete_handler(self.fileno)
         except ssl.SSLError:
             self.delete_handler(self.fileno)
+        except:
+            logging.print_error()
+            self.delete_handler(self.fileno)
 
     def evt_write(self):
         if not self.is_conn_ok():
@@ -245,6 +248,9 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         except ssl.SSLEOFError:
             self.delete_handler(self.fileno)
         except ssl.SSLError:
+            self.delete_handler(self.fileno)
+        except:
+            logging.print_error()
             self.delete_handler(self.fileno)
 
     def do_ssl_handshake(self):
