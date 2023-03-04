@@ -89,8 +89,7 @@
                     s="""<tr><td>%d</td><td>%s</td>""" % (x,hwaddr,)
                     t=""
                     for rule in self.V[hwaddr]["rules"]:
-                        t="<p>%s/%s</p>" % tuple(rule)
-                        s+=t
+                        t+="<p>%s/%s</p>" % tuple(rule)
                     s+="<td>%s</td>" % t
                     if self.V[hwaddr]["global_action"]=="accept":
                         s+="<td>允许</td>"
