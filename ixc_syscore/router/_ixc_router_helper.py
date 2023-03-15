@@ -652,7 +652,7 @@ class rpc(object):
         return 0, self.__helper.router.router_start_time()
 
     def traffic_log_enable(self,enable):
-        return 0,self.__helper.traffic_log_enable(enable)
+        return 0,self.__helper.router.traffic_log_enable(enable)
 
 
 class helper(object):
