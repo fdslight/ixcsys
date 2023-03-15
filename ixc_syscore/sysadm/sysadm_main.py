@@ -392,10 +392,10 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__traffic_log_fd).set_message_auth(rand_key)
 
         consts = RPCClient.fn_call("router", "/config", "get_all_consts")
-        RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_TRAFFIC_LOG"])
-        ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_TRAFFIC_LOG"],
-                                        rand_key, port)
-        RPCClient.fn_call("router", "/config", "traffic_log_enable", True)
+        #RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_TRAFFIC_LOG"])
+        #ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_TRAFFIC_LOG"],
+        #                                rand_key, port)
+        #RPCClient.fn_call("router", "/config", "traffic_log_enable", True)
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
