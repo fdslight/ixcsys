@@ -46,7 +46,8 @@ static unsigned long long __ixc_traffic_log_htonull(unsigned long long v)
     x=htonl(x);
     r=x;
     r=r<<32;
-    x=htonl(v & 0xffffffff);
+    x=v & 0xffffffff;
+    x=htonl(x);
     r|=x;
 
     return r;
@@ -75,7 +76,7 @@ static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
 
     ixc_npfwd_send_raw(m,0,IXC_FLAG_TRAFFIC_LOG);
 
-    log->tx_traffic=rx_traffic;
+    log->rx_traffic=rx_traffic;
     log->tx_traffic=tx_traffic;
 }
 
@@ -122,7 +123,7 @@ static void __ixc_traffic_log_statistics_tcpip(struct ixc_ether_header *header,s
     unsigned char *host_addr;
     int is_ipv6=0;
 
-    if(0x86dd==header->type) is_ipv6=1;
+    if(0x86dd==ntohs(header->type)) is_ipv6=1;
     
     if(is_ipv6){
         ip6_header=(struct netutil_ip6hdr *)(((char *)header)+14);
@@ -156,7 +157,7 @@ void ixc_traffic_log_statistics(struct ixc_ether_header *header,unsigned int siz
     struct ixc_traffic_log *log;
     struct time_data *tdata;
     unsigned char *hwaddr;
-    int is_tcpip=1;
+    int is_tcpip=1,rs;
     
     char is_found;
 
@@ -189,15 +190,22 @@ void ixc_traffic_log_statistics(struct ixc_ether_header *header,unsigned int siz
             STDERR("cannot add to time wheel\r\n");
             return;
         }
-
+        
         memcpy(log->hwaddr,hwaddr,6);
+        rs=map_add(traffic_log_map,(char *)hwaddr,log);
+        if(rs){
+            tdata->is_deleted=1;
+            free(log);
+            STDERR("cannot add to map\r\n");
+            return;
+        }
     }
 
     if(IXC_TRAFFIC_LOG_DIR_OUT==traffic_dir) log->tx_traffic+=size;
     else log->rx_traffic+=size;
 
 
-    switch(header->type){
+    switch(ntohs(header->type)){
         case 0x86dd:
         case 0x0800:
             break;
