@@ -30,6 +30,7 @@
 #include "global.h"
 #include "npfwd.h"
 #include "sec_net.h"
+#include "traffic_log.h"
 
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
@@ -824,6 +825,18 @@ router_start_time(PyObject *self,PyObject *args)
     return PyLong_FromUnsignedLongLong(run_start_time);
 }
 
+static PyObject *
+router_traffic_log_enable(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+
+    if(ixc_traffic_log_enable(enable)<0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
 
 static PyMemberDef router_members[]={
     {NULL}
@@ -885,6 +898,8 @@ static PyMethodDef routerMethods[]={
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},
     //
     {"router_start_time",(PyCFunction)router_start_time,METH_NOARGS,"get router start time"},
+    //
+    {"traffic_log_enable",(PyCFunction)router_traffic_log_enable,METH_VARARGS,"disable/enable traffic log"},
 
     {NULL,NULL,0,NULL}
 };
@@ -932,6 +947,7 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_DHCP_SERVER);
     PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
+    PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_LOG);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //
@@ -1294,6 +1310,12 @@ static void ixc_start(int debug)
     rs=sysloop_init();
     if(rs<0){
         STDERR("cannot init sysloop\r\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    rs=ixc_traffic_log_init();
+    if(rs<0){
+        STDERR("cannot init traffic_log\r\n");
         exit(EXIT_SUCCESS);
     }
 

@@ -24,6 +24,7 @@ import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.RPCClient as RPCClient
 
 import ixc_syscore.sysadm.handlers.httpd as httpd
+import ixc_syscore.sysadm.handlers.traffic_log as traffic_log
 import ixc_syscore.sysadm.pylib.power_monitor as power_monitor
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -94,6 +95,8 @@ class service(dispatcher.dispatcher):
     __httpd_configs = None
 
     __scgi_fd = None
+
+    __traffic_log_fd = None
 
     # 是否需要重启
     __is_restart = None
@@ -326,6 +329,7 @@ class service(dispatcher.dispatcher):
         self.__network_shift_cfg = None
 
         self.__scgi_fd = -1
+        self.__traffic_log_fd = -1
         self.__is_restart = False
         self.__ddns_up_time = time.time()
 
@@ -379,6 +383,16 @@ class service(dispatcher.dispatcher):
         )
         self.add_to_hwaddr_to_power_monitor()
         self.__power.set_enable(self.auto_shutdown_cfg["enable"])
+
+    def start_traffic_log(self):
+        rand_key = os.urandom(16)
+        self.__traffic_log_fd = self.create_handler(-1, traffic_log.traffic_log_handler)
+        port = self.get_handler(self.__traffic_log_fd).get_sock_port()
+        self.get_handler(self.__traffic_log_fd).set_message_auth(rand_key)
+
+        consts = RPCClient.fn_call("router", "/config", "get_all_consts")
+        RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_TRAFFIC_LOG"])
+        RPCClient.fn_call("router", "/config", "traffic_log_enable", True)
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
@@ -505,6 +519,9 @@ class service(dispatcher.dispatcher):
         if self.__scgi_fd:
             self.delete_handler(self.__scgi_fd)
             self.__scgi_fd = -1
+        if self.__traffic_log_fd > 0:
+            RPCClient.fn_call("router", "/config", "traffic_log_enable", True)
+            self.delete_handler(self.__traffic_log_fd)
         if self.__httpd_fd > 0:
             self.delete_handler(self.__httpd_fd)
             self.__httpd_fd = -1

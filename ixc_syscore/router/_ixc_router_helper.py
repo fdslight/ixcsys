@@ -76,6 +76,7 @@ class rpc(object):
             "cpu_num": self.cpu_num,
             "bind_cpu": self.bind_cpu,
             "router_start_time": self.router_start_time,
+            "traffic_log_enable":self.traffic_log_enable,
 
             "config_save": self.save
         }
@@ -106,6 +107,7 @@ class rpc(object):
             "IXC_FLAG_ARP": router.IXC_FLAG_ARP,
             "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
+            "IXC_FLAG_TRAFFIC_LOG":router.IXC_FLAG_TRAFFIC_LOG,
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
@@ -648,6 +650,9 @@ class rpc(object):
 
     def router_start_time(self):
         return 0, self.__helper.router.router_start_time()
+
+    def traffic_log_enable(self,enable):
+        return 0,self.__helper.traffic_log_enable(enable)
 
 
 class helper(object):

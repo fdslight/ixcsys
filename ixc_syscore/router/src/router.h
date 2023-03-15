@@ -14,6 +14,8 @@
 #define IXC_FLAG_SRC_FILTER 3
 /// 路由转发包
 #define IXC_FLAG_ROUTE_FWD 4
+/// 流量日志
+#define IXC_FLAG_TRAFFIC_LOG 5
 
 
 #include<sys/types.h>
