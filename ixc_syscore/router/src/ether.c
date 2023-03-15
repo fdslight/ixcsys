@@ -9,6 +9,7 @@
 #include "router.h"
 #include "pppoe.h"
 #include "route.h"
+#include "traffic_log.h"
 
 #include "../../../pywind/clib/debug.h"
 
@@ -37,12 +38,24 @@ static void ixc_ether_copy_to_monitor_host(struct ixc_mbuf *mbuf)
     ixc_netif_send(m);
 }
 
+// 以太网流量统计,所有统计针对LAN口
+static void ixc_ether_traffic_statistics(struct ixc_mbuf *m,int dir)
+{
+    struct ixc_netif *netif=m->netif;
+    struct ixc_ether_header *header=(struct ixc_ether_header *)(m->data+m->begin);
+
+    if(IXC_NETIF_LAN!=netif->type) return;
+
+    ixc_traffic_log_statistics(header,m->end-m->begin,dir);
+}
+
 int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
 {
     struct ixc_ether_header eth_header;
     int size;
 
     if(!add_header){
+        ixc_ether_traffic_statistics(mbuf,IXC_TRAFFIC_LOG_DIR_IN);
         ixc_netif_send(mbuf);
         return 0;
     }
@@ -121,6 +134,8 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
             return;
         }
     }
+    
+    ixc_ether_traffic_statistics(mbuf,IXC_TRAFFIC_LOG_DIR_OUT);
 
     memcpy(mbuf->dst_hwaddr,header->dst_hwaddr,6);
     memcpy(mbuf->src_hwaddr,header->src_hwaddr,6);
@@ -203,6 +218,7 @@ int ixc_ether_send2(struct ixc_mbuf *m)
         ixc_ether_copy_to_monitor_host(m);
     }
 
+    ixc_ether_traffic_statistics(m,IXC_TRAFFIC_LOG_DIR_IN);
     ixc_netif_send(m);
 
     return 0;

@@ -20,27 +20,13 @@ struct map *traffic_log_map=NULL;
 struct time_wheel traffic_log_time_wheel;
 struct sysloop *traffic_log_sysloop=NULL;
 
+static void __ixc_traffic_log_send(struct ixc_traffic_log *log);
+
 static void __ixc_traffic_log_sysloop_cb(struct sysloop *lp)
 {
     //DBG_FLAGS;
     // 执行时间函数,定期检查NAT会话是否过期
     time_wheel_handle(&traffic_log_time_wheel);
-}
-
-static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
-{
-    struct ixc_mbuf *m=ixc_mbuf_get();
-
-    if(NULL==m){
-        STDERR("cannot get mbuf\r\n");
-        return;
-    }
-
-    m->begin=m->offset=IXC_MBUF_BEGIN;
-    m->end=m->tail=m->begin+sizeof(struct ixc_traffic_log);
-    memcpy(m->data+m->begin,log,sizeof(struct ixc_traffic_log));
-
-    ixc_npfwd_send_raw(m,0,IXC_FLAG_TRAFFIC_LOG);
 }
 
 static void __ixc_traffic_log_timeout_cb(void *data)
@@ -64,6 +50,33 @@ static unsigned long long __ixc_traffic_log_htonull(unsigned long long v)
     r|=x;
 
     return r;
+}
+
+static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
+{
+    struct ixc_mbuf *m=ixc_mbuf_get();
+    unsigned long long rx_traffic,tx_traffic;
+
+    rx_traffic=log->rx_traffic;
+    tx_traffic=log->tx_traffic;
+
+    if(NULL==m){
+        STDERR("cannot get mbuf\r\n");
+        return;
+    }
+
+    m->begin=m->offset=IXC_MBUF_BEGIN;
+    m->end=m->tail=m->begin+sizeof(struct ixc_traffic_log);
+    memcpy(m->data+m->begin,log,sizeof(struct ixc_traffic_log));
+
+
+    log->rx_traffic=__ixc_traffic_log_htonull(rx_traffic);
+    log->tx_traffic=__ixc_traffic_log_htonull(tx_traffic);
+
+    ixc_npfwd_send_raw(m,0,IXC_FLAG_TRAFFIC_LOG);
+
+    log->tx_traffic=rx_traffic;
+    log->tx_traffic=tx_traffic;
 }
 
 int ixc_traffic_log_init(void)
