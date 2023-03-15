@@ -343,6 +343,7 @@ class service(dispatcher.dispatcher):
 
         self.start_scgi()
         self.http_start()
+        self.start_traffic_log()
         self.start_power_monitor()
         self.start_network_shift()
 
