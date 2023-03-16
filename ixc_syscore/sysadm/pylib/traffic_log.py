@@ -42,6 +42,7 @@ class parser(object):
         machine_info["rx_traffic"] += rx_traffic
         machine_info["tx_traffic"] += tx_traffic
 
+        print(rx_traffic/1000,tx_traffic/1000)
         if bool(is_tcpip):
             if (is_ipv6):
                 address = socket.inet_ntop(socket.AF_INET6, byte_host_addr)
@@ -52,8 +53,6 @@ class parser(object):
             ''''''
 
         if not calc_speed_flag: return
-
-        print(time.time(),up_time)
 
         old_up_time = machine_info["up_time"]
         if up_time - old_up_time < 5: return
