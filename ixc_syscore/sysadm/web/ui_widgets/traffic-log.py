@@ -25,6 +25,22 @@ class widget(ui_widget.widget):
         return s
 
     def handle(self, *args, **kwargs):
+        clients = RPC.fn_call("DHCP", "/dhcp_server", "get_clients")
+
+        # 此处转换bytes host_name编码
+        for dic in clients:
+            host_name = dic["host_name"]
+            if not host_name:
+                host_name = "-"
+            else:
+                host_name = host_name.decode("iso-8859-1")
+            dic["host_name"] = host_name
+
+        dhcp_kv = {}
+        for o in clients:
+            hwaddr = o["hwaddr"]
+            dhcp_kv[hwaddr] = o
+
         logs = {}
         traffic_info = global_vars["ixcsys.sysadm"].traffic_log_get()
 
@@ -41,4 +57,7 @@ class widget(ui_widget.widget):
                 # 厂商
                 "vendor": "-",
             }
+            # 显示主机名
+            if hwaddr in dhcp_kv:
+                logs[hwaddr]["host_name"] = dhcp_kv[hwaddr]["host_name"]
         return True, "traffic-log.html", {"logs": logs}
