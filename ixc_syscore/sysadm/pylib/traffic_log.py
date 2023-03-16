@@ -14,7 +14,6 @@ class parser(object):
     def __init__(self):
         self.__traffic_info = {}
         self.__day = time.strftime("%Y-%m-%d")
-        self.__time = time.time()
 
     def parse(self, message: bytes):
         try:
