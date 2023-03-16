@@ -10,10 +10,12 @@ FMT = "6sBB16sQQQ"
 class parser(object):
     __traffic_info = None
     __day = None
+    __time = None
 
     def __init__(self):
         self.__traffic_info = {}
         self.__day = time.strftime("%Y-%m-%d")
+        self.__time = time.time()
 
     def parse(self, message: bytes):
         try:
@@ -81,10 +83,29 @@ class parser(object):
             return True
         return False
 
+    def speed_set_to_zero(self):
+        """长期无流量速度置零
+        """
+        now = time.time()
+        if now - self.__time < 15: return
+        for hwaddr, machine in self.__traffic_info.items():
+            old_rx_traffic = machine["rx_traffic_old"]
+            old_tx_traffic = machine["tx_traffic_old"]
+
+            rx_traffic = machine["rx_traffic"]
+            tx_traffic = machine["tx_traffic"]
+
+            if old_rx_traffic == rx_traffic:
+                machine["rx_speed"] = 0
+            if old_tx_traffic == tx_traffic:
+                machine["tx_speed"] = 0
+            ''''''
+        self.__time = now
+
     def task_loop(self):
         if self.is_need_clear():
             self.__traffic_info = {}
-        ''''''
+        self.speed_set_to_zero()
 
     def traffic_log_get(self):
         return self.__traffic_info
