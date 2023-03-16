@@ -46,8 +46,8 @@ static unsigned long long __ixc_traffic_log_htonull(unsigned long long v)
     // 大端CPU直接返回值
     if(1==x) return v;
 
-    H=htonl(v & 0xffffffff);
-    L=htonl(v >> 32);
+    L=htonl(v & 0xffffffff);
+    H=htonl(v >> 32);
 
     r= H;
     r= (r<<32) | L;
