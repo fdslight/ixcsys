@@ -60,9 +60,6 @@ static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
     struct ixc_mbuf *m=ixc_mbuf_get();
     unsigned long long rx_traffic,tx_traffic;
 
-    rx_traffic=log->rx_traffic;
-    tx_traffic=log->tx_traffic;
-
     if(NULL==m){
         STDERR("cannot get mbuf\r\n");
         return;
@@ -72,8 +69,14 @@ static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
     m->end=m->tail=m->begin+sizeof(struct ixc_traffic_log);
     memcpy(m->data+m->begin,log,sizeof(struct ixc_traffic_log));
 
-    log->rx_traffic=__ixc_traffic_log_htonull(rx_traffic);
-    log->tx_traffic=__ixc_traffic_log_htonull(tx_traffic);
+    rx_traffic=log->rx_traffic;
+    tx_traffic=log->tx_traffic;
+
+    rx_traffic=__ixc_traffic_log_htonull(rx_traffic);
+    tx_traffic=__ixc_traffic_log_htonull(tx_traffic);
+
+    log->rx_traffic=rx_traffic;
+    log->tx_traffic=tx_traffic;
 
     ixc_npfwd_send_raw(m,0,IXC_FLAG_TRAFFIC_LOG);
 
