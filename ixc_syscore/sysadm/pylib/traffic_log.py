@@ -54,9 +54,9 @@ class parser(object):
         if not calc_speed_flag: return
 
         old_up_time = machine_info["up_time"]
-        machine_info["up_time"] = up_time
-
         if up_time - old_up_time < 5: return
+
+        machine_info["up_time"] = up_time
 
         rx_speed = int(rx_traffic / (up_time - old_up_time))
         tx_speed = int(tx_traffic / (up_time - old_up_time))
