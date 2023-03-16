@@ -28,6 +28,7 @@ class controller(rpc.controller):
             "get_clients": self.get_clients,
             "tftp_config_get": self.tftp_config_get,
             "tftp_dir_set": self.tftp_dir_set,
+            "ieee_mac_alloc_info_get": self.ieee_mac_alloc_info_get,
         }
 
     def get_configs(self):
@@ -147,3 +148,6 @@ class controller(rpc.controller):
         conf["file_dir"] = d
 
         return 0, None
+
+    def ieee_mac_alloc_info_get(self):
+        return self.dhcp.ieee_mac_info

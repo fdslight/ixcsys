@@ -57,7 +57,10 @@ class widget(ui_widget.widget):
                 # 厂商
                 "vendor": "-",
             }
-            # 显示主机名
+            # 从DHCP记录中获取主机名
             if hwaddr in dhcp_kv:
                 logs[hwaddr]["host_name"] = dhcp_kv[hwaddr]["host_name"]
+
+            # 查找MAC地址所属厂商
+
         return True, "traffic-log.html", {"logs": logs}
