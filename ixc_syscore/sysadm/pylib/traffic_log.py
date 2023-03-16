@@ -4,7 +4,7 @@ import struct, time, socket
 
 import pywind.lib.netutils as netutils
 
-FMT = "6sBB16sQQQ"
+FMT = "!6sBB16sQQQ"
 
 
 class parser(object):
