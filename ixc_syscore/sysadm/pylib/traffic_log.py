@@ -33,6 +33,8 @@ class parser(object):
                 "up_time": up_time,
                 "rx_traffic": 0,
                 "tx_traffic": 0,
+                "rx_traffic_old": 0,
+                "tx_traffic_old": 0,
                 "rx_speed": 0,
                 "tx_speed": 0
             }
@@ -58,11 +60,17 @@ class parser(object):
 
         machine_info["up_time"] = up_time
 
-        rx_speed = int(rx_traffic / (up_time - old_up_time))
-        tx_speed = int(tx_traffic / (up_time - old_up_time))
+        rx_traffic_size = machine_info["rx_traffic"] - machine_info["rx_traffic_old"]
+        tx_traffic_size = machine_info["tx_traffic"] - machine_info["tx_traffic_old"]
+
+        rx_speed = int(rx_traffic_size / (up_time - old_up_time))
+        tx_speed = int(tx_traffic_size / (up_time - old_up_time))
 
         machine_info["rx_speed"] = rx_speed
         machine_info["tx_speed"] = tx_speed
+
+        machine_info["rx_traffic_old"] = machine_info["rx_traffic"]
+        machine_info["tx_traffic_old"] = machine_info["tx_traffic"]
 
     def is_need_clear(self):
         """是否需要清除,一天重置一次
