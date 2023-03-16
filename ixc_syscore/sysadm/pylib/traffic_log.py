@@ -28,8 +28,8 @@ class parser(object):
 
         if hwaddr not in self.__traffic_info:
             self.__traffic_info[hwaddr] = {
-                "ip4_addr": "",
-                "ip6_addr": "",
+                "ip4_addr": "-",
+                "ip6_addr": "-",
                 "up_time": up_time,
                 "rx_traffic": 0,
                 "tx_traffic": 0,
