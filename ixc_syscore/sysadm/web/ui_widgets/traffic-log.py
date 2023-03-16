@@ -41,6 +41,8 @@ class widget(ui_widget.widget):
             hwaddr = o["hwaddr"]
             dhcp_kv[hwaddr] = o
 
+        ieee_mac_alloc_info = RPC.fn_call("DHCP", "/dhcp_server", "ieee_mac_alloc_info_get")
+
         logs = {}
         traffic_info = global_vars["ixcsys.sysadm"].traffic_log_get()
 
@@ -55,12 +57,16 @@ class widget(ui_widget.widget):
                 # 主机名
                 "host_name": "-",
                 # 厂商
-                "vendor": "-",
+                "vendor": "",
             }
             # 从DHCP记录中获取主机名
             if hwaddr in dhcp_kv:
                 logs[hwaddr]["host_name"] = dhcp_kv[hwaddr]["host_name"]
 
             # 查找MAC地址所属厂商
+            t = hwaddr.replace(":", "")
+            k = t[0:6].upper()
+            vendor = ieee_mac_alloc_info.get(k, "unkown")
+            logs[hwaddr]["vendor"] = vendor
 
         return True, "traffic-log.html", {"logs": logs}
