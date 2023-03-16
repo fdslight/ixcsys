@@ -53,6 +53,8 @@ class parser(object):
 
         if not calc_speed_flag: return
 
+        print(time.time(),up_time)
+
         old_up_time = machine_info["up_time"]
         if up_time - old_up_time < 5: return
 
