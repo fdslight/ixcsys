@@ -10,7 +10,6 @@ FMT = "6sBB16sQQQ"
 class parser(object):
     __traffic_info = None
     __day = None
-    __time = None
 
     def __init__(self):
         self.__traffic_info = {}
@@ -30,6 +29,7 @@ class parser(object):
 
         if hwaddr not in self.__traffic_info:
             self.__traffic_info[hwaddr] = {
+                "time": time.time(),
                 "ip4_addr": "-",
                 "ip6_addr": "-",
                 "up_time": up_time,
@@ -87,8 +87,10 @@ class parser(object):
         """长期无流量速度置零
         """
         now = time.time()
-        if now - self.__time < 15: return
         for hwaddr, machine in self.__traffic_info.items():
+            _time = machine["time"]
+            if now - _time < 20: continue
+
             old_rx_traffic = machine["rx_traffic_old"]
             old_tx_traffic = machine["tx_traffic_old"]
 
@@ -99,8 +101,7 @@ class parser(object):
                 machine["rx_speed"] = 0
             if old_tx_traffic == tx_traffic:
                 machine["tx_speed"] = 0
-            ''''''
-        self.__time = now
+            machine["time"] = now
 
     def task_loop(self):
         if self.is_need_clear():
