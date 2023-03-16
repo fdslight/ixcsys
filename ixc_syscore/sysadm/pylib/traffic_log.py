@@ -29,7 +29,7 @@ class parser(object):
 
         if hwaddr not in self.__traffic_info:
             self.__traffic_info[hwaddr] = {
-                "time": time.time(),
+                "time": 0,
                 "ip4_addr": "-",
                 "ip6_addr": "-",
                 "up_time": up_time,
@@ -45,6 +45,7 @@ class parser(object):
 
         machine_info["rx_traffic"] += rx_traffic
         machine_info["tx_traffic"] += tx_traffic
+        machine_info["time"] = time.time()
 
         if bool(is_tcpip):
             if (is_ipv6):
