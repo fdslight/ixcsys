@@ -40,7 +40,6 @@ class widget(ui_widget.widget):
                 "host_name": "-",
                 # 厂商
                 "vendor": "-",
-                # 厂商LOGO
-                "vendor_logo": "-"
             }
+        print(logs)
         return True, "traffic-log.html", logs
