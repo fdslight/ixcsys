@@ -26,6 +26,7 @@ import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syscore.sysadm.handlers.httpd as httpd
 import ixc_syscore.sysadm.handlers.traffic_log as traffic_log
 import ixc_syscore.sysadm.pylib.power_monitor as power_monitor
+import ixc_syscore.sysadm.pylib.traffic_log as traffic_log_parser
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -97,6 +98,7 @@ class service(dispatcher.dispatcher):
     __scgi_fd = None
 
     __traffic_log_fd = None
+    __traffic_log_parser = None
 
     # 是否需要重启
     __is_restart = None
@@ -330,6 +332,7 @@ class service(dispatcher.dispatcher):
 
         self.__scgi_fd = -1
         self.__traffic_log_fd = -1
+        self.__traffic_log_parser = traffic_log_parser.parser()
         self.__is_restart = False
         self.__ddns_up_time = time.time()
 
@@ -416,6 +419,8 @@ class service(dispatcher.dispatcher):
             p.start()
 
         self.__power.loop()
+        self.__traffic_log_parser.task_loop()
+
         if self.network_shift_config["enable"]:
             # 网络测试不通过直接网络切换
             if not self.__network.network_ok(self.network_shift_config["check_host"]):
@@ -505,8 +510,11 @@ class service(dispatcher.dispatcher):
             RPCClient.fn_call("DHCP", "/dhcp_server", "set_boot_ext_option", hwaddr, 175, "iPXE")
             RPCClient.fn_call("DHCP", "/dhcp_server", "set_boot_ext_option", hwaddr, 203, _dict["initiator-iqn"])
 
-    def handle_traffic_log_message(self,message:bytes):
-        pass
+    def handle_traffic_log_message(self, message: bytes):
+        self.__traffic_log_parser.parse(message)
+
+    def traffic_log_get(self):
+        return self.__traffic_log_parser.traffic_log_get()
 
     def do_restart(self):
         """执行路由器重启

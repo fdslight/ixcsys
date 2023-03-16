@@ -76,8 +76,9 @@ static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
 
     ixc_npfwd_send_raw(m,0,IXC_FLAG_TRAFFIC_LOG);
 
-    log->rx_traffic=rx_traffic;
-    log->tx_traffic=tx_traffic;
+    // 发送一次需要清零一次
+    log->rx_traffic=0;
+    log->tx_traffic=0;
 }
 
 int ixc_traffic_log_init(void)
