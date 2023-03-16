@@ -42,13 +42,17 @@ static unsigned long long __ixc_traffic_log_htonull(unsigned long long v)
 {
     int x=htonl(1);
     unsigned int L,H;
+    unsigned long long r;
     // 大端CPU直接返回值
     if(1==x) return v;
 
     H=htonl(v & 0xffffffff);
     L=htonl(v >> 32);
 
-    return (H<<32) | L;
+    r= H;
+    r= (r<<32) | L;
+
+    return r;
 }
 
 static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
