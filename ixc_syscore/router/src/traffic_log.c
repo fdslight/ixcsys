@@ -40,7 +40,7 @@ static void __ixc_traffic_log_timeout_cb(void *data)
 
 static unsigned long long __ixc_traffic_log_htonull(unsigned long long v)
 {
-#if __BYTE_ORDER==__BIG_ENDIAN
+#if __BYTE_ORDER==__ORDER_BIG_ENDIAN__
     return v;
 #else
     return __bswap_64(v);
@@ -124,25 +124,22 @@ static void __ixc_traffic_log_statistics_tcpip(struct ixc_ether_header *header,s
 
         if(IXC_TRAFFIC_LOG_DIR_OUT==dir) host_addr=ip6_header->src_addr;
         else host_addr=ip6_header->dst_addr;
+
+        if(!log->is_ipv6) __ixc_traffic_log_send(log);
+
+        memcpy(log->host_addr,host_addr,16);
+
     }else{
         ip4_header=(struct netutil_iphdr *)((char *)header+14);
 
         if(IXC_TRAFFIC_LOG_DIR_OUT==dir) host_addr=ip4_header->src_addr;
         else host_addr=ip4_header->dst_addr;
-    }
 
-    // 如果IP版本改变那么发送日志
-    if(log->is_ipv6){
-        if(!is_ipv6){
-            __ixc_traffic_log_send(log);
-            memcpy(log->host_addr,host_addr,4);
-        }        
-    }else{
-        if(is_ipv6){
-            __ixc_traffic_log_send(log);
-            memcpy(log->host_addr,host_addr,16);
-        }
+        if(log->is_ipv6) __ixc_traffic_log_send(log);
+
+        memcpy(log->host_addr,host_addr,4);
     }
+    
     log->is_ipv6=is_ipv6;
 }
 
