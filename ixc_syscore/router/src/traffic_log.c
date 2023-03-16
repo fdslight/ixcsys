@@ -40,11 +40,15 @@ static void __ixc_traffic_log_timeout_cb(void *data)
 
 static unsigned long long __ixc_traffic_log_htonull(unsigned long long v)
 {
-#if __BYTE_ORDER==__ORDER_BIG_ENDIAN__
-    return v;
-#else
-    return __bswap_64(v);
-#endif
+    int x=htonl(1);
+    unsigned int L,H;
+    // 大端CPU直接返回值
+    if(1==x) return v;
+
+    H=htonl(v & 0xffffffff);
+    L=htonl(v >> 32);
+
+    return (H<<32) | L;
 }
 
 static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
