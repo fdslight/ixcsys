@@ -56,6 +56,8 @@ class parser(object):
         old_up_time = machine_info["up_time"]
         machine_info["up_time"] = up_time
 
+        if up_time - old_up_time < 5: return
+
         rx_speed = int(rx_traffic / (up_time - old_up_time))
         tx_speed = int(tx_traffic / (up_time - old_up_time))
 

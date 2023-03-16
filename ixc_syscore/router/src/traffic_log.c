@@ -32,7 +32,7 @@ static void __ixc_traffic_log_sysloop_cb(struct sysloop *lp)
 static void __ixc_traffic_log_timeout_cb(void *data)
 {
     struct ixc_traffic_log *log=data;
-
+    
     __ixc_traffic_log_send(log);
     map_del(traffic_log_map,(char *)(log->hwaddr),NULL);
     free(log);
@@ -69,7 +69,6 @@ static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
     m->begin=m->offset=IXC_MBUF_BEGIN;
     m->end=m->tail=m->begin+sizeof(struct ixc_traffic_log);
     memcpy(m->data+m->begin,log,sizeof(struct ixc_traffic_log));
-
 
     log->rx_traffic=__ixc_traffic_log_htonull(rx_traffic);
     log->tx_traffic=__ixc_traffic_log_htonull(tx_traffic);
@@ -180,12 +179,10 @@ void ixc_traffic_log_statistics(struct ixc_ether_header *header,unsigned int siz
             STDERR("cannot malloc struct ixc_traffic_log\r\n");
             return;
         }
-
         bzero(log,sizeof(struct ixc_traffic_log));
         log->up_time=__ixc_traffic_log_htonull(time(NULL));
 
         tdata=time_wheel_add(&traffic_log_time_wheel,log,IXC_IO_WAIT_TIMEOUT);
-
         if(NULL==tdata){
             free(log);
             STDERR("cannot add to time wheel\r\n");
@@ -205,7 +202,6 @@ void ixc_traffic_log_statistics(struct ixc_ether_header *header,unsigned int siz
     if(IXC_TRAFFIC_LOG_DIR_OUT==traffic_dir) log->tx_traffic+=size;
     else log->rx_traffic+=size;
 
-
     switch(ntohs(header->type)){
         case 0x86dd:
         case 0x0800:
@@ -223,7 +219,6 @@ void ixc_traffic_log_statistics(struct ixc_ether_header *header,unsigned int siz
     }
 
     log->is_tcpip=is_tcpip;
-
     if(log->is_tcpip) __ixc_traffic_log_statistics_tcpip(header,log,traffic_dir);
 }
 

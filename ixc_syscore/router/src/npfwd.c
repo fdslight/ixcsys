@@ -321,7 +321,9 @@ int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char fl
     // 复制key
     memcpy(header->key,info->key,16);
 
-    header->if_type=m->netif->type;
+    if(NULL!=m->netif) header->if_type=m->netif->type;
+    else header->if_type=0;
+    
     header->ipproto=ipproto;
     header->flags=flags;
 
