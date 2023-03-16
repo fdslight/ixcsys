@@ -1,0 +1,31 @@
+<div id="ixc-traffic-log-view" class="ixc-menu-content" style="display: none;">
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">序号</th>
+            <th scope="col">网卡地址</th>
+            <th scope="col">IP地址</th>
+            <th scope="col">IPv6地址</th>
+            <th scope="col">主机名</th>
+            <th scope="col">发送流量</th>
+            <th scope="col">接收流量</th>
+            <th scope="col">发送速度</th>
+            <th scope="col">接收速度</th>
+            <th scope="col">设备厂商</th>
+        </tr>
+        </thead>
+        <tbody>
+            <%
+            x=1
+            for hwaddr,o in self.V["logs"].items():
+                s="<tr>"
+                s+="<td>%s</td>" % x
+                s+="<td>%s</td>" % hwaddr
+                s+="<td>%s</td>" % o['ip4_addr']
+                s+="</tr>"
+                x+=1
+                self.show(s)
+            %>
+        </tbody>
+    </table>
+</div>

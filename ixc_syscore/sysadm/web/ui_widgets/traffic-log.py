@@ -41,5 +41,4 @@ class widget(ui_widget.widget):
                 # 厂商
                 "vendor": "-",
             }
-        print(logs)
-        return True, "traffic-log.html", logs
+        return True, "traffic-log.html", {"logs": logs}
