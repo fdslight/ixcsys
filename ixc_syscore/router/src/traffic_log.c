@@ -38,27 +38,9 @@ static void __ixc_traffic_log_timeout_cb(void *data)
     free(log);
 }
 
-static unsigned long long __ixc_traffic_log_htonull(unsigned long long v)
-{
-    int x=htonl(1);
-    unsigned int L,H;
-    unsigned long long r;
-    // 大端CPU直接返回值
-    if(1==x) return v;
-
-    L=htonl(v & 0xffffffff);
-    H=htonl(v >> 32);
-
-    r= H;
-    r= (r<<32) | L;
-
-    return r;
-}
-
 static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
 {
     struct ixc_mbuf *m=ixc_mbuf_get();
-    unsigned long long rx_traffic,tx_traffic;
 
     if(NULL==m){
         STDERR("cannot get mbuf\r\n");
@@ -68,15 +50,6 @@ static void __ixc_traffic_log_send(struct ixc_traffic_log *log)
     m->begin=m->offset=IXC_MBUF_BEGIN;
     m->end=m->tail=m->begin+sizeof(struct ixc_traffic_log);
     memcpy(m->data+m->begin,log,sizeof(struct ixc_traffic_log));
-
-    rx_traffic=log->rx_traffic;
-    tx_traffic=log->tx_traffic;
-
-    rx_traffic=__ixc_traffic_log_htonull(rx_traffic);
-    tx_traffic=__ixc_traffic_log_htonull(tx_traffic);
-
-    log->rx_traffic=rx_traffic;
-    log->tx_traffic=tx_traffic;
 
     ixc_npfwd_send_raw(m,0,IXC_FLAG_TRAFFIC_LOG);
 
@@ -182,7 +155,7 @@ void ixc_traffic_log_statistics(struct ixc_ether_header *header,int size,int tra
             return;
         }
         bzero(log,sizeof(struct ixc_traffic_log));
-        log->up_time=__ixc_traffic_log_htonull(time(NULL));
+        log->up_time=time(NULL);
 
         tdata=time_wheel_add(&traffic_log_time_wheel,log,IXC_IO_WAIT_TIMEOUT);
         if(NULL==tdata){
