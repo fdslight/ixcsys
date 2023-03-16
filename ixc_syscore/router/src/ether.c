@@ -89,7 +89,8 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
     if(ether_net_monitor_enable && mbuf->netif->type==IXC_NETIF_WAN){
         ixc_ether_copy_to_monitor_host(mbuf);
     }
- 
+    
+    ixc_ether_traffic_statistics(mbuf,IXC_TRAFFIC_LOG_DIR_IN);
     ixc_netif_send(mbuf);
 
     return 0;
@@ -112,6 +113,7 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     header=(struct ixc_ether_header *)(mbuf->data+mbuf->begin);
     type=ntohs(header->type);
 
+    ixc_ether_traffic_statistics(mbuf,IXC_TRAFFIC_LOG_DIR_OUT);
     // 限定只支持以太网
     if(type<0x200){
         ixc_mbuf_put(mbuf);
@@ -134,8 +136,6 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
             return;
         }
     }
-    
-    ixc_ether_traffic_statistics(mbuf,IXC_TRAFFIC_LOG_DIR_OUT);
 
     memcpy(mbuf->dst_hwaddr,header->dst_hwaddr,6);
     memcpy(mbuf->src_hwaddr,header->src_hwaddr,6);
