@@ -150,4 +150,4 @@ class controller(rpc.controller):
         return 0, None
 
     def ieee_mac_alloc_info_get(self):
-        return self.dhcp.ieee_mac_info
+        return 0,self.dhcp.ieee_mac_info
