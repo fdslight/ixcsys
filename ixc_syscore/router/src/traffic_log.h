@@ -27,7 +27,7 @@ void ixc_traffic_log_uninit(void);
 #define IXC_TRAFFIC_LOG_DIR_OUT 0
 ///
 #define IXC_TRAFFIC_LOG_DIR_IN 1
-void ixc_traffic_log_statistics(struct ixc_ether_header *header,unsigned int size,int traffic_dir);
+void ixc_traffic_log_statistics(struct ixc_ether_header *header,int size,int traffic_dir);
 int ixc_traffic_log_enable(int enable);
 
 #endif

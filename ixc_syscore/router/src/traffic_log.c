@@ -151,7 +151,7 @@ static void __ixc_traffic_log_statistics_tcpip(struct ixc_ether_header *header,s
     log->is_ipv6=is_ipv6;
 }
 
-void ixc_traffic_log_statistics(struct ixc_ether_header *header,unsigned int size,int traffic_dir)
+void ixc_traffic_log_statistics(struct ixc_ether_header *header,int size,int traffic_dir)
 {
     struct ixc_traffic_log *log;
     struct time_data *tdata;
