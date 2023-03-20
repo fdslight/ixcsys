@@ -29,8 +29,9 @@ class parser(object):
         if hwaddr not in self.__traffic_info:
             is_spec_addr = False
             # 检查是否是特殊地址,如多播和未指定地址
-            if hwaddr[0] & 0x01 == 1: is_spec_addr = True
-            if hwaddr == bytes(6): is_spec_addr = True
+            if byte_hwaddr[0] & 0x01 == 1: is_spec_addr = True
+            if byte_hwaddr == bytes(6): is_spec_addr = True
+
             self.__traffic_info[hwaddr] = {
                 "is_spec_addr": is_spec_addr,
                 "time": 0,
