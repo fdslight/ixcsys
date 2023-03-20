@@ -27,7 +27,12 @@ class parser(object):
         hwaddr = netutils.byte_hwaddr_to_str(byte_hwaddr)
 
         if hwaddr not in self.__traffic_info:
+            is_spec_addr = False
+            # 检查是否是特殊地址,如多播和未指定地址
+            if hwaddr[0] & 0x01 == 1: is_spec_addr = True
+            if hwaddr == bytes(6): is_spec_addr = True
             self.__traffic_info[hwaddr] = {
+                "is_spec_addr": is_spec_addr,
                 "time": 0,
                 "ip4_addr": "-",
                 "ip6_addr": "-",
@@ -87,9 +92,13 @@ class parser(object):
         """长期无流量速度置零
         """
         now = time.time()
+        dels = []
         for hwaddr, machine in self.__traffic_info.items():
             _time = machine["time"]
             if now - _time < 20: continue
+            if machine["is_spec_addr"]:
+                dels.append(hwaddr)
+                continue
 
             old_rx_traffic = machine["rx_traffic_old"]
             old_tx_traffic = machine["tx_traffic_old"]
@@ -102,6 +111,7 @@ class parser(object):
             if old_tx_traffic == tx_traffic:
                 machine["tx_speed"] = 0
             machine["time"] = now
+        for hwaddr in dels: del self.__traffic_info[hwaddr]
 
     def task_loop(self):
         if self.is_need_clear():
