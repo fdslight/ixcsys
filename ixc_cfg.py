@@ -54,15 +54,21 @@ class ifconfig(object):
         if seq[0] == "hwaddr":
             self.lan_do_hwaddr(seq[1])
 
-    def lan_do_dev(self, devname: str):
-        if devname not in get_if_net_devices():
-            print("ERROR:not found system network card %s for LAN" % devname)
-            return
+    def lan_do_dev(self, devnames: str):
+        _list = devnames.split(",")
+        devname_list = []
+        for devname in _list:
+            if not devname: continue
+            if devname not in get_if_net_devices():
+                print("ERROR:not found system network card %s for LAN" % devname)
+                return
+            devname_list.append(devname)
+        ''''''
 
         fpath = "%s/ixc_configs/router/lan.ini" % sys_dir
 
         conf = cfg.ini_parse_from_file(fpath)
-        conf["if_config"]["phy_ifname"] = devname
+        conf["if_config"]["phy_ifname"] = ",".join(devname_list)
 
         cfg.save_to_ini(conf, fpath)
 
