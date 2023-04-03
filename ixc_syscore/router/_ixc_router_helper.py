@@ -53,6 +53,7 @@ class rpc(object):
             "lan_static_ipv6_enable": self.lan_static_ipv6_enable,
             "lan_static_ipv6_set": self.lan_static_ipv6_set,
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
+            "route_self_no_npfwd_enable":self.route_self_no_npfwd_enable,
             "pppoe_set": self.pppoe_set,
             "router_config_get": self.router_config_get,
             "port_map_add": self.port_map_add,
@@ -464,6 +465,11 @@ class rpc(object):
             configs["enable_ipv6_security"] = 0
 
         return 0, None
+    
+    def route_self_no_npfwd_enable(self,enable:bool):
+        self.__helper.router.route_self_no_npfwd_enable(enable)
+        return 0,None
+
 
     def dhcp_positive_heartbeat_set(self, positive_heartbeat=False):
         dhcp = self.__helper.wan_configs["dhcp"]

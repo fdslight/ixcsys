@@ -57,6 +57,7 @@ struct ixc_route{
     struct ixc_route_prefix *ip6_pre_head;
     // 是否开启IPv6透传
     int ipv6_pass;
+	int self_no_npfwd_enable;
 };
 
 int ixc_route_init(void);
@@ -78,5 +79,7 @@ int ixc_route_is_enabled_ipv6_pass(void);
 int ixc_route_ipv6_pass_enable(int enable);
 /// 是否开启IPv6隧道
 int ixc_route_ip6_tunnel_enable(int enable);
+/// 设置路由器本机不要重定向
+int ixc_route_set_self_no_npfwd(int enable);
 
 #endif

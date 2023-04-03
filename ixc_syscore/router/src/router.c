@@ -461,6 +461,17 @@ router_route_ipv6_pass_enable(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_route_self_no_npfwd_enable(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+
+    ixc_route_set_self_no_npfwd(enable);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 router_pppoe_enable(PyObject *self,PyObject *args)
 {
     int status;
@@ -863,6 +874,7 @@ static PyMethodDef routerMethods[]={
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
     {"route_ipv6_pass_enable",(PyCFunction)router_route_ipv6_pass_enable,METH_VARARGS,"enable/disable IPv6 pass"},
+	{"route_self_no_npfwd_enable",(PyCFunction)router_route_self_no_npfwd_enable,METH_VARARGS,"enable/disable self npfwd"},
     //
     {"pppoe_enable",(PyCFunction)router_pppoe_enable,METH_VARARGS,"enable or disable pppoe"},
     {"pppoe_is_enabled",(PyCFunction)router_pppoe_is_enabled,METH_NOARGS,"check pppoe is enabled"},
