@@ -26,7 +26,7 @@ class widget(ui_widget.widget):
 
     def handle(self, *args, **kwargs):
         clients = RPC.fn_call("DHCP", "/dhcp_server", "get_clients")
-
+        print(clients)
         # 此处转换bytes host_name编码
         for dic in clients:
             host_name = dic["host_name"]
@@ -45,7 +45,7 @@ class widget(ui_widget.widget):
 
         logs = {}
         traffic_info = global_vars["ixcsys.sysadm"].traffic_log_get()
-
+        print(traffic_info)
         for hwaddr, info in traffic_info.items():
             logs[hwaddr] = {
                 "ip4_addr": info["ip4_addr"],
