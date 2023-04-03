@@ -16,22 +16,22 @@
         </thead>
         <tbody>
             <%
-                x=1
-                for hwaddr,o in self.V["logs"].items():
-                    s="<tr>"
-                    s+="<td>%s</td>" % x
-                    s+="<td>%s</td>" % hwaddr
-                    s+="<td>%s</td>" % o['ip4_addr']
-                    s+="<td>%s</td>" % o['ip6_addr']
-                    s+="<td>%s</td>" % o['host_name']
-                    s+="<td>%s</td>" % o['tx_traffic']
-                    s+="<td>%s</td>" % o['rx_traffic']
-                    s+="<td>%s/S</td>" % o['tx_speed']
-                    s+="<td>%s/S</td>" % o['rx_speed']
-                    s+="<td>%s</td>" % o['vendor']
-                    s+="</tr>"
-                    x+=1
-                    self.show(s)
+            x=1
+            for hwaddr,o in self.V["logs"].items():
+                s="<tr>"
+                s+="<td>%s</td>" % x
+                s+="<td>%s</td>" % hwaddr
+                s+="<td>%s</td>" % o['ip4_addr']
+                s+="<td>%s</td>" % o['ip6_addr']
+                s+="<td>%s</td>" % o['host_name']
+                s+="<td>%s</td>" % o['tx_traffic']
+                s+="<td>%s</td>" % o['rx_traffic']
+                s+="<td>%s/S</td>" % o['tx_speed']
+                s+="<td>%s/S</td>" % o['rx_speed']
+                s+="<td>%s</td>" % o['vendor']
+                s+="</tr>"
+                x+=1
+                self.show(s)
             %>
         </tbody>
     </table>
