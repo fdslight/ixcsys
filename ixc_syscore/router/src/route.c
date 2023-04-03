@@ -699,7 +699,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 
-	if(!memcmp(iphdr->src_addr,netif->ipaddr,4) && route.self_no_npfwd_enable) npfwd_flags=1;
+	if(!memcmp(iphdr->src_addr,netif->ipaddr,4) && route.self_no_npfwd_enable && IXC_NETIF_LAN==netif->type) npfwd_flags=1;
 
     // 如果没有网卡,那么发送到其他应用
     if(NULL==r->netif && !npfwd_flags){
