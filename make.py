@@ -22,7 +22,6 @@ __builds = [
 
 __helper = """
     help                            show help
-    default                         generate default configure file
     build build_name [cflags]       build software
     build_all [cflags]              build all
     install_lib                     install system library
