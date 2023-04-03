@@ -90,11 +90,6 @@ class controller(base_controller.BaseController):
         else:
             kv_map["connection"]["enable_ipv6"] = "0"
 
-        if kv_map["connection"]["self_no_fwd_enable"]:
-            kv_map["connection"]["self_no_fwd_enable"] = "1"
-        else:
-            kv_map["connection"]["self_no_fwd_enable"] = "0"
-
         try:
             port = int(kv_map["connection"]["port"])
         except ValueError:

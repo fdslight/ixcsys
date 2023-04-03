@@ -653,7 +653,6 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct ixc_route_info *r;
     struct ixc_netif *netif=m->netif;
-	int npfwd_flags=0;
     unsigned short ttl;
 
     unsigned short csum;
@@ -700,10 +699,8 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 
-	if(!memcmp(iphdr->src_addr,ixc_g_manage_addr_get(0),4) && route.self_no_npfwd_enable && IXC_NETIF_LAN==netif->type) npfwd_flags=1;
-
     // 如果没有网卡,那么发送到其他应用
-    if(NULL==r->netif && !npfwd_flags){
+    if(NULL==r->netif){
         //ixc_router_send(netif->type,iphdr->protocol,IXC_FLAG_ROUTE_FWD,m->data+m->offset,m->tail-m->offset);
         // 这里丢弃数据包,避免内存泄漏
         //ixc_mbuf_put(m);
@@ -714,9 +711,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         return;
     }
 	
-	if(!npfwd_flags) m->netif=r->netif;
-	else m->netif=ixc_netif_get(IXC_NETIF_WAN);
-
+	m->netif=r->netif;
     netif=m->netif;
 
     memcpy(m->src_hwaddr,netif->hwaddr,6);
@@ -762,10 +757,4 @@ int ixc_route_ipv6_pass_enable(int enable)
     route.ipv6_pass=enable;
 
     return 0;
-}
-
-int ixc_route_set_self_no_npfwd(int enable)
-{
-	route.self_no_npfwd_enable=enable;
-	return 0;
 }
