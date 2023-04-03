@@ -54,7 +54,8 @@ class controller(base_controller.BaseController):
                 "udp_tunnel_redundancy": None,
                 "enable_heartbeat": None,
                 "heartbeat_timeout": None,
-                "tunnel_over_https": None
+                "tunnel_over_https": None,
+                "self_no_fwd_enable": None,
             },
             "tunnel_over_https": {
                 "url": "/",
@@ -88,6 +89,11 @@ class controller(base_controller.BaseController):
             kv_map["connection"]["enable_ipv6"] = "1"
         else:
             kv_map["connection"]["enable_ipv6"] = "0"
+
+        if kv_map["connection"]["self_no_fwd_enable"]:
+            kv_map["connection"]["self_no_fwd_enable"] = "1"
+        else:
+            kv_map["connection"]["self_no_fwd_enable"] = "0"
 
         try:
             port = int(kv_map["connection"]["port"])

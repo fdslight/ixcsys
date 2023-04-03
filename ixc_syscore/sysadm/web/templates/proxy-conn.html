@@ -150,6 +150,24 @@
                 </div>
             </div>
         </div>
+        <div class="form-group row">
+            <div class="col-sm-2">本机不走隧道</div>
+            <div class="col-sm-10">
+                <div class="form-check">
+                    <%
+                    if self.V['connection']['self_no_fwd_enable']:self.show("""<input class="form-check-input"
+                                                                                         name="connection.self_no_fwd_enable"
+                                                                                         type="checkbox"
+                                                                                         checked="checked">""")
+                    else:self.show("""<input class="form-check-input" name="connection.self_no_fwd_enable"
+                                             type="checkbox">""")
+                    %>
+                    <label class="form-check-label">
+                        启用
+                    </label>
+                </div>
+            </div>
+        </div>
         <hr/>
         <h4>HTTPS隧道</h4>
         <div class="ixc-empty"></div>

@@ -502,6 +502,8 @@ class service(dispatcher.dispatcher):
 
     def load_configs(self):
         self.__configs = conf.ini_parse_from_file(self.__conf_path)
+        connection = self.__configs["connection"]
+        if "self_no_fwd_enable" not in connection: connection["self_no_fwd_enable"] = 0
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
@@ -679,6 +681,11 @@ class service(dispatcher.dispatcher):
         handler.send_msg_to_tunnel(self.session_id, action, message)
 
     def set_forward(self):
+        if bool(int(self.configs["connection"].get("self_no_fwd_enable", "0"))):
+            RPCClient.fn_call("router", "/config", "route_self_no_npfwd_enable", False)
+        else:
+            RPCClient.fn_call("router", "/config", "route_self_no_npfwd_enable", True)
+
         self.__dns_fd = self.create_handler(-1, dns_proxy.dns_proxy)
         self.__rand_key = os.urandom(16)
         consts = RPCClient.fn_call("router", "/config", "get_all_consts")
