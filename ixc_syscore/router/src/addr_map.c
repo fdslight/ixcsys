@@ -225,6 +225,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     // 不需要发送ICMPv6的数据包直接发送
     if(!is_sent){
         memcpy(m->dst_hwaddr,r->hwaddr,6);
+        memcpy(m->src_hwaddr,netif->hwaddr,6);
         r->up_time=time(NULL);
         ixc_ether_send(m,1);
         return;

@@ -16,4 +16,5 @@ int ixc_g_manage_addr_set(unsigned char *addr,int is_ipv6);
 int ixc_g_network_enable(int enable);
 int ixc_g_network_is_enabled(void);
 
+
 #endif
