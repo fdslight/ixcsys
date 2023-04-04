@@ -169,7 +169,6 @@ int ixc_ip6sec_check_ok(struct ixc_mbuf *m)
             IXC_PRINT_IP6("src address ",header->src_addr);
             IXC_PRINT_IP6("dst address ",header->dst_addr);
             DBG("next header %d\r\n",header->next_header);
-            ixc_mbuf_put(m);
             return 0;
         }
         return 1;
