@@ -59,14 +59,14 @@ static int ixc_ip6_check_ok(struct ixc_mbuf *m)
     return 1;
 }
 
-static int ixc_ip6_is_dhcp(struct netutil_ip6hdr *header)
+static int ixc_ip6_is_dhcp(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
     struct netutil_udphdr *udp_header;
 
     if(17!=header->next_header) return 0;
     //if((header->dst_addr[0] >> 4)!=0x0f) return 0;
 
-    udp_header=(struct netutil_udphdr *)(((char *)header)+40);
+    udp_header=(struct netutil_udphdr *)(m->data+m->offset+40);
     // DHCP服务端
     if(ntohs(udp_header->dst_port)==547 && ntohs(udp_header->src_port)==546) return 2;
     // DHCP客户端
@@ -87,8 +87,8 @@ static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
         return;
     }
 
-    if(ixc_ip6_is_dhcp(header)==2){
-        ixc_npfwd_send_raw(m,17,IXC_FLAG_DHCPv6_SERVER);
+    if(ixc_ip6_is_dhcp(m,header)==2){
+        ixc_npfwd_send_raw(m,0,IXC_FLAG_DHCPv6_SERVER);
         return;
     }
 
