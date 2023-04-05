@@ -650,6 +650,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
 
     if(icmpv6_isset_dns){
         opt_dns=(struct ixc_icmpv6_opt_dns *)(buf+offset);
+        bzero(opt_dns,24);
         opt_dns->type=25;
         opt_dns->length=3;
         opt_dns->lifetime=htonl(1800);
@@ -672,6 +673,8 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
     icmp_header->checksum=csum_calc((unsigned short *)(buf),offset);
 
     IPv6_HEADER_SET(ip6_header,0,0,offset-40,58,64,ps_header->src_addr,ps_header->dst_addr);
+
+    memcpy(m->data+m->offset,buf+40,offset-40);
 
     m->tail=m->offset+offset;
     m->end=m->tail;
