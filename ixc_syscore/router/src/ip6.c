@@ -82,7 +82,6 @@ static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
 
 static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
-    int rs;
     if(!ixc_g_network_is_enabled()){
         ixc_mbuf_put(m);
         return;
