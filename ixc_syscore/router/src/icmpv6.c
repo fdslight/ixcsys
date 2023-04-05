@@ -163,6 +163,12 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     while(size<(m->end-m->offset-16)){
         type=ptr[0];
         length=ptr[1];
+
+        // 避免length为0的死循环
+        if(length==0){
+            is_err=1;
+            break;
+        }
         
         if(length==1 && (type!=1 || type!=5)){
             is_err=1;
@@ -630,12 +636,13 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
 
     payload_len=ntohs(ip6_header->payload_len);
 
-    STDERR("zzz\r\n");
     while(size<payload_len-16){
-        STDERR("start calc\r\n");
         type=ptr[0];
         length=ptr[1];
         x=length * 8;
+
+        // 避免死循环
+        if(x==0) break;
 
         switch(type){
             case 25:
@@ -645,7 +652,6 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
                 }
                 break;
             default:
-                STDERR("bb\r\n");
                 memcpy(buf+offset,ptr,x);
                 offset+=x;
                 break;
@@ -666,7 +672,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
     }
     
     ps_header=(struct netutil_ip6_ps_header *)(buf);
-    bzero(ps_header,40);
+    //bzero(ps_header,40);
 
     memcpy(ps_header->src_addr,ip6_header->src_addr,16);
     memcpy(ps_header->dst_addr,ip6_header->dst_addr,16);
