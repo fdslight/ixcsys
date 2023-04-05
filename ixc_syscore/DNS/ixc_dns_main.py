@@ -124,8 +124,11 @@ class service(dispatcher.dispatcher):
     def get_os_ip6_managet_addr(self):
         """获取操作系统的IPv6管理地址
         """
-        cmd="ip addr | grep inet6 | grep "
+        cmd = "ip addr | grep inet6 | grep "
 
+    def set_icmpv6_dns_opt(self):
+        """设置IPv6 DNS options"""
+        pass
 
     def rule_forward_set(self, port: int):
         self.get_handler(self.__dns_client).set_forward_port(port)
@@ -386,13 +389,18 @@ class service(dispatcher.dispatcher):
         cls.write_to_file(_list)
 
     def myloop(self):
-        self.auto_clean()
+        now = time.time()
 
+        self.auto_clean()
         if not self.__wan_ok:
-            now = time.time()
             if now - self.__up_time < 10: return
             self.__wan_ok = RPCClient.fn_call("router", "/config", "wan_ready_ok")
-        ''''''
+            return
+
+        if now - self.__up_time > 600:
+            self.set_icmpv6_dns_opt()
+
+        self.__up_time = now
 
 
 def main():
