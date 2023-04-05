@@ -77,6 +77,10 @@ static int ixc_ip6_is_dhcp(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 
 static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
+    if(ixc_ip6_is_dhcp(m,header)==1){
+        ixc_npfwd_send_raw(m,0,IXC_FLAG_DHCPv6_CLIENT);
+        return;
+    }
     ixc_route_handle(m);
 }
 
