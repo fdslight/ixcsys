@@ -121,6 +121,12 @@ class service(dispatcher.dispatcher):
         self.start_scgi()
         self.add_ns_os_resolv()
 
+    def get_os_ip6_managet_addr(self):
+        """获取操作系统的IPv6管理地址
+        """
+        cmd="ip addr | grep inet6 | grep "
+
+
     def rule_forward_set(self, port: int):
         self.get_handler(self.__dns_client).set_forward_port(port)
 

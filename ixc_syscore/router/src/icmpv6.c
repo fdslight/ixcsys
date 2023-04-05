@@ -640,7 +640,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
                 }
                 break;
             default:
-                memcpy(buf+offset,ptr,length);
+                memcpy(buf+offset,ptr,x);
                 offset+=x;
                 break;
         }
