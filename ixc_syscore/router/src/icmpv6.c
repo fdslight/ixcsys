@@ -630,19 +630,24 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
 
     payload_len=ntohs(ip6_header->payload_len);
 
+    STDERR("zzz\r\n");
     while(size<payload_len-16){
+        STDERR("start calc\r\n");
         type=ptr[0];
         length=ptr[1];
         x=length * 8;
 
-        if(type==25){
-            if(length>=3){
-                memcpy(icmpv6_wan_dnsserver_a,ptr+8,16);
-                if(length>=4) memcpy(icmpv6_wan_dnsserver_b,ptr+24,16);
-            }
-        }else{
-            memcpy(buf+offset,ptr,x);
-            offset+=x;
+        switch(type){
+            case 25:
+                if(length>=3){
+                    memcpy(icmpv6_wan_dnsserver_a,ptr+8,16);
+                    if(length>=4) memcpy(icmpv6_wan_dnsserver_b,ptr+24,16);
+                }
+                break;
+            default:
+                memcpy(buf+offset,ptr,x);
+                offset+=x;
+                break;
         }
         size+=x;
         ptr+=x;
