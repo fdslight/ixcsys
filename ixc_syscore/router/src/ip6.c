@@ -59,6 +59,22 @@ static int ixc_ip6_check_ok(struct ixc_mbuf *m)
     return 1;
 }
 
+static int ixc_ip6_is_dhcp(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
+{
+    struct netutil_udphdr *udp_header;
+
+    if(17!=header->next_header) return 0;
+    //if((header->dst_addr[0] >> 4)!=0x0f) return 0;
+
+    udp_header=(struct netutil_udphdr *)(m->data+m->offset+40);
+    // DHCP服务端
+    if(ntohs(udp_header->dst_port)==547 && ntohs(udp_header->src_port)==546) return 2;
+    // DHCP客户端
+    if(ntohs(udp_header->dst_port)==546 && ntohs(udp_header->src_port)==547) return 1;
+
+    return 0;
+}
+
 static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
     ixc_route_handle(m);
@@ -67,6 +83,12 @@ static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
 static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
     if(!ixc_g_network_is_enabled()){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 如果访问DHCPv6 server并且是直通状态那么丢弃dhcp请求数据包
+    if(ixc_ip6_is_dhcp(m,header)==2 && ixc_route_is_enabled_ipv6_pass()){
         ixc_mbuf_put(m);
         return;
     }
