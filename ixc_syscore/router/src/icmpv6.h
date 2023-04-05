@@ -84,6 +84,14 @@ struct ixc_icmpv6_opt_ra{
     unsigned char prefix[16];
 };
 
+struct ixc_icmpv6_opt_dns{
+    unsigned char type;
+    unsigned char length;
+    unsigned pad[2];
+    unsigned int lifetime;
+    unsigned char dnsserver[16];
+};
+
 #pragma pack(pop)
 
 #include "mbuf.h"
@@ -104,5 +112,13 @@ int ixc_icmpv6_send_rs(void);
 int ixc_icmpv6_send_ns(struct ixc_netif *netif,unsigned char *src_ipaddr,unsigned char *dst_ipaddr);
 /// 发送ICMPv6错误消息
 void ixc_icmpv6_send_error_msg(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *daddr,unsigned char type,unsigned char code,unsigned int pad_data,void *data,unsigned short data_size);
+/// 过滤并且修改ICMPv6数据包
+void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m);
+/// 设置DNS
+int ixc_icmpv6_dns_set(unsigned char *dnsserver);
+/// 取消DNS设置
+void ixc_icmpv6_dns_unset(void);
+/// 获取WAN DNSserver
+int ixc_icmpv6_wan_dnsserver_get(unsigned char *dns_a,unsigned char *dns_b);
 
 #endif

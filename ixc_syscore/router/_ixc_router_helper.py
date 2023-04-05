@@ -78,6 +78,10 @@ class rpc(object):
             "router_start_time": self.router_start_time,
             "traffic_log_enable": self.traffic_log_enable,
 
+            "icmpv6_dns_set":self.icmpv6_dns_set,
+            "icmpv6_dns_unset":self.icmpv6_dns_unset,
+            "icmpv6_wan_dnsserver_get":self.icmpv6_wan_dnsserver_get,
+
             "config_save": self.save
         }
 
@@ -653,6 +657,15 @@ class rpc(object):
 
     def traffic_log_enable(self, enable):
         return 0, self.__helper.router.traffic_log_enable(enable)
+
+    def icmpv6_dns_set(self,dnsserver:bytes):
+        return 0,self.__helper.router.icmpv6_dns_set(dnsserver)
+
+    def icmpv6_dns_unset(self):
+        return 0,self.__helper.router.icmpv6_dns_unset()
+
+    def icmpv6_wan_dnsserver_get(self):
+        return 0,self.__helper.router.icmpv6_wan_dnsserver_get()
 
 
 class helper(object):

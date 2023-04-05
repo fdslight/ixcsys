@@ -9,6 +9,11 @@
 #include "addr_map.h"
 #include "route.h"
 
+static int icmpv6_isset_dns=0;
+static unsigned char icmpv6_dnsserver[16];
+static unsigned char icmpv6_wan_dnsserver_a[16];
+static unsigned char icmpv6_wan_dnsserver_b[16];
+
 static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *src_ipaddr,unsigned char *dst_ipaddr,void *icmp_data,int length)
 {
     struct ixc_mbuf *m=ixc_mbuf_get();
@@ -131,16 +136,18 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 {
     struct ixc_netif *netif=m->netif;
     //struct ixc_icmpv6_ra_header *ra_header;
-    struct ixc_icmpv6_opt_prefix_info *opt_prefix;
+    struct ixc_icmpv6_opt_prefix_info *opt_prefix=NULL;
 
     unsigned char *ptr;
     unsigned char type,length;
-    int is_err=0,A=0;
+    int is_err=0,A=0,v,size=0;
     unsigned char gw_hwaddr[6],byte,slaac_addr[16];
     //unsigned char unspec_addr[]=IXC_IP6ADDR_UNSPEC;
-    unsigned int mtu;
+    unsigned int mtu=netif->mtu_v6;
 
-    if(m->tail-m->offset!=64){
+    v=(m->tail-m->offset)/8;
+
+    if(0!=v){
         ixc_mbuf_put(m);
         return;
     }
@@ -153,14 +160,9 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     //ra_header=(struct ixc_icmpv6_ra_header *)(m->data+m->offset);
     ptr=m->data+m->offset+16;
 
-    while(1){
+    while(size<(m->end-m->offset-16)){
         type=ptr[0];
         length=ptr[1];
-
-        if(type!=1 && type!=3 && type!=5){
-            is_err=1;
-            break;
-        }
         
         if(length==1 && (type!=1 || type!=5)){
             is_err=1;
@@ -168,6 +170,11 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         }
 
         if(type==3 && length!=4){
+            is_err=1;
+            break;
+        }
+
+        if(type==25 && length!=5){
             is_err=1;
             break;
         }
@@ -184,10 +191,16 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
                 break;
         }
 
+        size+=length*8;
         ptr+=length * 8;
     }
 
     if(is_err){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    if(NULL==opt_prefix){
         ixc_mbuf_put(m);
         return;
     }
@@ -386,6 +399,12 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 
 int ixc_icmpv6_init(void)
 {
+    bzero(icmpv6_dnsserver,16);
+    bzero(icmpv6_wan_dnsserver_a,16);
+    bzero(icmpv6_wan_dnsserver_b,16);
+
+    icmpv6_isset_dns=0;
+
     return 0;
 }
 
@@ -445,9 +464,13 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
     struct ixc_icmpv6_opt_ra *ra_opt;
     unsigned char dst_ipaddr[]=IXC_IP6ADDR_ALL_NODES;
     unsigned char dst_hwaddr[6];
+    struct ixc_icmpv6_opt_dns opt_dns;
+    int size=64;
 
-    unsigned char buf[64];
-    bzero(buf,64);
+    unsigned char buf[256];
+    
+    bzero(buf,256);
+    bzero(&opt_dns,sizeof(struct ixc_icmpv6_opt_dns));
 
     ra_header=(struct ixc_icmpv6_ra_header *)buf;
     ra_opt=(struct ixc_icmpv6_opt_ra *)(&buf[16]);
@@ -481,8 +504,18 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
         memcpy(dst_hwaddr,hwaddr,6);
         memcpy(dst_ipaddr,ipaddr,16);
     }
+
+    // 增加DNS下发
+    if(icmpv6_isset_dns){
+        opt_dns.type=25;
+        opt_dns.length=3;
+        memcpy(opt_dns.dnsserver,icmpv6_dnsserver,16);
+        
+        memcpy(((char *)(ra_opt))+size,&opt_dns,sizeof(struct ixc_icmpv6_opt_dns));
+        size+=sizeof(struct ixc_icmpv6_opt_dns);
+    }
     
-    ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,dst_ipaddr,buf,64);
+    ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,dst_ipaddr,buf,size);
 
     return 0;
 }
@@ -570,4 +603,99 @@ void ixc_icmpv6_send_error_msg(struct ixc_netif *netif,unsigned char *dst_hwaddr
     memcpy(buf+8,data,data_size);
 
     ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6addr,daddr,buf,data_size+8);
+}
+
+void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
+{
+    struct netutil_icmpv6hdr *icmp_header;
+    struct ixc_icmpv6_opt_dns *opt_dns;
+    struct netutil_ip6hdr *ip6_header;
+    struct netutil_ip6_ps_header *ps_header;
+
+    unsigned buf[0x20000];
+
+    unsigned char *ptr;
+    unsigned char type,length;
+    int offset=56,size=0,x;
+
+    ip6_header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    icmp_header=(struct netutil_icmpv6hdr *)(m->data+m->offset+40);
+
+    // 不是ICMPv6 RA报文直接pass
+    if(icmp_header->type!=134) return;
+    
+    ptr=((unsigned char *)(icmp_header))+16;
+    memcpy(buf+40,icmp_header,16);
+
+    while(size<(m->end-m->offset-40-16)){
+        type=ptr[0];
+        length=ptr[1];
+        x=length * 8;
+
+        switch(type){
+            case 25:
+                if(length>=3){
+                    memcpy(icmpv6_wan_dnsserver_a,ptr+8,16);
+                    if(length>=4) memcpy(icmpv6_wan_dnsserver_b,ptr+24,16);
+                }
+                break;
+            default:
+                memcpy(buf+offset,ptr,length);
+                offset+=x;
+                break;
+        }
+        size+=x;
+        ptr+=x;
+    }
+
+    if(icmpv6_isset_dns){
+        opt_dns=(struct ixc_icmpv6_opt_dns *)(buf+offset);
+        opt_dns->type=25;
+        opt_dns->length=3;
+        opt_dns->lifetime=htonl(1800);
+
+        memcpy(opt_dns->dnsserver,icmpv6_dnsserver,16);
+        offset+=24;
+    }
+    
+    ps_header=(struct netutil_ip6_ps_header *)(buf);
+    bzero(ps_header,40);
+
+    memcpy(ps_header->src_addr,ip6_header->src_addr,16);
+    memcpy(ps_header->dst_addr,ip6_header->dst_addr,16);
+
+    ps_header->length=htonl(offset-40+16);
+    ps_header->next_header=58;
+
+    icmp_header=(struct netutil_icmpv6hdr *)(buf+40);
+    icmp_header->checksum=0;
+    icmp_header->checksum=csum_calc((unsigned short *)(buf),offset);
+
+    IPv6_HEADER_SET(ip6_header,0,0,offset-40+16,58,64,ps_header->src_addr,ps_header->dst_addr);
+
+    m->tail=m->offset+offset;
+    m->end=m->tail;
+}
+
+int ixc_icmpv6_dns_set(unsigned char *dnsserver)
+{
+    if(NULL==dnsserver) return -1;
+    memcpy(icmpv6_dnsserver,dnsserver,16);
+
+    icmpv6_isset_dns=1;
+
+    return 0;
+}
+
+void ixc_icmpv6_dns_unset(void)
+{
+    icmpv6_isset_dns=0;
+}
+
+int ixc_icmpv6_wan_dnsserver_get(unsigned char *dns_a,unsigned char *dns_b)
+{
+    memcpy(dns_a,icmpv6_wan_dnsserver_a,16);
+    memcpy(dns_b,icmpv6_wan_dnsserver_b,16);
+
+    return 0;
 }

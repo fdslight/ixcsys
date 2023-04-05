@@ -31,6 +31,7 @@
 #include "npfwd.h"
 #include "sec_net.h"
 #include "traffic_log.h"
+#include "icmpv6.h"
 
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
@@ -461,6 +462,41 @@ router_route_ipv6_pass_enable(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_icmpv6_dns_set(PyObject *self,PyObject *args)
+{
+    unsigned char *dnsserver;
+    Py_ssize_t size;
+
+    if(!PyArg_ParseTuple(args,"y#",&dnsserver,&size)) return NULL;
+
+    if(size!=16){
+        PyErr_SetString(PyExc_ValueError,"wrong IPv6 address or gateway length");
+        return NULL;  
+    }
+
+    ixc_icmpv6_dns_set(dnsserver);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_icmpv6_dns_unset(PyObject *self,PyObject *args)
+{
+    ixc_icmpv6_dns_unset();
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+router_icmpv6_wan_dnsserver_get(PyObject *self,PyObject *args)
+{
+    unsigned char dns_a[16],dns_b[16];
+    ixc_icmpv6_wan_dnsserver_get(dns_a,dns_b);
+
+    return Py_BuildValue("(y#y#)",dns_a,16,dns_b,16);
+}
+
+static PyObject *
 router_pppoe_enable(PyObject *self,PyObject *args)
 {
     int status;
@@ -863,6 +899,10 @@ static PyMethodDef routerMethods[]={
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
     {"route_ipv6_pass_enable",(PyCFunction)router_route_ipv6_pass_enable,METH_VARARGS,"enable/disable IPv6 pass"},
+    //
+    {"icmpv6_dns_set",(PyCFunction)router_icmpv6_dns_set,METH_VARARGS,"set ICMPv6 NDP dns option"},
+    {"icmpv6_dns_unset",(PyCFunction)router_icmpv6_dns_unset,METH_NOARGS,"unset ICMPv6 NDP dns option"},
+    {"icmpv6_wan_dnsserver_get",(PyCFunction)router_icmpv6_wan_dnsserver_get,METH_NOARGS,"get WAN ICMPv6 NDP dns option value"},
     //
     {"pppoe_enable",(PyCFunction)router_pppoe_enable,METH_VARARGS,"enable or disable pppoe"},
     {"pppoe_is_enabled",(PyCFunction)router_pppoe_is_enabled,METH_NOARGS,"check pppoe is enabled"},
@@ -1386,6 +1426,12 @@ static void ixc_start(int debug)
     }
 
     rs=ixc_ip6_init();
+    if(rs<0){
+        STDERR("cannot init IPv6\r\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    rs=ixc_icmpv6_init();
     if(rs<0){
         STDERR("cannot init ICMPv6\r\n");
         exit(EXIT_SUCCESS);

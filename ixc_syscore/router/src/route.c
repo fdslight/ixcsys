@@ -554,6 +554,9 @@ static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip
         ixc_icmpv6_handle(m,header);
         return;
     }
+    
+    // 先修改再克隆,一些透传参数要修改,比如DNS
+    ixc_icmpv6_filter_and_modify(m);
 
     clone_m=ixc_mbuf_clone(m);
     if(NULL!=clone_m){
