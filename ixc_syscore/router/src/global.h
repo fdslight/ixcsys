@@ -16,5 +16,7 @@ int ixc_g_manage_addr_set(unsigned char *addr,int is_ipv6);
 int ixc_g_network_enable(int enable);
 int ixc_g_network_is_enabled(void);
 
+int ixc_g_ip6_passthrough_router_hwaddr_set(unsigned char *hwaddr);
+void ixc_g_ip6_passthrough_router_hwaddr_get(unsigned char *res);
 
 #endif

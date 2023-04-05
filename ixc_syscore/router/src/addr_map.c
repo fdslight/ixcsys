@@ -11,6 +11,7 @@
 #include "icmpv6.h"
 #include "router.h"
 #include "route.h"
+#include "global.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netutils.h"
@@ -225,6 +226,8 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     // 不需要发送ICMPv6的数据包直接发送
     if(!is_sent){
         memcpy(m->dst_hwaddr,r->hwaddr,6);
+        // 如果开启直通使用路由器的硬件地址
+        if(ixc_route_is_enabled_ipv6_pass()) ixc_g_ip6_passthrough_router_hwaddr_get(m->src_hwaddr); 
         r->up_time=time(NULL);
         ixc_ether_send(m,1);
         return;
