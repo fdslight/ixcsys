@@ -16,6 +16,10 @@
 #define IXC_FLAG_ROUTE_FWD 4
 /// 流量日志
 #define IXC_FLAG_TRAFFIC_LOG 5
+/// DHCPv6
+#define IXC_FLAG_DHCPv6_CLIENT 6
+/// DHCPv6 Server
+#define IXC_FLAG_DHCPv6_SERVER 7
 
 
 #include<sys/types.h>
