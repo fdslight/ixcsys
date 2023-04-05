@@ -8,7 +8,6 @@
 #include "ip6.h"
 #include "addr_map.h"
 #include "route.h"
-#include "global.h"
 
 static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *src_ipaddr,unsigned char *dst_ipaddr,void *icmp_data,int length)
 {
@@ -236,7 +235,6 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     //ixc_ip6_eui64_get(if_lan->hwaddr,slaac_addr);
     //ixc_netif_set_ip(IXC_NETIF_LAN,slaac_addr,64,1);
 
-    ixc_g_ip6_passthrough_router_hwaddr_set(m->src_hwaddr);
     netif->mtu_v6=mtu;
     memcpy(netif->ip6_default_router_hwaddr,gw_hwaddr,6);
 

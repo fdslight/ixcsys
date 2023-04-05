@@ -71,6 +71,8 @@ static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
         return;
     }
 
+    if(ixc_route_is_enabled_ipv6_pass()) ixc_addr_map_add(m->netif,header->src_addr,m->src_hwaddr,1);
+
     ixc_sec_net_handle_from_lan(m);
     //ixc_route_handle(m);
 }
