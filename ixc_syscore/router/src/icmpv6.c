@@ -674,7 +674,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
 
     IPv6_HEADER_SET(ip6_header,0,0,offset-40,58,64,ps_header->src_addr,ps_header->dst_addr);
 
-    memcpy(m->data+m->offset,buf+40,offset-40);
+    memcpy(m->data+m->offset+40,buf+40,offset-40);
 
     m->tail=m->offset+offset;
     m->end=m->tail;
