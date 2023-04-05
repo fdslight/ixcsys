@@ -635,17 +635,14 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
         length=ptr[1];
         x=length * 8;
 
-        switch(type){
-            case 25:
-                if(length>=3){
-                    memcpy(icmpv6_wan_dnsserver_a,ptr+8,16);
-                    if(length>=4) memcpy(icmpv6_wan_dnsserver_b,ptr+24,16);
-                }
-                break;
-            default:
-                memcpy(buf+offset,ptr,x);
-                offset+=x;
-                break;
+        if(type==25){
+            if(length>=3){
+                memcpy(icmpv6_wan_dnsserver_a,ptr+8,16);
+                if(length>=4) memcpy(icmpv6_wan_dnsserver_b,ptr+24,16);
+            }
+        }else{
+            memcpy(buf+offset,ptr,x);
+            offset+=x;
         }
         size+=x;
         ptr+=x;
