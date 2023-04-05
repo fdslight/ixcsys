@@ -208,9 +208,9 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
         return;
     }
 
-    memcpy(m->src_hwaddr,netif->hwaddr,6);
     // 如果是WAN口并且不是同网段地址那么直接使用默认网关
     if(netif->type==IXC_NETIF_WAN && !ixc_netif_is_subnet(netif,header->dst_addr,1,0)){
+        memcpy(m->src_hwaddr,netif->hwaddr,6);
         memcpy(m->dst_hwaddr,netif->ip6_default_router_hwaddr,6);
         ixc_ether_send(m,1);
         return;
@@ -225,6 +225,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     // 不需要发送ICMPv6的数据包直接发送
     if(!is_sent){
         memcpy(m->dst_hwaddr,r->hwaddr,6);
+        if(!ixc_route_is_enabled_ipv6_pass()) memcpy(m->src_hwaddr,netif->hwaddr,6);
         r->up_time=time(NULL);
         ixc_ether_send(m,1);
         return;
