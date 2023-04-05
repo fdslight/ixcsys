@@ -108,8 +108,6 @@ class rpc(object):
             "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
             "IXC_FLAG_TRAFFIC_LOG": router.IXC_FLAG_TRAFFIC_LOG,
-            "IXC_FLAG_DHCPv6_CLIENT":router.IXC_FLAG_DHCPv6_CLIENT,
-            "IXC_FLAG_DHCPv6_SERVER":router.IXC_FLAG_DHCPv6_SERVER,
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,

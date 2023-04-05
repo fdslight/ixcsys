@@ -93,8 +93,6 @@ static void ixc_npfwd_rx_data(int fd)
             case IXC_FLAG_ARP:
             case IXC_FLAG_DHCP_CLIENT:
             case IXC_FLAG_DHCP_SERVER:
-            case IXC_FLAG_DHCPv6_CLIENT:
-            case IXC_FLAG_DHCPv6_SERVER:
                 //DBG_FLAGS;
                 ixc_ether_send2(m);
                 break;
