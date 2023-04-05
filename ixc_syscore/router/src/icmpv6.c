@@ -645,6 +645,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
                 }
                 break;
             default:
+                STDERR("bb\r\n");
                 memcpy(buf+offset,ptr,x);
                 offset+=x;
                 break;
