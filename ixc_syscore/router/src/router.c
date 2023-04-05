@@ -949,7 +949,7 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
     PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_LOG);
     PyModule_AddIntMacro(m,IXC_FLAG_DHCPv6_CLIENT);
-    PyModule_AddIntMacro(m,IXC_FLAG_DHCP_SERVER);
+    PyModule_AddIntMacro(m,IXC_FLAG_DHCPv6_SERVER);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //
