@@ -618,7 +618,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
     struct netutil_ip6hdr *ip6_header;
     struct netutil_ip6_ps_header *ps_header;
 
-    unsigned buf[0x20000];
+    unsigned char buf[0x20000];
 
     unsigned char *ptr;
     unsigned char type,length;
