@@ -664,14 +664,14 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
     memcpy(ps_header->src_addr,ip6_header->src_addr,16);
     memcpy(ps_header->dst_addr,ip6_header->dst_addr,16);
 
-    ps_header->length=htonl(offset-40+16);
+    ps_header->length=htonl(offset-40);
     ps_header->next_header=58;
 
     icmp_header=(struct netutil_icmpv6hdr *)(buf+40);
     icmp_header->checksum=0;
     icmp_header->checksum=csum_calc((unsigned short *)(buf),offset);
 
-    IPv6_HEADER_SET(ip6_header,0,0,offset-40+16,58,64,ps_header->src_addr,ps_header->dst_addr);
+    IPv6_HEADER_SET(ip6_header,0,0,offset-40,58,64,ps_header->src_addr,ps_header->dst_addr);
 
     m->tail=m->offset+offset;
     m->end=m->tail;
