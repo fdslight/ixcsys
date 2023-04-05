@@ -617,6 +617,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
     unsigned char *ptr;
     unsigned char type,length;
     int offset=56,size=0,x;
+    unsigned short payload_len;
 
     ip6_header=(struct netutil_ip6hdr *)(m->data+m->offset);
     icmp_header=(struct netutil_icmpv6hdr *)(m->data+m->offset+40);
@@ -627,7 +628,9 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
     ptr=((unsigned char *)(icmp_header))+16;
     memcpy(buf+40,icmp_header,16);
 
-    while(size<(m->end-m->offset-40-16)){
+    payload_len=ntohs(ip6_header->payload_len);
+
+    while(size<payload_len-16){
         type=ptr[0];
         length=ptr[1];
         x=length * 8;
