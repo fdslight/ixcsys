@@ -174,7 +174,7 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
             break;
         }
 
-        if(type==25 && length!=5){
+        if(type==25 && length<3){
             is_err=1;
             break;
         }
