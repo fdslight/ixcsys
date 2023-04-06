@@ -173,7 +173,7 @@ class service(dispatcher.dispatcher):
         if self.__dns_server6 >= 0:
             self.delete_handler(self.__dns_server6)
 
-        self.__dns_server6 = self.create_handler(-1, dns_proxyd.proxyd, (ip6_mngaddr, 53), is_ipv6=True)
+        self.__dns_server6 = self.create_handler(-1, dns_proxyd.proxyd, (ip6_mngaddr, 53, 0, 0), is_ipv6=True)
         ip6_ns1 = ""
         ip6_ns2 = ""
 
@@ -250,12 +250,15 @@ class service(dispatcher.dispatcher):
 
         self.get_handler(fd).send_request_msg(message)
 
-    def handle_msg_from_dnsserver(self, message: bytes, is_ipv6=False):
+    def handle_msg_from_dnsserver(self, message: bytes):
         """处理来自于DNS服务器的消息
         """
         dns_id, = struct.unpack("!H", message[0:2])
         # 找不到映射记录那么直接删除
         if dns_id not in self.__id_wan2lan: return
+        o = self.__id_wan2lan[dns_id]
+        is_ipv6 = o["is_ipv6"]
+
         if is_ipv6:
             fd = self.__dns_server6
         else:

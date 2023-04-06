@@ -662,7 +662,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
 
     if(icmpv6_isset_dns){
         opt_dns=(struct ixc_icmpv6_opt_dns *)(buf+offset);
-        bzero(opt_dns,sizeof(struct ixc_icmpv6_opt_dns));
+        bzero(opt_dns,24);
         opt_dns->type=25;
         opt_dns->length=3;
         opt_dns->lifetime=htonl(1800);
