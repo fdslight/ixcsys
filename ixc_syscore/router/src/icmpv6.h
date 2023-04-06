@@ -87,7 +87,7 @@ struct ixc_icmpv6_opt_ra{
 struct ixc_icmpv6_opt_dns{
     unsigned char type;
     unsigned char length;
-    unsigned pad[2];
+    unsigned char pad[2];
     unsigned int lifetime;
     unsigned char dnsserver[16];
 };
