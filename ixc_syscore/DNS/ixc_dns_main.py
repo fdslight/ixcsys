@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import socket
 import sys, os, signal, time, struct, json, pickle
 import dns.message
 
@@ -82,8 +82,6 @@ class service(dispatcher.dispatcher):
     __id_wan2lan = None
     __matcher = None
 
-    __up_time = None
-
     __scgi_fd = None
     __cur_dns_id = None
 
@@ -91,7 +89,12 @@ class service(dispatcher.dispatcher):
     __forward_result = None
 
     __wan_ok = None
-    __up_time = None
+
+    __up_dns_record_time = None
+    __up_wan_ready_time = None
+    __up_autoset_icmpv6_dns_time = None
+    # IPv6管理地址
+    __ip6_mngaddr = None
 
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
@@ -108,11 +111,18 @@ class service(dispatcher.dispatcher):
         self.__id_wan2lan = {}
 
         self.__matcher = rule.matcher()
-        self.__up_time = time.time()
+
+        self.__up_dns_record_time = time.time()
+        self.__up_wan_ready_time = time.time()
+        self.__up_autoset_icmpv6_dns_time = time.time()
+
         self.__scgi_fd = -1
         self.__cur_dns_id = 1
         self.__forward_result = False
         self.__wan_ok = False
+
+        # 这里必须设置为字符串空值,用于比较,如果设置为None,类型不一致比较会出错
+        self.__ip6_mngaddr = ""
 
         RPCClient.wait_processes(["router", ])
 
@@ -121,14 +131,59 @@ class service(dispatcher.dispatcher):
         self.start_scgi()
         self.add_ns_os_resolv()
 
-    def get_os_ip6_managet_addr(self):
-        """获取操作系统的IPv6管理地址
-        """
-        cmd = "ip addr | grep inet6 | grep "
+    def get_ipv6_mngaddr(self):
+        cmd = "ip addr show ixclanbr | grep  inet6 | grep mng"
+        mng_ip6addr = None
+        fdst = os.popen(cmd)
+        _list = []
 
-    def set_icmpv6_dns_opt(self):
-        """设置IPv6 DNS options"""
-        pass
+        for line in fdst:
+            line = line.strip()
+            line = line.replace("\n", "")
+            _list.append(line.lower())
+        fdst.close()
+        if not _list: return None
+
+        for s in _list:
+            p = s.find("dep")
+            # 检查地址是否被弃用
+            if p >= 0: continue
+            s = s.split(" ")[1]
+            p = s.find("/")
+
+            mng_ip6addr = s[0:p]
+            break
+
+        return mng_ip6addr
+
+    def auto_set_ipv6_dns(self):
+        """设置IPv6 DNS"""
+        ip6_mngaddr = self.get_ipv6_mngaddr()
+        if not ip6_mngaddr:
+            if self.__dns_server6 >= 0:
+                RPCClient.fn_call("router", "/config", "icmpv6_dns_unset")
+                self.delete_handler(self.__dns_server6)
+                self.__dns_server6 = -1
+            return
+        if ip6_mngaddr == self.__ip6_mngaddr: return
+
+        self.__ip6_mngaddr = ip6_mngaddr
+
+        dns_a, dns_b = RPCClient.fn_call("router", "/config", "icmpv6_wan_dnsserver_get")
+        if self.__dns_server6 >= 0:
+            self.delete_handler(self.__dns_server6)
+
+        self.__dns_server6 = self.create_handler(-1, dns_proxyd.proxyd, (ip6_mngaddr, 53), is_ipv6=True)
+        ip6_ns1 = ""
+        ip6_ns2 = ""
+
+        if dns_a != bytes(16):
+            ip6_ns1 = socket.inet_ntop(socket.AF_INET6, dns_a)
+        if dns_b != bytes(16):
+            ip6_ns2 = socket.inet_ntop(socket.AF_INET6, dns_b)
+
+        self.set_nameservers(ip6_ns1, ip6_ns2, is_ipv6=True)
+        RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
 
     def rule_forward_set(self, port: int):
         self.get_handler(self.__dns_client).set_forward_port(port)
@@ -154,10 +209,6 @@ class service(dispatcher.dispatcher):
         self.__dns_client6 = self.create_handler(-1, dns_proxyd.proxy_client, ipv6["main_dns"], ipv6["second_dns"],
                                                  is_ipv6=True)
         self.__dns_server = self.create_handler(-1, dns_proxyd.proxyd, (manage_addr, 53), is_ipv6=False)
-
-        # 此处检查IPv6方式,如果是静态下发那么丢弃DNS AAAA请求
-        lan_configs = RPCClient.fn_call("router", "/config", "lan_config_get")
-        if_cfg = lan_configs["if_config"]
 
     def start_scgi(self):
         scgi_configs = {
@@ -213,7 +264,8 @@ class service(dispatcher.dispatcher):
         o = self.__id_wan2lan[dns_id]
         x_dns_id = o["id"]
         new_msg = b"".join([struct.pack("!H", x_dns_id), message[2:]])
-        self.get_handler(fd).send_msg(new_msg, o["address"])
+
+        if fd > 0: self.get_handler(fd).send_msg(new_msg, o["address"])
 
         if not o["from_forward"] and self.__forward_result:
             try:
@@ -364,7 +416,7 @@ class service(dispatcher.dispatcher):
         now_t = time.time()
 
         # 设置每隔一段时间清理一次DNS映射记录
-        if now_t - self.__up_time < 5: return
+        if now_t - self.__up_dns_record_time < 5: return
 
         dels = []
         for _id in self.__id_wan2lan:
@@ -374,6 +426,8 @@ class service(dispatcher.dispatcher):
 
         for _id in dels:
             del self.__id_wan2lan[_id]
+
+        self.__up_dns_record_time = now_t
 
     def add_ns_os_resolv(self):
         """加入nameserver到操作系统resolv中
@@ -393,14 +447,14 @@ class service(dispatcher.dispatcher):
 
         self.auto_clean()
         if not self.__wan_ok:
-            if now - self.__up_time < 10: return
+            if now - self.__up_wan_ready_time < 10: return
             self.__wan_ok = RPCClient.fn_call("router", "/config", "wan_ready_ok")
+            self.__up_wan_ready_time = now
             return
 
-        if now - self.__up_time > 600:
-            self.set_icmpv6_dns_opt()
-
-        self.__up_time = now
+        if now - self.__up_autoset_icmpv6_dns_time > 10:
+            self.auto_set_ipv6_dns()
+            self.__up_autoset_icmpv6_dns_time = now
 
 
 def main():
