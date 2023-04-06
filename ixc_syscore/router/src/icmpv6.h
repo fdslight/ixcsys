@@ -2,7 +2,7 @@
 #define IXC_ICMPv6_H
 
 #pragma pack(push)
-#pragma pack(4)
+#pragma pack(1)
 /// 路由请求头部
 struct ixc_icmpv6_rs_header{
     unsigned char type;
