@@ -183,6 +183,7 @@ class service(dispatcher.dispatcher):
             ip6_ns2 = socket.inet_ntop(socket.AF_INET6, dns_b)
 
         self.set_nameservers(ip6_ns1, ip6_ns2, is_ipv6=True)
+        print(ip6_ns1,ip6_ns2,ip6_mngaddr)
         RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
 
     def rule_forward_set(self, port: int):
