@@ -161,7 +161,7 @@ class service(dispatcher.dispatcher):
         ip6_mngaddr = self.get_ipv6_mngaddr()
 
         ip6_cfg = self.configs["ipv6"]
-        enable_auto = bool(int(ip6_cfg.get("enable_auto", "1")))
+        enable_auto = bool(int(ip6_cfg["enable_auto"]))
 
         if self.__ip6_mngaddr != ip6_mngaddr:
             self.__ip6_mngaddr = ip6_mngaddr
@@ -387,7 +387,7 @@ class service(dispatcher.dispatcher):
         else:
             cfg = self.configs["ipv4"]
 
-        return bool(int(cfg.get("enable_auto", "1")))
+        return bool(int(cfg["enable_auto"]))
 
     def get_nameservers(self, is_ipv6=False):
         if is_ipv6:
