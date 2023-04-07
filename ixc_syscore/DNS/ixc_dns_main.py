@@ -159,24 +159,20 @@ class service(dispatcher.dispatcher):
     def auto_set_ipv6_dns(self):
         """设置IPv6 DNS"""
         ip6_mngaddr = self.get_ipv6_mngaddr()
-        if not ip6_mngaddr:
-            if self.__dns_server6 >= 0:
-                RPCClient.fn_call("router", "/config", "icmpv6_dns_unset")
-                self.delete_handler(self.__dns_server6)
-                self.__dns_server6 = -1
-            return
-
-        if ip6_mngaddr == self.__ip6_mngaddr: return
 
         ip6_cfg=self.configs["ipv6"]
         enable_auto=bool(int(ip6_cfg.get("enable_auto","1")))
-        self.__ip6_mngaddr = ip6_mngaddr
+
+        if self.__ip6_mngaddr!=ip6_mngaddr:
+            self.__ip6_mngaddr=ip6_mngaddr
+            RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
+
+        if not enable_auto:return
 
         dns_a, dns_b = RPCClient.fn_call("router", "/config", "icmpv6_wan_dnsserver_get")
         if self.__dns_server6 >= 0:
             self.delete_handler(self.__dns_server6)
 
-        self.__dns_server6 = self.create_handler(-1, dns_proxyd.proxyd, (ip6_mngaddr, 53, 0, 0), is_ipv6=True)
         ip6_ns1 = ""
         ip6_ns2 = ""
 
@@ -186,21 +182,18 @@ class service(dispatcher.dispatcher):
             ip6_ns2 = socket.inet_ntop(socket.AF_INET6, dns_b)
         
         # 如果是链路本地地址,清空DNS
-        if not ip6_ns1:
+        if ip6_ns1:
             if ip6_ns1[0].lower()=='f':
                 ip6_ns1=""
             ''''''
-        if not ip6_ns2:
+        if  ip6_ns2:
             if ip6_ns2[0].lower()=='f':
                 ip6_ns2=""
             ''''''
-        if not enable_auto:
-            ip6_ns1=ip6_cfg.get("main_dns","")
-            ip6_ns2=ip6_cfg.get("second_dns","")
+        if ip6_ns1=="" and ip6_ns2=="":
+            RPCClient.fn_call("router","/config","icmpv6_dns_unset")
 
         self.set_nameservers(ip6_ns1, ip6_ns2, is_ipv6=True)
-        if ip6_ns1 or ip6_ns2:
-            RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
 
     def rule_forward_set(self, port: int):
         self.get_handler(self.__dns_client).set_forward_port(port)
@@ -226,6 +219,7 @@ class service(dispatcher.dispatcher):
         self.__dns_client6 = self.create_handler(-1, dns_proxyd.proxy_client, ipv6["main_dns"], ipv6["second_dns"],
                                                  is_ipv6=True)
         self.__dns_server = self.create_handler(-1, dns_proxyd.proxyd, (manage_addr, 53), is_ipv6=False)
+        self.__dns_server6=self.create_handler(-1,dns_proxyd.proxyd,("::",53,0,0),is_ipv6=True)
 
     def start_scgi(self):
         scgi_configs = {
