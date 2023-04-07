@@ -469,7 +469,7 @@ class service(dispatcher.dispatcher):
             self.__up_wan_ready_time = now
             return
 
-        if now - self.__up_autoset_icmpv6_dns_time > 10:
+        if now - self.__up_autoset_icmpv6_dns_time > 60:
             self.auto_set_ipv6_dns()
             self.__up_autoset_icmpv6_dns_time = now
 
