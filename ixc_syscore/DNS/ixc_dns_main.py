@@ -170,8 +170,6 @@ class service(dispatcher.dispatcher):
         if not enable_auto:return
 
         dns_a, dns_b = RPCClient.fn_call("router", "/config", "icmpv6_wan_dnsserver_get")
-        if self.__dns_server6 >= 0:
-            self.delete_handler(self.__dns_server6)
 
         ip6_ns1 = ""
         ip6_ns2 = ""
