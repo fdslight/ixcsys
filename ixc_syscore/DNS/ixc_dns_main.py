@@ -164,6 +164,9 @@ class service(dispatcher.dispatcher):
         enable_auto = bool(int(ip6_cfg["enable_auto"]))
 
         if self.__ip6_mngaddr != ip6_mngaddr:
+            if self.__dns_server6>=0:
+                self.delete_handler(self.__dns_server6)
+            self.__dns_server6 = self.create_handler(-1, dns_proxyd.proxyd, (ip6_mngaddr, 53, 0, 0), is_ipv6=True)
             self.__ip6_mngaddr = ip6_mngaddr
             RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
 
@@ -222,7 +225,6 @@ class service(dispatcher.dispatcher):
         self.__dns_client6 = self.create_handler(-1, dns_proxyd.proxy_client, ipv6["main_dns"], ipv6["second_dns"],
                                                  is_ipv6=True)
         self.__dns_server = self.create_handler(-1, dns_proxyd.proxyd, (manage_addr, 53), is_ipv6=False)
-        self.__dns_server6 = self.create_handler(-1, dns_proxyd.proxyd, ("::", 53, 0, 0), is_ipv6=True)
 
     def start_scgi(self):
         scgi_configs = {
