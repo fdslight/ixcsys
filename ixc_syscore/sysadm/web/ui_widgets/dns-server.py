@@ -8,8 +8,16 @@ class widget(ui_widget.widget):
         if RPC.RPCReadyOk("DNS"):
             configs = RPC.fn_call("DNS", "/config", "config_get")
             rs = configs
-            enable_auto = bool(int(configs["public"]["enable_auto"]))
-            rs["public"]["enable_auto"] = enable_auto
+            
+            ip4_cfg=rs["ipv4"]
+            ip6_cfg=rs["ipv6"]
+
+            ip4_enable_auto=bool(int(ip4_cfg.get("enable_auto","1")))
+            ip6_enable_auto=bool(int(ip6_cfg.get("enable_auto","1")))
+
+            ip4_cfg["enable_auto"]=ip4_enable_auto
+            ip6_cfg["enbale_auto"]=ip6_enable_auto
+
             uri = "dns-server.html"
         else:
             uri = "no-proc.html"

@@ -51,14 +51,19 @@ class controller(rpc.controller):
             ''''''
         return 0, None
 
-    def enable(self, enabled: bool):
+    def enable(self, enabled: bool,is_ipv6=False):
         """是否启用自动获取DNS或者关闭自动获取DNS
         """
         configs = self.__runtime.configs
-        if enabled:
-            configs["public"]["enable_auto"] = 1
+        if is_ipv6:
+            cfg=configs["ipv6"]
         else:
-            configs["public"]["enable_auto"] = 0
+            cfg=configs["ipv4"]
+
+        if enabled:
+            cfg["enable_auto"] = 1
+        else:
+            cfg["enable_auto"] = 0
         return 0, None
 
     def forward_dns_result(self):
@@ -83,7 +88,7 @@ class controller(rpc.controller):
         if not self.__runtime.is_auto(): return 0, None
         return 0, self.__runtime.set_nameservers(ns1, ns2, is_ipv6=is_ipv6)
 
-    def is_auto(self):
+    def is_auto(self,is_ipv6=False):
         """是否为自动设置DNS地址
         """
-        return 0, self.__runtime.is_auto()
+        return 0, self.__runtime.is_auto(is_ipv6=is_ipv6)

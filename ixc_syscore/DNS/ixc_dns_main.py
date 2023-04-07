@@ -165,8 +165,11 @@ class service(dispatcher.dispatcher):
                 self.delete_handler(self.__dns_server6)
                 self.__dns_server6 = -1
             return
+
         if ip6_mngaddr == self.__ip6_mngaddr: return
 
+        ip6_cfg=self.configs["ipv6"]
+        enable_auto=bool(int(ip6_cfg.get("enable_auto","1")))
         self.__ip6_mngaddr = ip6_mngaddr
 
         dns_a, dns_b = RPCClient.fn_call("router", "/config", "icmpv6_wan_dnsserver_get")
@@ -181,9 +184,23 @@ class service(dispatcher.dispatcher):
             ip6_ns1 = socket.inet_ntop(socket.AF_INET6, dns_a)
         if dns_b != bytes(16):
             ip6_ns2 = socket.inet_ntop(socket.AF_INET6, dns_b)
+        
+        # 如果是链路本地地址,清空DNS
+        if not ip6_ns1:
+            if ip6_ns1[0].lower()=='f':
+                ip6_ns1=""
+            ''''''
+        if not ip6_ns2:
+            if ip6_ns2[0].lower()=='f':
+                ip6_ns2=""
+            ''''''
+        if not enable_auto:
+            ip6_ns1=ip6_cfg.get("main_dns","")
+            ip6_ns2=ip6_cfg.get("second_dns","")
 
         self.set_nameservers(ip6_ns1, ip6_ns2, is_ipv6=True)
-        RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
+        if ip6_ns1 or ip6_ns2:
+            RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
 
     def rule_forward_set(self, port: int):
         self.get_handler(self.__dns_client).set_forward_port(port)
@@ -367,8 +384,13 @@ class service(dispatcher.dispatcher):
     def sec_rules(self):
         return self.__sec_rules
 
-    def is_auto(self):
-        return bool(int(self.__dns_configs["public"]["enable_auto"]))
+    def is_auto(self,is_ipv6=False):
+        if is_ipv6:
+            cfg=self.configs["ipv6"]
+        else:
+            cfg=self.configs["ipv4"]
+
+        return bool(int(cfg.get("enable_auto","1")))
 
     def get_nameservers(self, is_ipv6=False):
         if is_ipv6:

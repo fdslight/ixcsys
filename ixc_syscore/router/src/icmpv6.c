@@ -623,6 +623,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
     unsigned char *ptr;
     unsigned char type,length;
     int offset=56,size=0,x;
+	int have_dns_opt=0;
     unsigned short payload_len;
 
     ip6_header=(struct netutil_ip6hdr *)(m->data+m->offset);
@@ -646,6 +647,10 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
 
         switch(type){
             case 25:
+				have_dns_opt=1;
+				// 清除旧DNS
+				bzero(icmpv6_wan_dnsserver_a,16);
+				bzero(icmpv6_wan_dnsserver_b,16);
                 if(length>=3){
                     memcpy(icmpv6_wan_dnsserver_a,ptr+8,16);
                     if(length>=4) memcpy(icmpv6_wan_dnsserver_b,ptr+24,16);
@@ -659,6 +664,11 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
         size+=x;
         ptr+=x;
     }
+
+	if(!have_dns_opt){
+		bzero(icmpv6_wan_dnsserver_a,16);
+		bzero(icmpv6_wan_dnsserver_b,16);
+	}
 
     if(icmpv6_isset_dns){
         opt_dns=(struct ixc_icmpv6_opt_dns *)(buf+offset);
