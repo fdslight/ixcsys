@@ -160,14 +160,14 @@ class service(dispatcher.dispatcher):
         """设置IPv6 DNS"""
         ip6_mngaddr = self.get_ipv6_mngaddr()
 
-        ip6_cfg=self.configs["ipv6"]
-        enable_auto=bool(int(ip6_cfg.get("enable_auto","1")))
+        ip6_cfg = self.configs["ipv6"]
+        enable_auto = bool(int(ip6_cfg.get("enable_auto", "1")))
 
-        if self.__ip6_mngaddr!=ip6_mngaddr:
-            self.__ip6_mngaddr=ip6_mngaddr
+        if self.__ip6_mngaddr != ip6_mngaddr:
+            self.__ip6_mngaddr = ip6_mngaddr
             RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
 
-        if not enable_auto:return
+        if not enable_auto: return
 
         dns_a, dns_b = RPCClient.fn_call("router", "/config", "icmpv6_wan_dnsserver_get")
 
@@ -178,18 +178,18 @@ class service(dispatcher.dispatcher):
             ip6_ns1 = socket.inet_ntop(socket.AF_INET6, dns_a)
         if dns_b != bytes(16):
             ip6_ns2 = socket.inet_ntop(socket.AF_INET6, dns_b)
-        
+
         # 如果是链路本地地址,清空DNS
         if ip6_ns1:
-            if ip6_ns1[0].lower()=='f':
-                ip6_ns1=""
+            if ip6_ns1[0].lower() == 'f':
+                ip6_ns1 = ""
             ''''''
-        if  ip6_ns2:
-            if ip6_ns2[0].lower()=='f':
-                ip6_ns2=""
+        if ip6_ns2:
+            if ip6_ns2[0].lower() == 'f':
+                ip6_ns2 = ""
             ''''''
-        if ip6_ns1=="" and ip6_ns2=="":
-            RPCClient.fn_call("router","/config","icmpv6_dns_unset")
+        if ip6_ns1 == "" and ip6_ns2 == "":
+            RPCClient.fn_call("router", "/config", "icmpv6_dns_unset")
 
         self.set_nameservers(ip6_ns1, ip6_ns2, is_ipv6=True)
 
@@ -198,6 +198,11 @@ class service(dispatcher.dispatcher):
 
     def load_configs(self):
         self.__dns_configs = conf.ini_parse_from_file(self.__dns_conf_path)
+        ip4_cfg = self.__dns_configs["ipv4"]
+        ip6_cfg = self.__dns_configs["ipv6"]
+
+        if "enable_auto" not in ip4_cfg: ip4_cfg["enable_auto"] = "1"
+        if "enable_auto" not in ip6_cfg: ip6_cfg["enable_auto"] = "1"
 
     def load_sec_rules(self):
         self.__sec_rules = sec_rule.parse_from_file(self.__sec_rule_path)
@@ -217,7 +222,7 @@ class service(dispatcher.dispatcher):
         self.__dns_client6 = self.create_handler(-1, dns_proxyd.proxy_client, ipv6["main_dns"], ipv6["second_dns"],
                                                  is_ipv6=True)
         self.__dns_server = self.create_handler(-1, dns_proxyd.proxyd, (manage_addr, 53), is_ipv6=False)
-        self.__dns_server6=self.create_handler(-1,dns_proxyd.proxyd,("::",53,0,0),is_ipv6=True)
+        self.__dns_server6 = self.create_handler(-1, dns_proxyd.proxyd, ("::", 53, 0, 0), is_ipv6=True)
 
     def start_scgi(self):
         scgi_configs = {
@@ -376,13 +381,13 @@ class service(dispatcher.dispatcher):
     def sec_rules(self):
         return self.__sec_rules
 
-    def is_auto(self,is_ipv6=False):
+    def is_auto(self, is_ipv6=False):
         if is_ipv6:
-            cfg=self.configs["ipv6"]
+            cfg = self.configs["ipv6"]
         else:
-            cfg=self.configs["ipv4"]
+            cfg = self.configs["ipv4"]
 
-        return bool(int(cfg.get("enable_auto","1")))
+        return bool(int(cfg.get("enable_auto", "1")))
 
     def get_nameservers(self, is_ipv6=False):
         if is_ipv6:
