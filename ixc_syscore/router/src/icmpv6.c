@@ -515,6 +515,7 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
     if(icmpv6_isset_dns){
         opt_dns.type=25;
         opt_dns.length=3;
+        opt_dns.lifetime=htonl(1800);
         memcpy(opt_dns.dnsserver,icmpv6_dnsserver,16);
         
         memcpy(((char *)(ra_opt))+size,&opt_dns,sizeof(struct ixc_icmpv6_opt_dns));
@@ -617,6 +618,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
     struct ixc_icmpv6_opt_dns *opt_dns;
     struct netutil_ip6hdr *ip6_header;
     struct netutil_ip6_ps_header *ps_header;
+    struct ixc_icmpv6_ra_header *ra_header;
 
     unsigned char buf[0x20000];
 
@@ -632,6 +634,8 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
     // 不是ICMPv6 RA报文直接pass
     if(icmp_header->type!=134) return;
     
+    ra_header=(struct ixc_icmpv6_ra_header *)(m->data+m->offset+40);
+
     ptr=((unsigned char *)(icmp_header))+16;
     memcpy(buf+40,icmp_header,16);
 
@@ -675,7 +679,7 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
         bzero(opt_dns,sizeof(struct ixc_icmpv6_opt_dns));
         opt_dns->type=25;
         opt_dns->length=3;
-        opt_dns->lifetime=htonl(1800);
+        opt_dns->lifetime=ra_header->router_lifetime;
 
         memcpy(opt_dns->dnsserver,icmpv6_dnsserver,16);
         offset+=24;
