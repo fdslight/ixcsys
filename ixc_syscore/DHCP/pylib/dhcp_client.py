@@ -86,8 +86,9 @@ class dhcp_client(object):
 
     def handle_dhcp_ack(self, options: list):
         dhcp_server_id = self.get_dhcp_opt_value(options, 54)
-        if not dhcp_server_id: return
-        if dhcp_server_id != self.__dhcp_server_id: return
+        if dhcp_server_id:
+            if dhcp_server_id != self.__dhcp_server_id: return
+        ''''''
         if self.__dhcp_parser.xid != self.__xid: return
 
         ipaddr_lease_time = self.get_dhcp_opt_value(options, 51)
@@ -134,7 +135,7 @@ class dhcp_client(object):
 
     def handle_dhcp_offer(self, options: list):
         dhcp_server_id = self.get_dhcp_opt_value(options, 54)
-        if not dhcp_server_id: return
+        # if not dhcp_server_id: return
         if self.__dhcp_parser.xid != self.__xid: return
 
         self.__up_time = time.time()
@@ -147,12 +148,14 @@ class dhcp_client(object):
 
         new_opts = [
             (53, struct.pack("!B", 3)),
-            (54, dhcp_server_id),
             (12, self.__hostname.encode()),
             (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
             (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
         ]
+
+        if self.__dhcp_server_id:
+            new_opts.insert(1, (54, dhcp_server_id))
 
         byte_data = self.__dhcp_builder.build_to_link_data(
             bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
@@ -217,12 +220,14 @@ class dhcp_client(object):
 
         options = [
             (53, struct.pack("!B", 3)),
-            (54, self.__dhcp_server_id),
             (12, self.__hostname.encode()),
             (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
             (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
         ]
+
+        if self.__dhcp_server_id:
+            options.insert(1, (54, self.__dhcp_server_id))
 
         link_data = self.__dhcp_builder.build_to_link_data(
             dst_hwaddr,
@@ -246,12 +251,14 @@ class dhcp_client(object):
 
         new_opts = [
             (53, struct.pack("!B", 4)),
-            (54, self.__dhcp_server_id),
             (12, self.__hostname.encode()),
             (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
             (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
         ]
+
+        if self.__dhcp_server_id:
+            new_opts.insert(1, (54, self.__dhcp_server_id))
 
         byte_data = self.__dhcp_builder.build_to_link_data(
             bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
