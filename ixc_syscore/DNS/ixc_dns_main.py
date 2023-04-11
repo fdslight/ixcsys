@@ -163,7 +163,11 @@ class service(dispatcher.dispatcher):
         ip6_cfg = self.configs["ipv6"]
         enable_auto = bool(int(ip6_cfg["enable_auto"]))
 
-        if not ip6_mngaddr: return
+        if not ip6_mngaddr:
+            if self.__dns_server6 >= 0:
+                self.delete_handler(self.__dns_server6)
+            self.__dns_server6 = -1
+            return
 
         if self.__ip6_mngaddr != ip6_mngaddr:
             if self.__dns_server6 >= 0:
@@ -286,7 +290,7 @@ class service(dispatcher.dispatcher):
         x_dns_id = o["id"]
         new_msg = b"".join([struct.pack("!H", x_dns_id), message[2:]])
 
-        if fd > 0: self.get_handler(fd).send_msg(new_msg, o["address"])
+        if self.handler_exists(fd): self.get_handler(fd).send_msg(new_msg, o["address"])
 
         if not o["from_forward"] and self.__forward_result:
             try:
