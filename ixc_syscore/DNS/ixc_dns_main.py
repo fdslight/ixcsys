@@ -163,8 +163,12 @@ class service(dispatcher.dispatcher):
         ip6_cfg = self.configs["ipv6"]
         enable_auto = bool(int(ip6_cfg["enable_auto"]))
 
+        if not ip6_mngaddr: return
+
+
+
         if self.__ip6_mngaddr != ip6_mngaddr:
-            if self.__dns_server6>=0:
+            if self.__dns_server6 >= 0:
                 self.delete_handler(self.__dns_server6)
             self.__dns_server6 = self.create_handler(-1, dns_proxyd.proxyd, (ip6_mngaddr, 53, 0, 0), is_ipv6=True)
             self.__ip6_mngaddr = ip6_mngaddr
