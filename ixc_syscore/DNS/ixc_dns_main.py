@@ -165,8 +165,6 @@ class service(dispatcher.dispatcher):
 
         if not ip6_mngaddr: return
 
-
-
         if self.__ip6_mngaddr != ip6_mngaddr:
             if self.__dns_server6 >= 0:
                 self.delete_handler(self.__dns_server6)
