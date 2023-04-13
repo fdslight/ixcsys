@@ -94,8 +94,7 @@ def build_config_args(insert_s: str, _list: list):
 
 
 def __build(build_name, args: list):
-    # debug simpleNAS
-    if build_name not in __builds and build_name != "ixc_syscore/simpleNAS":
+    if build_name not in __builds:
         print("ERROR:not found build name %s" % build_name)
         return
 
