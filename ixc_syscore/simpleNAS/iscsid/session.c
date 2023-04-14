@@ -4,6 +4,7 @@
 
 #include "session.h"
 #include "iscsid.h"
+#include "sktbuf.h"
 
 #include "../../../pywind/clib/ev/ev.h"
 #include "../../../pywind/clib/debug.h"
@@ -251,7 +252,21 @@ static void ixc_session_myloop(void)
 static int iscsi_session_readable_fn(struct ev *ev)
 {
 	ssize_t recv_size;
+    struct ixc_sktbuf *sktbuf=NULL;
 	int rs;
+
+    for(int n=0;n<10;n++){
+        recv_size=recv(ev->fileno,sktbuf->data+sktbuf->end,IXC_SKTBUF_MAX-sktbuf->end,0);
+
+        if(0==recv_size){
+            
+            break;
+        }
+
+        if(recv<0){
+            if(EAGAIN==errno) break;
+        }
+    }
 
 	return 0;
 }
