@@ -9,5 +9,8 @@ class helper(object):
     def start(self):
         pass
 
+    def loop(self):
+        pass
+
     def release(self):
         pass
