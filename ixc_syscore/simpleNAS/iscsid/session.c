@@ -1,6 +1,7 @@
 #define  PY_SSIZE_T_CLEAN
 #include<Python.h>
 #include<structmember.h>
+#include<signal.h>
 
 #include "session.h"
 #include "iscsid.h"
@@ -252,21 +253,25 @@ static void ixc_session_myloop(void)
 static int iscsi_session_readable_fn(struct ev *ev)
 {
 	ssize_t recv_size;
-    struct ixc_sktbuf *sktbuf=NULL;
+    struct ixc_sktbuf *sktbuf=ixc_sktbuf_get();
 	int rs;
-
+    
     for(int n=0;n<10;n++){
         recv_size=recv(ev->fileno,sktbuf->data+sktbuf->end,IXC_SKTBUF_MAX-sktbuf->end,0);
 
         if(0==recv_size){
-            
+            ev_delete(&ev_set,ev);
             break;
         }
 
         if(recv<0){
             if(EAGAIN==errno) break;
+            else{
+                ev_delete(&ev_set,ev);
+            }
         }
     }
+    ixc_sktbuf_put(sktbuf);
 
 	return 0;
 }
@@ -285,6 +290,8 @@ static int iscsi_session_timeout_fn(struct ev *ev)
 
 static int iscsi_session_del_fn(struct ev *ev)
 {
+    kill(getppid(),SIGCHLD);
+    kill(getpid(),SIGINT);
 	return 0;
 }
 
@@ -309,10 +316,16 @@ int ixc_iscsi_session_create(int fd,void *sockaddr,socklen_t addrlen,int is_ipv6
         exit(EXIT_FAILURE);
     }
 
+    rs=ixc_sktbuf_init(1);
+    if(rs<0){
+        STDERR("cannot create sktbuf\r\n");
+        exit(EXIT_FAILURE);
+    }
+
     rs=ev_set_init(&ev_set,0);
     if(rs<0){
         STDERR("cannot init event\r\n");
-        exit(EXIT_SUCCESS);
+        exit(EXIT_FAILURE);
     }
 
     rs=sysloop_init();
@@ -356,10 +369,6 @@ int ixc_iscsi_session_create(int fd,void *sockaddr,socklen_t addrlen,int is_ipv6
 
 void ixc_iscsi_session_delete(void)
 {
-    const char *path=ixc_iscsid_get_pid_path();
-
     ixc_python_release();
     close(session_fd);
-
-    remove(path);
 }

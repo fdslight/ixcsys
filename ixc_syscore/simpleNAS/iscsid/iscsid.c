@@ -4,6 +4,7 @@
 #include<execinfo.h>
 #include<libgen.h>
 #include<time.h>
+#include<sys/wait.h>
 
 #include<sched.h>
 #include<arpa/inet.h>
@@ -44,11 +45,11 @@ static void ixc_segfault_info()
         fprintf(stderr,"%s\r\n",strs[n]);
     }
     free(strs);
-    exit(EXIT_FAILURE);
 }
 
 static void ixc_signal_handle(int signum)
 {
+    int _exit=1;
     switch(signum){
         case SIGINT:
             if(is_listener) {
@@ -60,7 +61,18 @@ static void ixc_signal_handle(int signum)
         case SIGSEGV:
             ixc_segfault_info();
             break;
+        case SIGCHLD:
+            if(is_listener) {
+                _exit=0;
+                wait(NULL);
+            }
+            break;
     }
+
+    if(!_exit) return;
+
+    if(!access(pid_path,F_OK)) remove(pid_path);
+    exit(EXIT_SUCCESS);
 }
 
 /// 设置运行环境
@@ -102,6 +114,7 @@ static void ixc_listen_start(const char *addr,int debug)
 
     signal(SIGSEGV,ixc_signal_handle);
     signal(SIGINT,ixc_signal_handle);
+    signal(SIGCHLD,ixc_signal_handle);
 
     rs=ixc_tcp_listener_init(buf,is_ipv6);
 
@@ -127,7 +140,6 @@ static void ixc_listen_stop(void)
     pid_t pid=pfile_read(pid_path);
 
     if(pid<0) return;
-    if(!access(pid_path,F_OK)) remove(pid_path);
 
     kill(pid,SIGINT);
 }
