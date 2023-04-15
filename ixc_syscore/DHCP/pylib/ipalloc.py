@@ -65,12 +65,16 @@ class alloc(object):
         self.__is_ipv6 = is_ipv6
         self.__subnet = subnet
 
-    def bind_ipaddr(self, hwaddr: str, ipaddr: str):
+    def bind_ipaddr(self, hwaddr: str, ipaddr: str, force_bind=False):
         """绑定IP地址
         :param hwaddr,硬件地址
         :param ipaddr,IP地址
         """
         # 检查有无存在冲突
+        if force_bind:
+            self.__bind[hwaddr] = ipaddr
+            return
+
         flags = False
         for tmp_hwaddr, tmp_ipaddr in self.__bind.items():
             if tmp_ipaddr == ipaddr:

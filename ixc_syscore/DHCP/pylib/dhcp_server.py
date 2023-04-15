@@ -531,5 +531,5 @@ class dhcp_server(object):
             hwaddr = _dict["hwaddr"]
             ipaddr = _dict["address"]
 
-            self.__alloc.bind_ipaddr(hwaddr.lower(), ipaddr)
+            self.__alloc.bind_ipaddr(hwaddr.lower(), ipaddr, force_bind=True)
             self.__ip_binds[hwaddr] = ipaddr
