@@ -394,6 +394,7 @@ class dhcp_server(object):
             ''''''
         if conflict:
             del self.__tmp_alloc_addrs[hwaddr]
+            self.__alloc.unbind_ipaddr(hwaddr)
 
     def set_timeout(self, timeout: int):
         """设置DHCP IP超时时间
