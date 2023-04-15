@@ -71,16 +71,14 @@ class alloc(object):
         :param ipaddr,IP地址
         """
         # 检查有无存在冲突
-        """
         flags = False
         for tmp_hwaddr, tmp_ipaddr in self.__bind.items():
             if tmp_ipaddr == ipaddr:
                 flags = True
                 break
             ''''''
-        """
-        #if not flags: self.__bind[hwaddr] = ipaddr
-        self.__bind[hwaddr] = ipaddr
+
+        if not flags: self.__bind[hwaddr] = ipaddr
 
     def unbind_ipaddr(self, hwaddr: str):
         if hwaddr not in self.__bind: return
