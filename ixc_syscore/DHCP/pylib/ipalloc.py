@@ -39,6 +39,7 @@ def ipaddr_plus_plus(byte_addr: bytes):
 class alloc(object):
     # IP 地址与MAC地址的绑定
     __bind = None
+    __bind_reverse = None
 
     __begin_addr = None
     __end_addr = None
@@ -52,6 +53,7 @@ class alloc(object):
 
     def __init__(self, addr_begin: str, addr_end: str, subnet: str, prefix: int, is_ipv6=False):
         self.__bind = {}
+        self.__bind_reverse = {}
 
         if is_ipv6:
             fa = socket.AF_INET6
@@ -65,12 +67,17 @@ class alloc(object):
         self.__is_ipv6 = is_ipv6
         self.__subnet = subnet
 
-    def bind_ipaddr(self, hwaddr: str, ipaddr: str):
+    def bind_ipaddr(self, hwaddr: str, ipaddr: str, force_bind=False):
         """绑定IP地址
         :param hwaddr,硬件地址
         :param ipaddr,IP地址
         """
         # 检查有无存在冲突
+        if force_bind:
+            self.__bind[hwaddr] = ipaddr
+            self.__bind_reverse[ipaddr] = hwaddr
+            return
+
         flags = False
         for tmp_hwaddr, tmp_ipaddr in self.__bind.items():
             if tmp_ipaddr == ipaddr:
@@ -78,12 +85,15 @@ class alloc(object):
                 break
             ''''''
 
-        if not flags: self.__bind[hwaddr] = ipaddr
+        if not flags:
+            self.__bind[hwaddr] = ipaddr
+            self.__bind_reverse[ipaddr] = hwaddr
 
     def unbind_ipaddr(self, hwaddr: str):
         if hwaddr not in self.__bind: return
         ipaddr = self.__bind[hwaddr]
         del self.__bind[hwaddr]
+        del self.__bind_reverse[ipaddr]
 
     def get_ipaddr(self, hwaddr: str):
         if hwaddr:
@@ -99,7 +109,7 @@ class alloc(object):
                 self.__cur_byte_addr = self.__begin_addr
                 return None
             addr = socket.inet_ntop(fa, self.__cur_byte_addr)
-            if addr in self.__bind:
+            if addr in self.__bind_reverse:
                 byte_addr = ipaddr_plus_plus(self.__cur_byte_addr)
                 self.__cur_byte_addr = byte_addr
                 continue

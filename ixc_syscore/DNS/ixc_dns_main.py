@@ -93,6 +93,8 @@ class service(dispatcher.dispatcher):
     __up_dns_record_time = None
     __up_wan_ready_time = None
     __up_autoset_icmpv6_dns_time = None
+    # 自动检查os resolv时间
+    __up_check_os_resolv_time = None
     # IPv6管理地址
     __ip6_mngaddr = None
 
@@ -115,6 +117,7 @@ class service(dispatcher.dispatcher):
         self.__up_dns_record_time = time.time()
         self.__up_wan_ready_time = time.time()
         self.__up_autoset_icmpv6_dns_time = time.time()
+        self.__up_check_os_resolv_time = time.time()
 
         self.__scgi_fd = -1
         self.__cur_dns_id = 1
@@ -485,6 +488,12 @@ class service(dispatcher.dispatcher):
         if now - self.__up_autoset_icmpv6_dns_time > 60:
             self.auto_set_ipv6_dns()
             self.__up_autoset_icmpv6_dns_time = now
+
+        # 一些Linux自带的软件在更新后会刷新/etc/resolv.conf文件
+        # 因此这里需要定期检查改回来
+        if now - self.__up_check_os_resolv_time > 60:
+            self.add_ns_os_resolv()
+            self.__up_check_os_resolv_time = now
 
 
 def main():
