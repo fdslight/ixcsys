@@ -94,7 +94,8 @@ def build_config_args(insert_s: str, _list: list):
 
 
 def __build(build_name, args: list):
-    if build_name not in __builds:
+    # 调试netguard
+    if build_name not in __builds and build_name != "netguard":
         print("ERROR:not found build name %s" % build_name)
         return
 
