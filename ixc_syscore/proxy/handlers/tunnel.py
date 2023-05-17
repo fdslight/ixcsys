@@ -97,7 +97,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             self.connect((server_ip, server_address[1]), timeout=8)
             logging.print_general("connecting", server_address)
         except socket.gaierror:
-            logging.print_general("not_found_host", server_address)
+            logging.print_error("not_found_host %s" % server_address[0])
             return False
 
         self.__server_address = server_address
@@ -160,7 +160,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
     def tcp_timeout(self):
         if not self.is_conn_ok():
             self.dispatcher.tunnel_conn_fail()
-            logging.print_general("connecting_timeout", self.__server_address)
+            logging.print_error("connecting_timeout  %s,%s" % self.__server_address)
             self.delete_handler(self.fileno)
             return
 
@@ -272,7 +272,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             self.add_evt_write(self.fileno)
         except ssl.SSLZeroReturnError:
             self.delete_handler(self.fileno)
-            logging.print_general("SSL handshake fail", self.__server_address)
+            logging.print_error("SSL handshake fail %s,%s" % self.__server_address)
         except:
             logging.print_error()
             self.delete_handler(self.fileno)
@@ -335,7 +335,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         p = data.find(b"\r\n\r\n")
 
         if p < 10 and size > 2048:
-            logging.print_general("wrong_http_response_header", self.__server_address)
+            logging.print_error("wrong_http_response_header %s,%s" % self.__server_address)
             self.delete_handler(self.fileno)
             return
 
@@ -351,26 +351,27 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         try:
             resp, kv_pairs = httputils.parse_http1x_response_header(s)
         except httputils.Http1xHeaderErr:
-            logging.print_general("wrong_http_reponse_header", self.__server_address)
+            logging.print_error("wrong_http_reponse_header %s,%s" % self.__server_address)
             self.delete_handler(self.fileno)
             return
 
         version, status = resp
 
         if status.find("101") != 0:
-            logging.print_general("https_handshake_error:%s" % status, self.__server_address)
+            logging.print_error("https_handshake_error:%s  %s,%s" % (status, self.__server_address[0],
+                                                                     self.__server_address[1],))
             self.delete_handler(self.fileno)
             return
 
         accept_key = self.get_http_kv_pairs("sec-websocket-accept", kv_pairs)
         if wslib.gen_handshake_key(self.__http_handshake_key) != accept_key:
-            logging.print_general("https_handshake_error:wrong websocket response key", self.__server_address)
+            logging.print_error("https_handshake_error:wrong websocket response key %s,%s" % self.__server_address)
             self.delete_handler(self.fileno)
             return
 
         auth_id = self.get_http_kv_pairs("x-auth-id", kv_pairs)
         if hashlib.sha256(self.__http_auth_id.encode()).hexdigest() != auth_id:
-            logging.print_general("wrong_auth_id", self.__server_address)
+            logging.print_error("wrong_auth_id %s,%s" % self.__server_address)
             self.delete_handler(self.fileno)
             return
 
@@ -442,7 +443,7 @@ class udp_tunnel(udp_handler.udp_handler):
         try:
             self.connect((server_ip, server_address[1]))
         except socket.gaierror:
-            logging.print_general("not_found_host", server_address)
+            logging.print_error("not_found_host %s" % server_address[0])
             return False
 
         self.__server_address = server_address
