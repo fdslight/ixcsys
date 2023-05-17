@@ -205,7 +205,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
 
     def tcp_timeout(self):
         if not self.is_conn_ok():
-            logging.print_general("conn_fail", self.__address)
+            logging.print_error("conn_fail %s,%s" % self.__address)
             self.delete_handler(self.fileno)
             return
 
@@ -254,12 +254,12 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         try:
             priv_key, msg = self.__decrypt.unwrap_tcp_body(self.reader.read(self.__payload_len), self.__crc32)
         except racs.TCPPktWrong:
-            logging.print_general("WRONG_NETPKT", self.__address)
+            logging.print_error("WRONG_NETPKT %s,%s" % self.__address)
             self.delete_handler(self.fileno)
             return
         self.__header_ok = False
         if priv_key != self.__priv_key:
-            logging.print_general("WRONG_PRIV_KEY", self.__address)
+            logging.print_error("WRONG_PRIV_KEY %s,%s" % self.__address)
             self.delete_handler(self.fileno)
             return
         self.__update_time = time.time()
