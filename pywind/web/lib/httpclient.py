@@ -577,6 +577,11 @@ class client(object):
         self.__sent.append(body_data)
 
 
+class h2client(object):
+    def __init__(self):
+        pass
+
+
 """
 import socket
 
