@@ -67,6 +67,9 @@ class alloc(object):
         self.__is_ipv6 = is_ipv6
         self.__subnet = subnet
 
+    def is_subnet(self, address: str):
+        return netutils.is_subnet(address, self.__prefix, self.__subnet)
+
     def bind_ipaddr(self, hwaddr: str, ipaddr: str, force_bind=False):
         """绑定IP地址
         :param hwaddr,硬件地址

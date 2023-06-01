@@ -292,21 +292,27 @@ class dhcp_server(object):
         if not request_ip: return
         # 检查是否是本机器的DHCP请求
         # if server_id != self.__my_ipaddr: return
+        if len(request_ip) != 4: return
+        is_subnet = self.__alloc.is_subnet(socket.inet_ntop(socket.AF_INET, request_ip))
+        neg_ok = is_subnet
 
-        resp_opts.append((53, bytes([5])))
+        if is_subnet:
+            resp_opts.append((53, bytes([5])))
+        else:
+            resp_opts.append((53, bytes([6])))
         self.add_boot_file(opts, request_list, resp_opts)
         resp_opts += self.get_resp_opts_from_request_list(opts, request_list)
 
         self.__dhcp_builder.yiaddr = request_ip
 
-        # 设置DHCP协商成功
-        o["neg_ok"] = True
+        # 设置DHCP协商状态
+        o["neg_ok"] = neg_ok
         # 更新时间
         o["time"] = time.time()
         if host_name:
             o["host_name"] = host_name
 
-        self.__alloc.bind_ipaddr(s_client_hwaddr, o["ip"])
+        if neg_ok: self.__alloc.bind_ipaddr(s_client_hwaddr, o["ip"])
         # self.__dhcp_builder.set_boot(self.__hostname, self.__boot_file)
 
         self.dhcp_msg_send(resp_opts)
