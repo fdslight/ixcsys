@@ -253,6 +253,17 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             logging.print_error()
             self.delete_handler(self.fileno)
 
+    def check_cert_is_expired(self):
+        peer_cert = self.socket.getpeercert()
+        expire_time = peer_cert["notAfter"]
+        t = time.strptime(expire_time, "%b %d %H:%M:%S %Y %Z")
+        expire_secs = time.mktime(t)
+        now = time.time()
+
+        if now > expire_secs: return True
+
+        return False
+
     def do_ssl_handshake(self):
         try:
             self.socket.do_handshake()
@@ -262,7 +273,11 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             if self.__strict_https:
                 cert = self.socket.getpeercert()
                 ssl.match_hostname(cert, self.__https_sni_host)
-
+                if self.check_cert_is_expired():
+                    logging.print_error("SSL handshake fail %s,%s;certificate is expired" % self.__server_address)
+                    self.delete_handler(self.fileno)
+                    return
+                ''''''
             logging.print_general("TLS_handshake_ok", self.__server_address)
             self.add_evt_read(self.fileno)
             self.send_handshake()
