@@ -94,21 +94,22 @@ def config_default(debug=False):
     fdst.close()
     cmd = cmd.replace("-I", "")
     cmd = cmd.replace("\n", "")
-    lib_dirs = cmd.replace("include", "lib").split(" ")
+    _lib_dirs = cmd.replace("include", "lib").split(" ")
+    lib_dirs=[]
+    libname="python3"
 
-    for s in lib_dirs:
+    for s in _lib_dirs:
         p = s.find("/python")
         if p <= 0: continue
         lib_dirs.append(s[0:p])
+        p+=1
+        libname=s[p:]
 
     includes = cmd.split(" ")
 
-    _list = lib_dirs[0].split("/")
-    lib_name = _list.pop()
-
     build_config = {"debug": debug,
                     "c_includes": includes,
-                    "libs": [lib_name],
+                    "libs": [libname],
                     "lib_dirs": lib_dirs
                     }
 
