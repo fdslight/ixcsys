@@ -95,6 +95,12 @@ def config_default(debug=False):
     cmd = cmd.replace("-I", "")
     cmd = cmd.replace("\n", "")
     lib_dirs = cmd.replace("include", "lib").split(" ")
+
+    for s in lib_dirs:
+        p = s.find("/python")
+        if p <= 0: continue
+        lib_dirs.append(s[0:p])
+
     includes = cmd.split(" ")
 
     _list = lib_dirs[0].split("/")
