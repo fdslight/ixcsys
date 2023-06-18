@@ -1223,7 +1223,15 @@ static void ixc_set_run_env(char *argv[])
 
     strcpy(rpc_path,"/tmp/ixcsys/router/rpc.sock");
 
+#if PY_MINOR_VERSION >= 11
+    PyStatus status;
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    config.program_name=program;
+#else
     Py_SetProgramName(program);
+#endif
 }
 
 static int ixc_init_python(int debug)
