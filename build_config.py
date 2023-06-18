@@ -104,9 +104,13 @@ def config_default(debug=False):
         lib_dirs.append(s[0:p])
         p+=1
         libname=s[p:]
-    lib_dirs.pop(0)
 
-    includes = cmd.split(" ")
+    _includes = cmd.split(" ")
+    includes=[]
+    for s in _includes:
+        s=s.strip()
+        if not s:continue
+        includes.append(s)
 
     build_config = {"debug": debug,
                     "c_includes": includes,
