@@ -1210,7 +1210,7 @@ static int ixc_rpc_fn_req(const char *name,void *arg,unsigned short arg_size,voi
 /// 设置运行环境
 static void ixc_set_run_env(char *argv[])
 {
-    wchar_t *program = Py_DecodeLocale(argv[0], NULL);
+    //wchar_t *program = Py_DecodeLocale(argv[0], NULL);
 
     strcpy(pid_path,"/tmp/ixcsys/router/router_core.pid");
 
@@ -1222,14 +1222,14 @@ static void ixc_set_run_env(char *argv[])
     dirname(run_dir);
 
     strcpy(rpc_path,"/tmp/ixcsys/router/rpc.sock");
-
+/*
 #if PY_MINOR_VERSION >= 11
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
     config.program_name=program;
 #else
     Py_SetProgramName(program);
-#endif
+#endif**/
 }
 
 static int ixc_init_python(int debug)
