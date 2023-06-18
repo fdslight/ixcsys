@@ -104,6 +104,7 @@ def config_default(debug=False):
         lib_dirs.append(s[0:p])
         p+=1
         libname=s[p:]
+    lib_dirs.pop(0)
 
     includes = cmd.split(" ")
 
