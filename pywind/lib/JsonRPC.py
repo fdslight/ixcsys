@@ -35,6 +35,24 @@ class RPCErr(Exception):
     pass
 
 
+class _ModuleObject(object):
+    __rpc_inst = None
+    __module_name = None
+    __func_name = None
+
+    def __init__(self, rpc_inst, module_name):
+        self.__rpc_inst = rpc_inst
+        self.__module_name = module_name
+
+    def __fn(self, *args, **kwargs):
+        self.__rpc_inst.send_rpc_request("aaa", self.__module_name, self.__func_name, *args, **kwargs)
+
+    def __getattr__(self, item):
+        self.__func_name = item
+
+        return self.__fn
+
+
 class JsonRPC(object):
     __reader = None
 
@@ -52,6 +70,8 @@ class JsonRPC(object):
     __errcode = None
     __type = None
 
+    __root_module = None
+
     def __init__(self, *args, **kwargs):
         self.__reader = reader.reader()
         self.__rpc_functions = {}
@@ -61,6 +81,9 @@ class JsonRPC(object):
         self.__heartbeat_time = 30
         self.__parse_header_ok = False
         self.__payload_length = 0
+        self.__root_module = _ModuleObject(self, "root")
+
+        self.reg_fn("root", "module_exists", self.__rpc_fn_module_exists)
 
         self.my_init(*args, **kwargs)
 
@@ -83,18 +106,58 @@ class JsonRPC(object):
         return frame
 
     def __build_request(self, module_name: str, fn_name: str, *args, **kwargs):
-        pass
+        o = {
+            "id": "---",
+            "module_name": module_name,
+            "fn_name": fn_name,
+            "args": args,
+            "kwargs": kwargs,
+        }
+        s = json.dumps(o)
+        frame = self.__build_data_frame(RPC_REQ, 0, s.encode())
 
-    def handle_auth_request(self, *args, **kwargs):
-        """处理认证请求,重写这个方法
-        """
-        return False
+        return frame
+
+    def __send_rpc_response(self, _id, result, is_error=False):
+        o = {
+            "id": _id,
+            "is_error": is_error,
+            "result": result
+        }
+
+        self.__send(RPC_RESP, 0, json.dumps(o).encode())
 
     def __handle_rpc_request(self, json_obj: object):
-        pass
+        _id = json_obj["id"]
+        module_name = json_obj["module_name"]
+        fn_name = json_obj["fn_name"]
+
+        if module_name not in self.__rpc_functions:
+            s = "module %s not found" % module_name
+            self.__send_rpc_response(_id, s, is_error=True)
+            return
+
+        o = json_obj[module_name]
+        if fn_name not in o:
+            s = "function %s not found from module" % (fn_name, module_name,)
+            self.__send_rpc_response(_id, s, is_error=True)
+            return
+
+        fn = o[fn_name]
+
+        try:
+            return_value = fn(*json_obj["args"], **json_obj["kwargs"])
+        except:
+            return
+
+        self.__send_rpc_response(_id, return_value, is_error=False)
 
     def __handle_rpc_response(self, json_obj: object):
-        pass
+        _id = json_obj["id"]
+        result = json_obj["result"]
+
+    def __rpc_fn_module_exists(self, _id, module_name: str):
+        return False, True
 
     def set_max_data_unit(self, max_size: int):
         if max_size < MAX_DATA_UNIT_SIZE:
@@ -124,11 +187,13 @@ class JsonRPC(object):
         self.__payload_length = payload_length
 
     def __send_pong(self):
-        frame = self.__build_data_frame(RPC_PONG, 0, os.urandom(16))
-        self.wrap_frame_for_send(frame)
+        self.__send(RPC_PONG, 0, os.urandom(16))
 
     def __send_ping(self):
-        frame = self.__build_data_frame(RPC_PING, 0, os.urandom(16))
+        frame = self.__send(RPC_PING, 0, os.urandom(16))
+
+    def __send(self, _type: int, errcode: int, message: bytes):
+        frame = self.__build_data_frame(_type, errcode, message)
         self.wrap_frame_for_send(frame)
 
     def __parse_body(self):
@@ -185,13 +250,17 @@ class JsonRPC(object):
         if not isinstance(o, dict):
             return False
 
-        keys = ("id", "result",)
+        keys = ("id", "result", "is_error",)
 
         for k, v in o.items():
             if k not in keys:
                 return False
             ''''''
         return True
+
+    def send_rpc_request(self, _id, module_name, fn_name, *args, **kwargs):
+        frame = self.__build_request(module_name, fn_name, *args, **kwargs)
+        print(frame)
 
     def parse_data(self, byte_data: bytes):
         self.__reader._putvalue(byte_data)
@@ -204,13 +273,15 @@ class JsonRPC(object):
             raise RPCErr("function %s exists at module %s" % (fn_name, module_name,))
         o[fn_name] = f
 
-    def set_auth_enable(self, enable: bool):
-        """启用或者关闭认证
-        """
-        self.__enable_auth = enable
+    def get_call_object(self, name: str, async_mode=False):
+        if name == "root": return self.__root_module
+        if async_mode: return _ModuleObject(self, name)
 
-    def request_auth(self, *args, **kwargs):
-        pass
+        if not self.__root_module.module_exists(name):
+            raise RPCErr("not found module %s" % name)
 
-    def get_call_object(self, name: str):
-        pass
+        return _ModuleObject(self, name)
+
+
+cls = JsonRPC()
+obj = cls.get_call_object("test")
