@@ -91,7 +91,9 @@ class tcp_tunnel(tcp_handler.tcp_handler):
 
     def create_tunnel(self, server_address):
         server_ip = self.dispatcher.get_proxy_server_ip(server_address[0])
-        if not server_ip: return False
+        if not server_ip:
+            logging.print_error("DNS_QUERY_ERROR %s" % server_address[0])
+            return False
 
         try:
             self.connect((server_ip, server_address[1]), timeout=8)
@@ -453,7 +455,9 @@ class udp_tunnel(udp_handler.udp_handler):
     def create_tunnel(self, server_address):
         server_ip = self.dispatcher.get_proxy_server_ip(server_address[0])
 
-        if not server_ip: return False
+        if not server_ip:
+            logging.print_error("DNS_QUERY_ERROR %s" % server_address[0])
+            return False
 
         try:
             self.connect((server_ip, server_address[1]))

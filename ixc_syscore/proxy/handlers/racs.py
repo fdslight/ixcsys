@@ -58,7 +58,9 @@ class udp_tunnel(udp_handler.udp_handler):
     def create_tunnel(self):
         server_ip = self.dispatcher.get_racs_server_ip(self.__address[0])
 
-        if not server_ip: return False
+        if not server_ip:
+            logging.print_error("DNS_QUERY_FAIL %s" % self.__address[0])
+            return False
 
         self.__server_address = (server_ip, self.__address[1],)
         self.__tunnel_ok = True
@@ -170,7 +172,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         server_ip = self.dispatcher.get_racs_server_ip(self.__address[0])
 
         if not server_ip:
-            logging.print_general("DNS_NOT_FOUND", self.__address)
+            logging.print_error("DNS_QUERY_FAIL %s" % self.__address[0])
             s.close()
             return -1
 

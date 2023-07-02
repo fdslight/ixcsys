@@ -119,6 +119,10 @@ class service(dispatcher.dispatcher):
     __racs_byte_network_v4 = None
     __racs_byte_network_v6 = None
 
+    # DNS查询是否故障,设置标志,防止阻塞
+    __dns_query_tunnel_is_error = None
+    __dns_query_racs_is_error = None
+
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
 
@@ -135,6 +139,8 @@ class service(dispatcher.dispatcher):
         self.__enable = False
         self.__racs_configs = {}
         self.__racs_fd = -1
+        self.__dns_query_tunnel_is_error = False
+        self.__dns_query_racs_is_error = False
 
         RPCClient.wait_processes(["router", "DNS", ])
 
@@ -368,7 +374,10 @@ class service(dispatcher.dispatcher):
 
         network["enable_ip6"] = int(network["enable_ip6"])
 
+        self.__dns_query_racs_is_error = False
+
         conf.save_to_ini(cfg, fpath)
+
         self.reset_racs()
 
     def tell_racs_close(self):
@@ -431,8 +440,9 @@ class service(dispatcher.dispatcher):
         network = self.__racs_configs["network"]
 
         # 检查功能是否开启
-        if not conn["enable"]:
-            return
+        if not conn["enable"]: return
+
+        if self.__dns_query_racs_is_error: return
 
         # 默认使用UDP隧道协议
         tunnel_type = conn.get("tunnel_type", "udp").lower()
@@ -486,6 +496,7 @@ class service(dispatcher.dispatcher):
     def conn_cfg_update(self, dic: dict):
         fpath = "%s/proxy.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         conf.save_to_ini(dic, fpath)
+        self.__dns_query_tunnel_is_error = False
         self.load_configs()
         self.reset()
 
@@ -657,7 +668,7 @@ class service(dispatcher.dispatcher):
     def send_msg_to_tunnel(self, action: int, message: bytes):
         if not self.__enable: return
         if not self.handler_exists(self.__conn_fd):
-            self.__open_tunnel()
+            if not self.__dns_query_tunnel_is_error: self.__open_tunnel()
         if not self.handler_exists(self.__conn_fd): return
 
         if action != proto_utils.ACT_IPDATA:
@@ -771,11 +782,17 @@ class service(dispatcher.dispatcher):
         if ipaddr:
             self.__server_ip = ipaddr
             RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", ipaddr, enable_ipv6)
+        else:
+            self.__dns_query_tunnel_is_error = True
+
         return ipaddr
 
     def get_racs_server_ip(self, host):
         enable_ipv6 = self.__racs_configs["connection"]["enable_ip6"]
         ipaddr = self.get_server_ip(host, enable_ipv6=enable_ipv6)
+
+        if not ipaddr:
+            self.__dns_query_racs_is_error = True
 
         return ipaddr
 
@@ -788,6 +805,8 @@ class service(dispatcher.dispatcher):
         if netutils.is_ipv6_address(host): return host
 
         resolver = dns.resolver.Resolver()
+        resolver.timeout = 5
+        resolver.lifetime = 5
 
         try:
             if enable_ipv6:

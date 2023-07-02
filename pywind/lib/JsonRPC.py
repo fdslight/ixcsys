@@ -10,7 +10,7 @@ errcode:4 byte , 故障码,0表示未发生故障,否则表示发生错误
 
 """
 
-import struct, json, socket, os, time
+import struct, json, socket, os, time, random
 
 import pywind.lib.reader as reader
 
@@ -35,24 +35,6 @@ class RPCErr(Exception):
     pass
 
 
-class _ModuleObject(object):
-    __rpc_inst = None
-    __module_name = None
-    __func_name = None
-
-    def __init__(self, rpc_inst, module_name):
-        self.__rpc_inst = rpc_inst
-        self.__module_name = module_name
-
-    def __fn(self, *args, **kwargs):
-        self.__rpc_inst.send_rpc_request("aaa", self.__module_name, self.__func_name, *args, **kwargs)
-
-    def __getattr__(self, item):
-        self.__func_name = item
-
-        return self.__fn
-
-
 class JsonRPC(object):
     __reader = None
 
@@ -70,7 +52,9 @@ class JsonRPC(object):
     __errcode = None
     __type = None
 
-    __root_module = None
+    __call_ids = None
+
+    __async_mode = None
 
     def __init__(self, *args, **kwargs):
         self.__reader = reader.reader()
@@ -81,11 +65,34 @@ class JsonRPC(object):
         self.__heartbeat_time = 30
         self.__parse_header_ok = False
         self.__payload_length = 0
-        self.__root_module = _ModuleObject(self, "root")
-
-        self.reg_fn("root", "module_exists", self.__rpc_fn_module_exists)
+        self.__call_ids = {}
+        self.__async_mode = False
 
         self.my_init(*args, **kwargs)
+
+    def __rand_string(self, size=32):
+        s = "1234567890QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm"
+        max_v = len(s) - 1
+        results = []
+
+        for i in range(size):
+            n = random.randint(0, max_v)
+            results.append(s[n])
+
+        return "".join(results)
+
+    def __gen_id(self):
+        is_ok = False
+        for i in range(10):
+            _id = self.__rand_string()
+            if _id in self.__call_ids: continue
+            is_ok = True
+            break
+
+        if not is_ok:
+            raise RPCErr("cannot generate RPC request id")
+
+        return _id
 
     def my_init(self, *args, **kwargs):
         """重写这个方法
@@ -105,9 +112,9 @@ class JsonRPC(object):
 
         return frame
 
-    def __build_request(self, module_name: str, fn_name: str, *args, **kwargs):
+    def __build_request(self, _id, module_name: str, fn_name: str, *args, **kwargs):
         o = {
-            "id": "---",
+            "id": _id,
             "module_name": module_name,
             "fn_name": fn_name,
             "args": args,
@@ -154,7 +161,20 @@ class JsonRPC(object):
 
     def __handle_rpc_response(self, json_obj: object):
         _id = json_obj["id"]
+
+        if _id not in self.__call_ids: return
+
         result = json_obj["result"]
+        is_error = json_obj["is_error"]
+
+        if is_error:
+            raise RPCErr(result)
+
+        o = self.__call_ids[_id]
+
+        if o["type"] == "sync": return True, result
+
+        return False, None
 
     def __rpc_fn_module_exists(self, _id, module_name: str):
         return False, True
@@ -228,7 +248,7 @@ class JsonRPC(object):
         if not self.__check_rpc_response_format(json_obj):
             raise RPCErr("wrong RPC response format")
 
-        self.__handle_rpc_response(json_obj)
+        return self.__handle_rpc_response(json_obj)
 
     def __check_rpc_request_format(self, o: object):
         if not isinstance(o, dict):
@@ -258,12 +278,49 @@ class JsonRPC(object):
             ''''''
         return True
 
-    def send_rpc_request(self, _id, module_name, fn_name, *args, **kwargs):
-        frame = self.__build_request(module_name, fn_name, *args, **kwargs)
-        print(frame)
+    def send_rpc_request(self, module_name, fn_name, *args, **kwargs):
+        # 同步模式下ID可以不做要求
+        _id = self.__gen_id()
+        self.__call_ids[_id] = {"type": "sync", "args": None, "kwargs": None, "fn": None}
+        frame = self.__build_request(_id, module_name, fn_name, *args, **kwargs)
+
+        self.wrap_frame_for_send(frame)
+        result = self.handle_peer_message()
+
+        return result
+
+    def async_send_rpc_request(self, module_name, fn_name, cb, cb_args, cb_kwargs, *args, **kwargs):
+        _id = self.__gen_id()
+        self.__call_ids[_id] = {"type": "async", "args": cb_args, "kwargs": cb_kwargs, "fn": cb}
+        frame = self.__build_request(_id, module_name, fn_name, *args, **kwargs)
+
+        self.wrap_frame_for_send(frame)
 
     def parse_data(self, byte_data: bytes):
         self.__reader._putvalue(byte_data)
+
+        while 1:
+            if not self.__parse_header_ok and self.__reader.size() < HEADER_SIZE: break
+            if not self.__parse_header_ok:
+                self.__parse_header()
+            if not self.__parse_header_ok: break
+            if self.__payload_length < self.__reader.size(): break
+            rs = self.__parse_body()
+            if not rs: continue
+            is_sync, result = rs
+            if is_sync:
+                return result
+
+    def set_async_mode(self, enable: bool):
+        """设置是否作为异步模式
+        """
+        self.__async_mode = enable
+
+    def handle_peer_message(self):
+        """获取对端消息,重写这个方法,函数返回RPC结果
+        """
+        byte_data = b""
+        return self.parse_data(byte_data)
 
     def reg_fn(self, module_name: str, fn_name, f: object):
         if module_name not in self.__rpc_functions:
@@ -273,15 +330,14 @@ class JsonRPC(object):
             raise RPCErr("function %s exists at module %s" % (fn_name, module_name,))
         o[fn_name] = f
 
-    def get_call_object(self, name: str, async_mode=False):
-        if name == "root": return self.__root_module
-        if async_mode: return _ModuleObject(self, name)
+    def call_fn(self, module_name, fn_name, *args, **kwargs):
+        if self.__async_mode:
+            raise RPCErr("async mode cannot call remote funciton by this function")
+        result = self.send_rpc_request(module_name, fn_name, *args, **kwargs)
 
-        if not self.__root_module.module_exists(name):
-            raise RPCErr("not found module %s" % name)
+        return result
 
-        return _ModuleObject(self, name)
-
-
-cls = JsonRPC()
-obj = cls.get_call_object("test")
+    def async_call_fn(self, module_name, fn_name, cb, cb_args, cb_kwargs, *args, **kwargs):
+        if not self.__async_mode:
+            raise RPCErr("sync mode cannot call remote funciton by this function")
+        self.async_send_rpc_request(module_name, fn_name, cb, cb_args, cb_kwargs, *args, **kwargs)
