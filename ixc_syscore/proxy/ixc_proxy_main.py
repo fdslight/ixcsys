@@ -805,10 +805,17 @@ class service(dispatcher.dispatcher):
         if netutils.is_ipv6_address(host): return host
 
         resolver = dns.resolver.Resolver()
+
         resolver.timeout = 5
         resolver.lifetime = 5
 
         try:
+            if enable_ipv6:
+                rs = resolver.resolve(host, "AAAA")
+            else:
+                rs = resolver.resolve(host, "A")
+        # API回退
+        except AttributeError:
             if enable_ipv6:
                 rs = resolver.query(host, "AAAA")
             else:
