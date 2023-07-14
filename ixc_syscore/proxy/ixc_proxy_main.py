@@ -123,6 +123,10 @@ class service(dispatcher.dispatcher):
     __dns_query_tunnel_is_error = None
     __dns_query_racs_is_error = None
 
+    # DNS执行重试时间
+    __dns_query_tunnel_retry_up_time = None
+    __dns_query_racs_retry_up_time = None
+
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
 
@@ -134,6 +138,8 @@ class service(dispatcher.dispatcher):
         self.__route_timer = timer.timer()
         self.__dns_map = {}
         self.__up_time = time.time()
+        self.__dns_query_tunnel_retry_up_time = time.time()
+        self.__dns_query_racs_retry_up_time = time.time()
         self.__ip_match = ip_match.ip_match()
         self.__conn_fd = -1
         self.__enable = False
@@ -427,6 +433,7 @@ class service(dispatcher.dispatcher):
         return
 
     def reset_racs(self):
+        now = time.time()
         self.clear_racs_route()
 
         if self.__racs_fd > 0:
@@ -442,8 +449,9 @@ class service(dispatcher.dispatcher):
         # 检查功能是否开启
         if not conn["enable"]: return
 
-        if self.__dns_query_racs_is_error: return
+        if self.__dns_query_racs_is_error and now - self.__dns_query_racs_retry_up_time < 300: return
 
+        self.__dns_query_racs_retry_up_time = now
         # 默认使用UDP隧道协议
         tunnel_type = conn.get("tunnel_type", "udp").lower()
         if tunnel_type not in ("tcp", "udp",):
@@ -667,8 +675,7 @@ class service(dispatcher.dispatcher):
 
     def send_msg_to_tunnel(self, action: int, message: bytes):
         if not self.__enable: return
-        if not self.handler_exists(self.__conn_fd):
-            if not self.__dns_query_tunnel_is_error: self.__open_tunnel()
+        if not self.handler_exists(self.__conn_fd): self.__open_tunnel()
         if not self.handler_exists(self.__conn_fd): return
 
         if action != proto_utils.ACT_IPDATA:
@@ -725,6 +732,7 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("router", "/config", "src_filter_set_protocols", protocol)
 
     def __open_tunnel(self):
+        now = time.time()
         conn = self.__configs["connection"]
         host = conn["host"]
         port = int(conn["port"])
@@ -734,6 +742,10 @@ class service(dispatcher.dispatcher):
         redundancy = bool(int(conn.get("udp_tunnel_redundancy", 1)))
         over_https = bool(int(conn.get("tunnel_over_https", 0)))
 
+        if self.__dns_query_tunnel_is_error and now - self.__dns_query_tunnel_retry_up_time < 300: return
+
+
+        self.__dns_query_tunnel_retry_up_time=now
         is_udp = False
 
         enable_heartbeat = bool(int(conn.get("enable_heartbeat", 0)))
@@ -780,6 +792,7 @@ class service(dispatcher.dispatcher):
         ipaddr = self.get_server_ip(host, enable_ipv6=enable_ipv6)
 
         if ipaddr:
+            self.__dns_query_tunnel_is_error = False
             self.__server_ip = ipaddr
             RPCClient.fn_call("router", "/config", "qos_set_tunnel_first", ipaddr, enable_ipv6)
         else:
@@ -793,6 +806,8 @@ class service(dispatcher.dispatcher):
 
         if not ipaddr:
             self.__dns_query_racs_is_error = True
+        else:
+            self.__dns_query_racs_is_error = False
 
         return ipaddr
 
