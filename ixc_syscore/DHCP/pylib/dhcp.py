@@ -106,8 +106,8 @@ class dhcp_parser(dhcp):
     def parse_public_header(self, public_data: bytes):
         try:
             self.op, self.hw_type, self.hw_len, self.h_ops, self.xid, self.secs, self.flags, \
-            self.ciaddr, self.yiaddr, self.siaddr, self.giaddr, \
-            self.chaddr, self.sname, self.file, magic_cookie = struct.unpack(HDR_FMT, public_data)
+                self.ciaddr, self.yiaddr, self.siaddr, self.giaddr, \
+                self.chaddr, self.sname, self.file, magic_cookie = struct.unpack(HDR_FMT, public_data)
         except struct.error:
             raise DHCPErr("wrong DHCP data")
 
@@ -169,6 +169,8 @@ class dhcp_builder(dhcp):
             raise DHCPErr("wrong DHCP data format")
 
         _list = []
+        if len(self.chaddr) != 16:
+            self.chaddr = self.chaddr + bytes(10)
 
         for code, byte_value in options:
             length = len(byte_value)

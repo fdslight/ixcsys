@@ -144,14 +144,15 @@ class dhcp_client(object):
 
         self.__dhcp_builder.reset()
         self.__dhcp_builder.xid = self.__xid
+        self.__dhcp_builder.chaddr=self.__hwaddr
 
         new_opts = [
             (53, struct.pack("!B", 3)),
             (54, dhcp_server_id),
             (12, self.__hostname.encode()),
-            (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
+            # (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
-            (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
+            (55, struct.pack("BBBBB",1, 3, 6, 28, 50))
         ]
 
         byte_data = self.__dhcp_builder.build_to_link_data(
@@ -175,12 +176,13 @@ class dhcp_client(object):
         self.__dhcp_parser.xid = self.__xid
         self.__dhcp_ip_conflict_check_ok = False
         self.__dhcp_builder.xid = self.__xid
+        self.__dhcp_builder.chaddr = self.__hwaddr
 
         options = [
             # DHCP msg type
             (53, struct.pack("b", 1)),
             # client id
-            (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
+            # (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (12, self.__hostname.encode()),
             # parameter request list
             (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
@@ -210,18 +212,19 @@ class dhcp_client(object):
         :return:
         """
         self.__dhcp_builder.reset()
-        self.__dhcp_builder.ciaddr = self.__hwaddr
+        # self.__dhcp_builder.ciaddr = self.__hwaddr
         self.__dhcp_builder.xid = self.__xid
         # 注意这里的时间要更新，避免连续发送dhcp request数据包
+        self.__dhcp_builder.chaddr = self.__hwaddr
         self.__up_time = time.time()
 
         options = [
             (53, struct.pack("!B", 3)),
-            (54, self.__dhcp_server_id),
+            #(54, self.__dhcp_server_id),
             (12, self.__hostname.encode()),
-            (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
+            # (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
-            (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
+            (55, struct.pack("BBBBB", 1, 3, 6, 28, 50))
         ]
 
         link_data = self.__dhcp_builder.build_to_link_data(
@@ -241,14 +244,15 @@ class dhcp_client(object):
         if self.__dhcp_step not in (3, 4,): return
 
         self.__dhcp_builder.reset()
-        self.__dhcp_builder.ciaddr = self.__hwaddr
+        # self.__dhcp_builder.ciaddr = self.__hwaddr
+        self.__dhcp_builder.chaddr = self.__hwaddr
         self.__dhcp_builder.xid = self.__xid
 
         new_opts = [
             (53, struct.pack("!B", 4)),
-            (54, self.__dhcp_server_id),
+            #(54, self.__dhcp_server_id),
             (12, self.__hostname.encode()),
-            (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
+            # (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
             (55, struct.pack("BBBBBB", 3, 1, 3, 6, 28, 50))
         ]
