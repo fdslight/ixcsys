@@ -220,7 +220,7 @@ class dhcp_client(object):
 
         options = [
             (53, struct.pack("!B", 3)),
-            #(54, self.__dhcp_server_id),
+            (54, self.__dhcp_server_id),
             (12, self.__hostname.encode()),
             # (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
