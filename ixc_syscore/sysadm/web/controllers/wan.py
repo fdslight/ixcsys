@@ -89,9 +89,13 @@ class controller(base_controller.BaseController):
 
         self.json_resp(False, {})
 
+    def dhcp_client_reset(self):
+        RPC.fn_call("DHCP", "/dhcp_client", "reset")
+        self.json_resp(False, {})
+
     def handle(self):
         _type = self.request.get_argument("type", is_qs=True, is_seq=False)
-        if _type not in ("pppoe", "dhcp", "static-ip",):
+        if _type not in ("pppoe", "dhcp", "static-ip", "dhcp-client-reset"):
             self.json_resp(True, "wrong request internet type")
             return
 
@@ -104,3 +108,5 @@ class controller(base_controller.BaseController):
         if _type == "static-ip":
             self.handle_static_ip()
             return
+
+        self.dhcp_client_reset()

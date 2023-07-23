@@ -26,3 +26,16 @@
         </div>
     </div>
 </form>
+        <script type="text/javascript">
+            $("#ixc-dhcp-client-reset").click(function (){
+                $.post("${self.url_prefix}/wan?type=dhcp-client-reset", {
+                }, function (result) {
+                    let is_error = result["is_error"];
+                    if (is_error) {
+                        alert(result["message"]);
+                    } else {
+                        alert("重置成功");
+                    }
+                });
+            });
+        </script>
