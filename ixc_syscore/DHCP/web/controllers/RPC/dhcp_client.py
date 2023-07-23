@@ -16,7 +16,8 @@ class controller(rpc.controller):
             "subnet_mask_get": self.subnet_mask_get,
             "broadcast_addr_get": self.broadcast_addr_get,
             "dnsserver_addr_get": self.dnsserver_addr_get,
-            "router_addr_get": self.router_addr_get
+            "router_addr_get": self.router_addr_get,
+            "reset": self.reset
         }
 
     def ip_get_ok(self):
@@ -47,3 +48,7 @@ class controller(rpc.controller):
         if not self.dhcp.client.dhcp_ok: return (0, None,)
         r = (0, self.dhcp.client.router_addr_get(),)
         return r
+
+    def reset(self):
+        self.dhcp.client.reset()
+        return 0, None
