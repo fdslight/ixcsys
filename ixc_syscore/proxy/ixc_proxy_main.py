@@ -170,7 +170,9 @@ class service(dispatcher.dispatcher):
             self.start(self.__debug)
         else:
             self.__enable = False
-            if self.__conn_fd > 0: self.delete_handler(self.__conn_fd)
+            if self.__conn_fd > 0:
+                self.delete_handler(self.__conn_fd)
+                self.__conn_fd = -1
             # 清除DNS规则
             RPCClient.fn_call("DNS", "/rule", "clear")
             # 关闭src filter
@@ -744,8 +746,7 @@ class service(dispatcher.dispatcher):
 
         if self.__dns_query_tunnel_is_error and now - self.__dns_query_tunnel_retry_up_time < 300: return
 
-
-        self.__dns_query_tunnel_retry_up_time=now
+        self.__dns_query_tunnel_retry_up_time = now
         is_udp = False
 
         enable_heartbeat = bool(int(conn.get("enable_heartbeat", 0)))
