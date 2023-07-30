@@ -165,14 +165,15 @@ class service(dispatcher.dispatcher):
         self.reset_racs()
 
     def reset(self):
+        if self.__conn_fd > 0:
+            self.delete_handler(self.__conn_fd)
+            self.__conn_fd = -1
+
         if bool(int(self.configs["connection"]["enable"])):
             self.__enable = True
             self.start(self.__debug)
         else:
             self.__enable = False
-            if self.__conn_fd > 0:
-                self.delete_handler(self.__conn_fd)
-                self.__conn_fd = -1
             # 清除DNS规则
             RPCClient.fn_call("DNS", "/rule", "clear")
             # 关闭src filter
