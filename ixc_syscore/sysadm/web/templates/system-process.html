@@ -31,7 +31,7 @@
         <tbody>
         <%
         for cpu_idx,usage in self.V["cpu_usage"]:
-            s="""<tr><td>%s</td><td>%s&nbsp;%%</td></tr>""" % (cpu_idx,usage)
+            s="""<tr><td>%s</td><td>%s&nbsp;%%</td></tr>""" % (cpu_idx.upper(),usage)
             self.show(s)
         %>
         </tbody>
