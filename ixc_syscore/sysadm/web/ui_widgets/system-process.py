@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import ixc_syslib.web.ui_widget as ui_widget
-import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.pylib.ixc_process as process
 
 
