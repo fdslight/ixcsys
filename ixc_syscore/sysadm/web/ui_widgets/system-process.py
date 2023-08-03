@@ -25,4 +25,12 @@ class widget(ui_widget.widget):
             tot_mem += mem_mb
             results.append(ps)
 
-        return True, "system-process.html", {"processes": results, "tot_used_mem": str(round(tot_mem,2))}
+        cpu_usage_list = []
+        cpu_usage = process.get_cpu_usage()
+        for cpu_idx, usage in cpu_usage:
+            v = usage * 100
+            v = round(v, 2)
+            cpu_usage_list.append((cpu_idx, v))
+
+        return True, "system-process.html", {"processes": results, "tot_used_mem": str(round(tot_mem, 2)),
+                                             "cpu_usage": cpu_usage_list}

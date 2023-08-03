@@ -20,4 +20,20 @@
             %>
         </tbody>
     </table>
+    <h4>CPU使用情况</h4>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">CPU核心</th>
+            <th scope="col">使用率</th>
+        </tr>
+        </thead>
+        <tbody>
+        <%
+        for cpu_idx,usage in self.V["cpu_usage"]:
+            s="""<tr><td>%s</td><td>%s \%</td></tr>""" % (cpu_idx,usage)
+            self.show(s)
+        %>
+        </tbody>
+    </table>
 </div>
