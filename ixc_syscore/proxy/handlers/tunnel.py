@@ -67,9 +67,9 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             context.set_alpn_protocols(["http/1.1"])
 
             if ciphers.upper() != "NULL": context.set_ciphers(ciphers)
+            if not self.__https_sni_host: self.__https_sni_host = kwargs["host"]
 
             if self.__enable_https_sni:
-                if not self.__https_sni_host: self.__https_sni_host = kwargs["host"]
                 s = context.wrap_socket(s, do_handshake_on_connect=False, server_hostname=self.__https_sni_host)
             else:
                 s = context.wrap_socket(s, do_handshake_on_connect=False)
