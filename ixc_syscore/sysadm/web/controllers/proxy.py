@@ -62,7 +62,8 @@ class controller(base_controller.BaseController):
                 "auth_id": "ixcsys",
                 "enable_https_sni": None,
                 "https_sni_host": "www.example.com",
-                "strict_https": None
+                "strict_https": None,
+                "ciphers": "NULL"
             },
             "src_filter": {
                 "enable": None,
@@ -168,6 +169,10 @@ class controller(base_controller.BaseController):
 
         if kv_map["tunnel_over_https"]["url"][0] != "/":
             self.json_resp(True, "HTTPS隧道的url值格式错误")
+            return
+
+        if kv_map["tunnel_over_https"]["ciphers"].strip() == ",":
+            self.json_resp(True, "错误的TLS加密算法")
             return
 
         if kv_map["src_filter"]["enable"]:

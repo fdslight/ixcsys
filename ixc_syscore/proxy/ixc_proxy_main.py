@@ -329,13 +329,28 @@ class service(dispatcher.dispatcher):
         enable_https_sni = bool(int(configs.get("enable_https_sni", 0)))
         https_sni_host = configs.get("https_sni_host", "")
         strict_https = bool(int(configs.get("strict_https", "0")))
+        ciphers = configs.get("ciphers", "NULL")
 
+        if ciphers.upper() != "NULL":
+            if ciphers[-1] == ",": ciphers = ciphers[0:-1]
+            ciphers = ciphers.strip()
+            if not ciphers:
+                ciphers = "NULL"
+            else:
+                _list = ciphers.split(",")
+                new_list = []
+                for s in _list:
+                    s = s.strip()
+                    new_list.append(s)
+                ciphers = ":".join(new_list)
+            ''''''
         pyo = {
             "url": configs.get("url", "/"),
             "auth_id": configs.get("auth_id", "ixcsys"),
             "enable_https_sni": enable_https_sni,
             "https_sni_host": https_sni_host,
             "strict_https": strict_https,
+            "ciphers": ciphers
         }
 
         return pyo
@@ -525,7 +540,10 @@ class service(dispatcher.dispatcher):
     def load_configs(self):
         self.__configs = conf.ini_parse_from_file(self.__conf_path)
         connection = self.__configs["connection"]
+        https_configs = self.__configs["tunnel_over_https"]
+
         if "self_no_fwd_enable" not in connection: connection["self_no_fwd_enable"] = 0
+        if "ciphers" not in https_configs: https_configs["ciphers"] = "NULL"
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
