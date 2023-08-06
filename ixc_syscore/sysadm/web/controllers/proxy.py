@@ -163,7 +163,6 @@ class controller(base_controller.BaseController):
         else:
             kv_map["tunnel_over_https"]["strict_https"] = "0"
 
-        print(kv_map["tunnel_over_https"])
         if kv_map["tunnel_over_https"]["ciphers"].strip() == ",":
             self.json_resp(True, "错误的TLS加密算法")
             return
