@@ -163,16 +163,17 @@ class controller(base_controller.BaseController):
         else:
             kv_map["tunnel_over_https"]["strict_https"] = "0"
 
+        print(kv_map["tunnel_over_https"])
+        if kv_map["tunnel_over_https"]["ciphers"].strip() == ",":
+            self.json_resp(True, "错误的TLS加密算法")
+            return
+
         if not kv_map["tunnel_over_https"]["url"]:
             self.json_resp(True, "HTTPS隧道的url不能为空")
             return
 
         if kv_map["tunnel_over_https"]["url"][0] != "/":
             self.json_resp(True, "HTTPS隧道的url值格式错误")
-            return
-
-        if kv_map["tunnel_over_https"]["ciphers"].strip() == ",":
-            self.json_resp(True, "错误的TLS加密算法")
             return
 
         if kv_map["src_filter"]["enable"]:
