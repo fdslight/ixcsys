@@ -173,8 +173,6 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的TLS加密算法")
             return
 
-        if not ciphers:
-
         if not kv_map["tunnel_over_https"]["url"]:
             self.json_resp(True, "HTTPS隧道的url不能为空")
             return
