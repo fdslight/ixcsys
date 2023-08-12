@@ -25,7 +25,6 @@ static void __ixc_traffic_log_send(struct ixc_traffic_log *log);
 static void __ixc_traffic_log_sysloop_cb(struct sysloop *lp)
 {
     //DBG_FLAGS;
-    // 执行时间函数,定期检查NAT会话是否过期
     time_wheel_handle(&traffic_log_time_wheel);
 }
 
