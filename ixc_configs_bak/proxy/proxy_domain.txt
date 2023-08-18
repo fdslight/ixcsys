@@ -90,6 +90,7 @@ goo.gl:1
 *.parler.com:1
 *.gab.com:1
 *.twitch.tv:1
+*.openai.com:1
 *.discord.com:1
 *.discordapp.net:1
 
