@@ -181,6 +181,8 @@ class service(dispatcher.dispatcher):
         if fstat.st_size > self.__errlog_file_max_size:
             fdst = open(self.__errlog_path, "w")
             fdst.close()
+        return
+
     def release(self):
         if self.__log_fd > 0: self.delete_handler(self.__log_fd)
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
