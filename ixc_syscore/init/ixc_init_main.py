@@ -68,6 +68,9 @@ class service(dispatcher.dispatcher):
     __syslog_path = None
     __scgi_fd = None
 
+    # 故障日志最大文件大小(bytes)
+    __errlog_file_max_size = None
+
     def init_func(self, debug):
         global_vars["ixcsys.init"] = self
 
@@ -79,6 +82,9 @@ class service(dispatcher.dispatcher):
         self.__errlog_path = "/var/log/ixcsys_error.log"
         self.__syslog_path = "/var/log/ixcsys_syslog.log"
 
+        # 限制最大为1MB
+        self.__errlog_file_max_size = 1 * 1024 * 1024
+
         self.create_poll()
         self.start_scgi()
         self.log_start()
@@ -87,7 +93,7 @@ class service(dispatcher.dispatcher):
         self.__log_fd = self.create_handler(-1, syslog.syslogd)
 
     def myloop(self):
-        pass
+        self.auto_clean_err_log()
 
     @property
     def debug(self):
@@ -167,6 +173,15 @@ class service(dispatcher.dispatcher):
         f.close()
 
         return s
+
+    def auto_clean_err_log(self):
+        """自动清理故障日志
+        """
+        fstat = os.stat(self.__errlog_path)
+        if fstat.st_size > self.__errlog_file_max_size:
+            fdst = open(self.__errlog_path, "w")
+            fdst.close()
+        return
 
     def release(self):
         if self.__log_fd > 0: self.delete_handler(self.__log_fd)
