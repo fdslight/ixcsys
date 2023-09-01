@@ -38,12 +38,12 @@ class widget(ui_widget.widget):
                 cpu_no = int(s)
                 temp = cpu.get_cpu_temperature(cpu_no)
                 if temp == None:
-                    t = "-"
+                    t = "- "
                 else:
                     t = str(temp)
                 ''''''
             except ValueError:
-                t = "-"
+                t = "- "
             cpu_info.append((cpu_idx, v, t))
 
         return True, "system-process.html", {"processes": results, "tot_used_mem": str(round(tot_mem, 2)),
