@@ -3,7 +3,8 @@ import os
 
 
 def get_cpu_temperature(cpu_seq: int):
-    """获取CPU温度,因为所有CPU温度差不多,获取0号CPU即可
+    """获取CPU温度
+    param cpu_seq:cpu序号
     """
     if cpu_seq < 0: return None
 
