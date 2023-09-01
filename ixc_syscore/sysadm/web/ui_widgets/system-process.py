@@ -37,7 +37,11 @@ class widget(ui_widget.widget):
             try:
                 cpu_no = int(s)
                 temp = cpu.get_cpu_temperature(cpu_no)
-                t = str(temp)
+                if temp == None:
+                    t = "-"
+                else:
+                    t = str(temp)
+                ''''''
             except ValueError:
                 t = "-"
             cpu_info.append((cpu_idx, v, t))
