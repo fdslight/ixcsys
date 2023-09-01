@@ -37,7 +37,7 @@ class widget(ui_widget.widget):
             try:
                 cpu_no = int(s)
                 temp = cpu.get_cpu_temperature(cpu_no)
-                if temp == None:
+                if temp is None:
                     t = "- "
                 else:
                     t = str(temp)
