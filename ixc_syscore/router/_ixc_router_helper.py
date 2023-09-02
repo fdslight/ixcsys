@@ -78,9 +78,9 @@ class rpc(object):
             "router_start_time": self.router_start_time,
             "traffic_log_enable": self.traffic_log_enable,
 
-            "icmpv6_dns_set":self.icmpv6_dns_set,
-            "icmpv6_dns_unset":self.icmpv6_dns_unset,
-            "icmpv6_wan_dnsserver_get":self.icmpv6_wan_dnsserver_get,
+            "icmpv6_dns_set": self.icmpv6_dns_set,
+            "icmpv6_dns_unset": self.icmpv6_dns_unset,
+            "icmpv6_wan_dnsserver_get": self.icmpv6_wan_dnsserver_get,
 
             "config_save": self.save
         }
@@ -618,12 +618,15 @@ class rpc(object):
         if enable and not netutils.is_hwaddr(hwaddr):
             return RPC.ERR_ARGS, "wrong hwaddr value"
 
+        self.__helper.net_monitor_configs["hwaddr"] = hwaddr
+
         if not enable:
             self.__helper.net_monitor_configs["enable"] = False
             return 0, self.__helper.router.net_monitor_set(False, b"")
 
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
         self.__helper.net_monitor_configs["enable"] = True
+
         return 0, self.__helper.router.net_monitor_set(True, byte_hwaddr)
 
     def net_monitor_config_get(self):
@@ -658,14 +661,14 @@ class rpc(object):
     def traffic_log_enable(self, enable):
         return 0, self.__helper.router.traffic_log_enable(enable)
 
-    def icmpv6_dns_set(self,dnsserver:bytes):
-        return 0,self.__helper.router.icmpv6_dns_set(dnsserver)
+    def icmpv6_dns_set(self, dnsserver: bytes):
+        return 0, self.__helper.router.icmpv6_dns_set(dnsserver)
 
     def icmpv6_dns_unset(self):
-        return 0,self.__helper.router.icmpv6_dns_unset()
+        return 0, self.__helper.router.icmpv6_dns_unset()
 
     def icmpv6_wan_dnsserver_get(self):
-        return 0,self.__helper.router.icmpv6_wan_dnsserver_get()
+        return 0, self.__helper.router.icmpv6_wan_dnsserver_get()
 
 
 class helper(object):
