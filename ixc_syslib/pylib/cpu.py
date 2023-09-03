@@ -33,7 +33,8 @@ def get_cpu_cur_freq(cpu_seq: int):
     cpu_cur_freq = -1
 
     try_files = [
-        "/sys/devices/system/cpu/cpu%s/cpufreq/cpuinfo_cur_freq" % cpu_seq
+        "/sys/devices/system/cpu/cpu%s/cpufreq/cpuinfo_cur_freq" % cpu_seq,
+        "/sys/devices/system/cpu/cpu%s/cpufreq/scaling_cur_freq" % cpu_seq,
     ]
 
     for file in try_files:

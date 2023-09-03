@@ -32,7 +32,7 @@
         </thead>
         <tbody>
         <%
-        for cpu_idx,usage,freq,temp in self.V["cpu_info"]:
+        for cpu_idx,freq,usage,temp in self.V["cpu_info"]:
             s="""<tr><td>%s</td><td>%s MHz</td><td>%s&nbsp;%%</td><td>%s°C</td></tr>""" % (cpu_idx.upper(),freq,usage,temp)
             self.show(s)
         %>
