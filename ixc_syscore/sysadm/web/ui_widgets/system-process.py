@@ -41,10 +41,17 @@ class widget(ui_widget.widget):
                     t = "- "
                 else:
                     t = str(temp)
-                ''''''
+
+                f = cpu.get_cpu_cur_freq(cpu_no)
+                if f < 0:
+                    freq = "- "
+                else:
+                    freq = str(f)
             except ValueError:
                 t = "- "
-            cpu_info.append((cpu_idx, v, t))
+                freq = "- "
+
+            cpu_info.append((cpu_idx, freq, v, t))
 
         return True, "system-process.html", {"processes": results, "tot_used_mem": str(round(tot_mem, 2)),
                                              "cpu_info": cpu_info}
