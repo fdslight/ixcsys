@@ -21,7 +21,6 @@ goo.gl:1
 *.youtu.be:1
 *.googleapis.com:1
 *.gmail.com:1
-*.ytimg.com:1
 *.blogger.com:1
 *.blogspot.com:1
 *.blogspot.hk:1
@@ -41,13 +40,10 @@ goo.gl:1
 *.gvt3.com:1
 *.google-analytics.com:1
 *.googlesyndication.com:1
-*.yahoo.com:1
-*.googlesyndication.com:1
 *.googletagmanager.com:1
 *.g.co:1
 *.live.com:1
 *.live.net:1
-*.google:1
 *.googletagservices.com:1
 *.ads-twitter.com:1
 *.withgoogle.com:1
@@ -63,12 +59,10 @@ goo.gl:1
 *.twitter.com:1
 *.twimg.com:1
 *.t.co:1
-*.instagram.com:1
 *.cdninstagram.com:1
 *.xing.com:1
 *.instagram.com:1
 *.line.me:1
-*.line-scdn.net:0
 *.viber.com:1
 *.whatsapp.net:1
 *.whatsapp.com:1
@@ -158,8 +152,6 @@ podcasts.captivate.fm:1
 *.rfa.org:1
 *.udn.com:1
 *.udn.com.tw:1
-# 苹果日报
-*.nextmedia.com:1
 # 华尔街日报
 *.wsj.com:1
 # 德国之声
@@ -178,6 +170,10 @@ podcasts.captivate.fm:1
 *.twnextdigital.com:1
 *.nxtdig.com.hk:1
 
+*.purespring.tv:1
+*.landofhope.tv:1
+
+
 # 网络存储
 *.dropbox.com:1
 *.dropboxstatic.com:0
@@ -192,7 +188,6 @@ podcasts.captivate.fm:1
 *.akamaihd.net:1
 *.akamaiedge.net:1
 *.akamaitechnologies.com:1
-*.chinadigitaltimes.net:1
 *.vpngate.net:1
 *.akamai.net:1
 *.github.io:1
@@ -200,7 +195,6 @@ podcasts.captivate.fm:1
 *.githubapp.com:1
 *.bit.ly:1
 *.dyndns.org:1
-*.doubleclick.net:1
 *.fastly.net:1
 *.blogsmithmedia.com:1
 *.aolcdn.com:1
@@ -231,7 +225,6 @@ register.mesh.com:1
 *.footprintdns.com:1
 *.tiqcdn.com:1
 *.typography.com:1
-*.akamaitechnologies.com:1
 *.ifixit.com:1
 *.akamaized.net:1
 *.hp.com:1
@@ -250,7 +243,6 @@ security.debian.org:1
 *.gov:1
 *.foresee.com:1
 *.rnao.org:1
-*.rnao.ca:1
 *.ac.uk:1
 *.medline.com:1
 *.sessioncam.com:1
@@ -297,8 +289,6 @@ login.oracle.com:1
 *.wireguard.com:1
 
 ### 医学相关
-*.ncbi.nlm.nih.gov:1
-*.pubmed.gov:1
 *.uptodate.com:1
 *.wolterskluwer.io:1
 *.rnao.ca:1
