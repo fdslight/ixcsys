@@ -129,6 +129,7 @@ class widget(ui_widget.widget):
         uri = "default.html"
         dic = {}
 
+        dic["time"] = time.strftime("%Y-%m-%d %H:%M:%S %Z")
         dic["have_update"] = self.have_update()
 
         rx_traffic_size, tx_traffic_size = RPC.fn_call("router", "/config", "wan_traffic_get")
