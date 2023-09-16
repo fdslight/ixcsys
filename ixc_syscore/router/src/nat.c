@@ -134,12 +134,22 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
 }
 
 /// 获取可用的NAT ID
-static struct ixc_nat_id *ixc_nat_id_get(struct ixc_nat_id_set *id_set)
+static struct ixc_nat_id *ixc_nat_id_get(struct ixc_nat_id_set *id_set,unsigned char protocol)
 {
-    struct ixc_nat_id *id=id_set->head;
+    struct ixc_nat_id *id=id_set->head,*prev_id;
+    
+    prev_id=id;
+    for(int n=0;NULL!=id;n++){
+        // 和端口映射存在冲突那么跳过
+        if(NULL!=ixc_port_map_find(protocol,id->id)){
+            prev_id=id;
+            id=id->next;
+            continue;
+        }
 
-    if(NULL!=id){
-        id_set->head=id->next;
+        if(0==n) id_set->head=id->next;
+        else prev_id->next=id->next;
+
         id->next=NULL;
 
         return id;
@@ -334,7 +344,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
     // 来自于LAN但没有会话记录那么创建session
     if(NULL==session && is_src){
-        nat_id=ixc_nat_id_get(id_set);
+        nat_id=ixc_nat_id_get(id_set,iphdr->protocol);
         if(NULL==nat_id){
             ixc_mbuf_put(m);
             STDERR("cannot get NAT ID for protocol %d\r\n",iphdr->protocol);
