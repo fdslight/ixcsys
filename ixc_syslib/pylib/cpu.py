@@ -24,6 +24,8 @@ def get_cpu_temperature(cpu_seq: int):
 
         temp = int(s)
 
+    if temp is None: return temp
+
     return round(temp / 1000, 2)
 
 
