@@ -14,6 +14,36 @@
                 <td>${self.V["time"]}</td>
             </tr>
             <tr>
+                <td>接收流量</td>
+                <td>${self.V["rx_traffic"]}</td>
+            </tr>
+            <tr>
+                <td>发送流量</td>
+                <td>${self.V["tx_traffic"]}</td>
+            </tr>
+            <tr>
+                <td>下载速度</td>
+                <td>${self.V["rx_traffic_speed"]}/秒</td>
+            </tr>
+            <tr>
+                <td>上传速度</td>
+                <td>${self.V["tx_traffic_speed"]}/秒</td>
+            </tr>
+            <tr>
+                <td>接收包速度</td>
+                <td>${self.V["rx_npkt_speed"]}包/秒</td>
+            </tr>
+            <tr>
+                <td>发送包速度</td>
+                <td>${self.V["tx_npkt_speed"]}包/秒</td>
+            </tr>
+            <tr>
+                <td>运行时间</td>
+                <td>${self.V["start_time"]["run_days"]}&nbsp;天 &nbsp;${self.V["start_time"]["run_hours"]}&nbsp;小时&nbsp;${self.V["start_time"]["run_minutes"]}
+                    &nbsp;分&nbsp;${self.V["start_time"]["run_seconds"]}&nbsp;秒
+                </td>
+            </tr>
+            <tr>
                 <td>系统架构</td>
                 <td>${self.V["cpu_arch"]}</td>
             </tr>
@@ -79,34 +109,6 @@
             <tr>
                 <td>DNSv6服务器2</td>
                 <td>${self.V["nameservers6"][1]}</td>
-            </tr>
-            <tr>
-                <td>接收流量</td>
-                <td>${self.V["rx_traffic"]}</td>
-            </tr>
-            <tr>
-                <td>发送流量</td>
-                <td>${self.V["tx_traffic"]}</td>
-            </tr>
-            <tr>
-                <td>下载速度</td>
-                <td>${self.V["rx_traffic_speed"]}/秒</td>
-            </tr>
-            <tr>
-                <td>上传速度</td>
-                <td>${self.V["tx_traffic_speed"]}/秒</td>
-            </tr>
-            <tr>
-                <td>接收包速度</td>
-                <td>${self.V["rx_npkt_speed"]}包/秒</td>
-            </tr>
-            <tr>
-                <td>发送包速度</td>
-                <td>${self.V["tx_npkt_speed"]}包/秒</td>
-            </tr>
-            <tr>
-                <td>运行时间</td>
-                <td>${self.V["start_time"]["run_days"]}&nbsp;天 &nbsp;${self.V["start_time"]["run_hours"]}&nbsp;小时&nbsp;${self.V["start_time"]["run_minutes"]}&nbsp;分&nbsp;${self.V["start_time"]["run_seconds"]}&nbsp;秒</td>
             </tr>
         </table>
     </div>
