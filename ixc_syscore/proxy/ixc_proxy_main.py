@@ -888,9 +888,9 @@ class service(dispatcher.dispatcher):
         if host == self.__server_ip: return
 
         if is_ipv6:
-            if not prefix: prefix = 128
+            if prefix is None: prefix = 128
         else:
-            if not prefix: prefix = 32
+            if prefix is None: prefix = 32
 
         if is_ipv6:
             n = 128
