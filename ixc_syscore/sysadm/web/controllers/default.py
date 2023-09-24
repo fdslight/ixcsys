@@ -17,6 +17,11 @@ class controller(base_controller.BaseController):
         page = self.request.get_argument("page", default=None, is_qs=True, is_seq=False)
         if not page: page = "default"
         cur_internet_type = RPC.fn_call("router", "/config", "cur_internet_type_get")
+
+        # 屏蔽PPPoE支持
+        if cur_internet_type not in ("dhcp", "static-ip",):
+            cur_internet_type = "dhcp"
+
         self.render("homepage.html", page=page, cur_internet_type=cur_internet_type)
 
     def handle_post(self):
