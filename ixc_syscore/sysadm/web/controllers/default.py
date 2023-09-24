@@ -18,7 +18,7 @@ class controller(base_controller.BaseController):
         if not page: page = "default"
         cur_internet_type = RPC.fn_call("router", "/config", "cur_internet_type_get")
 
-        # 屏蔽PPPoE支持
+        # PPPoE被慢慢淘汰,因此屏蔽PPPoE支持
         if cur_internet_type not in ("dhcp", "static-ip",):
             cur_internet_type = "dhcp"
 
