@@ -44,6 +44,28 @@ static void __fuzzyMap_node_put(struct fuzzyMap *m,struct fuzzyMap_node *node)
 	m->empty_head=node;
 }
 
+/// 进行唯一匹配
+void *__fuzzyMap_match(struct fuzzyMap *m,const char *key,char *is_found)
+{
+	struct fuzzyMap_node *node=m->tree_root;
+	unsigned char v;
+	char x;
+	unsigned int count;
+
+	*is_found=0;
+	
+	for(int n=0;n<m->length;n++){
+		x=*key++;
+		v=(unsigned char)x;
+		node=node->next_nodes[v];
+		if(NULL==node) break;
+	}
+
+	if(NULL==node) return NULL;
+	*is_found=1;
+
+	return node->data;
+}
 
 int fuzzyMap_new(struct fuzzyMap **m,unsigned char length)
 {
@@ -123,10 +145,9 @@ int fuzzyMap_add(struct fuzzyMap *m,const char *key,void *data)
 	char x,is_found;
 	struct fuzzyMap_node *node,*t,*tt,*tmp_list_head=NULL;
 	int rs=0;
-	unsigned int match_count;
 
 	// 如果找到数据那么直接返回
-	fuzzyMap_find(m,key,&is_found,&match_count);
+	__fuzzyMap_match(m,key,&is_found);
 	if(is_found) return -1;
 	
 	node=m->tree_root;
@@ -198,14 +219,13 @@ void fuzzyMap_del(struct fuzzyMap *m,const char *key,fuzzyMap_del_func_t fn)
 {
 	unsigned char v;
 	char x,is_found;
-	unsigned int match_count;
 
 	struct fuzzyMap_node *node=m->tree_root,*t,*tmp_list=NULL;
 
 	//DBG("%d\r\n",m->tree_root);
 	
 	//如没找到记录那么直接返回
-	t=fuzzyMap_find(m,key,&is_found,&match_count);
+	t=__fuzzyMap_match(m,key,&is_found);
 	if(!is_found) return;
 
 	if(NULL!=fn) fn(t);
