@@ -1,4 +1,7 @@
-/* 模糊映射算法,与map存在区别,如果存在相似的key,该库也会返回 */
+/* 
+ *模糊映射算法,与map存在区别,如果存在相似的key,该库也会返回
+ * 例如 key为 hell\0 ,那么查找hello也会返回,\0表示任意值的意思
+ */
 #ifndef __FUZZYMAP_H
 #define __FUZZYMAP_H
 
