@@ -261,9 +261,10 @@ void *fuzzyMap_find(struct fuzzyMap *m,const char *key,char *is_found,unsigned i
 	struct fuzzyMap_node *node=m->tree_root,*tmp_node;
 	unsigned char v;
 	char x;
+	unsigned int count;
 
 	*is_found=0;
-	*match_count=0;
+	count=0;
 	
 	for(int n=0;n<m->length;n++){
 		x=*key++;
@@ -275,12 +276,13 @@ void *fuzzyMap_find(struct fuzzyMap *m,const char *key,char *is_found,unsigned i
 			v=0;
 			node=tmp_node->next_nodes[v];
 		}
-		if(0!=v) (*match_count)++;
+		if(0!=v) count+=1;
 		if(NULL==node) break;
 	}
 
 	if(NULL==node) return NULL;
 
+	*match_count=count;
 	*is_found=1;
 
 	return node->data;
