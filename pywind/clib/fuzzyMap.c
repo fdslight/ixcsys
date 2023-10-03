@@ -258,7 +258,7 @@ void fuzzyMap_del(struct fuzzyMap *m,const char *key,fuzzyMap_del_func_t fn)
 
 void *fuzzyMap_find(struct fuzzyMap *m,const char *key,char *is_found,unsigned int *match_count)
 {
-	struct fuzzyMap_node *node=m->tree_root;
+	struct fuzzyMap_node *node=m->tree_root,*tmp_node;
 	unsigned char v;
 	char x;
 
@@ -269,10 +269,11 @@ void *fuzzyMap_find(struct fuzzyMap *m,const char *key,char *is_found,unsigned i
 		x=*key++;
 		v=(unsigned char)x;
 
+		tmp_node=node;
 		node=node->next_nodes[v];
 		if(NULL==node) {
 			v=0;
-			node=node->next_nodes[v];
+			node=tmp_node->next_nodes[v];
 		}
 		if(0!=v) (*match_count)++;
 		if(NULL==node) break;
