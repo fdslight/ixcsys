@@ -27,7 +27,12 @@ int main(int argc,char *argv[])
     fuzzyMap_each(m,cb);
     fuzzyMap_del(m,"herd",NULL);
     
-    printf("%d %d %d %d\r\n",rs,is_found,match_cnt,*z);
+    if(is_found){
+        printf("%d %d %d %d\r\n",rs,is_found,match_cnt,*z);
+    }else{
+        printf("not found key %s\r\n");
+    }
+    
 
     return 0;
 }

@@ -50,7 +50,6 @@ void *__fuzzyMap_match(struct fuzzyMap *m,const char *key,char *is_found)
 	struct fuzzyMap_node *node=m->tree_root;
 	unsigned char v;
 	char x;
-	unsigned int count;
 
 	*is_found=0;
 	
