@@ -18,10 +18,10 @@ int main(int argc,char *argv[])
     char is_found;
 
     rs=fuzzyMap_pre_alloc(m,256);
-    rs=fuzzyMap_add(m,"hell",&x);
+    rs=fuzzyMap_add(m,"hel\0",&x);
     rs=fuzzyMap_add(m,"herd",&y);
     
-    z=fuzzyMap_find(m,"hel\0",&is_found,&match_cnt);
+    z=fuzzyMap_find(m,"hell",&is_found,&match_cnt);
 
     fuzzyMap_del(m,"hell",NULL);
     fuzzyMap_each(m,cb);
