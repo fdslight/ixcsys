@@ -293,7 +293,7 @@ void *fuzzyMap_find(struct fuzzyMap *m,const char *key,char *is_found,unsigned i
 		node=node->next_nodes[v];
 		if(NULL==node) {
 			for(int i=0;i<0xff;i++){
-				node=tmp_node->next_nodes[v];
+				node=tmp_node->next_nodes[i];
 				if(NULL!=node) break;
 			}
 		}

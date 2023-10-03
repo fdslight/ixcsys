@@ -30,7 +30,7 @@ int main(int argc,char *argv[])
     if(is_found){
         printf("%d %d %d %d\r\n",rs,is_found,match_cnt,*z);
     }else{
-        printf("not found key %s\r\n");
+        printf("not found key\r\n");
     }
     
 
