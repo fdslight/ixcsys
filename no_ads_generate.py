@@ -15,7 +15,10 @@ def parse(fpath: str):
         line = line.replace("\r", "")
         if not line: continue
         if line[0] == "#": continue
+
         if line.find("google") >= 0: continue
+        if line.find("twitter") >= 0: continue
+        if line.find("facebook") >= 0: continue
 
         results.append(line)
     fdst.close()
