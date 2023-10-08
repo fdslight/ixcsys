@@ -20,3 +20,4 @@ for r in rules:
     rs=m.match(host)
     m.add_rule(host, action)
 
+print(m.match("ads.google.com"))

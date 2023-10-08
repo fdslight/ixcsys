@@ -15,10 +15,12 @@ def parse(fpath: str):
         line = line.replace("\r", "")
         if not line: continue
         if line[0] == "#": continue
+        if line.find("google") >= 0: continue
 
         results.append(line)
     fdst.close()
     return results
+
 
 def gen_proxy_rule(results):
     """生成代理规则
