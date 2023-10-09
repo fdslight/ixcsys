@@ -10,6 +10,19 @@ class controller(base_controller.BaseController):
         self.request.set_allow_methods(["POST"])
         return True
 
+    def parse_rules(self, s: str):
+        _list = s.split("\n")
+        results = []
+
+        for s in _list:
+            s = s.replace("\r", "")
+            s = s.replace("\t", "")
+            s = s.strip()
+            if not s: continue
+            results.append(s)
+
+        return results
+
     def handle(self):
         action = self.request.get_argument("action", is_seq=False, is_qs=False)
         rule = self.request.get_argument("rule", is_seq=False, is_qs=False)
@@ -25,7 +38,7 @@ class controller(base_controller.BaseController):
         rule = rule.strip()
 
         if action == "rule_add":
-            RPC.fn_call("DNS", "/rule", "sec_rule_add", rule)
+            RPC.fn_call("DNS", "/rule", "sec_rules_add", self.parse_rules(rule))
             RPC.fn_call("DNS", "/config", "save")
             self.json_resp(False, {})
         else:

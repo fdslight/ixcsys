@@ -424,6 +424,11 @@ class service(dispatcher.dispatcher):
         self.__sec_rules.append(rule)
         self.matcher.add_rule(rule, "drop", None)
 
+    def add_sec_rules(self, rules: list):
+        """批量加入rules
+        """
+        for rule in rules: self.add_sec_rule(rule)
+
     def del_sec_rule(self, rule: str):
         if rule not in self.__sec_rules: return
         self.__sec_rules.remove(rule)

@@ -23,6 +23,7 @@ class controller(rpc.controller):
             "get_forward": self.get_forward,
             "clear": self.clear,
             "sec_rule_add": self.sec_rule_add,
+            "sec_rules_add": self.sec_rules_add,
             "sec_rule_del": self.sec_rule_del,
             "get_sec_rules": self.get_sec_rules,
         }
@@ -69,6 +70,10 @@ class controller(rpc.controller):
     def sec_rule_add(self, rule: str):
         self.__runtime.add_sec_rule(rule)
 
+        return 0, None
+
+    def sec_rules_add(self, rules: list):
+        self.__runtime.add_sec_rules(rules)
         return 0, None
 
     def sec_rule_del(self, rule: str):
