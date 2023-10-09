@@ -25,8 +25,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="ixc-sec-dns-rule-del" onclick="let _form=$('#ixc-sec-dns-rule-form');$('#ixc-sec-dns-rule-form input[name=\'action\']').val('rule_dels');_form.submit();">删除</button>
-                <button type="button" class="btn btn-primary ixc-form-submit" id="ixc-sec-dns-rule-add" onclick="let _form=$('#ixc-sec-dns-rule-form');$('#ixc-sec-dns-rule-form input[name=\'action\']').val('rule_adds');_form.submit();">添加</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="ixc-sec-dns-rule-dels">删除</button>
+                <button type="button" class="btn btn-primary ixc-form-submit" id="ixc-sec-dns-rule-adds">添加</button>
             </div>
         </div>
     </div>
@@ -52,6 +52,7 @@
                     s="<tr><td>%s</td><td>%s</td>" % (x,rule,)
                     s+="<td><a href='#' class='ixc-sec-dns-rule-del' name='%s'>删除</a></td></tr>" % rule
                     self.show(s)
+                    x+=1
                 %>
             </tbody>
         </table>
@@ -73,8 +74,21 @@
             })
         });
 
-        $("#ixc-sec-dns-rule-add").click(function () {
+        $("#ixc-sec-dns-rule-adds").click(function () {
             let form_data = $("#ixc-sec-dns-rule-form").serialize();
+            $("#ixc-sec-dns-rule-form input[name='action']").val('rule_adds');
+            $.post("${self.url_prefix}/sec-dns-rule", form_data, function (rs) {
+                let is_error = rs.is_error;
+                if (is_error) {
+                    alert(rs.message);
+                } else {
+                    window.location.reload();
+                }
+            })
+        });
+        $("#ixc-sec-dns-rule-dels").click(function () {
+            let form_data = $("#ixc-sec-dns-rule-form").serialize();
+            $("#ixc-sec-dns-rule-form input[name='action']").val('rule_dels');
             $.post("${self.url_prefix}/sec-dns-rule", form_data, function (rs) {
                 let is_error = rs.is_error;
                 if (is_error) {
