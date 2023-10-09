@@ -9,6 +9,7 @@ def parse_from_text(text: str):
     for s in _list:
         s = s.strip()
         if not s: continue
+        if s[0] == "#": continue
         _list2.append(s)
 
     return _list2

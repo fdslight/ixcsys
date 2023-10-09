@@ -20,6 +20,7 @@ class controller(base_controller.BaseController):
             s = s.replace(" ", "")
             s = s.strip()
             if not s: continue
+            if s[0] == "#": continue
             results.append(s)
 
         return results
