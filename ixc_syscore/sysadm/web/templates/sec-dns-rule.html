@@ -18,15 +18,15 @@
             <div class="modal-body">
                 <form id="ixc-sec-dns-rule-form">
                     <div class="form-group">
-                        <label>请求主机(可用'*'代表所有主机，可同时添加多个规则，一行即一个规则)</label>
+                        <label>请求主机(可用'*'代表所有主机，可同时修改多个规则，一行即一个规则)</label>
                         <textarea class="form-control" name="rule" style="min-height: 200px;"></textarea>
-                        <input type="hidden" value="rule_add" name="action"/>
+                        <input type="hidden" value="rule_adds" name="action"/>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
-                <button type="button" class="btn btn-primary ixc-form-submit" id="ixc-sec-dns-rule-add">添加</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="ixc-sec-dns-rule-del" onclick="let _form=$('#ixc-sec-dns-rule-form');$('#ixc-sec-dns-rule-form input[name=\'action\']').val('rule_dels');_form.submit();">删除</button>
+                <button type="button" class="btn btn-primary ixc-form-submit" id="ixc-sec-dns-rule-add" onclick="let _form=$('#ixc-sec-dns-rule-form');$('#ixc-sec-dns-rule-form input[name=\'action\']').val('rule_adds');_form.submit();">添加</button>
             </div>
         </div>
     </div>
