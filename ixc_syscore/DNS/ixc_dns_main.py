@@ -75,7 +75,6 @@ class service(dispatcher.dispatcher):
     __dns_configs = None
     __dns_conf_path = None
 
-    __sec_rules = None
     # 加快查找速度
     __sec_rules_dict = None
     __sec_rule_path = None
@@ -220,8 +219,8 @@ class service(dispatcher.dispatcher):
         if "enable_auto" not in ip6_cfg: ip6_cfg["enable_auto"] = "1"
 
     def load_sec_rules(self):
-        self.__sec_rules = sec_rule.parse_from_file(self.__sec_rule_path)
-        for rule in self.__sec_rules:
+        sec_rules = sec_rule.parse_from_file(self.__sec_rule_path)
+        for rule in sec_rules:
             self.__sec_rules_dict[rule] = None
             self.matcher.add_rule(rule, "drop", None)
 
@@ -394,7 +393,11 @@ class service(dispatcher.dispatcher):
 
     @property
     def sec_rules(self):
-        return self.__sec_rules
+        sec_rules = []
+
+        for key in self.__sec_rules_dict: sec_rules.append(key)
+
+        return sec_rules
 
     def is_auto(self, is_ipv6=False):
         if is_ipv6:
@@ -425,7 +428,7 @@ class service(dispatcher.dispatcher):
     def add_sec_rule(self, rule: str):
         if rule in self.__sec_rules_dict:
             return
-        self.__sec_rules.append(rule)
+        self.__sec_rules_dict[rule]=None
         self.matcher.add_rule(rule, "drop", None)
 
     def add_sec_rules(self, rules: list):
@@ -435,7 +438,6 @@ class service(dispatcher.dispatcher):
 
     def del_sec_rule(self, rule: str):
         if rule not in self.__sec_rules_dict: return
-        self.__sec_rules.remove(rule)
 
         del self.__sec_rules_dict[rule]
 
@@ -446,7 +448,7 @@ class service(dispatcher.dispatcher):
         self.save_sec_rules()
 
     def save_sec_rules(self):
-        sec_rule.save_to_file(self.__sec_rules, self.__sec_rule_path)
+        sec_rule.save_to_file(self.__sec_rules_dict, self.__sec_rule_path)
 
     def release(self):
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)

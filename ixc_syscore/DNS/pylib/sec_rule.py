@@ -24,9 +24,9 @@ def parse_from_file(fpath: str):
     return parse_from_text(s)
 
 
-def save_to_file(_list: list, fpath: str):
+def save_to_file(rules, fpath: str):
     fdst = open(fpath, "w")
-    for x in _list:
+    for x in rules:
         s = "%s\r\n" % x
-        fdst.write(x)
+        fdst.write(s)
     fdst.close()
