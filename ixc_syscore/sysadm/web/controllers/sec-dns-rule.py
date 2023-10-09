@@ -28,7 +28,7 @@ class controller(base_controller.BaseController):
         action = self.request.get_argument("action", is_seq=False, is_qs=False)
         rule = self.request.get_argument("rule", is_seq=False, is_qs=False)
 
-        if action not in ("rule_add", "rule_del",):
+        if action not in ("rule_adds", "rule_del", "rule_dels"):
             self.json_resp(True, "错误的动作请求参数")
             return
 
@@ -38,9 +38,11 @@ class controller(base_controller.BaseController):
 
         rule = rule.strip()
 
-        if action == "rule_add":
+        if action == "rule_adds":
             RPC.fn_call("DNS", "/rule", "sec_rules_add", self.parse_rules(rule))
             RPC.fn_call("DNS", "/config", "save")
+            self.json_resp(False, {})
+        elif action == "rule_dels":
             self.json_resp(False, {})
         else:
             RPC.fn_call("DNS", "/rule", "sec_rule_del", rule)
