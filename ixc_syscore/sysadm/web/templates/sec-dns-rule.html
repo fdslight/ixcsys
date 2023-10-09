@@ -1,95 +1,26 @@
-<div class="row">
-    <div class="col-sm-10"></div>
-    <div class="col-sm-2">
-        <input type="button" class="btn btn-primary" value="规则添加" style="width: 100%;" data-toggle="modal"
-               data-target="#ixc-sec-dns-rule-modal"/>
-    </div>
-</div>
-<div class="modal fade" id="ixc-sec-dns-rule-modal" tabindex="-1" role="dialog"
-     aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">新建DNS拦截规则</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="ixc-sec-dns-rule-form">
-                    <div class="form-group">
-                        <label>请求主机(可用'*'代表所有主机，可同时修改多个规则，一行即一个规则,如果删除为空,那么规则全部清除)</label>
-                        <textarea class="form-control" name="rule" style="min-height: 200px;"></textarea>
-                        <input type="hidden" value="rule_adds" name="action"/>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="ixc-sec-dns-rule-dels">删除</button>
-                <button type="button" class="btn btn-primary ixc-form-submit" id="ixc-sec-dns-rule-adds">添加</button>
+<div id="ixc-sec-dns-rule-view" class="ixc-menu-content" style="display: none;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/sec-dns-rule" id="ixc-sec-dns-rule-form">
+        <h4>DNS拦截规则</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-group">
+            <textarea cols="100%" rows="40%" name="text" style="letter-spacing: 0.1em;">${self.V['rules']}</textarea>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <input type="hidden" value="dns_modify" name="action" />
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
             </div>
         </div>
-    </div>
-</div>
-
-<div id="ixc-sec-dns-rule-view" class="ixc-menu-content" style="display: none;">
-    <form style="width: 98%;margin: auto;min-width: 400px;" class="ixc-conf-form"
-          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/sec-dns-rule">
-        <h4>DNS拦截规则</h4>
-        <table class="table">
-            <thead>
-            <tr>
-                <th scope="col">序号</th>
-                <th scope="col">规则</th>
-                <th scope="col">操作</th>
-            </tr>
-            </thead>
-            <tbody>
-                <%
-                x=1
-                rules=self.V["rules"]
-                for rule in self.V["rules"]:
-                    s="<tr><td>%s</td><td>%s</td>" % (x,rule,)
-                    s+="<td><a href='#' class='ixc-sec-dns-rule-del' name='%s'>删除</a></td></tr>" % rule
-                    self.show(s)
-                    x+=1
-                %>
-            </tbody>
-        </table>
     </form>
 </div>
+
 <script type="text/javascript">
     $(document).ready(function () {
-        $(".ixc-sec-dns-rule-del").click(function () {
-            $.post("${self.url_prefix}/sec-dns-rule", {
-                "action": "rule_del",
-                "rule": $(this).attr("name")
-            }, function (rs) {
-                let is_error = rs.is_error;
-                if (is_error) {
-                    alert(rs.message);
-                } else {
-                    window.location.reload();
-                }
-            })
-        });
-
-        $("#ixc-sec-dns-rule-adds").click(function () {
-            $("#ixc-sec-dns-rule-form input[name='action']").val('rule_adds');
+        $("#ixc-sec-dns-rule-modify").click(function () {
             let form_data = $("#ixc-sec-dns-rule-form").serialize();
 
-            $.post("${self.url_prefix}/sec-dns-rule", form_data, function (rs) {
-                let is_error = rs.is_error;
-                if (is_error) {
-                    alert(rs.message);
-                } else {
-                    window.location.reload();
-                }
-            })
-        });
-        $("#ixc-sec-dns-rule-dels").click(function () {
-            $("#ixc-sec-dns-rule-form input[name='action']").val('rule_dels');
-            let form_data = $("#ixc-sec-dns-rule-form").serialize();
             $.post("${self.url_prefix}/sec-dns-rule", form_data, function (rs) {
                 let is_error = rs.is_error;
                 if (is_error) {
