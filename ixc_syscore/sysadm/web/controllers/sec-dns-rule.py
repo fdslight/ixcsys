@@ -17,6 +17,7 @@ class controller(base_controller.BaseController):
         for s in _list:
             s = s.replace("\r", "")
             s = s.replace("\t", "")
+            s = s.replace(" ", "")
             s = s.strip()
             if not s: continue
             results.append(s)
