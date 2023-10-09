@@ -76,6 +76,8 @@ class service(dispatcher.dispatcher):
     __dns_conf_path = None
 
     __sec_rules = None
+    # 加快查找速度
+    __sec_rules_dict = None
     __sec_rule_path = None
 
     # WAN到LAN的DNS ID映射
@@ -108,6 +110,7 @@ class service(dispatcher.dispatcher):
         self.__dns_client6 = -1
 
         self.__dns_conf_path = "%s/dns.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__sec_rules_dict = {}
         self.__sec_rule_path = "%s/sec_rules.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
 
         self.__id_wan2lan = {}
@@ -219,6 +222,7 @@ class service(dispatcher.dispatcher):
     def load_sec_rules(self):
         self.__sec_rules = sec_rule.parse_from_file(self.__sec_rule_path)
         for rule in self.__sec_rules:
+            self.__sec_rules_dict[rule] = None
             self.matcher.add_rule(rule, "drop", None)
 
     def start_dns(self):
@@ -419,7 +423,7 @@ class service(dispatcher.dispatcher):
         return self.get_handler(self.__dns_client).get_port()
 
     def add_sec_rule(self, rule: str):
-        if rule in self.__sec_rules:
+        if rule in self.__sec_rules_dict:
             return
         self.__sec_rules.append(rule)
         self.matcher.add_rule(rule, "drop", None)
@@ -430,8 +434,11 @@ class service(dispatcher.dispatcher):
         for rule in rules: self.add_sec_rule(rule)
 
     def del_sec_rule(self, rule: str):
-        if rule not in self.__sec_rules: return
+        if rule not in self.__sec_rules_dict: return
         self.__sec_rules.remove(rule)
+
+        del self.__sec_rules_dict[rule]
+
         self.matcher.del_rule(rule)
 
     def save_configs(self):
