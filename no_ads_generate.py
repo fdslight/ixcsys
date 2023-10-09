@@ -25,18 +25,6 @@ def parse(fpath: str):
     return results
 
 
-def gen_proxy_rule(results):
-    """生成代理规则
-    """
-    fdst = open("proxy_no_ads.txt", "w")
-    fdst.write("\r\n\r\n### drop ads ###\r\n")
-
-    for host in results:
-        fdst.write("%s:2\r\n" % host)
-
-    fdst.close()
-
-
 def gen_dns_rule(results):
     """生成DNS屏蔽规则
     """
@@ -52,7 +40,7 @@ def main():
     if os.path.isfile(fname): os.remove(fname)
     os.system("wget %s" % URL)
     results = parse(fname)
-    gen_proxy_rule(results)
+    # gen_proxy_rule(results)
     gen_dns_rule(results)
 
 
