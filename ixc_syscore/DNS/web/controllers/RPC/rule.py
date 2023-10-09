@@ -26,6 +26,7 @@ class controller(rpc.controller):
             "sec_rules_add": self.sec_rules_add,
             "sec_rule_del": self.sec_rule_del,
             "sec_rules_del": self.sec_rules_del,
+            "sec_rules_modify": self.sec_rules_modify,
             "get_sec_rules": self.get_sec_rules,
         }
 
@@ -84,6 +85,11 @@ class controller(rpc.controller):
 
     def sec_rules_del(self, rules: list):
         self.__runtime.del_sec_rules(rules)
+
+        return 0, None
+
+    def sec_rules_modify(self, rules: list):
+        self.__runtime.sec_rules_modify(rules)
 
         return 0, None
 

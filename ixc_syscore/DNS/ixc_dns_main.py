@@ -450,6 +450,31 @@ class service(dispatcher.dispatcher):
             for rule in rules: self.del_sec_rule(rule)
         return
 
+    def sec_rules_modify(self, rules: list):
+        added_list = []
+        dels_list = []
+        tmp_dict = {}
+
+        for rule in rules:
+            tmp_dict[rule] = None
+            if rule in self.__sec_rules_dict:
+                continue
+            else:
+                added_list.append(rule)
+            ''''''
+        old_rules = self.sec_rules
+        for rule in old_rules:
+            if rule in tmp_dict:
+                continue
+            else:
+                dels_list.append(rule)
+            ''''''
+
+        for rule in added_list:
+            self.add_sec_rule(rule)
+        for rule in dels_list:
+            self.del_sec_rule(rule)
+
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)
         self.save_sec_rules()
