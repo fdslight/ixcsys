@@ -26,19 +26,26 @@ action_names = [
 class matcher(object):
     __rule_tree = None
     __rules = None
+    # 内部关键字,查找以及增加规则时要转换
+    __internal_keywords = None
 
     def __init__(self):
         self.clear()
+        self.__internal_keywords = [
+            "refcnt", "action", "rule_info",
+        ]
 
     def match(self, host: str):
         """匹配主机
         """
+        host = host.lower()
         _list = host.split(".")
         _list.reverse()
 
         o = self.__rule_tree
         is_found = True
         for x in _list:
+            if x in self.__internal_keywords: x = "__%s" % x
             if x not in o:
                 is_found = False
                 break
@@ -66,12 +73,14 @@ class matcher(object):
         :param priv_data
         :return Boolean,添加成功那么返回True,不存在则返回False
         """
+        rule = rule.lower()
         if rule in self.__rules: return False
         _list = rule.split(".")
         _list.reverse()
         o = self.__rule_tree
 
         for x in _list:
+            if x in self.__internal_keywords: x = "__%s" % x
             # 新建的引用计数为0
             if x not in o: o[x] = {"refcnt": 0, "action": None, "rule_info": None}
             o = o[x]
@@ -84,6 +93,7 @@ class matcher(object):
         """删除规则
         :return Boolean,删除成功那么返回True,不存在则返回False
         """
+        rule = rule.lower()
         if rule not in self.__rules: return False
 
         _list = rule.split(".")
@@ -93,6 +103,7 @@ class matcher(object):
         is_found = True
 
         for x in _list:
+            if x in self.__internal_keywords: x = "__%s" % x
             if x not in o:
                 is_found = False
                 break
@@ -131,11 +142,10 @@ class matcher(object):
         self.__rule_tree = {}
         self.__rules = {}
 
-
-#cls = matcher()
-#cls.add_rule("*.facebook.com", "drop")
+# cls = matcher()
+# cls.add_rule("*.facebook.com", "drop")
 # cls.add_rule("*.google.com", "this is action")
 # cls.add_rule("*", "this is action")
 # print(cls.rules)
 # print(cls.rule_tree)
-#print(cls.match("www.facebook.com"))
+# print(cls.match("www.facebook.com"))

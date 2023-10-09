@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 
-import socket, os, struct, time
 
-import ixc_syslib.pylib.RPCClient as RPCClient
+from ixc_syscore.DNS.pylib import rule
+import ixc_syscore.proxy.pylib.file_parser as file_parser
 
-rand_key = os.urandom(16)
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.bind(("127.0.0.1", 0))
-port = s.getsockname()[1]
+rules = file_parser.parse_host_file("proxy_domain.txt")
+m = rule.matcher()
 
-RPCClient.fn_call("router", "/config", "unset_fwd_port", 7)
-ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", 7,
-                                rand_key, port)
+for r in rules:
+    host, n = r
+    action = "encrypt"
+    if n == 2:
+        action = "drop"
+    if n == 0:
+        action = "encrypt"
+    if n == 1:
+        action = "proxy"
 
-while 1:
-    msg, addr = s.recvfrom(4096)
-    print(msg,addr)
-    break
+    rs=m.match(host)
+    m.add_rule(host, action)
+
+print(m.match("ads.google.com"))
