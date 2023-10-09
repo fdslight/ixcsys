@@ -445,6 +445,10 @@ class service(dispatcher.dispatcher):
 
     def del_sec_rules(self, rules: list):
         for rule in rules: self.del_sec_rule(rule)
+        if not rules:
+            rules = self.sec_rules
+            for rule in rules: self.del_sec_rule(rule)
+        return
 
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)

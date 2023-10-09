@@ -32,7 +32,7 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的动作请求参数")
             return
 
-        if not rule:
+        if not rule and action != "rule_dels":
             self.json_resp(True, "空的规则")
             return
 
