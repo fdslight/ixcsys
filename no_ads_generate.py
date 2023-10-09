@@ -28,11 +28,13 @@ def parse(fpath: str):
 def gen_dns_rule(results):
     """生成DNS屏蔽规则
     """
-    fdst = open("dns_no_ads.txt", "w")
+    fname = "dns_no_ads.txt"
+    fdst = open(fname, "w")
     for host in results:
         fdst.write("%s\r\n" % host)
 
     fdst.close()
+    print("generate DNS NO AD rule file %s OK" % fname)
 
 
 def main():
@@ -42,6 +44,7 @@ def main():
     results = parse(fname)
     # gen_proxy_rule(results)
     gen_dns_rule(results)
+    os.remove(fname)
 
 
 if __name__ == '__main__': main()
