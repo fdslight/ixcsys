@@ -212,13 +212,12 @@ class service(dispatcher.dispatcher):
             rules = file_parser.parse_host_file(fpath)
             for r in rules:
                 host, n = r
-                action = "encrypt"
-                if n == 2:
-                    action = "drop"
                 if n == 0:
                     action = "encrypt"
-                if n == 1:
+                elif n == 1:
                     action = "proxy"
+                else:
+                    continue
                 RPCClient.fn_call("DNS", "/rule", "add", host, action)
         except file_parser.FilefmtErr:
             logging.print_error()
