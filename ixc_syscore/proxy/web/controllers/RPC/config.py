@@ -89,7 +89,7 @@ class controller(rpc.controller):
                 action = int(s[p:].strip())
             except ValueError:
                 return False, s
-            if action not in (0, 1, 2,):
+            if action not in (0, 1,):
                 return False, s
 
         return True, None
