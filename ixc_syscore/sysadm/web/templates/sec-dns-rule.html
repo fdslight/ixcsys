@@ -75,8 +75,9 @@
         });
 
         $("#ixc-sec-dns-rule-adds").click(function () {
-            let form_data = $("#ixc-sec-dns-rule-form").serialize();
             $("#ixc-sec-dns-rule-form input[name='action']").val('rule_adds');
+            let form_data = $("#ixc-sec-dns-rule-form").serialize();
+
             $.post("${self.url_prefix}/sec-dns-rule", form_data, function (rs) {
                 let is_error = rs.is_error;
                 if (is_error) {
@@ -87,8 +88,8 @@
             })
         });
         $("#ixc-sec-dns-rule-dels").click(function () {
-            let form_data = $("#ixc-sec-dns-rule-form").serialize();
             $("#ixc-sec-dns-rule-form input[name='action']").val('rule_dels');
+            let form_data = $("#ixc-sec-dns-rule-form").serialize();
             $.post("${self.url_prefix}/sec-dns-rule", form_data, function (rs) {
                 let is_error = rs.is_error;
                 if (is_error) {
