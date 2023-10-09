@@ -428,7 +428,7 @@ class service(dispatcher.dispatcher):
     def add_sec_rule(self, rule: str):
         if rule in self.__sec_rules_dict:
             return
-        self.__sec_rules_dict[rule]=None
+        self.__sec_rules_dict[rule] = None
         self.matcher.add_rule(rule, "drop", None)
 
     def add_sec_rules(self, rules: list):
@@ -442,6 +442,9 @@ class service(dispatcher.dispatcher):
         del self.__sec_rules_dict[rule]
 
         self.matcher.del_rule(rule)
+
+    def del_sec_rules(self, rules: list):
+        for rule in rules: self.del_sec_rule(rule)
 
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)

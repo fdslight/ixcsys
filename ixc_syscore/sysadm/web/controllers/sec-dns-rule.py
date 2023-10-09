@@ -43,6 +43,8 @@ class controller(base_controller.BaseController):
             RPC.fn_call("DNS", "/config", "save")
             self.json_resp(False, {})
         elif action == "rule_dels":
+            RPC.fn_call("DNS", "/rule", "sec_rules_del", self.parse_rules(rule))
+            RPC.fn_call("DNS", "/config", "save")
             self.json_resp(False, {})
         else:
             RPC.fn_call("DNS", "/rule", "sec_rule_del", rule)
