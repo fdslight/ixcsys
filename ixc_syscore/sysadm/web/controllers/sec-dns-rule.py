@@ -37,6 +37,8 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "空的规则")
             return
 
+        if rule is None: rule = ""
+
         rule = rule.strip()
 
         if action == "rule_adds":
