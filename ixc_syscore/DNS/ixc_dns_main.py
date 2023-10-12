@@ -475,6 +475,13 @@ class service(dispatcher.dispatcher):
             self.add_sec_rule(rule)
         for rule in dels_list:
             self.del_sec_rule(rule)
+        ''''''
+
+    def rule_clear(self):
+        # 清除所有clear
+        self.__matcher.clear()
+        # 重新加载内部clear
+        self.load_sec_rules()
 
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)
