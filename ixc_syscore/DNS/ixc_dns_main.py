@@ -369,6 +369,7 @@ class service(dispatcher.dispatcher):
         action = match_rs["action"]
         # 如果规则为丢弃那么直接丢弃该DNS请求
         if action == "drop":
+            logging.print_info("DNS_QUERY_DROP: %s from %s" % (host, address[0]))
             del self.__id_wan2lan[new_dns_id]
             return
         # 发送DNS数据到其他应用程序,如果找不到文件号那么丢弃数据包
