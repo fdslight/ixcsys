@@ -106,6 +106,7 @@ podcasts.captivate.fm:1
 *.vimeocdn.com:1
 *.vimeo.com:1
 *.shenyuncreations.com:1
+*.ntdfilms.com:1
 
 # 博客
 *.wordpress.com:1
