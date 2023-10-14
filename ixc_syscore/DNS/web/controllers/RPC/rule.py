@@ -49,7 +49,7 @@ class controller(rpc.controller):
         return 0, self.__runtime.matcher.rules
 
     def clear(self):
-        self.__runtime.matcher.clear()
+        self.__runtime.rule_clear()
         return 0, None
 
     def set_forward(self, port: int):

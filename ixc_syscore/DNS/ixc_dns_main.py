@@ -369,6 +369,7 @@ class service(dispatcher.dispatcher):
         action = match_rs["action"]
         # 如果规则为丢弃那么直接丢弃该DNS请求
         if action == "drop":
+            logging.print_info("DNS_QUERY_DROP: %s from %s" % (host, address[0]))
             del self.__id_wan2lan[new_dns_id]
             return
         # 发送DNS数据到其他应用程序,如果找不到文件号那么丢弃数据包
@@ -474,6 +475,13 @@ class service(dispatcher.dispatcher):
             self.add_sec_rule(rule)
         for rule in dels_list:
             self.del_sec_rule(rule)
+        ''''''
+
+    def rule_clear(self):
+        # 清除所有clear
+        self.__matcher.clear()
+        # 重新加载内部clear
+        self.load_sec_rules()
 
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)
