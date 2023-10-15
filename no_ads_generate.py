@@ -26,14 +26,14 @@ def parse(fpath: str):
         if not line: continue
         if line[0] == "#": continue
 
-        is_matched=False
+        is_matched = False
         for s in EXTRA_DROPS:
-            p=line.find(s)
-            if p>=0:
-                is_matched=True
+            p = line.find(s)
+            if p >= 0:
+                is_matched = True
                 break
             ''''''
-        if is_matched:continue
+        if is_matched: continue
 
         results.append(line)
     fdst.close()
@@ -45,6 +45,10 @@ def gen_dns_rule(results):
     """
     fname = "proxy_domain.txt"
     fdst = open(fname, "w")
+
+    for host in EXTRA_ADDS:
+        fdst.write("%s\r\n" % host)
+
     for host in results:
         fdst.write("%s\r\n" % host)
 
