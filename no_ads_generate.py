@@ -4,6 +4,16 @@ import os
 
 URL = "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-domains.txt"
 
+# 核外加入的匹配规则
+EXTRA_ADDS = [
+    "*.gz-data.com",
+]
+
+# 去除一些规则
+EXTRA_DROPS = [
+    "google", "twitter", "facebook",
+]
+
 
 def parse(fpath: str):
     fdst = open(fpath, "r")
@@ -16,9 +26,14 @@ def parse(fpath: str):
         if not line: continue
         if line[0] == "#": continue
 
-        if line.find("google") >= 0: continue
-        if line.find("twitter") >= 0: continue
-        if line.find("facebook") >= 0: continue
+        is_matched=False
+        for s in EXTRA_DROPS:
+            p=line.find(s)
+            if p>=0:
+                is_matched=True
+                break
+            ''''''
+        if is_matched:continue
 
         results.append(line)
     fdst.close()
@@ -28,7 +43,7 @@ def parse(fpath: str):
 def gen_dns_rule(results):
     """生成DNS屏蔽规则
     """
-    fname = "dns_no_ads.txt"
+    fname = "proxy_domain.txt"
     fdst = open(fname, "w")
     for host in results:
         fdst.write("%s\r\n" % host)
