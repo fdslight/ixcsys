@@ -43,7 +43,7 @@ def parse(fpath: str):
 def gen_dns_rule(results):
     """生成DNS屏蔽规则
     """
-    fname = "proxy_domain.txt"
+    fname = "DNS_NO_ADS_RULES.txt"
     fdst = open(fname, "w")
 
     for host in EXTRA_ADDS:
