@@ -11,7 +11,7 @@ EXTRA_ADDS = [
 
 # 去除一些规则
 EXTRA_DROPS = [
-    "google", "twitter", "facebook", "microsoft"
+    "google", "twitter", "facebook", "microsoft", "bing",
 ]
 
 
