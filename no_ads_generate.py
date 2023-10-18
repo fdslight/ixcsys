@@ -13,6 +13,7 @@ EXTRA_ADDS = [
 EXTRA_DROPS = [
     "google", "twitter", "facebook", "microsoft", "bing",
     ".qy.net", "doubleclick.net", "doubleclick.com",
+    "sentry.io",
 ]
 
 
