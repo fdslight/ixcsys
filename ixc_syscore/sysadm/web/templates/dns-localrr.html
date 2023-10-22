@@ -17,12 +17,12 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="ixc-port-map-form">
+                    <form id="ixc-localrr-form">
                         <div class="form-group">
                             <label>记录类型</label>
                             <select class="form-control" name="qtype">
-                                <option value="a">A</option>
-                                <option value="aaaa">AAAA</option>
+                                <option value="A">A</option>
+                                <option value="AAAA">AAAA</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -31,13 +31,13 @@
                         </div>
                         <div class="form-group">
                             <label>地址</label>
-                            <input type="text" class="form-control" name="ip"/>
+                            <input type="text" class="form-control" name="addr"/>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
-                    <button type="button" class="btn btn-primary" id="ixc-port-map-add">添加</button>
+                    <button type="button" class="btn btn-primary" id="ixc-localrr-add">添加</button>
                 </div>
             </div>
         </div>
@@ -65,15 +65,23 @@
                 """ % (x,name,addr,x,name,x)
                 self.show(s)
                 x+=1
+            for name in aaaa_rrs:
+                addr=aaaa_rrs[name]
+                s="""<tr><td>%d</td><td>AAAA</td><td>%s</td><td>%s</td><td><a href="#" class="ixc-localrr-do" name="%s">删除</a>
+                <input type="hidden" value="action=delete&qtype=AAAA&host=%s" id="ixc-localrr-del-%s" />
+                </td></tr>
+                """ % (x,name,addr,x,name,x)
+                self.show(s)
+                x+=1
             %>
         </tbody>
     </table>
 </div>
 <script type="text/javascript">
     $(document).ready(function () {
-        $("#ixc-port-map-add").click(function () {
-            let form_content = $("#ixc-port-map-form").serialize();
-            $.post("${self.url_prefix}/port_map", form_content, function (result) {
+        $("#ixc-localrr-add").click(function () {
+            let form_content = $("#ixc-localrr-form").serialize();
+            $.post("${self.url_prefix}/dns-localrr", form_content, function (result) {
                 let is_error = result["is_error"];
                 let message = result["message"];
 
@@ -85,11 +93,11 @@
             });
         });
 
-        $(".ixc-port-map-del-do").click(function () {
+        $(".ixc-localrr-do").click(function () {
             let seq = $(this).attr("name")
-            let arg = $("#ixc-port-map-del-" + seq).val();
+            let arg = $("#ixc-localrr-del-" + seq).val();
 
-            $.post("${self.url_prefix}/port_map", arg, function (result) {
+            $.post("${self.url_prefix}/dns-localrr", arg, function (result) {
                 let is_error = result["is_error"];
                 let message = result["message"];
 
