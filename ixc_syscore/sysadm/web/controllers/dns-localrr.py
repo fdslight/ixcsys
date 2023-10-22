@@ -47,7 +47,10 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "设置%s记录失败" % qtype)
             return
 
+        RPC.fn_call("DNS", "/config", "hosts_save")
+
         self.json_resp(False, "设置%s记录成功" % qtype)
+
 
     def handle_delete(self):
         qtype = self.request.get_argument("qtype", is_seq=False, is_qs=False)
@@ -67,6 +70,8 @@ class controller(base_controller.BaseController):
             is_ipv6 = False
 
         RPC.fn_call("DNS", "/config", "hosts_set", host, "", is_ipv6=is_ipv6)
+        RPC.fn_call("DNS", "/config", "hosts_save")
+
         self.json_resp(False, "删除%s记录成功" % qtype)
 
     def handle(self):
