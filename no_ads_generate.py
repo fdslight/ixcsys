@@ -32,8 +32,13 @@ EXTRA_DROPS = [
     ".windows.com",
     ".yahoo.com",
     ".yandex.ru",
+    ".co.jp",
+    ".dyson.",
+    ".reddit.com",
+    ".redditmedia.com",
+    ".redhat.com",
+    ".ricoh.",
 ]
-
 
 def parse(fpath: str):
     fdst = open(fpath, "r")
