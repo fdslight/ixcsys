@@ -13,8 +13,8 @@ EXTRA_ADDS = [
 EXTRA_DROPS = [
     "google", "twitter", "facebook", "microsoft", "bing",
     ".qy.net", "doubleclick.net", "doubleclick.com",
-    "sentry.io", "app-measurement", "cloudflare.com",".stripe.com",
-    ".tw",".philips.","cloudfront.net",
+    "sentry.io", "app-measurement", "cloudflare.com", ".stripe.com",
+    ".tw", ".philips.", ".cloudfront.net", ".amazonaws.com", ".amazon.", "americanexpress",
 ]
 
 
