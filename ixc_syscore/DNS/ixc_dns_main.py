@@ -277,6 +277,10 @@ class service(dispatcher.dispatcher):
         dic[host] = addr
         return True
 
+    @property
+    def hosts(self):
+        return self.__hosts
+
     def save_hosts(self):
         s = json.dumps(self.__hosts)
         with open(self.__hosts_fpath, "w") as f: f.write(s)

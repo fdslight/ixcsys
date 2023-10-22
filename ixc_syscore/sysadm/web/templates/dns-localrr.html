@@ -1,0 +1,106 @@
+<div id="ixc-dns-localrr-view" class="ixc-menu-content" style="display: none;">
+    <div class="row">
+        <div class="col-sm-10"></div>
+        <div class="col-sm-2">
+            <input type="button" class="btn btn-primary" value="添加" style="width: 100%;" data-toggle="modal"
+                   data-target="#ixc-port-map-modal"/>
+        </div>
+    </div>
+    <div class="modal fade" id="ixc-localrr-modal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalCenterTitle">本地DNS解析添加</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="ixc-port-map-form">
+                        <div class="form-group">
+                            <label>记录类型</label>
+                            <select class="form-control" name="qtype">
+                                <option value="a">A</option>
+                                <option value="aaaa">AAAA</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>域名</label>
+                            <input type="text" class="form-control" name="host"/>
+                        </div>
+                        <div class="form-group">
+                            <label>地址</label>
+                            <input type="text" class="form-control" name="ip"/>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="ixc-port-map-add">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">序号</th>
+            <th scope="col">记录类型</th>
+            <th scope="col">域名</th>
+            <th scope="col">IP地址</th>
+            <th scope="col">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+            <%
+            x=1
+            a_rrs=self.V["hosts"]["A"]
+            aaaa_rrs=self.V["hosts"]["AAAA"]
+            for name in a_rrs:
+                addr=a_rrs[name]
+                s="""<tr><td>%d</td><td>A</td><td>%s</td><td>%s</td><td><a href="#" class="ixc-localrr-do" name="%s">删除</a>
+                <input type="hidden" value="action=delete&qtype=A&host=%s" id="ixc-localrr-del-%s" />
+                </td></tr>
+                """ % (x,name,addr,x,name,x)
+                self.show(s)
+                x+=1
+            %>
+        </tbody>
+    </table>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#ixc-port-map-add").click(function () {
+            let form_content = $("#ixc-port-map-form").serialize();
+            $.post("${self.url_prefix}/port_map", form_content, function (result) {
+                let is_error = result["is_error"];
+                let message = result["message"];
+
+                if (is_error) {
+                    alert(message);
+                } else {
+                    window.location.reload(true);
+                }
+            });
+        });
+
+        $(".ixc-port-map-del-do").click(function () {
+            let seq = $(this).attr("name")
+            let arg = $("#ixc-port-map-del-" + seq).val();
+
+            $.post("${self.url_prefix}/port_map", arg, function (result) {
+                let is_error = result["is_error"];
+                let message = result["message"];
+
+                if (is_error) {
+                    alert(message);
+                } else {
+                    window.location.reload(true);
+                }
+            });
+
+            return false;
+        });
+    });
+</script>

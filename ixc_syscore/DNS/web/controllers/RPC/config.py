@@ -24,6 +24,7 @@ class controller(rpc.controller):
             "is_auto": self.is_auto,
             "hosts_set": self.hosts_set,
             "hosts_save": self.hosts_save,
+            "hosts_get": self.hosts_get,
             "save": self.save
         }
 
@@ -97,6 +98,9 @@ class controller(rpc.controller):
 
     def hosts_set(self, host, addr, is_ipv6=False):
         return 0, self.__runtime.hosts_modify(host, addr, is_ipv6=is_ipv6)
+
+    def hosts_get(self):
+        return 0, self.__runtime.hosts
 
     def hosts_save(self):
         self.__runtime.save_hosts()
