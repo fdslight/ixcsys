@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import struct
+import struct, socket
 
 HEADER_FMT = "!HHHHHH"
 
@@ -97,6 +97,36 @@ def build_dns_no_such_name_response(xid: int, host: str, is_ipv6=False):
     return b"".join(_list)
 
 
+def build_dns_addr_response(xid, host, addr, is_ipv6=False):
+    """构建DNS A或者AAAA响应
+    """
+    header_data = struct.pack(HEADER_FMT, xid, 0x8180, 0x0001, 0x0001, 0x0000, 0x0000)
+    if is_ipv6:
+        qtype = 28
+        x = 16
+        byte_addr = socket.inet_pton(socket.AF_INET6, addr)
+    else:
+        qtype = 1
+        x = 4
+        byte_addr = socket.inet_pton(socket.AF_INET, addr)
+
+    host_list = host.split(".")
+    _list = [header_data, ]
+
+    for s in host_list:
+        length = len(s)
+        _list.append(bytes([length]))
+        _list.append(s.encode("iso-8859-1"))
+    _list.append(b"\0")
+    _list.append(struct.pack("!HH", qtype, 0x0001))
+    _list.append(
+        struct.pack("!HHHIH", 0xc00c, qtype, 0x0001, 0x0000000f, x)
+    )
+    _list.append(byte_addr)
+
+    return b"".join(_list)
+
+
 """
 zz = "7d710100000100000000000003777777036d736e02636e0000010001"
 seq = []
@@ -114,4 +144,5 @@ dnspkt = bytes(seq)
 print(is_aaaa_request(dnspkt))
 """
 
-#print(build_dns_no_such_name_response(0x0011, "www.google.com",is_ipv6=True))
+# print(build_dns_no_such_name_response(0x0011, "www.google.com",is_ipv6=True))
+# print(build_dns_addr_response(0x0001,"www.google.com","192.168.2.2"))

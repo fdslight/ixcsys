@@ -22,6 +22,8 @@ class controller(rpc.controller):
             "get_nameservers": self.get_nameservers,
             "set_nameservers": self.set_nameservers,
             "is_auto": self.is_auto,
+            "hosts_set": self.hosts_set,
+            "hosts_save": self.hosts_save,
             "save": self.save
         }
 
@@ -51,14 +53,14 @@ class controller(rpc.controller):
             ''''''
         return 0, None
 
-    def enable(self, enabled: bool,is_ipv6=False):
+    def enable(self, enabled: bool, is_ipv6=False):
         """是否启用自动获取DNS或者关闭自动获取DNS
         """
         configs = self.__runtime.configs
         if is_ipv6:
-            cfg=configs["ipv6"]
+            cfg = configs["ipv6"]
         else:
-            cfg=configs["ipv4"]
+            cfg = configs["ipv4"]
 
         if enabled:
             cfg["enable_auto"] = 1
@@ -88,7 +90,14 @@ class controller(rpc.controller):
         if not self.__runtime.is_auto(): return 0, None
         return 0, self.__runtime.set_nameservers(ns1, ns2, is_ipv6=is_ipv6)
 
-    def is_auto(self,is_ipv6=False):
+    def is_auto(self, is_ipv6=False):
         """是否为自动设置DNS地址
         """
         return 0, self.__runtime.is_auto(is_ipv6=is_ipv6)
+
+    def hosts_set(self, host, addr, is_ipv6=False):
+        return 0, self.__runtime.hosts_modify(host, addr, is_ipv6=is_ipv6)
+
+    def hosts_save(self):
+        self.__runtime.save_hosts()
+        return 0, None

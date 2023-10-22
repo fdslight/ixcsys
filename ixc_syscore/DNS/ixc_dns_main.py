@@ -100,6 +100,9 @@ class service(dispatcher.dispatcher):
     # IPv6管理地址
     __ip6_mngaddr = None
 
+    __hosts_fpath = None
+    __hosts = None
+
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
 
@@ -129,6 +132,9 @@ class service(dispatcher.dispatcher):
 
         # 这里必须设置为字符串空值,用于比较,如果设置为None,类型不一致比较会出错
         self.__ip6_mngaddr = ""
+
+        self.__hosts_fpath = "%s/hosts.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__hosts = {}
 
         RPCClient.wait_processes(["router", ])
 
@@ -224,10 +230,70 @@ class service(dispatcher.dispatcher):
         for rule in sec_rules:
             self.__sec_rules_dict[rule] = None
             self.matcher.add_rule(rule, "drop", None)
+        ''''''
+
+    def load_hosts(self):
+        default_conf = {"A": {}, "AAAA": {}}
+        if not os.path.isfile(self.__hosts_fpath):
+            conf = default_conf
+        else:
+            with open(self.__hosts_fpath, "r") as f:
+                s = f.read()
+            f.close()
+            try:
+                dic = json.loads(s)
+                conf = dic
+            except:
+                conf = default_conf
+            ''''''
+        if not isinstance(conf, dict): conf = default_conf
+        if "A" not in conf: conf["A"] = {}
+        if "AAAA" not in conf: conf["AAAA"] = {}
+
+        self.__hosts = conf
+
+    def hosts_modify(self, host, addr, is_ipv6=False):
+        if not host: return False
+        # 地址不存在那么就删除记录
+        if not addr:
+            if is_ipv6:
+                dic = self.__hosts["AAAA"]
+            else:
+                dic = self.__hosts["A"]
+            if host in dic: del dic[host]
+            return True
+        ''''''
+        if not netutils.is_ipv4_address(addr) and not netutils.is_ipv6_address(addr):
+            return False
+
+        if netutils.is_ipv6_address(addr) and not is_ipv6:
+            return False
+
+        if is_ipv6:
+            dic = self.__hosts["AAAA"]
+        else:
+            dic = self.__hosts["A"]
+
+        dic[host] = addr
+        return True
+
+    def save_hosts(self):
+        s = json.dumps(self.__hosts)
+        with open(self.__hosts_fpath, "w") as f: f.write(s)
+        f.close()
+
+    def hosts_get(self, host, is_ipv6=False):
+        if is_ipv6:
+            dic = self.__hosts["AAAA"]
+        else:
+            dic = self.__hosts["A"]
+
+        return dic.get(host, None)
 
     def start_dns(self):
         self.load_configs()
         self.load_sec_rules()
+        self.load_hosts()
 
         manage_addr = self.get_manage_addr()
         ipv4 = self.__dns_configs["ipv4"]
@@ -359,6 +425,31 @@ class service(dispatcher.dispatcher):
 
         q = questions[0]
         host = b".".join(q.name[0:-1]).decode("iso-8859-1")
+
+        # 检查是否是路由器内置的域名
+        if host == "router.ixcsys":
+            if dns_utils.is_a_request(message):
+                local_msg = dns_utils.build_dns_addr_response(dns_id, host, self.get_manage_addr(), is_ipv6=False)
+                self.get_handler(from_fd).send_msg(local_msg, address)
+            del self.__id_wan2lan[new_dns_id]
+            return
+
+        if dns_utils.is_aaaa_request(message):
+            local_rr = self.hosts_get(host, is_ipv6=True)
+            if local_rr is not None:
+                local_msg = dns_utils.build_dns_addr_response(dns_id, host, local_rr, is_ipv6=True)
+                self.get_handler(from_fd).send_msg(local_msg, address)
+                del self.__id_wan2lan[new_dns_id]
+                return
+            ''''''
+        if dns_utils.is_a_request(message):
+            local_rr = self.hosts_get(host, is_ipv6=False)
+            if local_rr is not None:
+                local_msg = dns_utils.build_dns_addr_response(dns_id, host, local_rr, is_ipv6=False)
+                self.get_handler(from_fd).send_msg(local_msg, address)
+                del self.__id_wan2lan[new_dns_id]
+                return
+            ''''''
         match_rs = self.__matcher.match(host)
 
         logging.print_info("DNS_QUERY: %s from %s" % (host, address[0]))
@@ -383,7 +474,7 @@ class service(dispatcher.dispatcher):
 
             if flags:
                 drop_msg = dns_utils.build_dns_no_such_name_response(dns_id, host, is_ipv6=is_aaaa)
-                self.get_handler(from_fd).send_msg(drop_msg, address, )
+                self.get_handler(from_fd).send_msg(drop_msg, address)
 
             logging.print_info("DNS_QUERY_DROP: %s from %s" % (host, address[0]))
 
@@ -503,6 +594,7 @@ class service(dispatcher.dispatcher):
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)
         self.save_sec_rules()
+        self.save_hosts()
 
     def save_sec_rules(self):
         sec_rule.save_to_file(self.__sec_rules_dict, self.__sec_rule_path)
