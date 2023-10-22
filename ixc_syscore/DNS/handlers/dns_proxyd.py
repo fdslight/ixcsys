@@ -125,5 +125,5 @@ class proxyd(udp_handler.udp_handler):
         self.close()
 
     def send_msg(self, message: bytes, client_addr: tuple):
-        self.sendto(message, (client_addr[0], client_addr[1],))
+        self.sendto(message, client_addr)
         self.add_evt_write(self.fileno)
