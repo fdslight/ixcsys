@@ -11,10 +11,27 @@ EXTRA_ADDS = [
 
 # 去除一些规则
 EXTRA_DROPS = [
-    "google", "twitter", "facebook", "microsoft", "bing",
-    ".qy.net", "doubleclick.net", "doubleclick.com",
-    "sentry.io", "app-measurement", "cloudflare.com", ".stripe.com",
-    ".tw", ".philips.", ".cloudfront.net", "amazonaws.com", ".amazon.", "americanexpress",
+    "google",
+    "twitter",
+    "facebook",
+    "microsoft",
+    "bing",
+    ".qy.net",
+    "doubleclick.net",
+    "doubleclick.com",
+    "sentry.io",
+    "app-measurement",
+    "cloudflare.com",
+    ".stripe.com",
+    ".tw",
+    ".philips.",
+    ".cloudfront.net",
+    "amazonaws.com",
+    ".amazon.",
+    "americanexpress",
+    ".windows.com",
+    ".yahoo.com",
+    ".yandex.ru",
 ]
 
 
