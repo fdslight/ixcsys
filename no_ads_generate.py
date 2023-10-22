@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# 生成广告屏蔽版本的代理规则文件
+# 生成DNS广告屏蔽规则
+
 import os
 
 URL = "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-domains.txt"
@@ -39,6 +40,7 @@ EXTRA_DROPS = [
     ".redhat.com",
     ".ricoh.",
 ]
+
 
 def parse(fpath: str):
     fdst = open(fpath, "r")
