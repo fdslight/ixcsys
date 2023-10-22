@@ -431,7 +431,7 @@ class service(dispatcher.dispatcher):
         host = b".".join(q.name[0:-1]).decode("iso-8859-1")
 
         # 检查是否是路由器内置的域名
-        if host == "router.ixcsys":
+        if host == "ixcsys.local":
             if dns_utils.is_a_request(message):
                 local_msg = dns_utils.build_dns_addr_response(dns_id, host, self.get_manage_addr(), is_ipv6=False)
                 self.get_handler(from_fd).send_msg(local_msg, address)
