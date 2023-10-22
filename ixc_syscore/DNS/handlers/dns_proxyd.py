@@ -112,7 +112,7 @@ class proxyd(udp_handler.udp_handler):
 
     def udp_readable(self, message, address):
         if len(message) < 16: return
-        self.dispatcher.handle_msg_from_dnsclient(message, address, is_ipv6=self.__is_ipv6)
+        self.dispatcher.handle_msg_from_dnsclient(self.fileno, message, address, is_ipv6=self.__is_ipv6)
 
     def udp_writable(self):
         self.remove_evt_write(self.fileno)
@@ -125,5 +125,5 @@ class proxyd(udp_handler.udp_handler):
         self.close()
 
     def send_msg(self, message: bytes, client_addr: tuple):
-        self.sendto(message, client_addr)
+        self.sendto(message, (client_addr[0], client_addr[1],))
         self.add_evt_write(self.fileno)

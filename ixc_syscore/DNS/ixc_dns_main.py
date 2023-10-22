@@ -23,6 +23,7 @@ import ixc_syscore.DNS.handlers.dns_proxyd as dns_proxyd
 import ixc_syscore.DNS.pylib.rule as rule
 import ixc_syscore.DNS.pylib.os_resolv as os_resolv
 import ixc_syscore.DNS.pylib.sec_rule as sec_rule
+import ixc_syscore.DNS.pylib.dns_utils as dns_utils
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -328,7 +329,7 @@ class service(dispatcher.dispatcher):
         # 此处删除记录
         del self.__id_wan2lan[dns_id]
 
-    def handle_msg_from_dnsclient(self, message: bytes, address: tuple, is_ipv6=False):
+    def handle_msg_from_dnsclient(self, from_fd, message: bytes, address: tuple, is_ipv6=False):
         """处理来自于DNS客户端的消息
         """
         if not self.__wan_ok: return
@@ -369,7 +370,23 @@ class service(dispatcher.dispatcher):
         action = match_rs["action"]
         # 如果规则为丢弃那么直接丢弃该DNS请求
         if action == "drop":
+            flags = False
+            is_aaaa = False
+            if dns_utils.is_aaaa_request(message):
+                is_aaaa = True
+                flags = True
+            elif dns_utils.is_a_request(message):
+                is_aaaa = False
+                flags = True
+            else:
+                pass
+
+            if flags:
+                drop_msg = dns_utils.build_dns_no_such_name_response(dns_id, host, is_ipv6=is_aaaa)
+                self.get_handler(from_fd).send_msg(drop_msg, address, )
+
             logging.print_info("DNS_QUERY_DROP: %s from %s" % (host, address[0]))
+
             del self.__id_wan2lan[new_dns_id]
             return
         # 发送DNS数据到其他应用程序,如果找不到文件号那么丢弃数据包
