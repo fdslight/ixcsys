@@ -13,15 +13,22 @@ class controller(base_controller.BaseController):
 
     def handle(self):
         ip4_auto = self.request.get_argument("ipv4.enable_auto", is_qs=False, is_seq=False)
-        ip6_auto = self.request.get_argument("ipv6.enable_auto",is_qs=False,is_seq=False)
+        ip6_auto = self.request.get_argument("ipv6.enable_auto", is_qs=False, is_seq=False)
+        enable_dnsv6_drop = self.request.get_argument("enable_dnsv6_drop", is_qs=False, is_seq=False)
+
         if not ip4_auto:
             ip4_auto = False
         else:
             ip4_auto = True
         if not ip6_auto:
-            ip6_auto=False
+            ip6_auto = False
         else:
-            ip6_auto=True
+            ip6_auto = True
+
+        if not enable_dnsv6_drop:
+            enable_dnsv6_drop = False
+        else:
+            enable_dnsv6_drop = True
 
         ipv4_main_dns = self.request.get_argument("ipv4.main_dns", is_qs=False, is_seq=False)
         ipv4_second_dns = self.request.get_argument("ipv4.second_dns", is_qs=False, is_seq=False)
@@ -36,7 +43,7 @@ class controller(base_controller.BaseController):
             ''''''
         if not ip6_auto:
             if not ipv6_main_dns:
-                self.json_resp(True,self.LA("please set main IPv6 DNS address"))
+                self.json_resp(True, self.LA("please set main IPv6 DNS address"))
                 return
 
         if ipv4_main_dns and not netutils.is_ipv4_address(ipv4_main_dns):
@@ -69,8 +76,9 @@ class controller(base_controller.BaseController):
         if ipv6_second_dns:
             RPC.fn_call("DNS", "/config", "set_parent_server", ipv6_second_dns, is_main_server=False, is_ipv6=True)
 
-        RPC.fn_call("DNS", "/config", "enable", ip4_auto,is_ipv6=False)
-        RPC.fn_call("DNS","/config","enable",ip6_auto,is_ipv6=True)
+        RPC.fn_call("DNS", "/config", "enable", ip4_auto, is_ipv6=False)
+        RPC.fn_call("DNS", "/config", "enable", ip6_auto, is_ipv6=True)
+        RPC.fn_call("DNS", "/config", "set_dnsv6_drop_enable", enable_dnsv6_drop)
         RPC.fn_call("DNS", "/config", "save")
 
         self.json_resp(False, {})

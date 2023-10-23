@@ -25,6 +25,7 @@ class controller(rpc.controller):
             "hosts_set": self.hosts_set,
             "hosts_save": self.hosts_save,
             "hosts_get": self.hosts_get,
+            "set_dnsv6_drop_enable": self.set_dnsv6_drop_enable,
             "save": self.save
         }
 
@@ -104,4 +105,9 @@ class controller(rpc.controller):
 
     def hosts_save(self):
         self.__runtime.save_hosts()
+        return 0, None
+
+    def set_dnsv6_drop_enable(self, enable: bool):
+        self.__runtime.set_drop_dnsv6_enable(enable)
+
         return 0, None

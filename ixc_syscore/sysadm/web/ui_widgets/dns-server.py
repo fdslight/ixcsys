@@ -18,6 +18,9 @@ class widget(ui_widget.widget):
             ip4_cfg["enable_auto"] = ip4_enable_auto
             ip6_cfg["enbale_auto"] = ip6_enable_auto
 
+            pub = rs["public"]
+            pub["enable_ipv6_dns_drop"] = bool(int(pub["enable_ipv6_dns_drop"]))
+
             uri = "dns-server.html"
         else:
             uri = "no-proc.html"

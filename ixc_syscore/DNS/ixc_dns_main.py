@@ -222,8 +222,13 @@ class service(dispatcher.dispatcher):
         ip4_cfg = self.__dns_configs["ipv4"]
         ip6_cfg = self.__dns_configs["ipv6"]
 
+        if "public" not in self.__dns_configs: self.__dns_configs["public"] = {}
+
+        pub = self.__dns_configs["public"]
+
         if "enable_auto" not in ip4_cfg: ip4_cfg["enable_auto"] = "1"
         if "enable_auto" not in ip6_cfg: ip6_cfg["enable_auto"] = "1"
+        if "enable_ipv6_dns_drop" not in pub: pub["enable_ipv6_dns_drop"] = "0"
 
     def load_sec_rules(self):
         sec_rules = sec_rule.parse_from_file(self.__sec_rule_path)
@@ -430,6 +435,14 @@ class service(dispatcher.dispatcher):
         q = questions[0]
         host = b".".join(q.name[0:-1]).decode("iso-8859-1")
 
+        # 检查是否开启丢弃DNSv6请求
+        if self.enable_drop_dnsv6():
+            if dns_utils.is_aaaa_request(message):
+                drop_msg = dns_utils.build_dns_no_such_name_response(dns_id, host, is_ipv6=True)
+                self.get_handler(from_fd).send_msg(drop_msg, address)
+                del self.__id_wan2lan[new_dns_id]
+                return
+            ''''''
         # 检查是否是路由器内置的域名
         if host == "router.ixcsys.com":
             if dns_utils.is_a_request(message):
@@ -519,6 +532,22 @@ class service(dispatcher.dispatcher):
             cfg = self.configs["ipv4"]
 
         return bool(int(cfg["enable_auto"]))
+
+    def enable_drop_dnsv6(self):
+        """是否开启了丢弃DNSv6报文
+        """
+        pub = self.configs["public"]
+
+        return bool(int(pub["enable_ipv6_dns_drop"]))
+
+    def set_drop_dnsv6_enable(self, enable: bool):
+        """开启或者关闭DNSv6请求
+        """
+        pub = self.configs["public"]
+        if enable:
+            pub["enable_ipv6_dns_drop"] = "1"
+        else:
+            pub["enable_ipv6_dns_drop"] = "0"
 
     def get_nameservers(self, is_ipv6=False):
         if is_ipv6:
