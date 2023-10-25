@@ -27,7 +27,7 @@ class controller(base_controller.BaseController):
         try:
             ip6_tcp_mss = int(ip6_tcp_mss)
         except ValueError:
-            self.json_resp(True, "错误的IPv6 TCP MSS值类型 %s" % ip_tcp_mss)
+            self.json_resp(True, "错误的IPv6 TCP MSS值类型 %s" % ip6_tcp_mss)
             return
 
         if ip_tcp_mss != 0:
