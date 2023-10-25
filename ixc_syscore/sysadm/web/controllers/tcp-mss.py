@@ -32,12 +32,12 @@ class controller(base_controller.BaseController):
 
         if ip_tcp_mss != 0:
             if ip_tcp_mss < 536 or ip_tcp_mss > 1460:
-                self.json_resp(True, "错误的MSS数值,IPv4 TCP MSS值范围为536~1460" % ip_tcp_mss)
+                self.json_resp(True, "错误的MSS数值,IPv4 TCP MSS值范围为536~1460")
                 return
             ''''''
         if ip6_tcp_mss != 0:
             if ip6_tcp_mss < 516 or ip6_tcp_mss > 1440:
-                self.json_resp(True, "错误的MSS数值,IPv6 TCP MSS值范围为516~1440" % ip_tcp_mss)
+                self.json_resp(True, "错误的MSS数值,IPv6 TCP MSS值范围为516~1440")
                 return
             ''''''
 
