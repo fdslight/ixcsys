@@ -462,6 +462,18 @@ router_route_ipv6_pass_enable(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_route_tcp_mss_set(PyObject *self,PyObject *args)
+{
+    unsigned short tcp_mss;
+    int is_ipv6,rs;
+    if(!PyArg_ParseTuple(args,"Hp",&tcp_mss,&is_ipv6)) return NULL;
+
+    rs=ixc_route_tcp_mss_set(tcp_mss,is_ipv6);
+
+    return PyBool_FromLong(rs);
+}
+
+static PyObject *
 router_icmpv6_dns_set(PyObject *self,PyObject *args)
 {
     unsigned char *dnsserver;
@@ -899,6 +911,7 @@ static PyMethodDef routerMethods[]={
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
     {"route_ipv6_pass_enable",(PyCFunction)router_route_ipv6_pass_enable,METH_VARARGS,"enable/disable IPv6 pass"},
+    {"route_tcp_mss_set",(PyCFunction)router_route_tcp_mss_set,METH_VARARGS,"set tcp mss value"},
     //
     {"icmpv6_dns_set",(PyCFunction)router_icmpv6_dns_set,METH_VARARGS,"set ICMPv6 NDP dns option"},
     {"icmpv6_dns_unset",(PyCFunction)router_icmpv6_dns_unset,METH_NOARGS,"unset ICMPv6 NDP dns option"},

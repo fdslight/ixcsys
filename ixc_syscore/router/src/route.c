@@ -25,6 +25,90 @@ static int route_is_initialized=0;
 static struct time_wheel route_cache_tw;
 static struct sysloop *route_sysloop=NULL;
 
+static void route_tcp_mss_modify(struct netutil_tcphdr *tcp_header,int is_ipv6)
+{
+    unsigned short csum=ntohs(tcp_header->csum);
+    unsigned char *ptr=(unsigned char *)tcp_header;
+    unsigned short header_len_and_flag=ntohs(tcp_header->header_len_and_flag);
+    int header_size=((header_len_and_flag & 0xf000) >> 12) * 4;
+    int is_syn= (header_len_and_flag & 0x0002) >> 1;
+    unsigned short tcp_mss=0,set_tcp_mss;
+    unsigned char *tcp_opt=ptr+20;
+    unsigned short *tcp_mss_ptr=NULL;
+    unsigned char x,length;
+
+    // 检查是否是SYN报文
+    //DBG_FLAGS;
+    if(!is_syn) return;
+    //DBG_FLAGS;
+    if(header_size<=20) return;
+
+    //DBG_FLAGS;
+    for(int n=0;n<header_size-20;){
+        x=*tcp_opt++;
+        if(0==x) break;
+        if(1==x) {
+            n+=1;
+            continue;
+        }
+        length=*tcp_opt++;
+        if(2==x){
+            if(4==length) {
+                tcp_mss_ptr=(unsigned short *)(tcp_opt);
+                memcpy(&tcp_mss,tcp_opt,2);
+            }
+            break;
+       } 
+       tcp_opt=tcp_opt+length-2;
+       n+=length;
+    }
+
+    if(0==tcp_mss) return;
+  
+    tcp_mss=ntohs(tcp_mss);
+    //DBG("tcp mss %d set tcp mss %d\r\n",tcp_mss,set_tcp_mss);
+
+    if(is_ipv6)set_tcp_mss=route.ip6_tcp_mss;
+    else set_tcp_mss=route.ip_tcp_mss;
+
+    // 实际TCP MSS小于设置值,那么不修改
+    if(tcp_mss<=set_tcp_mss) return;
+    //DBG_FLAGS;
+    *tcp_mss_ptr=htons(set_tcp_mss);
+    csum=csum_calc_incre(tcp_mss,set_tcp_mss,csum);
+    tcp_header->csum=htons(csum);
+
+}
+
+static void route_modify_ip_tcp_mss(struct netutil_iphdr *header)
+{
+    int header_size= (header->ver_and_ihl & 0x0f) * 4;
+    unsigned char *ptr=(unsigned char *)header;
+    struct netutil_tcphdr *tcp_header=NULL;
+
+    if(0==route.ip_tcp_mss) return;
+    if(6!=header->protocol) return;
+
+    ptr=ptr+header_size;
+
+    tcp_header=(struct netutil_tcphdr *)ptr;
+    route_tcp_mss_modify(tcp_header,0);
+}
+
+static void route_modify_ip6_tcp_mss(struct netutil_ip6hdr *header)
+{
+    unsigned char *ptr=(unsigned char *)header;
+    struct netutil_tcphdr *tcp_header=NULL;
+
+    if(0==route.ip6_tcp_mss) return;
+    if(6!=header->next_header) return;
+
+    ptr=ptr+40;
+    tcp_header=(struct netutil_tcphdr *)ptr;
+    route_tcp_mss_modify(tcp_header,1);
+}
+
+
 static int ixc_route_prefix_add(unsigned char prefix,int is_ipv6)
 {
     struct ixc_route_prefix *p=NULL,*t,**head,*old;
@@ -586,6 +670,8 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
         return;
     }
 
+    route_modify_ip6_tcp_mss(header);
+
     // 检查IP地址是否指向自己
     if(!memcmp(header->dst_addr,netif->ip6addr,16)){
         ixc_route_handle_for_ipv6_local(m,header);
@@ -671,6 +757,8 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         ixc_mbuf_put(m);
         return;
     }
+
+    route_modify_ip_tcp_mss(iphdr);
 
     r=ixc_route_match(iphdr->dst_addr,0);
 
@@ -760,4 +848,33 @@ int ixc_route_ipv6_pass_enable(int enable)
     route.ipv6_pass=enable;
 
     return 0;
+}
+
+int ixc_route_tcp_mss_set(unsigned short mss,int is_ipv6)
+{
+    if(0==mss) return 1;
+    // 限制IPv6的tcp mss
+    if(is_ipv6 && mss>1440) {
+        STDERR("wrong IPv6 TCP MSS value %u\r\n",mss);
+        return 0;
+    }
+    if(is_ipv6 && mss<516){
+        STDERR("wrong IPv6 TCP MSS value %u\r\n",mss);
+        return 0;
+    }
+
+    if(!is_ipv6 && mss>1460) {
+        STDERR("wrong IPv6 TCP MSS value %u\r\n",mss);
+        return 0;
+    }
+
+    if(!is_ipv6 && mss<536){
+        STDERR("wrong IPv6 TCP MSS value %u\r\n",mss);
+        return 0;
+    }
+
+    if(is_ipv6) route.ip6_tcp_mss=mss;
+    else route.ip_tcp_mss=mss;
+
+    return 1;
 }

@@ -46,11 +46,14 @@ ${self.inherit("base.html")}
                 <li class="list-group-item ixc-left-menu" id="ixc-port-map">
                     <a href="${self.url_prefix}/?show=ixc-port-map&page=port-map">端口映射</a>
                 </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-proxy">
+                    <a href="${self.url_prefix}/?show=ixc-proxy.ixc-proxy-conn&page=proxy&type=conn">网络代理</a>
+                </li>
                 <li class="list-group-item ixc-left-menu" id="ixc-ddns">
                     <a href="${self.url_prefix}/?show=ixc-ddns&page=ddns">CloudFlare DDNS</a>
                 </li>
-                <li class="list-group-item ixc-left-menu" id="ixc-proxy">
-                    <a href="${self.url_prefix}/?show=ixc-proxy.ixc-proxy-conn&page=proxy&type=conn">网络代理</a>
+                <li class="list-group-item ixc-left-menu" id="ixc-tcp-mss">
+                    <a href="${self.url_prefix}/?show=ixc-tcp-mss&page=tcp-mss">TCP MSS</a>
                 </li>
             </ul>
             <div class="ixc-empty"></div>

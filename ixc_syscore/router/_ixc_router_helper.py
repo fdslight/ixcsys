@@ -25,6 +25,7 @@ class rpc(object):
             "get_lan_ipaddr_info": self.get_lan_ipaddr_info,
             "add_route": self.add_route,
             "del_route": self.del_route,
+            "tcp_mss_set": self.tcp_mss_set,
             "set_wan_ipaddr": self.set_wan_ipaddr,
             "wan_ready_ok": self.wan_ready_ok,
 
@@ -259,6 +260,22 @@ class rpc(object):
         self.__helper.router.route_del(byte_subnet, prefix, is_ipv6)
 
         return 0, (True, "")
+
+    def tcp_mss_set(self, tcp_mss, is_ipv6=False):
+        if tcp_mss != 0:
+            if is_ipv6:
+                if tcp_mss < 516 or tcp_mss > 1440: return 0, False
+            else:
+                if tcp_mss < 536 or tcp_mss > 1460: return 0, False
+            ''''''
+        if is_ipv6:
+            self.__helper.router_configs["config"]["ip6_tcp_mss"] = tcp_mss
+        else:
+            self.__helper.router_configs["config"]["ip_tcp_mss"] = tcp_mss
+
+        self.__helper.save_router_configs()
+
+        return 0, self.__helper.router.route_tcp_mss_set(tcp_mss, is_ipv6)
 
     def pppoe_is_enabled(self):
         is_enabled = self.__helper.router.pppoe_is_enabled()
@@ -728,6 +745,11 @@ class helper(object):
 
         if "bind_cpu" not in dic:
             dic["bind_cpu"] = -1
+
+        if "ip_tcp_mss" not in dic:
+            dic["ip_tcp_mss"] = 0
+        if "ip6_tcp_mss" not in dic:
+            dic["ip6_tcp_mss"] = 0
 
     def load_port_map_configs(self):
         path = "%s/port_map.ini" % self.__conf_dir
