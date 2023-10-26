@@ -329,6 +329,7 @@ class service(dispatcher.dispatcher):
         """获取管理地址
         """
         if self.__ip_mngaddr: return self.__ip_mngaddr
+
         self.__ip_mngaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
 
         return self.__ip_mngaddr
