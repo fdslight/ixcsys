@@ -99,6 +99,8 @@ class service(dispatcher.dispatcher):
     __up_check_os_resolv_time = None
     # IPv6管理地址
     __ip6_mngaddr = None
+    # IPv4管理地址
+    __ip_mngaddr = None
 
     __hosts_fpath = None
     __hosts = None
@@ -326,9 +328,10 @@ class service(dispatcher.dispatcher):
     def get_manage_addr(self):
         """获取管理地址
         """
-        ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
+        if self.__ip_mngaddr: return self.__ip_mngaddr
+        self.__ip_mngaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
 
-        return ipaddr
+        return self.__ip_mngaddr
 
     def get_dns_id(self):
         dns_id = self.__cur_dns_id
