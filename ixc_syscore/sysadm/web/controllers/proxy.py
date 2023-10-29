@@ -113,8 +113,8 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的连接超时值")
             return
 
-        if conn_timeout < 20:
-            self.json_resp(True, "连接超时应等于大于20s")
+        if conn_timeout < 120:
+            self.json_resp(True, "连接超时应等于大于120s")
             return
 
         try:
