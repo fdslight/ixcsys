@@ -95,7 +95,7 @@ class ifconfig(object):
 
     def wan_do_dev(self, devname: str):
         if devname not in get_if_net_devices():
-            print("ERROR:not found system network card %s for LAN" % devname)
+            print("ERROR:not found system network card %s for WAN" % devname)
             return
 
         fpath = "%s/ixc_configs/router/wan.ini" % sys_dir
