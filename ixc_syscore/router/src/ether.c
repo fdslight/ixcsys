@@ -10,7 +10,6 @@
 #include "pppoe.h"
 #include "route.h"
 #include "traffic_log.h"
-#include "iptv.h"
 
 #include "../../../pywind/clib/debug.h"
 
@@ -143,18 +142,6 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
 
     mbuf->offset+=14;
     mbuf->link_proto=type;
-
-    // 如果是IPTV接口那么处理IPTV数据包
-    if(IXC_NETIF_IPTV==netif->type){
-        ixc_iptv_handle(mbuf);
-        return;
-    }
-
-    // LAN口检查设备是否是IPTV设备
-    if(IXC_NETIF_LAN==netif->type && ixc_iptv_is_iptv_device(mbuf->src_hwaddr)){
-        ixc_iptv_handle(mbuf);
-        return;
-    }
     
     if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){
         // 如果WAN口开启PPPoE那么限制只支持PPPoE数据包

@@ -32,7 +32,6 @@
 #include "sec_net.h"
 #include "traffic_log.h"
 #include "icmpv6.h"
-#include "iptv.h"
 
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
@@ -887,57 +886,6 @@ router_traffic_log_enable(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
-static PyObject *
-router_iptv_enable(PyObject *self,PyObject *args)
-{
-    int enable;
-    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
-
-    ixc_iptv_enable(enable);
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-router_iptv_dev_add(PyObject *self,PyObject *args)
-{
-    unsigned char *hwaddr;
-    Py_ssize_t size;
-    int is_err;
-
-    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
-
-    if(6!=size){
-        PyErr_SetString(PyExc_ValueError,"wrong hwaddr length");
-        return NULL;
-    }
-
-    is_err=ixc_iptv_device_add(hwaddr);
-    if(is_err){
-        Py_RETURN_FALSE;
-    }
-
-    Py_RETURN_TRUE;
-}
-
-static PyObject *
-router_iptv_dev_del(PyObject *self,PyObject *args)
-{
-    unsigned char *hwaddr;
-    Py_ssize_t size;
-
-    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
-
-    if(6!=size){
-        PyErr_SetString(PyExc_ValueError,"wrong hwaddr length");
-        return NULL;
-    }
-
-    ixc_iptv_device_del(hwaddr);
-
-    Py_RETURN_NONE;
-}
-
 static PyMemberDef router_members[]={
     {NULL}
 };
@@ -1005,10 +953,6 @@ static PyMethodDef routerMethods[]={
     {"router_start_time",(PyCFunction)router_start_time,METH_NOARGS,"get router start time"},
     //
     {"traffic_log_enable",(PyCFunction)router_traffic_log_enable,METH_VARARGS,"disable/enable traffic log"},
-    //
-    {"iptv_enable",(PyCFunction)router_iptv_enable,METH_VARARGS,"enable/disable IPTV"},
-    {"iptv_dev_add",(PyCFunction)router_iptv_dev_add,METH_VARARGS,"add iptv hardware address"},
-    {"iptv_dev_del",(PyCFunction)router_iptv_dev_del,METH_VARARGS,"delete iptv hardware address"},
 
     {NULL,NULL,0,NULL}
 };
@@ -1061,8 +1005,6 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //
     PyModule_AddIntMacro(m,IXC_NETIF_WAN);
-    //
-    PyModule_AddIntMacro(m,IXC_NETIF_IPTV);
 
 
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_DROP);
@@ -1529,12 +1471,6 @@ static void ixc_start(int debug)
     rs=ixc_npfwd_init(&ixc_ev_set);
     if(rs<0){
         STDERR("cannot init npfwd\r\n");
-        exit(EXIT_SUCCESS);
-    }
-
-    rs=ixc_iptv_init();
-    if(rs<0){
-        STDERR("cannot init IPTV\r\n");
         exit(EXIT_SUCCESS);
     }
     

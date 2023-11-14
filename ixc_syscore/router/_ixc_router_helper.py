@@ -79,10 +79,6 @@ class rpc(object):
             "router_start_time": self.router_start_time,
             "traffic_log_enable": self.traffic_log_enable,
 
-            "iptv_enable": self.iptv_enable,
-            "iptv_dev_add": self.iptv_dev_add,
-            "iptv_dev_del": self.iptv_dev_del,
-
             "icmpv6_dns_set": self.icmpv6_dns_set,
             "icmpv6_dns_unset": self.icmpv6_dns_unset,
             "icmpv6_wan_dnsserver_get": self.icmpv6_wan_dnsserver_get,
@@ -120,7 +116,6 @@ class rpc(object):
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
-            "IXC_NETIF_IPTV": router.IXC_NETIF_IPTV,
             "IXC_SEC_NET_ACT_DROP": router.IXC_SEC_NET_ACT_DROP,
             "IXC_SEC_NET_ACT_ACCEPT": router.IXC_SEC_NET_ACT_ACCEPT,
         }
@@ -379,26 +374,6 @@ class rpc(object):
     def lan_traffic_speed_get(self):
         speed_info = self.__helper.router.netif_traffic_speed_get(router.IXC_NETIF_LAN)
         return 0, speed_info
-
-    def iptv_enable(self, enable: bool):
-        if not enable:
-            self.__helper.stop_iptv()
-        else:
-            self.__helper.start_iptv()
-
-        return 0, None
-
-    def iptv_dev_add(self, hwaddr: bytes):
-        """
-        :param hwaddr 6字节bytes
-        """
-        return 0, self.__helper.router.iptv_dev_add(hwaddr)
-
-    def iptv_dev_del(self, hwaddr: bytes):
-        """
-        :param hwaddr 6字节bytes
-        """
-        return 0, self.__helper.router.iptv_dev_del(hwaddr)
 
     def manage_addr_set(self, ip: str):
         lan_configs = self.__helper.lan_configs
@@ -720,15 +695,11 @@ class helper(object):
     __LAN_NAME = None
     __WAN_NAME = None
 
-    __IPTV_NAME = None
-    __IPTV_BR_NAME = None
-
     __router = None
     __debug = None
 
     __if_lan_fd = None
     __if_wan_fd = None
-    __if_iptv_fd = None
 
     __lan_configs = None
     __wan_configs = None
@@ -884,8 +855,6 @@ class helper(object):
             os.system("ip link set %s down" % self.__WAN_BR_NAME)
             os.system("ip link del %s" % self.__LAN_BR_NAME)
             os.system("ip link del %s" % self.__WAN_BR_NAME)
-
-            self.stop_iptv()
         else:
             os.system("ifconfig %s destroy" % self.__LAN_BR_NAME)
             os.system("ifconfig %s destroy" % self.__WAN_BR_NAME)
@@ -1100,51 +1069,6 @@ class helper(object):
 
         self.router.route_add(byte_subnet, 0, byte_gw, False)
 
-    def start_iptv(self):
-        self.load_wan_configs()
-
-        iptv = self.__wan_configs.get("iptv", {"enable": 0})
-        iptv_enable = iptv.get("enable", "0")
-        try:
-            iptv_enable = bool(int(iptv_enable))
-        except ValueError:
-            iptv_enable = False
-
-        if not iptv_enable: return
-
-        # 接口名
-        iptv_name = iptv["ifname"]
-        self.__if_iptv_fd, self.__IPTV_NAME = self.__router.netif_create(self.__IPTV_NAME, router.IXC_NETIF_IPTV)
-
-        if self.is_linux:
-            self.linux_br_create(self.__WAN_BR_NAME, [iptv_name, self.__IPTV_NAME, ])
-            os.system("ip link set %s promisc on" % iptv_name)
-            os.system("ip link set %s promisc on" % self.__IPTV_NAME)
-            os.system("ip link set %s up" % iptv_name)
-            # 关闭外网IPv6支持
-            os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__IPTV_BR_NAME)
-            os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % iptv_name)
-        else:
-            pass
-
-    def stop_iptv(self):
-        iptv = self.__wan_configs["iptv"]
-        iptv_enable = iptv.get("enable", "0")
-        try:
-            iptv_enable = bool(int(iptv_enable))
-        except ValueError:
-            iptv_enable = False
-
-        if not iptv_enable: return
-
-        if self.__if_iptv_fd > 0:
-            self.router.netif_delete(router.IXC_NETIF_IPTV)
-
-        self.__if_iptv_fd = -1
-
-        os.system("ip link set %s down" % self.__IPTV_BR_NAME)
-        os.system("ip link del %s" % self.__IPTV_BR_NAME)
-
     def set_gw_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         if is_ipv6:
             fa = socket.AF_INET6
@@ -1207,17 +1131,12 @@ class helper(object):
         self.__router = router.router()
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
-        self.__if_iptv_fd = -1
 
         self.__WAN_BR_NAME = "ixcwanbr"
         self.__LAN_BR_NAME = "ixclanbr"
 
         self.__LAN_NAME = "ixclan"
         self.__WAN_NAME = "ixcwan"
-
-        # IPTV相关接口
-        self.__IPTV_NAME = "ixciptv"
-        self.__IPTV_BR_NAME = "ixciptvbr"
 
         self.__wan_configs = {}
         self.__is_linux = sys.platform.startswith("linux")
@@ -1243,7 +1162,6 @@ class helper(object):
         self.reset_port_map()
 
         self.start_security()
-        self.start_iptv()
 
     @property
     def router(self):
