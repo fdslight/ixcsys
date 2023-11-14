@@ -6,10 +6,14 @@
 #include "../../../pywind/clib/ev/ev.h"
 
 #define IXC_NETIF_READ_NUM 64
-#define IXC_NETIF_MAX 2
+#define IXC_NETIF_MAX 3
 
+// LAN端口
 #define IXC_NETIF_LAN 0
+// WAN端口
 #define IXC_NETIF_WAN 1
+// IPTV端口
+#define IXC_NETIF_IPTV 2
 
 struct ixc_netif{
     struct ixc_mbuf *sent_first;
@@ -57,7 +61,6 @@ struct ixc_netif{
     unsigned char ip_mask[4];
     unsigned char ip_subnet[4];
     int ip_prefix;
-
 
     unsigned char ip6addr[16];
     unsigned char ip6_mask[16];
