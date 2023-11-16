@@ -46,9 +46,6 @@ class widget(ui_widget.widget):
         logs = {}
         traffic_info = global_vars["ixcsys.sysadm"].traffic_log_get()
 
-        sent_total = 0
-        received_total = 0
-
         for hwaddr, info in traffic_info.items():
             logs[hwaddr] = {
                 "ip4_addr": info["ip4_addr"],
@@ -62,8 +59,6 @@ class widget(ui_widget.widget):
                 # 厂商
                 "vendor": "",
             }
-            sent_total += int(info["tx_traffic"])
-            received_total += int(info("rx_traffic"))
             # 从DHCP记录中获取主机名
             if hwaddr in dhcp_kv:
                 logs[hwaddr]["host_name"] = dhcp_kv[hwaddr]["host_name"]
@@ -74,8 +69,4 @@ class widget(ui_widget.widget):
             vendor = ieee_mac_alloc_info.get(k, "unkown")
             logs[hwaddr]["vendor"] = vendor
 
-        return True, "traffic-log.html", {
-            "logs": logs,
-            "sent_total": self.get_traffic_descr(sent_total),
-            "received_total": self.get_traffic_descr(received_total),
-        }
+        return True, "traffic-log.html", {"logs": logs}
