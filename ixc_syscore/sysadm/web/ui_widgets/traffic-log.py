@@ -46,8 +46,11 @@ class widget(ui_widget.widget):
         logs = {}
         traffic_info = global_vars["ixcsys.sysadm"].traffic_log_get()
 
-        sent_total=0
-        received_total=0
+        sent_total = 0
+        received_total = 0
+
+        rx_speed = 0
+        tx_speed = 0
 
         for hwaddr, info in traffic_info.items():
             logs[hwaddr] = {
@@ -63,8 +66,12 @@ class widget(ui_widget.widget):
                 "vendor": "",
             }
 
-            sent_total+=int(info["tx_traffic"])
-            received_total+=int(info["rx_traffic"])
+            sent_total += int(info["tx_traffic"])
+            received_total += int(info["rx_traffic"])
+
+            rx_speed += int(info["rx_speed"])
+            tx_speed += int(info["tx_speed"])
+
             # 从DHCP记录中获取主机名
             if hwaddr in dhcp_kv:
                 logs[hwaddr]["host_name"] = dhcp_kv[hwaddr]["host_name"]
@@ -77,6 +84,8 @@ class widget(ui_widget.widget):
 
         return True, "traffic-log.html", {
             "logs": logs,
-            "sent_total":self.get_traffic_descr(sent_total),
-            "received_total":self.get_traffic_descr(received_total),
+            "sent_total": self.get_traffic_descr(sent_total),
+            "received_total": self.get_traffic_descr(received_total),
+            "rx_speed": self.get_traffic_descr(rx_speed),
+            "tx_speed": self.get_traffic_descr(tx_speed),
         }
