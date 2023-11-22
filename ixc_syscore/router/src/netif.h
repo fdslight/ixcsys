@@ -82,12 +82,6 @@ void ixc_netif_uninit(void);
 
 int ixc_netif_create(const char *devname,char res_devname[],int if_idx);
 void ixc_netif_delete(int if_idx);
-
-/// 读取netif数据
-struct ixc_mbuf *ixc_netif_readv(struct ixc_netif *netif,int *is_err);
-/// 写入netif数据
-int ixc_netif_writev(struct ixc_netif *nif);
-
 int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int is_ipv6);
 
 /// 设置硬件地址

@@ -5,7 +5,6 @@
 #include<fcntl.h>
 #include<unistd.h>
 #include<sys/time.h>
-#include<sys/uio.h>
 
 #include "netif.h"
 #include "router.h"
@@ -219,56 +218,6 @@ void ixc_netif_delete(int if_idx)
         m=t;
     }
     netif->is_used=0;
-}
-
-/// 读取netif数据
-struct ixc_mbuf *ixc_netif_readv(struct ixc_netif *netif,int *is_err)
-{
-    struct iovec vec[IXC_NETIF_READ_NUM];
-    struct ixc_mbuf *mbuf,*head=NULL,*last=NULL;
-    int iovcnt=0;
-    ssize_t size;
-
-    bzero(&vec[0],sizeof(struct iovec)*IXC_NETIF_READ_NUM);
-
-    for(int n=0;n<IXC_NETIF_READ_NUM;n++){
-        mbuf=ixc_mbuf_get();
-        if(NULL==mbuf) break;
-        
-        vec[n].iov_base=mbuf->data+IXC_MBUF_BEGIN;
-        vec[n].iov_len=IXC_MBUF_DATA_MAX_SIZE-IXC_MBUF_BEGIN;
-
-        iovcnt=n+1;
-    }
-
-    size=readv(netif->fd,vec,iovcnt);
-
-    *is_err=size;
-    // 释放未使用的mbuf
-    for(int n=iovcnt;n<IXC_NETIF_READ_NUM;n++){
-        ixc_mbuf_put(vec[n].iov_base);
-    }
-
-    for(int n=0;n<iovcnt;n++){
-        mbuf=vec[n].iov_base;
-        if(NULL==head){
-            head=mbuf;
-        }else{
-            last->next=mbuf;
-        }
-        last=mbuf;
-    }
-
-    return head;
-}
-/// 写入netif数据
-int ixc_netif_writev(struct ixc_netif *nif)
-{
-    struct iovec vec[IXC_NETIF_READ_NUM];
-    
-    bzero(&vec[0],sizeof(struct iovec)*IXC_NETIF_READ_NUM);
-
-    return 0;
 }
 
 int ixc_netif_set_ip(int if_idx,unsigned char *ipaddr,unsigned char prefix,int is_ipv6)
