@@ -31,7 +31,7 @@ X86_64 with SSE2 or ARM64 with NEON
 4.the ixcsys default user is "admin" and password "admin"
 
 # about Packet forwarding speed(the software only support single-core forward packet)
-1.Intel J1800 CPU or arm cortex-a53:200Mbit/s  
+1.Intel J1800 CPU or arm cortex-a53:100Mbit/s  
 2.Intel N5105:1000Mbit/s at least  
 3.Raspberry PI 4 or arm cortex-A72:300Mbit/s  
 
