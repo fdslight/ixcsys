@@ -182,7 +182,7 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     }else{
         // 如果开启非系统DNS请求丢弃,检查是否是系统DNS请求,如果不是那么丢弃数据包
         if(ip_enable_no_system_dns_drop && ixc_ip_is_no_system_dns_req(mbuf,header)){
-            ixc_mbuf_put(m);
+            ixc_mbuf_put(mbuf);
             return;
         }
         ixc_ip_handle_from_lan(mbuf,header);

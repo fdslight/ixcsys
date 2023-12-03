@@ -113,8 +113,6 @@ static int ixc_ip6_is_no_system_dns_req(struct ixc_mbuf *m,struct netutil_ip6hdr
 
 static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
-    unsigned char *g_manage_addr=ixc_g_manage_addr_get(1);
-
     if(!ixc_g_network_is_enabled()){
         ixc_mbuf_put(m);
         return;
