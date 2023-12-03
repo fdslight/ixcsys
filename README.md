@@ -27,5 +27,13 @@ X86_64 with SSE2 or ARM64 with NEON
 # run ixcsys
 1.first you must tell ixcsys your computer physical network card by run "python3 ixc_cfg.py" configure network card   
 2.secondly run command "python3 ixc_main.py start" as root user   
-3.last you can open "http://192.168.11.254" manage router by your browser  
+3.last you can open "http://192.168.11.254 or http://router.ixcsys.com" manage router by your browser  
 4.the ixcsys default user is "admin" and password "admin"
+
+# about Packet forwarding speed(the software only support single CPU forward packet)
+1.Intel J1800 CPU or arm cortex-a55:200Mbit/s  
+2.Intel N5105:1000Mbit/s at least  
+3.Raspberry PI 4 or arm cortex-A72:300Mbit/s  
+
+# why use Linux tuntap
+netmap is not the part of Linux kernel,though FreeBSD support netmap,but it is difficult for the most people.
