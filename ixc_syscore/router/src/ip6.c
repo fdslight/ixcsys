@@ -87,7 +87,7 @@ static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
 /// @是否是系统DNS请求
 /// @param header 
 /// @return 如果是非系统请求,返回1,否则返回0
-static int ixc_ip6_is_no_system_dns_req(struct netutil_ip6hdr *header)
+static int ixc_ip6_is_no_system_dns_req(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
     unsigned char *g_manage_addr=ixc_g_manage_addr_get(1);
     struct netutil_udphdr *udphdr;
@@ -127,7 +127,7 @@ static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
     }
 
     // 如果开启非系统DNS丢弃并且是非系统DNS请求,那么丢弃数据包
-    if(ip6_enable_no_system_dns_drop && ixc_ip6_is_no_system_dns_req(header)){
+    if(ip6_enable_no_system_dns_drop && ixc_ip6_is_no_system_dns_req(m,header)){
         ixc_mbuf_put(m);
         return;
     }
