@@ -101,7 +101,7 @@ static int ixc_ip_is_no_system_dns_req(struct ixc_mbuf *m,struct netutil_iphdr *
 {
     unsigned char *g_manage_addr=ixc_g_manage_addr_get(0);
     struct netutil_udphdr *udphdr;
-    int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
+    int hdr_len=(header->ver_and_ihl & 0x0f) *4;
 
     // 检查地址是否符合要求
     if(!memcmp(header->src_addr,g_manage_addr,4)) return 0;
