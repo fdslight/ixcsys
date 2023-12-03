@@ -36,4 +36,4 @@ X86_64 with SSE2 or ARM64 with NEON
 3.Raspberry PI 4 or arm cortex-A72:300Mbit/s  
 
 # why use Linux tuntap
-netmap is not the part of Linux kernel,though FreeBSD support netmap,but it is difficult for the most people.
+netmap is not the part of Linux kernel,though FreeBSD support netmap,but FreeBSD is difficult for the most people.
