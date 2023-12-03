@@ -34,4 +34,7 @@ int ixc_ip6_addr_get(unsigned char *hwaddr,unsigned char *subnet,unsigned char *
 /// 获取多播地址
 int ixc_ip6_multi_brd_get(unsigned char *addr,unsigned char *result);
 
+/// 开启或者关闭非系统DNS请求
+int ixc_ip6_no_system_dns_drop_enable(int enable);
+
 #endif

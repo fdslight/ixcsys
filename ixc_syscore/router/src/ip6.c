@@ -19,6 +19,7 @@
 
 static struct sysloop *ip6_sysloop=NULL;
 static time_t ip6_up_time=0;
+static int ip6_enable_no_system_dns_drop=0;
 static int ip6_is_initialized=0;
 
 static void ixc_ip6_sysloop_cb(struct sysloop *loop)
@@ -83,8 +84,37 @@ static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
     ixc_route_handle(m);
 }
 
+/// @是否是系统DNS请求
+/// @param header 
+/// @return 如果是非系统请求,返回1,否则返回0
+static int ixc_ip6_is_no_system_dns_req(struct netutil_ip6hdr *header)
+{
+    unsigned char *g_manage_addr=ixc_g_manage_addr_get(1);
+    struct netutil_udphdr *udphdr;
+    // 检查地址是否符合要求
+    if(!memcmp(header->src_addr,g_manage_addr,16)) return 0;
+    // 检查协议是否符合要求
+    switch(header->next_header){
+        case 6:
+        case 17:
+            break;
+        default:
+            return 0;
+    }
+    
+    // 因为TCP和UDP头部端口位置布局一样,因此直接用UDP定义
+    udphdr=(struct netutil_udphdr *)(m->data+m->offset+40);
+    
+    // 检查是否是53端口
+    if(ntohs(udphdr->dst_port)!=53) return 0;
+
+    return 1;
+}
+
 static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
+    unsigned char *g_manage_addr=ixc_g_manage_addr_get(1);
+
     if(!ixc_g_network_is_enabled()){
         ixc_mbuf_put(m);
         return;
@@ -92,6 +122,12 @@ static void ixc_ip6_handle_from_lan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
 
     // 如果访问DHCPv6 server并且是直通状态那么丢弃dhcp请求数据包
     if(ixc_ip6_is_dhcp(m,header)==2 && ixc_route_is_enabled_ipv6_pass()){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    // 如果开启非系统DNS丢弃并且是非系统DNS请求,那么丢弃数据包
+    if(ip6_enable_no_system_dns_drop && ixc_ip6_is_no_system_dns_req(header)){
         ixc_mbuf_put(m);
         return;
     }
@@ -111,7 +147,7 @@ int ixc_ip6_init(void)
         return -1;
     }
     ip6_up_time=time(NULL);
-
+    ip6_enable_no_system_dns_drop=0;
     ip6_is_initialized=1;
 
     return 0;
@@ -234,5 +270,11 @@ int ixc_ip6_addr_get(unsigned char *hwaddr,unsigned char *subnet,unsigned char *
     memcpy(result,subnet,16);
     ixc_ip6_eui64_get(hwaddr,&result[8]);
 
+    return 0;
+}
+
+int ixc_ip6_no_system_dns_drop_enable(int enable)
+{
+    ip6_enable_no_system_dns_drop=enable;
     return 0;
 }

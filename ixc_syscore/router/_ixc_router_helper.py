@@ -26,6 +26,7 @@ class rpc(object):
             "add_route": self.add_route,
             "del_route": self.del_route,
             "tcp_mss_set": self.tcp_mss_set,
+            "dns_drop_no_system_enable": self.dns_drop_no_system_enable,
             "set_wan_ipaddr": self.set_wan_ipaddr,
             "wan_ready_ok": self.wan_ready_ok,
 
@@ -277,6 +278,9 @@ class rpc(object):
 
         return 0, self.__helper.router.route_tcp_mss_set(tcp_mss, is_ipv6)
 
+    def dns_drop_no_system_enable(self, enable: bool, is_ipv6=False):
+        return 0, self.__helper.router.dns_drop_no_system_enable(enable, is_ipv6)
+
     def pppoe_is_enabled(self):
         is_enabled = self.__helper.router.pppoe_is_enabled()
 
@@ -375,7 +379,12 @@ class rpc(object):
         speed_info = self.__helper.router.netif_traffic_speed_get(router.IXC_NETIF_LAN)
         return 0, speed_info
 
-    def manage_addr_set(self, ip: str):
+    def manage_addr_set(self, ip: str, is_ipv6=False):
+        # 对IPv6地址进行特殊处理
+        if is_ipv6:
+            self.__helper.router.g_manage_addr_set(ip, True)
+            return 0, None
+
         lan_configs = self.__helper.lan_configs
         lan_configs["if_config"]["manage_addr"] = ip
 

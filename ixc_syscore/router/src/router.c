@@ -474,6 +474,18 @@ router_route_tcp_mss_set(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_dns_drop_no_system_enable(PyObject *self,PyObject *args)
+{
+    int status,is_ipv6;
+    if(!PyArg_ParseTuple(args,"pp",&status,&is_ipv6)) return NULL;
+    
+    if(is_ipv6) ixc_ip6_no_system_dns_drop_enable(status);
+    else ixc_ip_no_system_dns_drop_enable(status);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 router_icmpv6_dns_set(PyObject *self,PyObject *args)
 {
     unsigned char *dnsserver;
@@ -912,6 +924,7 @@ static PyMethodDef routerMethods[]={
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
     {"route_ipv6_pass_enable",(PyCFunction)router_route_ipv6_pass_enable,METH_VARARGS,"enable/disable IPv6 pass"},
     {"route_tcp_mss_set",(PyCFunction)router_route_tcp_mss_set,METH_VARARGS,"set tcp mss value"},
+    {"dns_drop_no_system_enable",(PyCFunction)router_dns_drop_no_system_enable,METH_VARARGS,"enable/disable no system dns"},
     //
     {"icmpv6_dns_set",(PyCFunction)router_icmpv6_dns_set,METH_VARARGS,"set ICMPv6 NDP dns option"},
     {"icmpv6_dns_unset",(PyCFunction)router_icmpv6_dns_unset,METH_NOARGS,"unset ICMPv6 NDP dns option"},
@@ -1441,6 +1454,12 @@ static void ixc_start(int debug)
     rs=ixc_pppoe_init();
     if(rs<0){
         STDERR("cannot init pppoe\r\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    rs=ixc_ip_init();
+    if(rs<0){
+        STDERR("cannot init IP\r\n");
         exit(EXIT_SUCCESS);
     }
 

@@ -183,6 +183,8 @@ class service(dispatcher.dispatcher):
             self.__dns_server6 = -1
             return
 
+        RPCClient.fn_call("router", "/config", "manage_addr_set", ip6_mngaddr, is_ipv6=True)
+
         if self.__ip6_mngaddr != ip6_mngaddr:
             if self.__dns_server6 >= 0:
                 self.delete_handler(self.__dns_server6)
@@ -231,6 +233,13 @@ class service(dispatcher.dispatcher):
         if "enable_auto" not in ip4_cfg: ip4_cfg["enable_auto"] = "1"
         if "enable_auto" not in ip6_cfg: ip6_cfg["enable_auto"] = "1"
         if "enable_ipv6_dns_drop" not in pub: pub["enable_ipv6_dns_drop"] = "0"
+        if "enable_dns_no_system_drop" not in pub: pub["enable_dns_no_system_drop"] = "0"
+
+        # 如果开启了丢弃,那么执行
+        if bool(int(pub["enable_dns_no_system_drop"])):
+            RPCClient.fn_call("router", "/config", "dns_drop_no_system_enable", True, is_ipv6=False)
+            RPCClient.fn_call("router", "/config", "dns_drop_no_system_enable", True, is_ipv6=True)
+        ''''''
 
     def load_sec_rules(self):
         sec_rules = sec_rule.parse_from_file(self.__sec_rule_path)
@@ -552,6 +561,19 @@ class service(dispatcher.dispatcher):
             pub["enable_ipv6_dns_drop"] = "1"
         else:
             pub["enable_ipv6_dns_drop"] = "0"
+        ''''''
+
+    def dns_no_system_drop_enable(self, enable: bool):
+        pub = self.configs["public"]
+        if enable:
+            RPCClient.fn_call("router", "/config", "dns_drop_no_system_enable", True, is_ipv6=False)
+            RPCClient.fn_call("router", "/config", "dns_drop_no_system_enable", True, is_ipv6=True)
+            pub["enable_dns_no_system_drop"] = "1"
+        else:
+            RPCClient.fn_call("router", "/config", "dns_drop_no_system_enable", False, is_ipv6=False)
+            RPCClient.fn_call("router", "/config", "dns_drop_no_system_enable", False, is_ipv6=True)
+            pub["enable_dns_no_system_drop"] = "0"
+        return
 
     def get_nameservers(self, is_ipv6=False):
         if is_ipv6:

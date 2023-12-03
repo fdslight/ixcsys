@@ -15,6 +15,7 @@ class controller(base_controller.BaseController):
         ip4_auto = self.request.get_argument("ipv4.enable_auto", is_qs=False, is_seq=False)
         ip6_auto = self.request.get_argument("ipv6.enable_auto", is_qs=False, is_seq=False)
         enable_dnsv6_drop = self.request.get_argument("enable_dnsv6_drop", is_qs=False, is_seq=False)
+        enable_dns_no_system_drop = self.request.get_argument("enable_dns_no_system_drop", is_qs=False, is_seq=False)
 
         if not ip4_auto:
             ip4_auto = False
@@ -29,6 +30,11 @@ class controller(base_controller.BaseController):
             enable_dnsv6_drop = False
         else:
             enable_dnsv6_drop = True
+
+        if not enable_dns_no_system_drop:
+            enable_dns_no_system_drop = False
+        else:
+            enable_dns_no_system_drop = True
 
         ipv4_main_dns = self.request.get_argument("ipv4.main_dns", is_qs=False, is_seq=False)
         ipv4_second_dns = self.request.get_argument("ipv4.second_dns", is_qs=False, is_seq=False)
@@ -79,6 +85,7 @@ class controller(base_controller.BaseController):
         RPC.fn_call("DNS", "/config", "enable", ip4_auto, is_ipv6=False)
         RPC.fn_call("DNS", "/config", "enable", ip6_auto, is_ipv6=True)
         RPC.fn_call("DNS", "/config", "set_dnsv6_drop_enable", enable_dnsv6_drop)
+        RPC.fn_call("DNS", "/config", "dns_no_system_drop_enable", enable_dns_no_system_drop)
         RPC.fn_call("DNS", "/config", "save")
 
         self.json_resp(False, {})

@@ -20,6 +20,7 @@ class widget(ui_widget.widget):
 
             pub = rs["public"]
             pub["enable_ipv6_dns_drop"] = bool(int(pub["enable_ipv6_dns_drop"]))
+            pub["enable_dns_no_system_drop"] = bool(int(pub["enable_dns_no_system_drop"]))
 
             uri = "dns-server.html"
         else:

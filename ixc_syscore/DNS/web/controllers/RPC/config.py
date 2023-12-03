@@ -26,6 +26,7 @@ class controller(rpc.controller):
             "hosts_save": self.hosts_save,
             "hosts_get": self.hosts_get,
             "set_dnsv6_drop_enable": self.set_dnsv6_drop_enable,
+            "dns_no_system_drop_enable": self.dns_no_system_drop_enable,
             "save": self.save
         }
 
@@ -110,4 +111,8 @@ class controller(rpc.controller):
     def set_dnsv6_drop_enable(self, enable: bool):
         self.__runtime.set_drop_dnsv6_enable(enable)
 
+        return 0, None
+
+    def dns_no_system_drop_enable(self, enable: bool):
+        self.__runtime.dns_no_system_drop_enable(enable)
         return 0, None

@@ -17,6 +17,19 @@
 
 #include "../../../pywind/clib/netutils.h"
 
+// 是否开启非系统DNS丢弃
+static int ip_enable_no_system_dns_drop=0;
+//
+static int ip_is_initialized=0;
+
+int ixc_ip_init(void)
+{
+    ip_enable_no_system_dns_drop=0;
+    ip_is_initialized=1;
+
+    return 0;
+}
+
 static int ixc_ip_check_ok(struct ixc_mbuf *m,struct netutil_iphdr *header)
 {
     int version=(header->ver_and_ihl & 0xf0) >> 4;
@@ -81,6 +94,35 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     ixc_nat_handle(m);
 }
 
+/// @是否是系统DNS请求
+/// @param header 
+/// @return 如果是非系统请求,返回1,否则返回0
+static int ixc_ip_is_no_system_dns_req(struct netutil_iphdr *header)
+{
+    unsigned char *g_manage_addr=ixc_g_manage_addr_get(0);
+    struct netutil_udphdr *udphdr;
+    int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
+
+    // 检查地址是否符合要求
+    if(!memcmp(header->src_addr,g_manage_addr,4)) return 0;
+    // 检查协议是否符合要求
+    switch(header->protocol){
+        case 6:
+        case 17:
+            break;
+        default:
+            return 0;
+    }
+    
+    // 因为TCP和UDP头部端口位置布局一样,因此直接用UDP定义
+    udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
+    
+    // 检查是否是53端口
+    if(ntohs(udphdr->dst_port)!=53) return 0;
+
+    return 1;
+}
+
 static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphdr)
 {
     struct netutil_udphdr *udphdr;
@@ -138,6 +180,11 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     if(IXC_NETIF_WAN==netif->type){
         ixc_ip_handle_from_wan(mbuf,header);
     }else{
+        // 如果开启非系统DNS请求丢弃,检查是否是系统DNS请求,如果不是那么丢弃数据包
+        if(ip_enable_no_system_dns_drop && ixc_ip_is_no_system_dns_req(header)){
+            ixc_mbuf_put(m);
+            return;
+        }
         ixc_ip_handle_from_lan(mbuf,header);
     }
 }
@@ -189,4 +236,15 @@ int ixc_ip_send(struct ixc_mbuf *m)
     ixc_addr_map_handle(m);
 
     return 0;
+}
+
+int ixc_ip_no_system_dns_drop_enable(int enable)
+{
+    ip_enable_no_system_dns_drop=enable;
+    return 0;
+}
+
+void ixc_ip_uninit(void)
+{
+    ip_is_initialized=0;
 }
