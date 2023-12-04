@@ -85,7 +85,8 @@ static void route_modify_ip_tcp_mss(struct netutil_iphdr *header)
     int header_size= (header->ver_and_ihl & 0x0f) * 4;
     unsigned char *ptr=(unsigned char *)header;
     struct netutil_tcphdr *tcp_header=NULL;
-
+    
+    // 如果值为0那么不修改tcp mss
     if(0==route.ip_tcp_mss) return;
     if(6!=header->protocol) return;
 
@@ -100,6 +101,7 @@ static void route_modify_ip6_tcp_mss(struct netutil_ip6hdr *header)
     unsigned char *ptr=(unsigned char *)header;
     struct netutil_tcphdr *tcp_header=NULL;
 
+    // 如果值为0那么不修改tcp mss
     if(0==route.ip6_tcp_mss) return;
     if(6!=header->next_header) return;
 
@@ -852,7 +854,12 @@ int ixc_route_ipv6_pass_enable(int enable)
 
 int ixc_route_tcp_mss_set(unsigned short mss,int is_ipv6)
 {
-    if(0==mss) return 1;
+    // 如果tcp mss为0那么就是默认行为
+    if(0==mss) {
+        if(is_ipv6) route.ip6_tcp_mss=0;
+        else route.ip_tcp_mss=0;
+        return 1;
+    }
     // 限制IPv6的tcp mss
     if(is_ipv6 && mss>1440) {
         STDERR("wrong IPv6 TCP MSS value %u\r\n",mss);
