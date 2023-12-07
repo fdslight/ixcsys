@@ -11,7 +11,7 @@ import pywind.lib.configfile as cfg
 
 helper = """if wan | lan  hwaddr your_hardware_addresss
 if wan dev your_network_card_name
-if lan dev your_network_card_name1[,your_network_card_name2...]
+if lan dev your_network_card_name1[,your_network_card_name2,your_network_card_name3,...]
 user reset
 system reset
 help"""
