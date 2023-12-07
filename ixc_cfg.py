@@ -10,7 +10,8 @@ sys.path.append(sys_dir)
 import pywind.lib.configfile as cfg
 
 helper = """if wan | lan  hwaddr your_hardware_addresss
-if wan | lan  dev your_network_card_name
+if wan dev your_network_card_name
+if lan dev your_network_card_name1[,your_network_card_name2...]
 user reset
 system reset
 help"""
