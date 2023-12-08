@@ -40,6 +40,8 @@ EXTRA_DROPS = [
     ".redhat.com",
     ".ricoh.",
     "marketo.net",
+
+    "simba.taobao.com",
 ]
 
 
