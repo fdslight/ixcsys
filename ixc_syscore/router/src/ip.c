@@ -102,6 +102,7 @@ static int ixc_ip_is_no_system_dns_req(struct ixc_mbuf *m,struct netutil_iphdr *
     unsigned char *g_manage_addr=ixc_g_manage_addr_get(0);
     struct netutil_udphdr *udphdr;
     int hdr_len=(header->ver_and_ihl & 0x0f) *4;
+    unsigned short dst_port;
 
     // 检查地址是否符合要求
     if(!memcmp(header->src_addr,g_manage_addr,4)) return 0;
@@ -117,8 +118,9 @@ static int ixc_ip_is_no_system_dns_req(struct ixc_mbuf *m,struct netutil_iphdr *
     // 因为TCP和UDP头部端口位置布局一样,因此直接用UDP定义
     udphdr=(struct netutil_udphdr *)(m->data+m->offset+hdr_len);
     
-    // 检查是否是53端口
-    if(ntohs(udphdr->dst_port)!=53) return 0;
+    dst_port=ntohs(udphdr->dst_port);
+    // 检查是否是53和853端口
+    if(dst_port!=53 && dst_port!=853) return 0;
 
     return 1;
 }
