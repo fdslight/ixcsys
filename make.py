@@ -212,6 +212,7 @@ def __install_all(prefix=None):
         "ixc_cfg.py",
         "ixc_main.py",
         "net_monitor.ini",
+        "ixc_auto_update.py"
         "version",
     ]
 
