@@ -1,0 +1,38 @@
+<div id="ixc-auto-update-view" class="ixc-menu-content" style="display: none;">
+    <form style="width: 50%;margin: auto;min-width: 400px;" class="ixc-conf-form" id="ixc-auto-update-form"
+          enctype="application/x-www-form-urlencoded" method="post" action="${self.url_prefix}/auto-update">
+        <h4>设置自动更新时间</h4>
+        <div class="ixc-empty"></div>
+        <div class="ixc-empty"></div>
+        <div class="form-group">
+            <select id="ixc-time-hour" name="hour">
+                <%
+                    for i in range(24):
+                        s="""<option value="%s">%s</option>""" % (i,i,)
+                        self.show(s)
+                %>
+            </select>
+            时
+            <select id="ixc-time-min" name="minute">
+                <%
+                    for i in range(60):
+                        s="""<option value="%s">%s</option>""" % (i,i,)
+                        self.show(s)
+                %>
+            </select>
+            分
+        </div>
+
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right" id="ixc-auto-shutdown-btn">确定</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#ixc-time-hour").val("${self.V['h']}");
+        $("#ixc-time-min").val("${self.V['m']}");
+    });
+</script>
