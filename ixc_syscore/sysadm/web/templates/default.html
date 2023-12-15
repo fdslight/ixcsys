@@ -67,7 +67,15 @@
                 <td>${self.V["internet_type"]}</td>
             </tr>
             <tr>
-                <td>IP地址</td>
+                <td>互联网IP地址</td>
+                <td>${self.V["self_global_ip"]["ip"]}</td>
+            </tr>
+            <tr>
+                <td>互联网IPv6地址</td>
+                <td>${self.V["self_global_ip"]["ip6"]}</td>
+            </tr>
+            <tr>
+                <td>WAN IP地址</td>
                 <td>${self.V["wan_ip"]}/${self.V["wan_prefix"]}</td>
             </tr>
             <tr>
