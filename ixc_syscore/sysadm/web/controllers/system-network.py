@@ -24,10 +24,12 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "不可用的故障切换网卡")
             return
 
-        if enable_auto:
-            enable_auto = True
-        else:
-            enable_auto = False
+        #if enable_auto:
+        #    enable_auto = True
+        #else:
+        #    enable_auto = False
+        # 禁止主备网络切换功能
+        enable_auto = False
 
         if not hwaddr:
             self.json_resp(True, "硬件地址不能为空")
