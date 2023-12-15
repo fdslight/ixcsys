@@ -95,21 +95,21 @@ def config_default(debug=False):
     cmd = cmd.replace("-I", "")
     cmd = cmd.replace("\n", "")
     _lib_dirs = cmd.replace("include", "lib").split(" ")
-    lib_dirs=[]
-    libname="python3"
+    lib_dirs = []
+    libname = "python3"
 
     for s in _lib_dirs:
         p = s.find("/python")
         if p <= 0: continue
         lib_dirs.append(s[0:p])
-        p+=1
-        libname=s[p:]
+        p += 1
+        libname = s[p:]
 
     _includes = cmd.split(" ")
-    includes=[]
+    includes = []
     for s in _includes:
-        s=s.strip()
-        if not s:continue
+        s = s.strip()
+        if not s: continue
         includes.append(s)
 
     build_config = {"debug": debug,
@@ -126,9 +126,17 @@ def config_default(debug=False):
 
 
 def main():
+    # 检查必须的二进制文件是否存在
     if not os.path.isfile("/usr/bin/lsb_release"):
         print("ERROR:please install lsb_release")
         return
+    if not os.path.isfile("/usr/bin/curl"):
+        print("ERROR:please install curl")
+        return
+    if not os.path.isfile("/usr/sbin/in.tftpd"):
+        print("ERROR:please install tftpd")
+        return
+
     if len(sys.argv) == 2:
         if sys.argv[1] == "default":
             config_default(debug=False)
