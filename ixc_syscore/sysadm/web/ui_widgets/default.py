@@ -184,6 +184,6 @@ class widget(ui_widget.widget):
         dic["available_mem"] = self.get_host_available_mem()
         dic["is_temp_network"] = self.sysadm.network_is_work_on_temp
         dic["host_os"] = os_info.get_os_info()[0]
-        dic["self_global_ip"] = self.sysadm.get_self_global_ip()
+        dic["self_global_ip"] = self.sysadm.self_global_ip
 
         return True, uri, dic

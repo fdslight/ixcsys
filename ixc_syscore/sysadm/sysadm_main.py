@@ -434,7 +434,7 @@ class service(dispatcher.dispatcher):
                 self.do_network_shift()
             ''''''
         # 定时获取全球IP地址
-        self.get_self_global_ip()
+        self.cron_global_ip_get()
 
         self.__up_time = time.time()
 
@@ -580,15 +580,17 @@ class service(dispatcher.dispatcher):
 
         return result
 
-    def get_self_global_ip(self):
+    @property
+    def self_global_ip(self):
+        return self.__global_ip_cache
+
+    def cron_global_ip_get(self):
         now = time.time()
 
-        if now - self.__global_ip_cron_time_up < 300: return self.__global_ip_cache
+        if now - self.__global_ip_cron_time_up < 180: return
 
         self.__global_ip_cache = self.__get_self_global_ip()
         self.__global_ip_cron_time_up = now
-
-        return self.__global_ip_cache
 
     def do_restart(self):
         """执行路由器重启
