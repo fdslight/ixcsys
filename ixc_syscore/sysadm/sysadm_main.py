@@ -126,6 +126,10 @@ class service(dispatcher.dispatcher):
     # 网络是否工作站临时网卡上
     __network_work_on_temp = None
 
+    # 获取全球IP地址更新时间
+    __global_ip_cron_time_up = None
+    __global_ip_cache = None
+
     def get_server_ip(self, host):
         """获取服务器IP
         :param host:
@@ -336,6 +340,9 @@ class service(dispatcher.dispatcher):
         self.__is_restart = False
         self.__ddns_up_time = time.time()
 
+        self.__global_ip_cron_time_up = time.time()
+        self.__global_ip_cache = {"ip": "", "ip6": ""}
+
         global_vars["ixcsys.sysadm"] = self
 
         RPCClient.wait_processes(["router", "DHCP", "DNS"])
@@ -426,6 +433,9 @@ class service(dispatcher.dispatcher):
             if not self.__network.network_ok(self.network_shift_config["check_host"]):
                 self.do_network_shift()
             ''''''
+        # 定时获取全球IP地址
+        self.get_self_global_ip()
+
         self.__up_time = time.time()
 
     @property
@@ -515,6 +525,70 @@ class service(dispatcher.dispatcher):
 
     def traffic_log_get(self):
         return self.__traffic_log_parser.traffic_log_get()
+
+    def __get_self_global_ip(self):
+        """获取自己的全球IP地址
+        """
+        seq = [
+            "-4 'https://api.ipify.org?format=json'",
+            "-6 'https://api64.ipify.org?format=json'"
+        ]
+        # 检查curl是否存在
+        if not os.path.isfile("/usr/bin/curl"):
+            return {
+                "ip": "not curl for get ip",
+                "ip6": "not curl for get ipv6"
+            }
+
+        addr_list = []
+
+        for t in seq:
+            cmd = "curl --connect-timeout 3 %s" % t
+            with os.popen(cmd) as f:
+                s = f.read()
+            f.close()
+
+            try:
+                o = json.loads(s)
+            except:
+                logging.print_alert("server response wrong data %s for get self global ip" % s)
+                continue
+            if "ip" not in o:
+                logging.print_alert("server response wrong data %s for get self global ip" % s)
+                continue
+
+            addr_list.append(o["ip"])
+
+        result = {
+            "ip": "",
+            "ip6": ""
+        }
+
+        for ip in addr_list:
+            is_ipv6 = netutils.is_ipv6_address(ip)
+            is_ipv4 = netutils.is_ipv4_address(ip)
+
+            if not is_ipv4 and not is_ipv6:
+                logging.print_alert("server response wrong data for get self global ip value %s" % ip)
+                continue
+
+            if is_ipv4:
+                result["ip"] = ip
+            else:
+                result["ip6"] = ip
+            ''''''
+
+        return result
+
+    def get_self_global_ip(self):
+        now = time.time()
+
+        if now - self.__global_ip_cron_time_up < 60: return
+
+        self.__global_ip_cache = self.__get_self_global_ip()
+        self.__global_ip_cron_time_up = now
+
+        return self.__global_ip_cache
 
     def do_restart(self):
         """执行路由器重启

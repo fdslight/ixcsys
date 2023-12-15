@@ -4,8 +4,6 @@ import platform, os, json, time
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.pylib.os_info as os_info
-import ixc_syslib.pylib.logging as logging
-import pywind.lib.netutils as netutils
 
 from pywind.global_vars import global_vars
 
@@ -126,60 +124,6 @@ class widget(ui_widget.widget):
             "run_seconds": run_secs,
         }
 
-    def get_self_global_ip(self):
-        """获取自己的全球IP地址
-        """
-        seq = [
-            "-4 'https://api.ipify.org?format=json'",
-            "-6 'https://api64.ipify.org?format=json'"
-        ]
-        # 检查curl是否存在
-        if not os.path.isfile("/usr/bin/curl"):
-            return {
-                "ip": "not curl for get ip",
-                "ip6": "not curl for get ipv6"
-            }
-
-        addr_list = []
-
-        for t in seq:
-            cmd = "curl --connect-timeout 3 %s" % t
-            with os.popen(cmd) as f:
-                s = f.read()
-            f.close()
-
-            try:
-                o = json.loads(s)
-            except:
-                logging.print_alert("server response wrong data %s for get self global ip" % s)
-                continue
-            if "ip" not in o:
-                logging.print_alert("server response wrong data %s for get self global ip" % s)
-                continue
-
-            addr_list.append(o["ip"])
-
-        result = {
-            "ip": "",
-            "ip6": ""
-        }
-
-        for ip in addr_list:
-            is_ipv6 = netutils.is_ipv6_address(ip)
-            is_ipv4 = netutils.is_ipv4_address(ip)
-
-            if not is_ipv4 and not is_ipv6:
-                logging.print_alert("server response wrong data for get self global ip value %s" % ip)
-                continue
-
-            if is_ipv4:
-                result["ip"] = ip
-            else:
-                result["ip6"] = ip
-            ''''''
-
-        return result
-
     def handle(self, *args, **kwargs):
         uri = "default.html"
         dic = {}
@@ -240,6 +184,6 @@ class widget(ui_widget.widget):
         dic["available_mem"] = self.get_host_available_mem()
         dic["is_temp_network"] = self.sysadm.network_is_work_on_temp
         dic["host_os"] = os_info.get_os_info()[0]
-        dic["self_global_ip"] = self.get_self_global_ip()
+        dic["self_global_ip"] = self.sysadm.get_self_global_ip()
 
         return True, uri, dic
