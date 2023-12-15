@@ -129,9 +129,9 @@ class widget(ui_widget.widget):
     def get_self_global_ip(self):
         """获取自己的全球IP地址
         """
-        urls = [
-            "'https://api.ipify.org?format=json'",
-            "'https://api64.ipify.org?format=json'"
+        seq = [
+            "-4 'https://api.ipify.org?format=json'",
+            "-6 'https://api64.ipify.org?format=json'"
         ]
         # 检查curl是否存在
         if not os.path.isfile("/usr/bin/curl"):
@@ -142,8 +142,8 @@ class widget(ui_widget.widget):
 
         addr_list = []
 
-        for url in urls:
-            cmd = "curl --connect-timeout 3 %s" % url
+        for t in seq:
+            cmd = "curl --connect-timeout 3 %s" % t
             with os.popen(cmd) as f:
                 s = f.read()
             f.close()
