@@ -143,7 +143,7 @@ class widget(ui_widget.widget):
         addr_list = []
 
         for url in urls:
-            cmd = "curl %s" % url
+            cmd = "curl --connect-timeout 5 %s" % url
             with os.popen(cmd) as f:
                 s = f.read()
             f.close()
