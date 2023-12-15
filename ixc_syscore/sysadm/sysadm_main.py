@@ -583,7 +583,7 @@ class service(dispatcher.dispatcher):
     def get_self_global_ip(self):
         now = time.time()
 
-        if now - self.__global_ip_cron_time_up < 60: return
+        if now - self.__global_ip_cron_time_up < 300: return self.__global_ip_cache
 
         self.__global_ip_cache = self.__get_self_global_ip()
         self.__global_ip_cron_time_up = now
