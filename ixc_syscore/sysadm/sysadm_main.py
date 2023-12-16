@@ -526,59 +526,40 @@ class service(dispatcher.dispatcher):
     def traffic_log_get(self):
         return self.__traffic_log_parser.traffic_log_get()
 
-    def __get_self_global_ip(self):
-        """获取自己的全球IP地址
-        """
-        seq = [
-            "-4 'https://api.ipify.org?format=json'",
-            "-6 'https://api64.ipify.org?format=json'"
-        ]
-        # 检查curl是否存在
+    def __get_self_global_ip(self, is_ipv6=False):
+        if is_ipv6:
+            cmd = "curl --connect-timeout 3 -6 'https://api64.ipify.org?format=json'"
+        else:
+            cmd = "curl --connect-timeout 3 -4 'https://api.ipify.org?format=json'"
+
         if not os.path.isfile("/usr/bin/curl"):
-            return {
-                "ip": "not curl for get ip",
-                "ip6": "not curl for get ipv6"
-            }
+            return "not found curl for get ip"
 
-        addr_list = []
+        with os.popen(cmd) as f:
+            s = f.read()
+        f.close()
 
-        for t in seq:
-            cmd = "curl --connect-timeout 3 %s" % t
-            with os.popen(cmd) as f:
-                s = f.read()
-            f.close()
+        try:
+            o = json.loads(s)
+        except:
+            logging.print_alert("server response wrong data %s for get self global ip" % s)
+            return "wrong response for ip"
 
-            try:
-                o = json.loads(s)
-            except:
-                logging.print_alert("server response wrong data %s for get self global ip" % s)
-                continue
-            if "ip" not in o:
-                logging.print_alert("server response wrong data %s for get self global ip" % s)
-                continue
+        if "ip" not in o:
+            logging.print_alert("server response wrong json data %s for get global ip" % s)
+            return "wrong response for ip"
 
-            addr_list.append(o["ip"])
+        if not isinstance(o, dict):
+            logging.print_alert("server response wrong json data %s for get global ip,it need dict type" % s)
+            return "wrong response for ip"
 
-        result = {
-            "ip": "",
-            "ip6": ""
-        }
+        ip = o["ip"]
+        if is_ipv6 and netutils.is_ipv6_address(ip):
+            return ip
+        if not is_ipv6 and netutils.is_ipv4_address(ip):
+            return ip
 
-        for ip in addr_list:
-            is_ipv6 = netutils.is_ipv6_address(ip)
-            is_ipv4 = netutils.is_ipv4_address(ip)
-
-            if not is_ipv4 and not is_ipv6:
-                logging.print_alert("server response wrong data for get self global ip value %s" % ip)
-                continue
-
-            if is_ipv4:
-                result["ip"] = ip
-            else:
-                result["ip6"] = ip
-            ''''''
-
-        return result
+        return ""
 
     @property
     def self_global_ip(self):
@@ -587,9 +568,26 @@ class service(dispatcher.dispatcher):
     def cron_global_ip_get(self):
         now = time.time()
 
-        if now - self.__global_ip_cron_time_up < 180: return
+        ip = self.__global_ip_cache["ip"]
+        if not ip:
+            ip = self.__get_self_global_ip(is_ipv6=False)
+            self.__global_ip_cache["ip"] = ip
 
-        self.__global_ip_cache = self.__get_self_global_ip()
+        ip6 = self.__global_ip_cache["ip6"]
+
+        if not ip6:
+            ip6 = self.__get_self_global_ip(is_ipv6=True)
+            self.__global_ip_cache["ip6"] = ip6
+
+        if now - self.__global_ip_cron_time_up < 600: return
+
+        ip = self.__get_self_global_ip(is_ipv6=False)
+        ip6 = self.__get_self_global_ip(is_ipv6=True)
+
+        if ip:
+            self.__global_ip_cache["ip"] = ip
+        if ip6:
+            self.__global_ip_cache["ip6"] = ip6
         self.__global_ip_cron_time_up = now
 
     def do_restart(self):
