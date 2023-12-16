@@ -527,13 +527,15 @@ class service(dispatcher.dispatcher):
         return self.__traffic_log_parser.traffic_log_get()
 
     def __get_self_global_ip(self, is_ipv6=False):
+        # IPv4和IPv6使用不同网站原因是避免在很短间隔内查询IPv4又查询IPv6被封禁
         if is_ipv6:
             cmd = "curl --connect-timeout 3 -6 'https://api64.ipify.org?format=json'"
         else:
-            cmd = "curl --connect-timeout 3 -4 'https://api.ipify.org?format=json'"
+            cmd = "curl --connect-timeout 3 -4 'https://whatsmyip.dev/api/ip'"
 
         if not os.path.isfile("/usr/bin/curl"):
-            return "not found curl for get ip"
+            logging.print_error("not found curl command")
+            return ""
 
         with os.popen(cmd) as f:
             s = f.read()
@@ -543,22 +545,30 @@ class service(dispatcher.dispatcher):
             o = json.loads(s)
         except:
             logging.print_alert("server response wrong data %s for get self global ip" % s)
-            return "wrong response for ip"
+            return ""
 
-        if "ip" not in o:
+        if "ip" not in o and is_ipv6:
+            logging.print_alert("server response wrong json data %s for get global ip6" % s)
+            return ""
+
+        if "addr" not in o and not is_ipv6:
             logging.print_alert("server response wrong json data %s for get global ip" % s)
-            return "wrong response for ip"
+            return ""
 
         if not isinstance(o, dict):
             logging.print_alert("server response wrong json data %s for get global ip,it need dict type" % s)
-            return "wrong response for ip"
+            return ""
 
-        ip = o["ip"]
-        if is_ipv6 and netutils.is_ipv6_address(ip):
+        if is_ipv6:
+            ip = o["ip"]
+            if netutils.is_ipv6_address(ip):
+                return ip
+            else:
+                return ""
+            ''''''
+        ip = o["addr"]
+        if netutils.is_ipv4_address(ip):
             return ip
-        if not is_ipv6 and netutils.is_ipv4_address(ip):
-            return ip
-
         return ""
 
     @property
