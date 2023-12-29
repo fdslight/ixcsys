@@ -24,6 +24,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
 
     __enable_heartbeat = None
     __heartbeat_timeout = None
+    __is_sent_heartbeat = None
 
     __ssl_handshake_ok = None
     __over_https = None
@@ -91,6 +92,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
 
         self.__enable_heartbeat = kwargs.get("enable_heartbeat", False)
         self.__heartbeat_timeout = kwargs.get("heartbeat_timeout", 15)
+        self.__is_sent_heartbeat = False
 
         return self.fileno
 
@@ -133,8 +135,13 @@ class tcp_tunnel(tcp_handler.tcp_handler):
                 session_id, action, message = pkt_info
 
                 if action not in proto_utils.ACTS: continue
-                if action == proto_utils.ACT_PONG: continue
-                if action == proto_utils.ACT_PING: continue
+                if action == proto_utils.ACT_PONG:
+                    self.__is_sent_heartbeat = False
+                    logging.print_general("receive server pong", self.__server_address)
+                    continue
+                if action == proto_utils.ACT_PING:
+                    self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PONG, proto_utils.rand_bytes())
+                    continue
 
                 self.__update_time = time.time()
                 self.dispatcher.handle_msg_from_tunnel(session_id, action, message)
@@ -157,12 +164,11 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         logging.print_general("tcp_error", self.__server_address)
         self.delete_handler(self.fileno)
 
-    def __handle_heartbeat_timeout(self):
-        t = time.time()
-
-        if t - self.__update_time >= self.__heartbeat_timeout:
-            self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PING, proto_utils.rand_bytes())
-        return
+    def send_heartbeat(self):
+        # 发送ping请求时更新时间
+        self.__update_time = time.time()
+        self.__is_sent_heartbeat = True
+        self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PING, proto_utils.rand_bytes())
 
     def tcp_timeout(self):
         if not self.is_conn_ok():
@@ -180,8 +186,13 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             return
 
         if self.__enable_heartbeat:
+            # 未响应ping请求那么关闭连接
+            if self.__is_sent_heartbeat:
+                self.delete_handler(self.fileno)
+                logging.print_general("server not response ping request", self.__server_address)
+                return
             if v >= self.__heartbeat_timeout:
-                self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PING, proto_utils.rand_bytes())
+                self.send_heartbeat()
             ''''''
         self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
 
@@ -486,7 +497,9 @@ class udp_tunnel(udp_handler.udp_handler):
         if action not in proto_utils.ACTS: return
 
         if action == proto_utils.ACT_PONG: return
-        if action == proto_utils.ACT_PING: return
+        if action == proto_utils.ACT_PING:
+            self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PONG, proto_utils.rand_bytes())
+            return
 
         self.__update_time = time.time()
         self.dispatcher.handle_msg_from_tunnel(session_id, action, byte_data)
