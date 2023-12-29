@@ -131,7 +131,7 @@ class controller(base_controller.BaseController):
             return
 
         if conn_timeout - heartbeat_timeout < 30:
-            self.json_resp(True, "心跳超时要小于连接超时30秒")
+            self.json_resp(True, "心跳超时至少要小于连接超时30秒")
             return
 
         if kv_map["connection"]["tunnel_type"] not in ("tcp", "udp",):
