@@ -169,6 +169,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         self.__update_time = time.time()
         self.__is_sent_heartbeat = True
         self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PING, proto_utils.rand_bytes())
+        logging.print_general("send ping request", self.__server_address)
 
     def tcp_timeout(self):
         if not self.is_conn_ok():
