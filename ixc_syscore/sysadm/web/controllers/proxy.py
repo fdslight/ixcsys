@@ -130,6 +130,10 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "心跳值应大于或者等于10s")
             return
 
+        if conn_timeout - heartbeat_timeout < 30:
+            self.json_resp(True, "心跳超时要小于连接超时30秒")
+            return
+
         if kv_map["connection"]["tunnel_type"] not in ("tcp", "udp",):
             self.json_resp(True, "错误的隧道协议类型")
             return
