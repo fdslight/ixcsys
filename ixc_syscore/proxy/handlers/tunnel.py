@@ -139,7 +139,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
                 if action not in proto_utils.ACTS: continue
                 if action == proto_utils.ACT_PONG:
                     self.__is_sent_heartbeat = False
-                    logging.print_general("receive server pong", self.__server_address)
+                    #logging.print_general("receive server pong", self.__server_address)
                     continue
                 if action == proto_utils.ACT_PING:
                     self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PONG, proto_utils.rand_bytes())
@@ -170,7 +170,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         self.__heartbeat_up_time = time.time()
         self.__is_sent_heartbeat = True
         self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PING, proto_utils.rand_bytes())
-        logging.print_general("send ping request", self.__server_address)
+        #logging.print_general("send ping request", self.__server_address)
 
     def tcp_timeout(self):
         if not self.is_conn_ok():

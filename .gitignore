@@ -57,3 +57,6 @@ __pycache__/
 build_config.json
 .vscode
 .idea
+
+# test
+test.py
