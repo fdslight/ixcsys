@@ -577,6 +577,7 @@ class service(dispatcher.dispatcher):
 
     def cron_global_ip_get(self):
         now = time.time()
+        if now - self.__global_ip_cron_time_up < 600: return
 
         ip = self.__global_ip_cache["ip"]
         if not ip:
@@ -588,8 +589,6 @@ class service(dispatcher.dispatcher):
         if not ip6:
             ip6 = self.__get_self_global_ip(is_ipv6=True)
             self.__global_ip_cache["ip6"] = ip6
-
-        if now - self.__global_ip_cron_time_up < 600: return
 
         ip = self.__get_self_global_ip(is_ipv6=False)
         ip6 = self.__get_self_global_ip(is_ipv6=True)

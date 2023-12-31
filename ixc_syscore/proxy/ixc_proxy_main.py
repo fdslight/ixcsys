@@ -709,20 +709,17 @@ class service(dispatcher.dispatcher):
         if not self.handler_exists(self.__conn_fd): return
 
         # 压缩DNS和IPDATA数据
-        if action in (proto_utils.ACT_IPDATA, proto_utils.ACT_DNS,):
+        if action == proto_utils.ACT_DNS:
             length = len(message)
             new_msg = gzip.compress(message)
             comp_length = len(new_msg)
 
             if comp_length < length:
                 message = new_msg
-                if action == proto_utils.ACT_IPDATA:
-                    action = proto_utils.ACT_GZIP_IPDATA
-                else:
-                    action = proto_utils.ACT_GZIP_DNS
+                action = proto_utils.ACT_GZIP_DNS
                 ''''''
             ''''''
-        if action not in (proto_utils.ACT_IPDATA, proto_utils.ACT_GZIP_IPDATA,):
+        if action != proto_utils.ACT_IPDATA:
             self.get_handler(self.__conn_fd).send_msg_to_tunnel(self.session_id, action, message)
             return
 
@@ -738,6 +735,14 @@ class service(dispatcher.dispatcher):
             return
 
         self.__update_route_access(host)
+
+        length = len(message)
+        new_msg = gzip.compress(message)
+        comp_length = len(new_msg)
+
+        if comp_length < length:
+            message = new_msg
+            action = proto_utils.ACT_GZIP_IPDATA
 
         handler = self.get_handler(self.__conn_fd)
         handler.send_msg_to_tunnel(self.session_id, action, message)
