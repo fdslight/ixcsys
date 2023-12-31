@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, time, importlib, struct, socket, json
+import sys, os, signal, time, importlib, struct, socket, json, gzip
 import dns.resolver
 
 ### 启pyjoin JIT加速
@@ -643,6 +643,16 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__conn_fd)
             return
 
+        # 对消息进行解压
+        if action == proto_utils.ACT_GZIP_IPDATA or action == proto_utils.ACT_GZIP_DNS:
+            message = gzip.decompress(message)
+
+            if action == proto_utils.ACT_GZIP_IPDATA:
+                action = proto_utils.ACT_IPDATA
+            else:
+                action = proto_utils.ACT_DNS
+            ''''''
+
         if action == proto_utils.ACT_IPDATA:
             ip_ver = (message[0] & 0xf0) >> 4
             if ip_ver not in (4, 6,): return
@@ -698,7 +708,21 @@ class service(dispatcher.dispatcher):
         if not self.handler_exists(self.__conn_fd): self.__open_tunnel()
         if not self.handler_exists(self.__conn_fd): return
 
-        if action != proto_utils.ACT_IPDATA:
+        # 压缩DNS和IPDATA数据
+        if action in (proto_utils.ACT_IPDATA, proto_utils.ACT_DNS,):
+            length = len(message)
+            new_msg = gzip.compress(message)
+            comp_length = len(new_msg)
+
+            if comp_length < length:
+                message = new_msg
+                if action == proto_utils.ACT_IPDATA:
+                    action = proto_utils.ACT_GZIP_IPDATA
+                else:
+                    action = proto_utils.ACT_GZIP_DNS
+                ''''''
+            ''''''
+        if action not in (proto_utils.ACT_IPDATA, proto_utils.ACT_GZIP_IPDATA,):
             self.get_handler(self.__conn_fd).send_msg_to_tunnel(self.session_id, action, message)
             return
 
