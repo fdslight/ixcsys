@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, time, importlib, struct, socket, json, gzip
+import sys, os, signal, time, importlib, struct, socket, json, zlib
 import dns.resolver
 
 ### 启pyjoin JIT加速
@@ -644,10 +644,10 @@ class service(dispatcher.dispatcher):
             return
 
         # 对消息进行解压
-        if action == proto_utils.ACT_GZIP_IPDATA or action == proto_utils.ACT_GZIP_DNS:
-            message = gzip.decompress(message)
+        if action == proto_utils.ACT_ZLIB_IPDATA or action == proto_utils.ACT_ZLIB_DNS:
+            message = zlib.decompress(message)
 
-            if action == proto_utils.ACT_GZIP_IPDATA:
+            if action == proto_utils.ACT_ZLIB_IPDATA:
                 action = proto_utils.ACT_IPDATA
             else:
                 action = proto_utils.ACT_DNS
@@ -711,12 +711,12 @@ class service(dispatcher.dispatcher):
         # 压缩DNS和IPDATA数据
         if action == proto_utils.ACT_DNS:
             length = len(message)
-            new_msg = gzip.compress(message)
+            new_msg = zlib.compress(message)
             comp_length = len(new_msg)
 
             if comp_length < length:
                 message = new_msg
-                action = proto_utils.ACT_GZIP_DNS
+                action = proto_utils.ACT_ZLIB_DNS
                 ''''''
             ''''''
         if action != proto_utils.ACT_IPDATA:
@@ -737,12 +737,12 @@ class service(dispatcher.dispatcher):
         self.__update_route_access(host)
 
         length = len(message)
-        new_msg = gzip.compress(message)
+        new_msg = zlib.compress(message)
         comp_length = len(new_msg)
 
         if comp_length < length:
             message = new_msg
-            action = proto_utils.ACT_GZIP_IPDATA
+            action = proto_utils.ACT_ZLIB_IPDATA
 
         handler = self.get_handler(self.__conn_fd)
         handler.send_msg_to_tunnel(self.session_id, action, message)
