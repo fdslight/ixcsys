@@ -645,7 +645,10 @@ class service(dispatcher.dispatcher):
 
         # 对消息进行解压
         if action == proto_utils.ACT_ZLIB_IPDATA or action == proto_utils.ACT_ZLIB_DNS:
-            message = zlib.decompress(message)
+            try:
+                message = zlib.decompress(message)
+            except zlib.error:
+                return
 
             if action == proto_utils.ACT_ZLIB_IPDATA:
                 action = proto_utils.ACT_IPDATA
