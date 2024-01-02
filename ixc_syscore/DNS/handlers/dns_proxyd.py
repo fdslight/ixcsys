@@ -44,9 +44,9 @@ class proxy_client(udp_handler.udp_handler):
     def udp_readable(self, message, address):
         if len(message) < 8: return
         # 检查地址是否是DNS服务器的地址
-        # if address[0] != self.__ns1 and address[0] != self.__ns2 and address[0] != "127.0.0.1": return
+        if address[0] != self.__ns1 and address[0] != self.__ns2 and address[0] != "127.0.0.1": return
         # 核对是否是允许的对端端口
-        # if address[1] not in (53, self.__forward_port,): return
+        if address[1] not in (53, self.__forward_port,): return
         self.dispatcher.handle_msg_from_dnsserver(message)
 
     def udp_writable(self):
