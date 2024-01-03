@@ -461,6 +461,10 @@ class service(dispatcher.dispatcher):
             if dns_utils.is_a_request(message):
                 local_msg = dns_utils.build_dns_addr_response(dns_id, host, self.get_manage_addr(), is_ipv6=False)
                 self.get_handler(from_fd).send_msg(local_msg, address)
+            # 内置域名IPv6请求丢弃
+            else:
+                drop_msg = dns_utils.build_dns_no_such_name_response(dns_id, host, is_ipv6=True)
+                self.get_handler(from_fd).send_msg(drop_msg, address)
             del self.__id_wan2lan[new_dns_id]
             return
 
