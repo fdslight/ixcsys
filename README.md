@@ -2,7 +2,7 @@
 A software router for Linux   
 
 # CPU requirement
-X86_64 with SSE2,ARM64 with NEON and other 64bit CPU.
+X86_64 with SSE2,ARM64 with NEON or other 64bit CPU.
 
 # dep envrionment
 1. python3,tftpd-hpa,curl,python3 module dnspython3,cryptography and cloudflare-ddns
