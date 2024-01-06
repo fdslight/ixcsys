@@ -8,10 +8,14 @@ sys_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(sys_dir)
 
 import pywind.lib.configfile as cfg
+import pywind.lib.netutils as netutils
 
 helper = """if wan | lan  hwaddr your_hardware_addresss
 if wan dev your_network_card_name
 if lan dev your_network_card_name1[,your_network_card_name2,your_network_card_name3,...]
+if lan manage_addr your_manage_ip_addr
+if lan ip_addr your_lan_gateway_addr
+if lan mask mask
 user reset
 system reset
 help"""
@@ -45,7 +49,7 @@ class ifconfig(object):
         if len(seq) < 2:
             print(helper)
             return
-        if seq[0] not in ("dev", "hwaddr",):
+        if seq[0] not in ("dev", "hwaddr", "manage_addr", "ip_addr", "mask",):
             print(helper)
             return
 
@@ -54,6 +58,15 @@ class ifconfig(object):
 
         if seq[0] == "hwaddr":
             self.lan_do_hwaddr(seq[1])
+
+        if seq[0] == "manage_addr":
+            self.lan_do_manage_addr(seq[1])
+
+        if seq[0] == "ip_addr":
+            self.lan_do_ipaddr(seq[1])
+
+        if seq[0] == "mask":
+            self.lan_do_mask(seq[1])
 
     def lan_do_dev(self, devnames: str):
         _list = devnames.split(",")
@@ -78,6 +91,46 @@ class ifconfig(object):
 
         conf = cfg.ini_parse_from_file(fpath)
         conf["if_config"]["hwaddr"] = hwaddr
+
+        cfg.save_to_ini(conf, fpath)
+
+    def lan_do_manage_addr(self, manage_addr: str):
+        if not netutils.is_ipv4_address(manage_addr):
+            print("ERROR:manage address %s not is a IPv4 address" % manage_addr)
+            return
+
+        fpath = "%s/ixc_configs/router/lan.ini" % sys_dir
+
+        conf = cfg.ini_parse_from_file(fpath)
+        conf["if_config"]["manage_addr"] = manage_addr
+
+        cfg.save_to_ini(conf, fpath)
+
+    def lan_do_ipaddr(self, addr: str):
+        if not netutils.is_ipv4_address(addr):
+            print("ERROR:LAN gateway address %s not is a IPv4 address" % addr)
+            return
+
+        fpath = "%s/ixc_configs/router/lan.ini" % sys_dir
+
+        conf = cfg.ini_parse_from_file(fpath)
+        conf["if_config"]["ip_addr"] = addr
+
+        cfg.save_to_ini(conf, fpath)
+
+    def lan_do_mask(self, mask: str):
+        if not netutils.is_ipv4_address(mask):
+            print("ERROR:LAN gateway MASK %s not is a IPv4 address" % mask)
+            return
+
+        if not netutils.is_mask(mask):
+            print("ERROR:LAN IP MASK %s not is a valid mask" % mask)
+            return
+
+        fpath = "%s/ixc_configs/router/lan.ini" % sys_dir
+
+        conf = cfg.ini_parse_from_file(fpath)
+        conf["if_config"]["mask"] = mask
 
         cfg.save_to_ini(conf, fpath)
 
