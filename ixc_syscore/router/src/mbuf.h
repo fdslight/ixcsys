@@ -26,7 +26,7 @@ struct ixc_mbuf{
 #define IXC_MBUF_FROM_APP 2
     int from;
     // 开始位置
-#define IXC_MBUF_BEGIN 512
+#define IXC_MBUF_BEGIN 256
     int begin;
     // 偏移位置
     int offset;
