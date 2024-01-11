@@ -13,7 +13,7 @@ struct ixc_qos_slot{
     int is_used;
 };
 
-#define IXC_QOS_SLOT_NUM 1024
+#define IXC_QOS_SLOT_NUM 32768
 
 struct ixc_qos{
     struct ixc_qos_slot *slot_objs[IXC_QOS_SLOT_NUM];
