@@ -28,7 +28,8 @@ inline static int ixc_qos_calc_slot(void *header,int is_ipv6)
     int hdr_len;
 
     unsigned long long v;
-    unsigned char next_header,buf[8]={
+    unsigned char next_header,*s=header;
+    unsigned char buf[8]={
         0,0,0,0,
         0,0,0,0
     };
@@ -58,8 +59,7 @@ inline static int ixc_qos_calc_slot(void *header,int is_ipv6)
         case 17:
         case 136:
             // TCP头部,UDP和UDPLite端口部分定义相同,这里只需要端口部分,直接用UDP协议定义即可
-            if(is_ipv6) udphdr=(struct netutil_udphdr *)(ip6hdr+hdr_len);
-            else udphdr=(struct netutil_udphdr *)(iphdr+hdr_len);
+            udphdr=(struct netutil_udphdr *)(s+hdr_len);
             
             memcpy(&buf[4],&(udphdr->src_port),2);
             memcpy(&buf[6],&(udphdr->dst_port),2);
