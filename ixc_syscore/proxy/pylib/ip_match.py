@@ -15,7 +15,7 @@ class ip_match(object):
 
     def __check_format(self, subnet, prefix):
         prefix = int(prefix)
-        if prefix < 1: return False
+        if prefix < 0: return False
 
         if netuitls.is_ipv4_address(subnet) and prefix > 32: return False
         if netuitls.is_ipv6_address(subnet) and prefix > 128: return False
@@ -56,7 +56,7 @@ class ip_match(object):
         else:
             n = 32
 
-        while n > 0:
+        while n >= 0:
             subnet = netuitls.calc_subnet(ipaddr, n, is_ipv6=is_ipv6)
             name = "%s/%s" % (subnet, n)
             n -= 1
