@@ -11,7 +11,7 @@ def main():
     files = [
         "src/cweb.c"
     ]
-    sys_builder.do_compile(files,"ixcweb.exe","-DDEBUG")
+    sys_builder.do_compile(files,"ixcweb","-DDEBUG")
 
 
 if __name__ == '__main__': main()
