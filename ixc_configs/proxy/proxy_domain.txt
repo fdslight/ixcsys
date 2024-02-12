@@ -160,6 +160,8 @@ podcasts.captivate.fm:1
 *.udn.com.tw:1
 # 华尔街日报
 *.wsj.com:1
+# 彭博社
+*.bloomberg.com:1
 # 德国之声
 *.dw.com:1
 *.boxun.com:1
