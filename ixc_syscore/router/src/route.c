@@ -764,7 +764,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 
     r=ixc_route_match(iphdr->dst_addr,0);
 
-    // 如果找不到理由,那么就丢弃数据包
+    // 如果找不到路由,那么就丢弃数据包
     if(NULL==r){
         IXC_PRINT_IP("route not found for dest ip",iphdr->dst_addr);
         ixc_mbuf_put(m);
