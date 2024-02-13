@@ -744,12 +744,12 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct ixc_route_info *r;
     struct ixc_netif *netif=m->netif;
-    unsigned short ttl;
 
+    unsigned short ttl;
     unsigned short csum;
-    
-    // 保留地址直接丢弃
-    if(iphdr->dst_addr[0]>=224){
+
+    // 多播地址直接丢弃
+    if((iphdr->dst_addr[0] & 0xf0) == 224){
         ixc_mbuf_put(m);
         return;
     }
