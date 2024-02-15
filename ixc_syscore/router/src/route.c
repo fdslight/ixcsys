@@ -744,6 +744,9 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
 /// @return 1表示可以被路由,0表示无法被路由
 static int ixc_route_ip_can_be_routed(struct netutil_iphdr *header)
 {
+    unsigned char ip_unspec[]=IXC_IPADDR_UNSPEC;
+    unsigned char ip_brd[]=IXC_IPADDR_BROADCAST;
+
     // 多播地址丢弃
     if((header->dst_addr[0] & 0xf0)==224){
         return 0;
@@ -753,12 +756,12 @@ static int ixc_route_ip_can_be_routed(struct netutil_iphdr *header)
         return 0;
     }
     //未指定地址丢弃 
-    if(!memcmp(header->src_addr,IXC_IPADDR_UNSPEC,4)){
+    if(!memcmp(header->src_addr,ip_unspec,4)){
         return 0;
     }
 
     // 广播地址丢弃
-    if(!memcmp(header->dst_addr,IXC_IPADDR_BROADCAST,4)){
+    if(!memcmp(header->dst_addr,ip_brd,4)){
         return 0;
     }
 
