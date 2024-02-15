@@ -4,6 +4,7 @@
 #include "mbuf.h"
 
 #define IXC_IPADDR_UNSPEC {0x00,0x00,0x00,0x00}
+#define IXC_IPADDR_BROADCAST {0xff,0xff,0xff,0xff}
 
 int ixc_ip_init(void);
 

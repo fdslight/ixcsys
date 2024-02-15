@@ -739,6 +739,32 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     }
 }
 
+/// @ ip地址是否可以被路由检查
+/// @param header 
+/// @return 1表示可以被路由,0表示无法被路由
+static int ixc_route_ip_can_be_routed(struct netutil_iphdr *header)
+{
+    // 多播地址丢弃
+    if((header->dst_addr[0] & 0xf0)==224){
+        return 0;
+    }
+    // 链路本地地址丢弃数据包
+    if(header->dst_addr[0]==169 && header->dst_addr[1]==254){
+        return 0;
+    }
+    //未指定地址丢弃 
+    if(!memcmp(header->src_addr,IXC_IPADDR_UNSPEC,4)){
+        return 0;
+    }
+
+    // 广播地址丢弃
+    if(!memcmp(header->dst_addr,IXC_IPADDR_BROADCAST,4)){
+        return 0;
+    }
+
+    return 1;
+}
+
 static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
@@ -748,14 +774,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
     unsigned short ttl;
     unsigned short csum;
 
-    // 多播地址直接丢弃
-    if((iphdr->dst_addr[0] & 0xf0) == 224){
-        ixc_mbuf_put(m);
-        return;
-    }
-
-    // 链路本地地址丢弃数据包
-    if(iphdr->dst_addr[0]==169 && iphdr->dst_addr[1]==254){
+    if(!ixc_route_ip_can_be_routed(iphdr)){
         ixc_mbuf_put(m);
         return;
     }
