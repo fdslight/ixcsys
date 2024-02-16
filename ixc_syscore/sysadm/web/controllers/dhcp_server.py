@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-
+import socket
+import struct
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
 import ixc_syslib.pylib.RPCClient as RPC
 
@@ -48,6 +49,17 @@ class controller(base_controller.BaseController):
 
         if lease_time < 600 or lease_time > 86400:
             self.json_resp(True, "DHCP租期最小是10分钟,最长1天")
+            return
+
+        # 此处检查结束地址是否大于开始地址
+        byte_addr_begin = socket.inet_pton(socket.AF_INET, addr_begin)
+        byte_addr_end = socket.inet_pton(socket.AF_INET, addr_end)
+
+        n_addr_begin, = struct.unpack("!I", byte_addr_begin)
+        n_addr_end, = struct.unpack("!I", byte_addr_end)
+
+        if n_addr_end <= n_addr_begin:
+            self.json_resp(True, "DHCP分配结束地址应大于开始地址")
             return
 
         if not s_enable_dhcp:
