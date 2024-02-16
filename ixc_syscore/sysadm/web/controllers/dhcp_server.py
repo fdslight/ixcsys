@@ -59,7 +59,7 @@ class controller(base_controller.BaseController):
         n_addr_end, = struct.unpack("!I", byte_addr_end)
 
         if n_addr_end <= n_addr_begin:
-            self.json_resp(True, "DHCP分配结束地址应大于开始地址")
+            self.json_resp(True, "DHCP地址分配结束地址应大于开始地址")
             return
 
         if not s_enable_dhcp:
