@@ -784,6 +784,7 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("router", "/config", "src_filter_set_protocols", protocol)
 
     def __open_tunnel(self):
+        self.__session_id = None
         now = time.time()
         conn = self.__configs["connection"]
         host = conn["host"]
