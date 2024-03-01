@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket
+import socket, zlib
 import sys, os, signal, time, struct, json, pickle
 import dns.message
 
@@ -647,6 +647,30 @@ class service(dispatcher.dispatcher):
         for rule in dels_list:
             self.del_sec_rule(rule)
         ''''''
+
+    def sec_rules_modify_with_raw(self, text: bytes, is_compressed=False):
+        """传递未经处理的文本的原始规则
+        """
+        if is_compressed:
+            try:
+                text = zlib.decompress(text)
+            except:
+                return
+            ''''''
+        s = text.decode('iso-8859-1')
+        _list = s.split("\n")
+        results = []
+
+        for s in _list:
+            s = s.replace("\r", "")
+            s = s.replace("\t", "")
+            s = s.replace(" ", "")
+            s = s.strip()
+            if not s: continue
+            if s[0] == "#": continue
+            results.append(s)
+
+        self.sec_rules_modify(results)
 
     def rule_clear(self):
         # 清除所有clear
