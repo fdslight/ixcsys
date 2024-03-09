@@ -835,6 +835,7 @@ class service(dispatcher.dispatcher):
 
         if use_https:
             self.__conn_fd = self.create_handler(-1, handler, crypto, None, **kwargs)
+            self.get_handler(self.__conn_fd).set_use_http_thin_protocol(True)
         else:
             self.__conn_fd = self.create_handler(-1, handler, crypto, self.__crypto_configs, **kwargs)
 
