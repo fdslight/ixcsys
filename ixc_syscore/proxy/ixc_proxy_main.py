@@ -32,6 +32,7 @@ import ixc_syscore.proxy.pylib.file_parser as file_parser
 import ixc_syscore.proxy.pylib.ip_match as ip_match
 import ixc_syscore.proxy.pylib.crypto.utils as crypto_utils
 import ixc_syscore.proxy.pylib.racs_cext as racs_cext
+import ixc_syscore.proxy.pylib.base_proto.tunnel_over_http as tunnel_over_http
 import ixc_syscore.proxy.handlers.tunnel as tunnel
 import ixc_syscore.proxy.handlers.netpkt as netpkt
 import ixc_syscore.proxy.handlers.dns_proxy as dns_proxy
@@ -794,6 +795,7 @@ class service(dispatcher.dispatcher):
         tunnel_type = conn["tunnel_type"]
         redundancy = bool(int(conn.get("udp_tunnel_redundancy", 1)))
         over_https = bool(int(conn.get("tunnel_over_https", 0)))
+        use_https = False
 
         if self.__dns_query_tunnel_is_error and now - self.__dns_query_tunnel_retry_up_time < 300: return
 
@@ -812,6 +814,10 @@ class service(dispatcher.dispatcher):
         else:
             handler = tunnel.tcp_tunnel
             crypto = self.__tcp_crypto
+            if over_https:
+                use_https = True
+                crypto = tunnel_over_http
+            ''''''
 
         if conn_timeout < 120:
             raise ValueError("the conn timeout must be more than 120s")
@@ -827,7 +833,10 @@ class service(dispatcher.dispatcher):
 
         if tunnel_type.lower() == "udp": kwargs["redundancy"] = redundancy
 
-        self.__conn_fd = self.create_handler(-1, handler, crypto, self.__crypto_configs, **kwargs)
+        if use_https:
+            self.__conn_fd = self.create_handler(-1, handler, crypto, None, **kwargs)
+        else:
+            self.__conn_fd = self.create_handler(-1, handler, crypto, self.__crypto_configs, **kwargs)
 
         rs = self.get_handler(self.__conn_fd).create_tunnel((host, port,))
         if not rs:

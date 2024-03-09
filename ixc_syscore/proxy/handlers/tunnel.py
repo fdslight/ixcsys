@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """客户端隧道实现
 """
+import base64
 import socket, time, ssl, random, hashlib
 
 import pywind.evtframework.handlers.tcp_handler as tcp_handler
@@ -36,6 +37,8 @@ class tcp_tunnel(tcp_handler.tcp_handler):
     __enable_https_sni = None
     __https_sni_host = None
     __strict_https = None
+    # 是否设置为http优化的精简协议
+    __isset_http_thin_protocol = None
 
     __tmp_buf = None
 
@@ -44,6 +47,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         self.__over_https = False
         self.__https_sni_host = None
         self.__enable_https_sni = None
+        self.__isset_http_thin_protocol = False
 
         self.__http_handshake_ok = False
         self.__tmp_buf = []
@@ -134,12 +138,16 @@ class tcp_tunnel(tcp_handler.tcp_handler):
                 pkt_info = self.__decrypt.get_pkt()
                 if not pkt_info: break
 
-                session_id, action, message = pkt_info
+                if self.__isset_http_thin_protocol:
+                    session_id = self.dispatcher.session_id
+                    action, message = pkt_info
+                else:
+                    session_id, action, message = pkt_info
 
                 if action not in proto_utils.ACTS: continue
                 if action == proto_utils.ACT_PONG:
                     self.__is_sent_heartbeat = False
-                    #logging.print_general("receive server pong", self.__server_address)
+                    # logging.print_general("receive server pong", self.__server_address)
                     continue
                 if action == proto_utils.ACT_PING:
                     self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PONG, proto_utils.rand_bytes())
@@ -170,7 +178,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         self.__heartbeat_up_time = time.time()
         self.__is_sent_heartbeat = True
         self.send_msg_to_tunnel(self.dispatcher.session_id, proto_utils.ACT_PING, proto_utils.rand_bytes())
-        #logging.print_general("send ping request", self.__server_address)
+        # logging.print_general("send ping request", self.__server_address)
 
     def tcp_timeout(self):
         if not self.is_conn_ok():
@@ -319,7 +327,10 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             self.delete_handler(self.fileno)
 
     def send_msg_to_tunnel(self, session_id, action, message):
-        sent_pkt = self.__encrypt.build_packet(session_id, action, message)
+        if self.__isset_http_thin_protocol:
+            sent_pkt = self.__encrypt.build_packet(action, message)
+        else:
+            sent_pkt = self.__encrypt.build_packet(session_id, action, message)
 
         if self.__over_https and not self.__http_handshake_ok:
             self.__tmp_buf.append(sent_pkt)
@@ -357,6 +368,12 @@ class tcp_tunnel(tcp_handler.tcp_handler):
 
         host = ("Host", self.__https_sni_host,)
         origin = ("Origin", "https://%s" % self.__https_sni_host)
+
+        if self.__isset_http_thin_protocol:
+            session_id = base64.b16encode(self.dispatcher.session_id).decode("iso-8859-1")
+            kv_pairs.append(
+                ("X-User-Session-Id", session_id)
+            )
 
         kv_pairs.append(host)
         kv_pairs.append(origin)
@@ -431,6 +448,9 @@ class tcp_tunnel(tcp_handler.tcp_handler):
                 return v
             ''''''
         return None
+
+    def set_use_http_thin_protocol(self, enable: bool):
+        self.__isset_http_thin_protocol = enable
 
 
 class udp_tunnel(udp_handler.udp_handler):
