@@ -189,6 +189,9 @@ class service(dispatcher.dispatcher):
             if self.__dns_server6 >= 0:
                 self.delete_handler(self.__dns_server6)
             self.__dns_server6 = self.create_handler(-1, dns_proxyd.proxyd, (ip6_mngaddr, 53, 0, 0), is_ipv6=True)
+            if self.__dns_server6 < 0:
+                logging.print_alert("cannot create dns server socket for IPv6")
+                return
             self.__ip6_mngaddr = ip6_mngaddr
             RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
 

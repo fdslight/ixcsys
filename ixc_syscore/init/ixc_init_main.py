@@ -82,8 +82,8 @@ class service(dispatcher.dispatcher):
         self.__errlog_path = "/var/log/ixcsys_error.log"
         self.__syslog_path = "/var/log/ixcsys_syslog.log"
 
-        # 限制最大为1MB
-        self.__errlog_file_max_size = 1 * 1024 * 1024
+        # 限制最大为256KB
+        self.__errlog_file_max_size = 256 * 1024
 
         self.create_poll()
         self.start_scgi()

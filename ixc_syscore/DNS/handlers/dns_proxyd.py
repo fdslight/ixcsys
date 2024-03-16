@@ -104,7 +104,12 @@ class proxyd(udp_handler.udp_handler):
         s = socket.socket(fa, socket.SOCK_DGRAM)
         if is_ipv6: s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
         self.set_socket(s)
-        self.bind(listen)
+        # 这里可能存在绑定失败的情况
+        try:
+            self.bind(listen)
+        except OSError:
+            self.close()
+            return -1
         self.register(self.fileno)
         self.add_evt_read(self.fileno)
 
