@@ -969,7 +969,7 @@ class helper(object):
                 # os.system("ip link set %s promisc on" % self.__LAN_NAME)
                 os.system("ip link set %s up" % devname)
             # 设置内网桥接网卡MTU为1400,目的为了本机能够被正常访问
-            os.system("ip link set dev %s mtu 1400" % self.__LAN_BR_NAME)
+            # os.system("ip link set dev %s mtu 1400" % self.__LAN_BR_NAME)
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
 
