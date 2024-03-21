@@ -390,7 +390,6 @@ class service(dispatcher.dispatcher):
 
         if self.handler_exists(fd): self.get_handler(fd).send_msg(new_msg, o["address"])
 
-        """
         if not o["from_forward"] and self.__forward_result:
             try:
                 msg_obj = dns.message.from_wire(new_msg)
@@ -418,7 +417,6 @@ class service(dispatcher.dispatcher):
                     self.get_handler(self.__dns_client).send_forward_msg(pickle.dumps(msg))
                 ''''''
             ''''''
-        """
         # 此处删除记录
         del self.__id_wan2lan[dns_id]
 
@@ -599,10 +597,6 @@ class service(dispatcher.dispatcher):
     def forward_dns_result(self):
         self.__forward_result = True
 
-    @property
-    def is_forwarded_result(self) -> bool:
-        return self.__forward_result
-
     def get_forward(self):
         return self.get_handler(self.__dns_client).get_port()
 
@@ -754,7 +748,6 @@ class service(dispatcher.dispatcher):
             self.add_ns_os_resolv()
             self.__up_check_os_resolv_time = now
         ''''''
-
 
 def main():
     __helper = "ixc_syscore/DNS helper: start | stop | debug"
