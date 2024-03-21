@@ -409,16 +409,12 @@ class service(dispatcher.dispatcher):
                     else:
                         continue
                     if not flags: continue
-                    """
                     msg = {
                         "action": "dns_result",
                         "priv_data": None,
                         "message": (ip, is_ipv6,)
                     }
                     self.get_handler(self.__dns_client).send_forward_msg(pickle.dumps(msg))
-                    """
-                    # 这里直接同步设置代理,避免异步导致前几个数据包走默认路由从而导致与目标网络连接中断
-                    self.set_route_for_proxy(ip, is_ipv6=is_ipv6)
                 ''''''
             ''''''
         # 此处删除记录
@@ -752,16 +748,6 @@ class service(dispatcher.dispatcher):
             self.add_ns_os_resolv()
             self.__up_check_os_resolv_time = now
         ''''''
-
-    def set_route_for_proxy(self, address, is_ipv6=False):
-        """设置路由,主要为IP名单外但DNS又不需要代理的IP地址提供代理
-        """
-        if not RPCClient.RPCReadyOk("proxy"): return
-        try:
-            RPCClient.fn_call("proxy", "/config", "set_proxy_route", address, is_ipv6=is_ipv6)
-        except:
-            logging.print_alert("set route %s error for proxy" % address)
-        return
 
 
 def main():
