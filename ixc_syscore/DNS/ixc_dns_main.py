@@ -747,7 +747,7 @@ class service(dispatcher.dispatcher):
         if now - self.__up_check_os_resolv_time > 60:
             self.add_ns_os_resolv()
             self.__up_check_os_resolv_time = now
-        ''''''
+
 
 def main():
     __helper = "ixc_syscore/DNS helper: start | stop | debug"
