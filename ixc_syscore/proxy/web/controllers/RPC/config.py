@@ -24,6 +24,7 @@ class controller(rpc.controller):
             "update_crypto_module_conf": self.update_crypto_module_conf,
 
             "racs_cfg_update": self.racs_cfg_update,
+            "set_proxy_route": self.set_proxy_route,
         }
 
     def config_get(self, cfg_type: str):
@@ -57,7 +58,7 @@ class controller(rpc.controller):
     def __check_ip_rule(self, text: str):
         _list = text.split("\n")
         for s in _list:
-            s = s.replace("\r","")
+            s = s.replace("\r", "")
             s = s.strip()
             if not s: continue
             if s[0] == "#": continue
@@ -76,7 +77,7 @@ class controller(rpc.controller):
     def __check_dns_rule(self, text: str):
         _list = text.split("\n")
         for s in _list:
-            s = s.replace("\r","")
+            s = s.replace("\r", "")
             s = s.strip()
             if not s: continue
             if s[0] == "#": continue
@@ -125,4 +126,9 @@ class controller(rpc.controller):
 
     def racs_cfg_update(self, cfg: dict):
         self.__runtime.racs_cfg_update(cfg)
+        return 0, None
+
+    def set_proxy_route(self, address: str, is_ipv6=False):
+        self.__runtime.auto_proxy_with_ip(address, is_ipv6=is_ipv6)
+
         return 0, None
