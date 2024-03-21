@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, signal, time, importlib, struct, socket, json, zlib
-import dns.resolver, dns.message
+import dns.resolver, dns.message, json
 
 ### 启pyjoin JIT加速
 # try:
@@ -29,7 +29,6 @@ import ixc_syslib.web.route as webroute
 
 import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
 import ixc_syscore.proxy.pylib.file_parser as file_parser
-import ixc_syscore.proxy.pylib.ip_match as ip_match
 import ixc_syscore.proxy.pylib.crypto.utils as crypto_utils
 import ixc_syscore.proxy.pylib.racs_cext as racs_cext
 import ixc_syscore.proxy.pylib.base_proto.tunnel_over_http as tunnel_over_http
@@ -111,8 +110,6 @@ class service(dispatcher.dispatcher):
     __dns_map = None
     __up_time = None
 
-    __ip_match = None
-
     __enable = None
 
     __racs_configs = None
@@ -141,7 +138,6 @@ class service(dispatcher.dispatcher):
         self.__up_time = time.time()
         self.__dns_query_tunnel_retry_up_time = time.time()
         self.__dns_query_racs_retry_up_time = time.time()
-        self.__ip_match = ip_match.ip_match()
         self.__conn_fd = -1
         self.__enable = False
         self.__racs_configs = {}
@@ -229,7 +225,6 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("DNS", "/config", "forward_dns_result")
 
         self.get_handler(self.__dns_fd).set_forward(port)
-        self.__ip_match.clear()
         self.set_domain_rule()
 
         fpaths = [
@@ -243,8 +238,12 @@ class service(dispatcher.dispatcher):
             ''''''
         try:
             rules = file_parser.parse_ip_subnet_file(fpaths[0])
-            for subnet, prefix in rules:
-                self.__ip_match.add_rule(subnet, prefix)
+            text = json.dumps(rules)
+            byte_data = text.encode('utf-8')
+            cmp_data = zlib.compress(byte_data)
+
+            RPCClient.fn_call("DNS", "/config", "no_proxy_ips_add", cmp_data)
+            
             rules = file_parser.parse_ip_subnet_file(fpaths[1])
             self.__set_static_ip_rules(rules)
         except file_parser.FilefmtErr:
@@ -296,7 +295,6 @@ class service(dispatcher.dispatcher):
             self.set_route(subnet, prefix=prefix, is_ipv6=is_ipv6, is_dynamic=False)
 
     def auto_proxy_with_ip(self, ip: str, is_ipv6=False):
-        if self.__ip_match.match(ip, is_ipv6=is_ipv6): return
         self.set_route(ip, is_ipv6=is_ipv6)
 
     def myloop(self):

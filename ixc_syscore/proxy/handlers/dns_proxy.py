@@ -27,9 +27,10 @@ class dns_proxy(udp_handler.udp_handler):
         dns_msg = o["message"]
         action = o["action"]
 
-        if action != "dns_result":
+        if action != "proxy_ip":
             self.dispatcher.send_dns_request_to_tunnel(action, dns_msg)
         else:
+            # DNS自动设置路由后告知proxy程序,由代理程序管理路由
             self.dispatcher.auto_proxy_with_ip(dns_msg[0], is_ipv6=dns_msg[1])
 
     def udp_writable(self):

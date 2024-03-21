@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import zlib, json
 
 import ixc_syslib.web.controllers.rpc_controller as rpc
 
@@ -27,6 +28,7 @@ class controller(rpc.controller):
             "hosts_get": self.hosts_get,
             "set_dnsv6_drop_enable": self.set_dnsv6_drop_enable,
             "dns_no_system_drop_enable": self.dns_no_system_drop_enable,
+            "no_proxy_ips_add": self.no_proxy_ips_add,
             "save": self.save
         }
 
@@ -116,3 +118,22 @@ class controller(rpc.controller):
     def dns_no_system_drop_enable(self, enable: bool):
         self.__runtime.dns_no_system_drop_enable(enable)
         return 0, None
+
+    def no_proxy_ips_add(self, byte_data: bytes):
+        try:
+            rs = zlib.decompress(byte_data)
+        except:
+            return 0, False
+
+        try:
+            text = rs.decode()
+        except:
+            return 0, False
+
+        try:
+            _list = json.loads(text)
+        except:
+            return 0, False
+
+        self.__runtime.set_no_proxy_ips(_list)
+        return 0, True

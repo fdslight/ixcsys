@@ -12,6 +12,7 @@ import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 import pywind.web.handlers.scgi as scgi
 import pywind.lib.netutils as netutils
+import pywind.lib.timer as timer
 
 from pywind.global_vars import global_vars
 
@@ -24,6 +25,7 @@ import ixc_syscore.DNS.pylib.rule as rule
 import ixc_syscore.DNS.pylib.os_resolv as os_resolv
 import ixc_syscore.DNS.pylib.sec_rule as sec_rule
 import ixc_syscore.DNS.pylib.dns_utils as dns_utils
+import ixc_syscore.DNS.pylib.ip_match as ip_match
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -105,6 +107,9 @@ class service(dispatcher.dispatcher):
     __hosts_fpath = None
     __hosts = None
 
+    __ip_match = None
+    __route_timer = None
+
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
 
@@ -137,6 +142,8 @@ class service(dispatcher.dispatcher):
 
         self.__hosts_fpath = "%s/hosts.json" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__hosts = {}
+        self.__ip_match = ip_match.ip_match()
+        self.__route_timer = timer.timer()
 
         RPCClient.wait_processes(["router", ])
 
@@ -144,6 +151,20 @@ class service(dispatcher.dispatcher):
         self.start_dns()
         self.start_scgi()
         self.add_ns_os_resolv()
+
+    def set_no_proxy_ips(self, ip_list: str):
+        """加入IP匹配规则
+        """
+        self.__ip_match.clear()
+        for subnet, prefix in ip_list:
+            self.__ip_match.add_rule(subnet, prefix)
+
+    def set_route(self, host: str, is_ipv6=False):
+        if is_ipv6:
+            RPCClient.fn_call("router", "/config", "add_route", host, 128, "::", is_ipv6=is_ipv6)
+        else:
+            RPCClient.fn_call("router", "/config", "add_route", host, 32, "0.0.0.0", is_ipv6=is_ipv6)
+        ''''''
 
     def get_ipv6_mngaddr(self):
         cmd = "ip addr show ixclanbr | grep  inet6 | grep mng"
@@ -354,9 +375,6 @@ class service(dispatcher.dispatcher):
 
         return dns_id
 
-    # def set_route(self, subnet: str, prefix: int, is_ipv6=False):
-    #    RPCClient.fn_call("router", "/config", "add_route", subnet, prefix, None, is_ipv6=is_ipv6)
-
     def send_to_dnsserver(self, message: bytes, is_ipv6=False):
         """发送到DNS服务器
         """
@@ -409,12 +427,16 @@ class service(dispatcher.dispatcher):
                     else:
                         continue
                     if not flags: continue
+                    if self.__ip_match.match(ip, is_ipv6=is_ipv6): continue
+                    # DNS自动设置路由后告知proxy程序,由代理程序管理路由
+                    self.set_route(ip, is_ipv6=is_ipv6)
                     msg = {
-                        "action": "dns_result",
+                        "action": "proxy_ip",
                         "priv_data": None,
                         "message": (ip, is_ipv6,)
                     }
                     self.get_handler(self.__dns_client).send_forward_msg(pickle.dumps(msg))
+                    logging.print_info("notify proxy for ip address %s" % ip)
                 ''''''
             ''''''
         # 此处删除记录
