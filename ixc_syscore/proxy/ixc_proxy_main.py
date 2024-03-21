@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, signal, time, importlib, struct, socket, json, zlib
-import dns.resolver
+import dns.resolver, dns.message
 
 ### 启pyjoin JIT加速
 # try:

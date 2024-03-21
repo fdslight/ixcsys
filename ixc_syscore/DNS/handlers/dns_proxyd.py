@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """实现DNS服务器代理,用于实现高级DNS过滤功能
 """
+import pickle
 import socket
 import pywind.evtframework.handlers.udp_handler as udp_handler
 
@@ -47,6 +48,16 @@ class proxy_client(udp_handler.udp_handler):
         if address[0] != self.__ns1 and address[0] != self.__ns2 and address[0] != "127.0.0.1": return
         # 核对是否是允许的对端端口
         if address[1] not in (53, self.__forward_port,): return
+
+        if address[1] == 53 and self.dispatcher.is_forwarded_result:
+            msg = {
+                "action": "auto_proxy_for_ip",
+                "priv_data": None,
+                "message": message
+            }
+            self.send_forward_msg(pickle.dumps(msg))
+            return
+
         self.dispatcher.handle_msg_from_dnsserver(message)
 
     def udp_writable(self):

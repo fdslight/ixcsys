@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import socket, pickle
+import socket, pickle, dns.message
 import pywind.evtframework.handlers.udp_handler as udp_handler
+import pywind.lib.netutils as netutils
 
 
 class dns_proxy(udp_handler.udp_handler):
@@ -27,10 +28,28 @@ class dns_proxy(udp_handler.udp_handler):
         dns_msg = o["message"]
         action = o["action"]
 
-        if action != "dns_result":
+        if action != "auto_proxy_for_ip":
             self.dispatcher.send_dns_request_to_tunnel(action, dns_msg)
-        else:
-            self.dispatcher.auto_proxy_with_ip(dns_msg[0], is_ipv6=dns_msg[1])
+            return
+
+        # 此处处理DNS消息
+        try:
+            msg_obj = dns.message.from_wire(message)
+        except:
+            return
+
+        for rrset in msg_obj.answer:
+            for cname in rrset:
+                ip = cname.__str__()
+                if netutils.is_ipv4_address(ip):
+                    self.dispatcher.auto_proxy_with_ip(ip)
+                    continue
+                if netutils.is_ipv6_address(ip):
+                    self.dispatcher.auto_proxy_with_ip(ip, is_ipv6=True)
+                    continue
+                ''''''
+            ''''''
+        self.send_dns_msg(message)
 
     def udp_writable(self):
         self.remove_evt_write(self.fileno)
