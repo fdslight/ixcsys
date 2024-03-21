@@ -756,6 +756,7 @@ class service(dispatcher.dispatcher):
     def set_route_for_proxy(self, address, is_ipv6=False):
         """设置路由,主要为IP名单外但DNS又不需要代理的IP地址提供代理
         """
+        if not RPCClient.RPCReadyOk("proxy"): return
         try:
             RPCClient.fn_call("proxy", "/config", "set_proxy_route", address, is_ipv6=is_ipv6)
         except:
