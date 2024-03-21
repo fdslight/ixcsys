@@ -73,11 +73,11 @@ class controller(rpc.controller):
             cfg["enable_auto"] = 0
         return 0, None
 
-    def forward_dns_result(self):
+    def forward_dns_result(self, enable: bool):
         """重定向DNS结果
         :return:
         """
-        self.__runtime.forward_dns_result()
+        self.__runtime.forward_dns_result(enable)
         return 0, None
 
     def save(self):

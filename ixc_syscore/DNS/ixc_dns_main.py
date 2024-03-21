@@ -616,8 +616,8 @@ class service(dispatcher.dispatcher):
         else:
             self.get_handler(self.__dns_client).set_nameservers(ns1, ns2)
 
-    def forward_dns_result(self):
-        self.__forward_result = True
+    def forward_dns_result(self, enable: bool):
+        self.__forward_result = enable
 
     def get_forward(self):
         return self.get_handler(self.__dns_client).get_port()

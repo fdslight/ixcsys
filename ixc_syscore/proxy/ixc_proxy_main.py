@@ -173,6 +173,7 @@ class service(dispatcher.dispatcher):
             self.__enable = False
             # 清除DNS规则
             RPCClient.fn_call("DNS", "/rule", "clear")
+            RPCClient.fn_call("DNS", "/config", "forward_dns_result", False)
             # 关闭src filter
             RPCClient.fn_call("router", "/config", "src_filter_enable", False)
             self.del_routes()
@@ -220,9 +221,12 @@ class service(dispatcher.dispatcher):
             logging.print_error()
 
     def __set_rules(self):
+        # 隧道未开启不刷新规则
+        if not bool(int(self.configs["connection"]["enable"])): return
+
         RPCClient.fn_call("DNS", "/rule", "clear")
         port = RPCClient.fn_call("DNS", "/rule", "get_forward")
-        RPCClient.fn_call("DNS", "/config", "forward_dns_result")
+        RPCClient.fn_call("DNS", "/config", "forward_dns_result", True)
 
         self.get_handler(self.__dns_fd).set_forward(port)
         self.set_domain_rule()
@@ -243,7 +247,7 @@ class service(dispatcher.dispatcher):
             cmp_data = zlib.compress(byte_data)
 
             RPCClient.fn_call("DNS", "/config", "no_proxy_ips_add", cmp_data)
-            
+
             rules = file_parser.parse_ip_subnet_file(fpaths[1])
             self.__set_static_ip_rules(rules)
         except file_parser.FilefmtErr:
