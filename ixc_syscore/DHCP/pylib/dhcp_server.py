@@ -465,6 +465,7 @@ class dhcp_server(object):
             self.__tmp_alloc_addrs[hwaddr] = {"time": time.time(), "ip": bind[hwaddr],
                                               "neg_ok": False, "host_name": b""}
             self.__alloc.bind_ipaddr(hwaddr, bind[hwaddr])
+        return
 
     def loop(self):
         t = time.time()
@@ -489,6 +490,7 @@ class dhcp_server(object):
             ip = self.__tmp_alloc_addrs[hwaddr]["ip"]
             if ip in self.__used_ips: del self.__used_ips[ip]
             del self.__tmp_alloc_addrs[hwaddr]
+        return
 
     def get_clients(self):
         """获取已经分配的客户端
@@ -540,3 +542,4 @@ class dhcp_server(object):
 
             self.__alloc.bind_ipaddr(hwaddr.lower(), ipaddr, force_bind=True)
             self.__ip_binds[hwaddr] = ipaddr
+        return
