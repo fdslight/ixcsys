@@ -177,6 +177,7 @@ class service(dispatcher.dispatcher):
     def auto_clean_err_log(self):
         """自动清理故障日志
         """
+        if not os.path.isfile(self.__errlog_path): return
         fstat = os.stat(self.__errlog_path)
         if fstat.st_size > self.__errlog_file_max_size:
             fdst = open(self.__errlog_path, "w")
