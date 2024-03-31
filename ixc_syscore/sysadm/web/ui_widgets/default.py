@@ -19,6 +19,13 @@ class widget(ui_widget.widget):
         fpath = "/tmp/ixcsys_update.tar.gz"
         return os.path.isfile(fpath)
 
+    def get_uname(self):
+        fdst = os.popen("uname -a")
+        s = fdst.read()
+        fdst.close()
+
+        return s
+
     def read_version(self):
         fpath = "%s/version" % self.sys_dir
         if not os.path.isfile(fpath):
@@ -184,6 +191,7 @@ class widget(ui_widget.widget):
         dic["available_mem"] = self.get_host_available_mem()
         dic["is_temp_network"] = self.sysadm.network_is_work_on_temp
         dic["host_os"] = os_info.get_os_info()[0]
+        dic['uname'] = self.get_uname()
         dic["self_global_ip"] = self.sysadm.self_global_ip
 
         return True, uri, dic
