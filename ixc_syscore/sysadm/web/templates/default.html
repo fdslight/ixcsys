@@ -44,6 +44,10 @@
                 <td>${self.V['host_os']}</td>
             </tr>
             <tr>
+                <td>内核</td>
+                <td>${self.V['uname']}</td>
+            </tr>
+            <tr>
                 <td>版本</td>
                 <td>
                         ${self.V["version"]}
@@ -51,10 +55,6 @@
                         if self.V["have_update"]:self.show('<span class="ixc-prompt">(有新的更新，请重启路由器更新)</span>')
                         %>
                 </td>
-            </tr>
-            <tr>
-                <td>系统内核</td>
-                <td>${self.V['uname']}</td>
             </tr>
             <!--
             <tr>
