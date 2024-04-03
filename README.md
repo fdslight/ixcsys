@@ -32,7 +32,7 @@ X86_64 with SSE2,ARM64 with NEON or other 64bit CPU.
 
 # about Packet forwarding speed(the software only support single-core forward packet)
 1.Intel J1800 CPU or arm cortex-a53:100Mbit/s  
-2.Intel N5105:1000Mbit/s at least  
+2.Intel N5105:1000Mbit/s
 3.Raspberry PI 4 or arm cortex-A72:300Mbit/s   
 4.amd opteron x3421:500Mbit/s   
 
