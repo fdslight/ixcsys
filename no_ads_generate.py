@@ -43,10 +43,11 @@ EXTRA_DROPS = [
 
     "simba.taobao.com",
     "ganjing",
-    
 
     # 去除规则,避免和额外加入的重复
     "gz-data.com",
+    # 允许p2p
+    "p2p"
 ]
 
 
