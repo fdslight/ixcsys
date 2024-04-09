@@ -11,6 +11,7 @@ import pywind.web.lib.websocket as wslib
 
 import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
 import ixc_syscore.proxy.pylib.logging as logging
+import ixc_syscore.proxy.pylib.ssl_backports as ssl_backports
 
 
 class tcp_tunnel(tcp_handler.tcp_handler):
@@ -306,7 +307,10 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             # 如果开启严格HTTPS那么匹配对端证书
             if self.__strict_https:
                 cert = self.socket.getpeercert()
-                ssl.match_hostname(cert, self.__https_sni_host)
+                if not hasattr(ssl, 'match_hostname'):
+                    ssl_backports.match_hostname(cert, self.__https_sni_host)
+                else:
+                    ssl.match_hostname(cert, self.__https_sni_host)
                 if self.check_cert_is_expired():
                     logging.print_error("SSL handshake fail %s,%s;certificate is expired" % self.__server_address)
                     self.delete_handler(self.fileno)
