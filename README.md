@@ -9,14 +9,15 @@ X86_64 with SSE2,ARM64 with NEON or other 64bit CPU.
 
 
 # debian/ubuntu install runtime
-1. sudo apt install python3-pip
-2. sudo pip3 install dnspython3
-3. sudo pip3 install cryptography
-4. sudo pip3 install cloudflare-ddns
+1. sudo apt install python3-pip 
+2. sudo pip3 install dnspython3 
+3. sudo pip3 install cryptography 
+4. sudo pip3 install cloudflare-ddns 
 5. sudo apt install libpython3-dev  
-6. sudo apt install tftpd-hpa
-7. sudo apt install pkg-config
-8. sudo apt install lsb-release
+6. sudo apt install tftpd-hpa 
+7. sudo apt install pkg-config 
+8. sudo apt install lsb-release 
+9. sudo apt install curl 
 
 # build ixcsys
 1.first you need run "python3 configure.py" for configure your environment(for example,"python3 build_config.py default")     
@@ -34,7 +35,7 @@ X86_64 with SSE2,ARM64 with NEON or other 64bit CPU.
 1.Intel J1800 CPU or arm cortex-a53:100Mbit/s  
 2.Intel N5105:1000Mbit/s     
 3.Raspberry PI 4 or arm cortex-A72:300Mbit/s   
-4.amd opteron x3421:500Mbit/s   
+4.AMD Opteron x3421:500Mbit/s   
 
 # why use Linux tuntap
 netmap is not the part of Linux kernel,though FreeBSD support netmap,but FreeBSD is difficult for the most people.
