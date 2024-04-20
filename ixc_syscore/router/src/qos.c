@@ -120,9 +120,10 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
         }
     }
 
-    if(IXC_MBUF_FROM_LAN==m->from) ixc_qos_put(m,iphdr,0);
+    ixc_qos_put(m,iphdr,0);
+    //if(IXC_MBUF_FROM_LAN==m->from) ixc_qos_put(m,iphdr,0);
     // 只对LAN to WAN的流量进行QOS,因为无法控制WAN to LAN的流量
-    else ixc_qos_send_to_next(m);
+    //else ixc_qos_send_to_next(m);
     //else ixc_qos_put(m,iphdr->dst_addr[3],iphdr->src_addr[1],iphdr->src_addr[2],iphdr->src_addr[3]);
 }
 
@@ -139,9 +140,10 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
         }
     }
     
-    if(IXC_MBUF_FROM_LAN==m->from) ixc_qos_put(m,header,1);
+    ixc_qos_put(m,header,1);
+    //if(IXC_MBUF_FROM_LAN==m->from) ixc_qos_put(m,header,1);
     // 只对LAN to WAN的流量进行QOS,因为无法控制WAN to LAN的流量
-    else ixc_qos_send_to_next(m);
+    //else ixc_qos_send_to_next(m);
     //else ixc_qos_put(m,header->dst_addr[15],header->src_addr[13],header->src_addr[14],header->src_addr[15]);
 }
 
