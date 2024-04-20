@@ -13,6 +13,20 @@ class widget(ui_widget.widget):
     def sysadm(self):
         return global_vars["ixcsys.sysadm"]
 
+    def get_hostname(self):
+        fpath = "/etc/hostname"
+        if not os.path.isfile(fpath):
+            return "no hostname"
+        with open(fpath, "r", errors="ignore") as f: s = f.read()
+        f.close()
+
+        s = s.replace("\n", "")
+        s = s.replace("\r", "")
+
+        hostname = s
+
+        return hostname
+
     def have_update(self):
         """检查更新是否存在
         """
@@ -135,6 +149,7 @@ class widget(ui_widget.widget):
         uri = "default.html"
         dic = {}
 
+        dic['hostname'] = self.get_hostname()
         dic["time"] = time.strftime("%Y-%m-%d %H:%M:%S %Z")
         dic["have_update"] = self.have_update()
 
