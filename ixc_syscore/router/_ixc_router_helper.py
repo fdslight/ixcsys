@@ -21,6 +21,8 @@ class rpc(object):
 
         self.__fn_objects = {
             "get_all_consts": self.get_all_consts,
+            "start_pass": self.start_pass,
+            "stop_pass": self.stop_pass,
             "get_wan_ipaddr_info": self.get_wan_ipaddr_info,
             "get_lan_ipaddr_info": self.get_lan_ipaddr_info,
             "add_route": self.add_route,
@@ -124,6 +126,14 @@ class rpc(object):
         }
 
         return 0, values
+
+    def start_pass(self, ifname: str):
+        self.start_pass(ifname)
+        return 0, None
+
+    def stop_pass(self):
+        self.stop_pass()
+        return 0, None
 
     def get_wan_hwaddr(self):
         """获取WAN硬件地址
@@ -869,24 +879,17 @@ class helper(object):
             os.system("ip link set %s down" % self.__WAN_BR_NAME)
             os.system("ip link del %s" % self.__LAN_BR_NAME)
             os.system("ip link del %s" % self.__WAN_BR_NAME)
-
-            if self.__if_pass_fd >= 0:
-                os.system("ip link set %s down" % self.__PASS_NAME)
-                os.system("ip link set %s down" % self.__PASS_BR_NAME)
-                os.system("ip link del %s" % self.__PASS_BR_NAME)
-            ''''''
         else:
             os.system("ifconfig %s destroy" % self.__LAN_BR_NAME)
             os.system("ifconfig %s destroy" % self.__WAN_BR_NAME)
 
-            if self.__if_pass_fd >= 0:
-                os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
-            ''''''
+        self.stop_pass()
+
         if self.__if_lan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_LAN)
         if self.__if_wan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_WAN)
-        if self.__if_pass_fd>0:
+        if self.__if_pass_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_PASS)
 
         self.__if_lan_fd = -1
@@ -1034,6 +1037,18 @@ class helper(object):
             os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % ifname)
         else:
             pass
+
+    def stop_pass(self):
+        if self.is_linux:
+            if self.__if_pass_fd >= 0:
+                os.system("ip link set %s down" % self.__PASS_NAME)
+                os.system("ip link set %s down" % self.__PASS_BR_NAME)
+                os.system("ip link del %s" % self.__PASS_BR_NAME)
+            ''''''
+        else:
+            if self.__if_pass_fd >= 0:
+                os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
+            ''''''
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)

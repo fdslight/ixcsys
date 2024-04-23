@@ -34,6 +34,7 @@ class pass_service(udp_handler.udp_handler):
         _id, if_type, _, ipproto, flags = struct.unpack("!16sBBBB", message[0:20])
         if _id != self.__id: return
         ether_data = message[20:]
+        self.dispatcher.send_forward_message(ether_data)
 
     def udp_writable(self):
         self.remove_evt_write(self.fileno)
@@ -55,3 +56,12 @@ class pass_service(udp_handler.udp_handler):
         """
         self.__id = _id
         self.__server_port = 8964
+
+    def send_msg(self, message: bytes):
+        flags = self.consts["IXC_FLAG_ETHER_PASS"]
+        if_type = self.consts['IXC_NETIF_PASS']
+        header = struct.pack("!16sBBBB", self.__id, if_type, 0, 0, flags)
+        sent_msg = b"".join([header, message])
+
+        self.add_evt_write(self.fileno)
+        self.sendto(sent_msg, ("127.0.0.1", self.__server_port))
