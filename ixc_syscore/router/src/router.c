@@ -1014,10 +1014,13 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
     PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_LOG);
+    PyModule_AddIntMacro(m,IXC_FLAG_ETHER_PASS);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //
     PyModule_AddIntMacro(m,IXC_NETIF_WAN);
+    //
+    PyModule_AddIntMacro(m,IXC_NETIF_PASS);
 
 
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_DROP);

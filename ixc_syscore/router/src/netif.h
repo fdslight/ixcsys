@@ -6,10 +6,12 @@
 #include "../../../pywind/clib/ev/ev.h"
 
 #define IXC_NETIF_READ_NUM 64
-#define IXC_NETIF_MAX 2
+#define IXC_NETIF_MAX 3
 
 #define IXC_NETIF_LAN 0
 #define IXC_NETIF_WAN 1
+// 直通接口
+#define IXC_NETIF_PASS 2
 
 struct ixc_netif{
     struct ixc_mbuf *sent_first;

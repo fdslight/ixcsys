@@ -416,11 +416,17 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
 
         if(IXC_NETIF_LAN==netif->type){
             m->from=IXC_MBUF_FROM_LAN;
-        }
-        else{
+        }else if(IXC_NETIF_WAN==netif->type){
             m->from=IXC_MBUF_FROM_WAN;
+        }else{
+            m->from=-1;
         }
-        ixc_ether_handle(m);
+
+        if(IXC_NETIF_PASS!=netif->type){
+             ixc_ether_handle(m);
+        }else{
+            ixc_npfwd_send_raw(m,0,IXC_FLAG_ETHER_PASS);
+        }
     }
 
     ixc_netif_calc_speed(netif);
