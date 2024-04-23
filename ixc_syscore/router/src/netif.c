@@ -49,14 +49,6 @@ static int ixc_netif_timeout_fn(struct ev *ev)
     return 0;
 }
 
-static int ixc_netif_del_fn(struct ev *ev)
-{
-    struct ixc_netif *netif=ev->data;
-    ixc_netif_delete(netif->type);
-
-    return 0;
-}
-
 static void ixc_netif_calc_speed(struct ixc_netif *netif)
 {
     unsigned long long old_sec;
@@ -164,11 +156,11 @@ int ixc_netif_create(const char *devname,char res_devname[],int if_idx)
         return -1;
     }
 
-    EV_INIT_SET(ev,ixc_netif_readable_fn,ixc_netif_writable_fn,ixc_netif_timeout_fn,ixc_netif_del_fn,netif);
+    EV_INIT_SET(ev,ixc_netif_readable_fn,ixc_netif_writable_fn,ixc_netif_timeout_fn,NULL,netif);
 	rs=ev_modify(netif_ev_set,ev,EV_READABLE,EV_CTL_ADD);
 
 	if(rs<0){
-		ev_delete(netif_ev_set,ev);
+        ixc_netif_delete(if_idx);
 		STDERR("cannot add to readablefor fd %d\r\n",fd);
 		return -1;
 	}
@@ -207,6 +199,8 @@ void ixc_netif_delete(int if_idx)
     netif=&netif_objs[if_idx];
 
     if(!netif->is_used) return;
+
+    ev_delete(netif_ev_set,ev_get(netif_ev_set,netif->fd));
 
     tapdev_close(netif->fd,netif->devname);
 

@@ -114,9 +114,11 @@ class rpc(object):
             "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
             "IXC_FLAG_TRAFFIC_LOG": router.IXC_FLAG_TRAFFIC_LOG,
+            "IXC_FLAG_ETHER_PASS": router.IXC_FLAG_ETHER_PASS,
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
+            "IXC_NETIF_PASS": router.IXC_NETIF_PASS,
             "IXC_SEC_NET_ACT_DROP": router.IXC_SEC_NET_ACT_DROP,
             "IXC_SEC_NET_ACT_ACCEPT": router.IXC_SEC_NET_ACT_ACCEPT,
         }
@@ -867,14 +869,25 @@ class helper(object):
             os.system("ip link set %s down" % self.__WAN_BR_NAME)
             os.system("ip link del %s" % self.__LAN_BR_NAME)
             os.system("ip link del %s" % self.__WAN_BR_NAME)
+
+            if self.__if_pass_fd >= 0:
+                os.system("ip link set %s down" % self.__PASS_NAME)
+                os.system("ip link set %s down" % self.__PASS_BR_NAME)
+                os.system("ip link del %s" % self.__PASS_BR_NAME)
+            ''''''
         else:
             os.system("ifconfig %s destroy" % self.__LAN_BR_NAME)
             os.system("ifconfig %s destroy" % self.__WAN_BR_NAME)
 
+            if self.__if_pass_fd >= 0:
+                os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
+            ''''''
         if self.__if_lan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_LAN)
         if self.__if_wan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_WAN)
+        if self.__if_pass_fd>0:
+            self.router.netif_delete(router.IXC_NETIF_PASS)
 
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
