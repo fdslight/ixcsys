@@ -700,15 +700,18 @@ class rpc(object):
 class helper(object):
     __WAN_BR_NAME = None
     __LAN_BR_NAME = None
+    __PASS_BR_NAME = None
 
     __LAN_NAME = None
     __WAN_NAME = None
+    __PASS_NAME = None
 
     __router = None
     __debug = None
 
     __if_lan_fd = None
     __if_wan_fd = None
+    __if_pass_fd = None
 
     __lan_configs = None
     __wan_configs = None
@@ -1006,6 +1009,19 @@ class helper(object):
         self.router.ip6sec_enable(enable_ipv6_security)
         self.router.g_manage_addr_set(manage_addr, False)
 
+    def start_pass(self, ifname: str):
+        self.__if_pass_fd, self.__PASS_NAME = self.__router.netif_create("ixcpass", router.IXC_NETIF_PASS)
+        if self.is_linux:
+            self.linux_br_create(self.__PASS_BR_NAME, [ifname, self.__PASS_NAME, ])
+            os.system("ip link set %s promisc on" % ifname)
+            os.system("ip link set %s promisc on" % self.__PASS_NAME)
+            os.system("ip link set %s up" % ifname)
+            # 关闭外网IPv6支持
+            os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__PASS_BR_NAME)
+            os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % ifname)
+        else:
+            pass
+
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)
         self.load_wan_configs()
@@ -1140,12 +1156,15 @@ class helper(object):
         self.__router = router.router()
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
+        self.__if_pass_fd = -1
 
         self.__WAN_BR_NAME = "ixcwanbr"
         self.__LAN_BR_NAME = "ixclanbr"
+        self.__PASS_BR_NAME = "ixcpass"
 
         self.__LAN_NAME = "ixclan"
         self.__WAN_NAME = "ixcwan"
+        self.__PASS_NAME = "ixcpass"
 
         self.__wan_configs = {}
         self.__is_linux = sys.platform.startswith("linux")

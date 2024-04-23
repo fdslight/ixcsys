@@ -9,9 +9,6 @@ class pass_service(udp_handler.udp_handler):
     __id = None
     __server_port = None
 
-    __dhcp_server = None
-    __dhcp_client = None
-
     @property
     def consts(self):
         return self.dispatcher.router_consts
