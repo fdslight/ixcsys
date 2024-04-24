@@ -108,7 +108,6 @@ class service(dispatcher.dispatcher):
 
     def load_configs(self):
         self.__configs = conf.ini_parse_from_file(self.__conf_path)
-        self.change_pass()
 
     def change_pass(self):
         enable = bool(int(self.__configs['config']['enable']))
@@ -140,6 +139,7 @@ class service(dispatcher.dispatcher):
 
         self.get_handler(self.__pass_fd).set_message_auth(self.__rand_key)
         self.__forward_fd = self.create_handler(-1, forward.forward_handler)
+        self.change_pass()
 
     def start_scgi(self):
         scgi_configs = {
