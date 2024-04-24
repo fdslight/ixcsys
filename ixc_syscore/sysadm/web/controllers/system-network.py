@@ -24,9 +24,9 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "不可用的故障切换网卡")
             return
 
-        #if enable_auto:
+        # if enable_auto:
         #    enable_auto = True
-        #else:
+        # else:
         #    enable_auto = False
         # 禁止主备网络切换功能
         enable_auto = False
@@ -143,10 +143,16 @@ class controller(base_controller.BaseController):
 
         self.json_resp(False, "")
 
+    def handle_pass_submit(self):
+        ifname = self.request.get_argument('ifname', is_qs=False, is_seq=False)
+        enable = self.request.get_argument('enable-pass', default='0', is_qs=False, is_seq=False)
+
+        self.json_resp(True, ifname,enable)
+
     def handle(self):
         _type = self.request.get_argument("type", is_qs=True, is_seq=False)
         types = [
-            "lan", "wan",
+            "lan", "wan", "pass"
         ]
         if _type not in types:
             self.json_resp(True, "unknown request type")
@@ -154,5 +160,7 @@ class controller(base_controller.BaseController):
 
         if _type == "lan":
             self.handle_lan_submit()
+        elif _type == "pass":
+            self.handle_pass_submit()
         else:
             self.handle_wan_submit()
