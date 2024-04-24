@@ -102,6 +102,9 @@ class service(dispatcher.dispatcher):
         if self.__pass_fd < 0: return
         self.get_handler(self.__pass_fd).send_msg(message)
 
+    def send_message_to_client(self,message:bytes):
+        self.get_handler(self.__forward_fd).send_msg(message)
+
     @property
     def conf_dir(self):
         return os.getenv("IXC_MYAPP_CONF_DIR")

@@ -54,12 +54,17 @@ class forward_handler(udp_handler.udp_handler):
     def udp_readable(self, message, address):
         if message[0] != 0 and not self.__client_address: return
         if message[0] == 0:
-            self.handle_notify(message[1:])
+            self.handle_notify(message[1:], address)
             return
         if message[0] != 8:
             return
 
         self.dispatcher.send_message_to_router(message[1:])
+
+    def send_msg(self, message: bytes):
+        if not self.__client_address: return
+        self.sendto(message, self.__client_address)
+        self.add_evt_write(self.fileno)
 
     def udp_writable(self):
         self.remove_evt_write(self.fileno)
