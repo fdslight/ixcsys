@@ -74,7 +74,7 @@ class execute(object):
         try:
             return eval(code_text, locals())
         except:
-            sys.stderr.write("wrong template code:%s\r\n" % code_text)
+            traceback.print_exc()
             return ""
 
     def __exe_from_syntax_tree(self, syntax_tree):
