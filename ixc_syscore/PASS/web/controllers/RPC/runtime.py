@@ -15,4 +15,4 @@ class controller(rpc.controller):
         }
 
     def get_connected_device(self):
-        return 0, self._pass.device_name
+        return 0, self._pass.device

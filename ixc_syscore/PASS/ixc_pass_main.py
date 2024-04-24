@@ -173,8 +173,8 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("router", "/config", "stop_pass")
 
     @property
-    def device_name(self):
-        return self.get_handler(self.__forward_fd).device_name
+    def device(self):
+        return self.get_handler(self.__forward_fd).device
 
     def myloop(self):
         pass

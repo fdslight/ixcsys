@@ -77,5 +77,7 @@ class forward_handler(udp_handler.udp_handler):
         self.close()
 
     @property
-    def device_name(self):
-        return self.__device_name
+    def device(self):
+        if not self.__client_address:
+            return self.__device_name, ""
+        return self.__device_name, self.__client_address[0]
