@@ -40,7 +40,12 @@ class widget(ui_widget.widget):
             ip_addr = ""
             ip4_mtu = public.get("ip4_mtu", 1500)
         elif _type == "pass":
-            pass
+            if_name = "-"
+            hwaddr = ""
+            manage_addr = ""
+            mask = ""
+            ip_addr = ""
+            ip4_mtu = ""
         else:
             configs = RPC.fn_call("router", "/config", "lan_config_get")
             if_config = configs["if_config"]
