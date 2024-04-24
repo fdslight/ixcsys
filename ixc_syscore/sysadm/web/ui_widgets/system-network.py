@@ -42,7 +42,7 @@ class widget(ui_widget.widget):
             ip_addr = ""
             ip4_mtu = public.get("ip4_mtu", 1500)
         elif _type == "pass":
-            ok, config = RPC.fn_call("PASS", "/config", "config_get")
+            config = RPC.fn_call("PASS", "/config", "config_get")
             if_name = config['if_name']
             if if_name not in avaliable_devices:
                 if_name = ''

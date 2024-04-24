@@ -11,17 +11,18 @@ class controller(rpc.controller):
 
     def rpc_init(self):
         self.fobjs = {
-            "config_get": self.configs_get,
+            "config_get": self.config_get,
             "config_save": self.config_save,
         }
 
-    def configs_get(self):
-        config=self._pass.configs['config']
+    def config_get(self):
+        config = self._pass.configs['config']
 
         return 0, config
 
     def config_save(self, configs: dict):
         old_configs = self._pass.configs
         old_configs['config'] = configs
+        self._pass.save_configs()
 
-        return 0, self._pass.save_config()
+        return 0, None

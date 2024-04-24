@@ -151,8 +151,7 @@ class controller(base_controller.BaseController):
         try:
             bool_enable = bool(int(enable))
         except ValueError:
-            self.json_resp(True, "wrong enable-pass value")
-            return
+            bool_enable = False
 
         if bool_enable:
             enable = '1'
