@@ -1187,7 +1187,7 @@ class helper(object):
 
         self.__WAN_BR_NAME = "ixcwanbr"
         self.__LAN_BR_NAME = "ixclanbr"
-        self.__PASS_BR_NAME = "ixcpass"
+        self.__PASS_BR_NAME = "ixcpassbr"
 
         self.__LAN_NAME = "ixclan"
         self.__WAN_NAME = "ixcwan"
