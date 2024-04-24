@@ -112,12 +112,8 @@ class service(dispatcher.dispatcher):
 
     def change_pass(self):
         enable = bool(int(self.__configs['config']['enable']))
-        # 如果原来为开启状态,现在为禁用状态那么禁用
-        if not enable and self.__enable_pass_flags:
-            self.disable_pass()
-        # 如果启用并且原来未启用,那么开启直通
-        if enable and not self.__enable_pass_flags:
-            self.enable_pass()
+        self.disable_pass()
+        if enable: self.enable_pass()
 
     def save_configs(self):
         self.change_pass()

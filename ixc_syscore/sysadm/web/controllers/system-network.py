@@ -4,7 +4,7 @@ import ixc_syscore.sysadm.web.controllers.controller as base_controller
 
 import ixc_syslib.pylib.RPCClient as RPC
 import pywind.lib.netutils as netutils
-import ixc_syscore.sysadm.pylib.network_shift as network_shift
+import ixc_syscore.sysadm.pylib.network as network
 
 
 class controller(base_controller.BaseController):
@@ -14,22 +14,22 @@ class controller(base_controller.BaseController):
 
     def handle_wan_submit(self):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
-        enable_auto = self.request.get_argument("enable_auto", is_seq=False, is_qs=False)
-        temp_ifname = self.request.get_argument("shift_ifname", is_seq=False, is_qs=False)
-        check_host = self.request.get_argument("check_host", is_seq=False,
-                                               is_qs=False)
+        # enable_auto = self.request.get_argument("enable_auto", is_seq=False, is_qs=False)
+        # temp_ifname = self.request.get_argument("shift_ifname", is_seq=False, is_qs=False)
+        # check_host = self.request.get_argument("check_host", is_seq=False,
+        #                                       is_qs=False)
         ip4_mtu = self.request.get_argument("ip4_mtu", is_seq=False, is_qs=False)
 
-        if enable_auto and temp_ifname not in network_shift.get_available_net_devices():
-            self.json_resp(True, "不可用的故障切换网卡")
-            return
+        # if enable_auto and temp_ifname not in network.get_available_net_devices():
+        #    self.json_resp(True, "不可用的故障切换网卡")
+        #    return
 
         # if enable_auto:
         #    enable_auto = True
         # else:
         #    enable_auto = False
         # 禁止主备网络切换功能
-        enable_auto = False
+        # enable_auto = False
 
         if not hwaddr:
             self.json_resp(True, "硬件地址不能为空")
@@ -38,18 +38,18 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的硬件地址格式")
             return
 
-        if enable_auto:
-            if not check_host:
-                self.json_resp(True, "请设置检查网络的https服务器地址")
-                return
-            if netutils.is_ipv6_address(check_host):
-                self.json_resp(True, "不支持IPv6地址作为检查主机")
-                return
-            p = check_host.find(":")
-            if p >= 0:
-                self.json_resp(True, "地址不能携带端口号")
-                return
-            ''''''
+        # if enable_auto:
+        #    if not check_host:
+        #        self.json_resp(True, "请设置检查网络的https服务器地址")
+        #        return
+        #    if netutils.is_ipv6_address(check_host):
+        #        self.json_resp(True, "不支持IPv6地址作为检查主机")
+        #        return
+        #    p = check_host.find(":")
+        #    if p >= 0:
+        #        self.json_resp(True, "地址不能携带端口号")
+        #        return
+        #    ''''''
         try:
             ip4_mtu = int(ip4_mtu)
         except ValueError:
@@ -60,15 +60,15 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "MTU的取值范围为576~1500")
             return
 
-        if not check_host: check_host = ""
-        if not temp_ifname: temp_ifname = ""
+        # if not check_host: check_host = ""
+        # if not temp_ifname: temp_ifname = ""
 
         configs = RPC.fn_call("router", "/config", "lan_config_get")
         lan_hwaddr = configs["if_config"]["hwaddr"]
         if lan_hwaddr == hwaddr:
             self.json_resp(True, "WAN与LAN的地址不能相同")
             return
-
+        """
         o = {
             "enable": enable_auto,
             "device_name": temp_ifname,
@@ -79,6 +79,7 @@ class controller(base_controller.BaseController):
         }
 
         self.save_sysadm_json_config("%s/network_shift.json" % self.my_config_dir, o)
+        """
 
         RPC.fn_call("router", "/config", "wan_hwaddr_set", hwaddr)
         RPC.fn_call("router", "/config", "wan_mtu_set", ip4_mtu, False)
@@ -144,10 +145,36 @@ class controller(base_controller.BaseController):
         self.json_resp(False, "")
 
     def handle_pass_submit(self):
-        ifname = self.request.get_argument('ifname', is_qs=False, is_seq=False)
+        ifname = self.request.get_argument('ifname', default='', is_qs=False, is_seq=False)
         enable = self.request.get_argument('enable-pass', default='0', is_qs=False, is_seq=False)
 
-        self.json_resp(True, ifname)
+        try:
+            bool_enable = bool(int(enable))
+        except ValueError:
+            self.json_resp(True, "wrong enable-pass value")
+            return
+
+        if bool_enable:
+            enable = '1'
+        else:
+            enable = '0'
+
+        if not ifname and bool_enable:
+            self.json_resp(True, '未找到可用的网卡')
+            return
+
+        devices = network.get_available_net_devices()
+        if ifname not in devices:
+            self.json_resp(True, "未知的网卡%s" % ifname)
+            return
+
+        config = {
+            'enable': enable,
+            'if_name': ifname,
+        }
+        RPC.fn_call("PASS", "/config", "config_save", config)
+
+        self.json_resp(False, '修改成功')
 
     def handle(self):
         _type = self.request.get_argument("type", is_qs=True, is_seq=False)

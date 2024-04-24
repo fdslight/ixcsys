@@ -16,7 +16,9 @@ class controller(rpc.controller):
         }
 
     def configs_get(self):
-        return 0, self._pass.configs
+        config=self._pass.configs['config']
+
+        return 0, config
 
     def config_save(self, configs: dict):
         old_configs = self._pass.configs

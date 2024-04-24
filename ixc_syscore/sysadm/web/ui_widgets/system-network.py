@@ -30,6 +30,8 @@ class widget(ui_widget.widget):
 
         manage_addr = ""
         mask = ""
+        avaliable_devices = network.get_available_net_devices()
+        enable_pass = False
 
         if _type == "wan":
             configs = RPC.fn_call("router", "/config", "wan_config_get")
@@ -40,7 +42,11 @@ class widget(ui_widget.widget):
             ip_addr = ""
             ip4_mtu = public.get("ip4_mtu", 1500)
         elif _type == "pass":
-            if_name = "-"
+            ok, config = RPC.fn_call("PASS", "/config", "config_get")
+            if_name = config['if_name']
+            if if_name not in avaliable_devices:
+                if_name = ''
+            enable_pass = bool(int(config['enable']))
             hwaddr = ""
             manage_addr = ""
             mask = ""
@@ -62,5 +68,6 @@ class widget(ui_widget.widget):
         return True, "system-network.html", {"if_name": if_name, "hwaddr": hwaddr, "manage_addr": manage_addr,
                                              "mask": mask, "ip_addr": ip_addr,
                                              "ip4_mtu": ip4_mtu,
-                                             "net_devices": network.get_available_net_devices(),
+                                             "net_devices": avaliable_devices,
+                                             "enable_pass": enable_pass
                                              }
