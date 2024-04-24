@@ -163,7 +163,7 @@ class service(dispatcher.dispatcher):
         return self.__router_consts
 
     def enable_pass(self):
-        ifname = "eth3"
+        ifname = self.configs['config']['if_name']
         RPCClient.fn_call("router", "/config", "start_pass", ifname)
 
     def disable_pass(self):
