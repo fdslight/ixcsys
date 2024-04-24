@@ -1039,16 +1039,14 @@ class helper(object):
             pass
 
     def stop_pass(self):
+        if self.__if_pass_fd < 0: return
         if self.is_linux:
-            if self.__if_pass_fd >= 0:
-                os.system("ip link set %s down" % self.__PASS_NAME)
-                os.system("ip link set %s down" % self.__PASS_BR_NAME)
-                os.system("ip link del %s" % self.__PASS_BR_NAME)
-            ''''''
+            os.system("ip link set %s down" % self.__PASS_NAME)
+            os.system("ip link set %s down" % self.__PASS_BR_NAME)
+            os.system("ip link del %s" % self.__PASS_BR_NAME)
         else:
-            if self.__if_pass_fd >= 0:
-                os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
-            ''''''
+            os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
+        return
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)
