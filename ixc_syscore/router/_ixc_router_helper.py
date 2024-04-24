@@ -1026,6 +1026,7 @@ class helper(object):
         self.router.g_manage_addr_set(manage_addr, False)
 
     def start_pass(self, ifname: str):
+        if self.__if_pass_fd >= 0: return
         self.__if_pass_fd, self.__PASS_NAME = self.__router.netif_create("ixcpass", router.IXC_NETIF_PASS)
         if self.is_linux:
             self.linux_br_create(self.__PASS_BR_NAME, [ifname, self.__PASS_NAME, ])
