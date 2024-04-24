@@ -1047,6 +1047,7 @@ class helper(object):
             os.system("ip link del %s" % self.__PASS_BR_NAME)
         else:
             os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
+        self.__router.netif_delete(router.IXC_NETIF_PASS)
         self.__if_pass_fd = -1
 
     def start_wan(self):
