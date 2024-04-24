@@ -128,11 +128,11 @@ class rpc(object):
         return 0, values
 
     def start_pass(self, ifname: str):
-        self.start_pass(ifname)
+        self.__helper.start_pass(ifname)
         return 0, None
 
     def stop_pass(self):
-        self.stop_pass()
+        self.__helper.stop_pass()
         return 0, None
 
     def get_wan_hwaddr(self):
