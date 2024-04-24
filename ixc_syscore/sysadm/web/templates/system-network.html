@@ -92,7 +92,7 @@
         <div class="form-group row">
             <label class="col-sm-2 col-form-label">可用网卡</label>
             <div class="col-sm-10">
-                <h5 class="ixc-alert">用于一些特殊场景,比如IPTV直通</h5>
+                <p class="ixc-prompt">用于一些特殊场景,比如IPTV直通</p>
                 <select class="form-control" name="ifname">
                     <%
                         for ifname in self.V["net_devices"]:
@@ -116,7 +116,7 @@
         <div class="form-group row">
             <div class="col-sm-2">当前连接设备</div>
             <div class="col-sm-10">
-                <h5 class="ixc-alert">开启之后需要有安装ixcpass的终端</h5>
+                <p class="ixc-prompt">开启之后需要有安装ixcpass的终端</p>
                 <div class="form-check">
                     <label class="form-check-label">
                         <input class="form-check-input" name="enable-pass" value="1" type="checkbox" />
