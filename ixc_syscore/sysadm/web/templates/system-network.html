@@ -92,7 +92,7 @@
         <div class="form-group row">
             <label class="col-sm-2 col-form-label">可用网卡</label>
             <div class="col-sm-2">
-                <select class="form-control" name="ifname">
+                <select class="form-control" name="ifname" style="width: 100%;">
                     <%
                         for ifname in self.V["net_devices"]:
                             s="""<option value="%s">%s</option>""" % (ifname,ifname,)
