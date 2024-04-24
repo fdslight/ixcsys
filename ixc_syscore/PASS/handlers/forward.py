@@ -18,7 +18,7 @@ class forward_handler(udp_handler.udp_handler):
     __device_name = None
 
     def init_func(self, creator_fd, *args, **kwargs):
-        self.__device_name = ""
+        self.__device_name = "no device"
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         self.set_socket(s)
@@ -70,3 +70,6 @@ class forward_handler(udp_handler.udp_handler):
     def udp_delete(self):
         self.unregister(self.fileno)
         self.close()
+
+    def device_name(self):
+        return self.__device_name
