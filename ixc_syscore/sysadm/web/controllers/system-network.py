@@ -147,7 +147,7 @@ class controller(base_controller.BaseController):
         ifname = self.request.get_argument('ifname', is_qs=False, is_seq=False)
         enable = self.request.get_argument('enable-pass', default='0', is_qs=False, is_seq=False)
 
-        self.json_resp(True, ifname,enable)
+        self.json_resp(True, ifname)
 
     def handle(self):
         _type = self.request.get_argument("type", is_qs=True, is_seq=False)
