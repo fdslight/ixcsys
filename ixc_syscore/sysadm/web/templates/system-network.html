@@ -1,11 +1,14 @@
 <div id="ixc-system-network-view" class="ixc-menu-content">
     <nav class="nav nav-pills flex-column flex-sm-row" style="background-color: rgba(8,64,92,0.07);">
         <a class="flex-sm-fill text-sm-center nav-link ixc-network-iftype"
-           id="ixc-system-network-wan" name="wan"
+           id="ixc-system-network-wan"
            href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-wan&page=system-network&type=wan">WAN网口</a>
-        <a class="flex-sm-fill text-sm-center nav-link ixc-network-iftype" name="dhcp"
+        <a class="flex-sm-fill text-sm-center nav-link ixc-network-iftype"
            href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-lan&page=system-network&type=lan"
            id="ixc-system-network-lan">LAN网口</a>
+        <a class="flex-sm-fill text-sm-center nav-link ixc-network-iftype"
+           href="${self.url_prefix}/?show=ixc-system-network.ixc-system-network-lan&page=system-network&type=pass"
+           id="ixc-system-network-pass">直通网口</a>
     </nav>
     <div class="ixc-empty"></div>
     <div class="ixc-empty"></div>
@@ -112,6 +115,22 @@
             <div class="col-sm-10">
                 <input type="text" class="form-control" name="mask" value="${self.V['mask']}"
                        placeholder="子网掩码">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            </div>
+        </div>
+    </form>
+       <form style="width: 50%;margin: auto;min-width: 400px;display: none;" class="ixc-system-network ixc-conf-form"
+          id="ixc-system-network-pass-view" action="${self.url_prefix}/system-network?type=pass" method="post"
+          enctype="application/x-www-form-urlencoded">
+        <div class="form-group row">
+            <label for="inputPassword3" class="col-sm-2 col-form-label">网卡</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" value="-"
+                       disabled="disabled"/>
             </div>
         </div>
         <div class="form-group row">
