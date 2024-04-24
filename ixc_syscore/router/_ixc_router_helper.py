@@ -1047,7 +1047,7 @@ class helper(object):
             os.system("ip link del %s" % self.__PASS_BR_NAME)
         else:
             os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
-        return
+        self.__if_pass_fd = -1
 
     def start_wan(self):
         self.__pppoe = pppoe.pppoe(self)
