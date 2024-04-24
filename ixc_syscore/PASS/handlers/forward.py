@@ -71,5 +71,6 @@ class forward_handler(udp_handler.udp_handler):
         self.unregister(self.fileno)
         self.close()
 
+    @property
     def device_name(self):
         return self.__device_name
