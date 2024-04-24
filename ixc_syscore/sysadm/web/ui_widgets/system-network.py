@@ -4,6 +4,7 @@ import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syscore.sysadm.pylib.network_shift as network_shift
 
+
 class widget(ui_widget.widget):
     def get_network_shift_conf(self):
         fpath = "%s/network_shift.json" % self.my_conf_dir
@@ -25,7 +26,7 @@ class widget(ui_widget.widget):
 
     def handle(self, *args, **kwargs):
         _type = self.get_argument("type", default="wan")
-        if _type not in ("wan", "lan",): _type = "wan"
+        if _type not in ("wan", "lan", "pass",): _type = "wan"
 
         manage_addr = ""
         mask = ""
@@ -38,6 +39,8 @@ class widget(ui_widget.widget):
             # 避免模板找不到变量报错
             ip_addr = ""
             ip4_mtu = public.get("ip4_mtu", 1500)
+        elif _type == "pass":
+            pass
         else:
             configs = RPC.fn_call("router", "/config", "lan_config_get")
             if_config = configs["if_config"]
