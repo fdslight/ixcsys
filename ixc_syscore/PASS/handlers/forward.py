@@ -53,20 +53,20 @@ class forward_handler(udp_handler.udp_handler):
 
     def udp_readable(self, message, address):
         if len(message) < 7: return
-        _type,=struct.unpack("!I",message[0:4])
+        _type, = struct.unpack("!I", message[0:4])
 
         if _type != 0 and not self.__client_address: return
         if _type == 0:
-            self.handle_notify(message[1:], address)
+            self.handle_notify(message[4:], address)
             return
-        if _type != 8:
-            return
+        if _type != 8: return
 
         self.dispatcher.send_message_to_router(message[4:])
 
     def send_msg(self, message: bytes):
         if not self.__client_address: return
-        self.sendto(message, self.__client_address)
+        new_msg = struct.pack("!I", 8) + message
+        self.sendto(new_msg, self.__client_address)
         self.add_evt_write(self.fileno)
 
     def udp_writable(self):
