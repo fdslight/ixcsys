@@ -93,7 +93,7 @@ class forward_handler(udp_handler.udp_handler):
         if now - self.__time > 300:
             self.__device_name = "no device"
             self.__client_address = None
-        return
+        self.set_timeout(self.fileno, 10)
 
     @property
     def device(self):
