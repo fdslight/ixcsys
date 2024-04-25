@@ -22,7 +22,7 @@ def get_available_net_devices():
 
     for if_name in net_devices:
         if if_name == if_wan_name: continue
-        if if_name in lan_list: continue
+        if if_name == if_lan_name: continue
         devices.append(if_name)
 
     return devices
