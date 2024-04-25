@@ -16,14 +16,13 @@ def get_available_net_devices():
 
     # 这里需要考虑多张lan网卡的情况
     lan_list = if_lan_name.replace(" ", "").split(",")
-    print(lan_list)
 
     net_devices = osnet.get_if_net_devices()
     devices = []
 
     for if_name in net_devices:
         if if_name == if_wan_name: continue
-        if if_name == if_lan_name: continue
+        if if_name in lan_list: continue
         devices.append(if_name)
 
     return devices
