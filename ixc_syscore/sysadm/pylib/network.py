@@ -16,6 +16,7 @@ def get_available_net_devices():
 
     # 这里需要考虑多张lan网卡的情况
     lan_list = if_lan_name.replace(" ", "").split(",")
+    print(lan_list)
 
     net_devices = osnet.get_if_net_devices()
     devices = []
