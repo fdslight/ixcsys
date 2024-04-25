@@ -8,7 +8,7 @@ type:4 bytes
     8表示以太网数据包
 """
 
-import socket, struct
+import socket, struct, time
 import pywind.evtframework.handlers.udp_handler as udp_handler
 import ixc_syslib.pylib.logging as logging
 
@@ -16,6 +16,7 @@ import ixc_syslib.pylib.logging as logging
 class forward_handler(udp_handler.udp_handler):
     __client_address = None
     __device_name = None
+    __time = None
 
     def init_func(self, creator_fd, *args, **kwargs):
         self.__device_name = "no device"
@@ -25,6 +26,8 @@ class forward_handler(udp_handler.udp_handler):
         self.bind((self.dispatcher.manage_addr, 1999))
         self.register(self.fileno)
         self.add_evt_read(self.fileno)
+        self.set_timeout(self.fileno, 10)
+        self.__time = time.time()
 
         return self.fileno
 
@@ -48,6 +51,7 @@ class forward_handler(udp_handler.udp_handler):
         if not device_name:
             logging.print_alert("wrong ixcpass notify device name")
             return
+        self.__time = time.time()
         self.__device_name = device_name
         self.__client_address = address
 
@@ -78,6 +82,14 @@ class forward_handler(udp_handler.udp_handler):
     def udp_delete(self):
         self.unregister(self.fileno)
         self.close()
+
+    def udp_timeout(self):
+        # 超时重置客户端
+        now = time.time()
+        if now - self.__time > 300:
+            self.__device_name = "no device"
+            self.__client_address = None
+        return
 
     @property
     def device(self):
