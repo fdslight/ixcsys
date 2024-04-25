@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """数据帧格式
-action:1 byte
+type:4 bytes
     0表示notify,由客户端发出,告知客户端自身的名字以及端口,该数据包客户端定时更新
         数据格式为
             IXCSYS\r\n\r\n
@@ -8,7 +8,7 @@ action:1 byte
     8表示以太网数据包
 """
 
-import socket
+import socket, struct
 import pywind.evtframework.handlers.udp_handler as udp_handler
 import ixc_syslib.pylib.logging as logging
 
@@ -52,14 +52,17 @@ class forward_handler(udp_handler.udp_handler):
         self.__client_address = address
 
     def udp_readable(self, message, address):
-        if message[0] != 0 and not self.__client_address: return
-        if message[0] == 0:
+        if len(message) < 7: return
+        _type,=struct.unpack("!I",message[0:4])
+
+        if _type != 0 and not self.__client_address: return
+        if _type == 0:
             self.handle_notify(message[1:], address)
             return
-        if message[0] != 8:
+        if _type != 8:
             return
 
-        self.dispatcher.send_message_to_router(message[1:])
+        self.dispatcher.send_message_to_router(message[4:])
 
     def send_msg(self, message: bytes):
         if not self.__client_address: return
