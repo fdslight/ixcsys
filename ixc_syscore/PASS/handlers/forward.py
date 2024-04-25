@@ -65,7 +65,11 @@ class forward_handler(udp_handler.udp_handler):
             return
         if _type != 8: return
 
-        self.dispatcher.send_message_to_router(message[4:])
+        message = message[4:]
+        # 丢弃超过1500字节的数据包
+        if len(message) > 1500: return
+
+        self.dispatcher.send_message_to_router(message)
 
     def send_msg(self, message: bytes):
         if not self.__client_address: return
