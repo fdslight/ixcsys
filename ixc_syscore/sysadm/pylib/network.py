@@ -14,12 +14,15 @@ def get_available_net_devices():
     configs = RPC.fn_call("router", "/config", "lan_config_get")
     if_lan_name = configs["if_config"]["phy_ifname"]
 
+    # 这里需要考虑多张lan网卡的情况
+    lan_list = if_lan_name.replace(" ", "").split(",")
+
     net_devices = osnet.get_if_net_devices()
     devices = []
 
     for if_name in net_devices:
         if if_name == if_wan_name: continue
-        if if_name == if_lan_name: continue
+        if if_name in lan_list: continue
         devices.append(if_name)
 
     return devices
