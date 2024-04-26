@@ -67,7 +67,7 @@ class forward_handler(udp_handler.udp_handler):
 
         message = message[4:]
         # 限制数据包长度
-        if len(message) > 16384: return
+        if len(message) > 0xffff: return
 
         self.dispatcher.send_message_to_router(message)
 
