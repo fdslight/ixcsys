@@ -180,6 +180,7 @@ class service(dispatcher.dispatcher):
         pass
 
     def release(self):
+        self.disable_pass()
         if self.__scgi_fd > 0:
             self.delete_handler(self.__scgi_fd)
         self.__scgi_fd = -1
