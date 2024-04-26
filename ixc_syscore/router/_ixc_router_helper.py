@@ -1044,6 +1044,7 @@ class helper(object):
         if self.is_linux:
             os.system("ip link set %s down" % self.__PASS_NAME)
             os.system("ip link set %s down" % self.__PASS_BR_NAME)
+            os.system("ip link set %s nomaster" % self.__PASS_NAME)
             os.system("ip link del %s" % self.__PASS_BR_NAME)
         else:
             os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
