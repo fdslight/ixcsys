@@ -76,7 +76,8 @@ class forward_handler(udp_handler.udp_handler):
     def send_msg(self, message: bytes):
         if not self.__client_address: return
         new_msg = struct.pack("!I", 8) + message
-        self.sendto(new_msg, self.__client_address)
+        # self.sendto(new_msg, self.__client_address)
+        self.send(new_msg)
         self.add_evt_write(self.fileno)
 
     def udp_writable(self):
