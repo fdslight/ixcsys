@@ -23,6 +23,9 @@ class udp_handler(handler.handler):
         self.socket.connect(address)
         self.__peer_address = self.socket.getpeername()
 
+    def disconnect(self):
+        self.__is_connect = False
+
     def connect_ex(self, address):
         self.__is_connect = True
         self.__sent = []
