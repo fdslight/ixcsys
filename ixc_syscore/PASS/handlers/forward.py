@@ -9,7 +9,6 @@ type:4 bytes
 """
 
 import socket, struct, time
-from ctypes import CDLL, create_string_buffer
 import pywind.evtframework.handlers.udp_handler as udp_handler
 import ixc_syslib.pylib.logging as logging
 
@@ -55,7 +54,6 @@ class forward_handler(udp_handler.udp_handler):
         self.__time = time.time()
         self.__device_name = device_name
         self.__client_address = address
-        #self.connect(self.__client_address)
 
     def udp_readable(self, message, address):
         if len(message) < 7: return
@@ -95,14 +93,7 @@ class forward_handler(udp_handler.udp_handler):
         if now - self.__time > 300:
             self.__device_name = "no device"
             self.__client_address = None
-            #self.fwd_disconnect()
         self.set_timeout(self.fileno, 10)
-
-    def fwd_disconnect(self):
-        libc = CDLL("libc.so.6")
-        buf = create_string_buffer(16)
-        libc.connect(self.fileno, buf, 16)
-        self.disconnect()
 
     @property
     def device(self):
