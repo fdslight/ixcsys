@@ -37,8 +37,10 @@ def check_py_modules():
         except ImportError:
             no_modules.append(name)
         ''''''
-    if not no_modules: return True
-    print("ERROR:not found python modules %s" % ",".join(no_modules))
+
+    if no_modules:
+        print("ERROR:not found python modules %s" % ",".join(no_modules))
+        return False
 
     exe_dir = os.path.dirname(sys.executable)
     if not exe_dir:
@@ -48,7 +50,7 @@ def check_py_modules():
         print("ERROR:not found s-tui")
         return False
 
-    return False
+    return True
 
 
 def set_pub_env():
