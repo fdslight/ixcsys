@@ -50,7 +50,7 @@
         <tbody>
         <%
         for cpu_idx,temp in self.V["temperature"].items():
-            s="""<tr><td>%s</td><td>%s°C</td></tr>""" % (cpu_idx.upper(),temp)
+            s="""<tr><td>%s</td><td>%s°C</td></tr>""" % (cpu_idx,temp)
             self.show(s)
         %>
         </tbody>
