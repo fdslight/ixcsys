@@ -13,11 +13,12 @@ X86_64 with SSE2,ARM64 with NEON or other 64bit CPU.
 2. sudo pip3 install dnspython3 
 3. sudo pip3 install cryptography 
 4. sudo pip3 install cloudflare-ddns 
-5. sudo apt install libpython3-dev  
-6. sudo apt install tftpd-hpa 
-7. sudo apt install pkg-config 
-8. sudo apt install lsb-release 
-9. sudo apt install curl 
+5. sudo pip3 install s-tui 
+6. sudo apt install libpython3-dev  
+7. sudo apt install tftpd-hpa 
+8. sudo apt install pkg-config 
+9. sudo apt install lsb-release 
+10. sudo apt install curl 
 
 # build ixcsys
 1.first you need run "python3 configure.py" for configure your environment(for example,"python3 build_config.py default")     

@@ -39,6 +39,15 @@ def check_py_modules():
         ''''''
     if not no_modules: return True
     print("ERROR:not found python modules %s" % ",".join(no_modules))
+
+    exe_dir = os.path.dirname(sys.executable)
+    if not exe_dir:
+        exe_dir = "."
+    s_tui_path = "%s/s-tui" % exe_dir
+    if not os.path.isfile(s_tui_path):
+        print("ERROR:not found s-tui")
+        return False
+
     return False
 
 

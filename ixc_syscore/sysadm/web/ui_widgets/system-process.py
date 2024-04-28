@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import os, sys, json
+from collections import OrderedDict
+
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syslib.pylib.ixc_process as process
 import ixc_syslib.pylib.cpu as cpu
@@ -6,6 +9,15 @@ import ixc_syslib.pylib.cpu as cpu
 
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
+        s_tui_path = "%s/s-tui" % os.path.dirname(sys.executable)
+        cmd = "%s --json" % s_tui_path
+        fdst = os.popen(cmd)
+        s = fdst.read()
+        fdst.close()
+
+        o = json.loads(s,object_pairs_hook=OrderedDict)
+        temperature = o['Temp']
+
         processes = process.get_process()
         results = []
         tot_mem = 0.0
@@ -51,7 +63,9 @@ class widget(ui_widget.widget):
                 t = "- "
                 freq = "- "
 
+            # 与s-tui显示内容保持一致
+            cpu_idx = cpu_idx.lower().replace("cpu", "Core")
             cpu_info.append((cpu_idx, freq, v, t))
 
         return True, "system-process.html", {"processes": results, "tot_used_mem": str(round(tot_mem, 2)),
-                                             "cpu_info": cpu_info}
+                                             "cpu_info": cpu_info,"temperature": temperature}

@@ -39,4 +39,20 @@
         %>
         </tbody>
     </table>
+    <h4>温度情况</h4>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">CPU核心</th>
+            <th scope="col">温度(℃)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <%
+        for cpu_idx,temp in self.V["temperature"].items():
+            s="""<tr><td>%s</td><td>%s°C</td></tr>""" % (cpu_idx.upper(),temp)
+            self.show(s)
+        %>
+        </tbody>
+    </table>
 </div>
