@@ -20,4 +20,4 @@ class controller(rpc.controller):
         return 0, self._pass.device
 
     def get_client_update_time(self):
-        return 0, self.dispatcher.client_update_time
+        return 0, self._pass.client_update_time
