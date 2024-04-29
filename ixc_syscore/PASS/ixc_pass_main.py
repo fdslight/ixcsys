@@ -102,7 +102,7 @@ class service(dispatcher.dispatcher):
         if self.__pass_fd < 0: return
         self.get_handler(self.__pass_fd).send_msg(message)
 
-    def send_message_to_client(self,message:bytes):
+    def send_message_to_client(self, message: bytes):
         self.get_handler(self.__forward_fd).send_msg(message)
 
     @property
@@ -175,6 +175,11 @@ class service(dispatcher.dispatcher):
     @property
     def device(self):
         return self.get_handler(self.__forward_fd).device
+
+    @property
+    def client_update_time(self):
+        if self.__forward_fd < 0: return ""
+        return self.get_handler(self.__forward_fd).client_update_time
 
     def myloop(self):
         pass

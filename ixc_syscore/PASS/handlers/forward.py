@@ -16,6 +16,7 @@ import ixc_syslib.pylib.logging as logging
 class forward_handler(udp_handler.udp_handler):
     __client_address = None
     __device_name = None
+    __client_uptime = None
     __time = None
 
     def init_func(self, creator_fd, *args, **kwargs):
@@ -28,6 +29,7 @@ class forward_handler(udp_handler.udp_handler):
         self.add_evt_read(self.fileno)
         self.set_timeout(self.fileno, 10)
         self.__time = time.time()
+        self.__client_uptime = time.time()
 
         return self.fileno
 
@@ -54,6 +56,7 @@ class forward_handler(udp_handler.udp_handler):
         self.__time = time.time()
         self.__device_name = device_name
         self.__client_address = address
+        self.__client_uptime = self.__time
 
     def udp_readable(self, message, address):
         if len(message) < 7: return
@@ -100,3 +103,10 @@ class forward_handler(udp_handler.udp_handler):
         if not self.__client_address:
             return self.__device_name, ""
         return self.__device_name, self.__client_address[0]
+
+    @property
+    def client_update_time(self):
+        """客户端时间
+        """
+        t = time.localtime(self.__client_uptime)
+        return time.strftime("%Y-%m-%d %H:%M:%S", t)

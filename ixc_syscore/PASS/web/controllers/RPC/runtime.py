@@ -12,7 +12,12 @@ class controller(rpc.controller):
     def rpc_init(self):
         self.fobjs = {
             "get_connected_device": self.get_connected_device,
+            # 客户端最近握手时间
+            "get_client_update_time": self.get_client_update_time,
         }
 
     def get_connected_device(self):
         return 0, self._pass.device
+
+    def get_client_update_time(self):
+        return 0, self.dispatcher.client_update_time
