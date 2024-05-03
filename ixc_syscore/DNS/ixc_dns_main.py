@@ -748,6 +748,8 @@ class service(dispatcher.dispatcher):
 
         _list = cls.get_os_resolv()
         _list.insert(0, ("nameserver", manage_addr))
+        # 修复操作系统DNS查询偶发性5秒延迟问题
+        _list.insert(0, ("options", "single-request-reopen"))
         cls.write_to_file(_list)
 
     def myloop(self):
