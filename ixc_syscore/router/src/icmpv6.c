@@ -257,11 +257,6 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 
     netif->mtu_v6=mtu;
     memcpy(netif->ip6_default_router_hwaddr,gw_hwaddr,6);
-    
-    // 如果开启IPv6直通那么设置WAN路由器地址
-    if(ixc_route_is_enabled_ipv6_pass()){
-        ixc_g_ip6_pass_router_hwaddr_set(gw_hwaddr);
-    }
 
     ixc_mbuf_put(m);
 }

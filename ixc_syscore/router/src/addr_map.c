@@ -232,9 +232,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     }
 
     memcpy(m->dst_hwaddr,r->hwaddr,6);
-
-    if(!ixc_route_is_enabled_ipv6_pass()) memcpy(m->src_hwaddr,netif->hwaddr,6);
-    else memcpy(m->src_hwaddr,ixc_g_ip6_pass_router_hwaddr_get(),6);
+    memcpy(m->src_hwaddr,netif->hwaddr,6);
 
     r->up_time=time(NULL);
     ixc_ether_send(m,1);
