@@ -11,6 +11,7 @@
 #include "icmpv6.h"
 #include "router.h"
 #include "route.h"
+#include "global.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netutils.h"
@@ -222,17 +223,21 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     else{
         if(r->is_changed) is_sent=1;
     }
-    // 不需要发送ICMPv6的数据包直接发送
-    if(!is_sent){
-        memcpy(m->dst_hwaddr,r->hwaddr,6);
-        if(!ixc_route_is_enabled_ipv6_pass()) memcpy(m->src_hwaddr,netif->hwaddr,6);
-        r->up_time=time(NULL);
-        ixc_ether_send(m,1);
+
+    // 找不到记录那么就发送ICMPv6 NS报文
+    if(is_sent){
+        ixc_icmpv6_send_ns(netif,netif->ip6_local_link_addr,header->dst_addr);
+        ixc_mbuf_put(m);
         return;
     }
-    // 找不到记录那么就发送NDP RS报文
-    ixc_icmpv6_send_ns(netif,netif->ip6_local_link_addr,header->dst_addr);
-    ixc_mbuf_put(m);
+
+    memcpy(m->dst_hwaddr,r->hwaddr,6);
+
+    if(!ixc_route_is_enabled_ipv6_pass()) memcpy(m->src_hwaddr,netif->hwaddr,6);
+    else memcpy(m->src_hwaddr,ixc_g_ip6_pass_router_hwaddr_get(),6);
+
+    r->up_time=time(NULL);
+    ixc_ether_send(m,1);
 }
 
 static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)

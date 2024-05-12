@@ -47,3 +47,17 @@ int ixc_g_network_is_enabled(void)
 {
     return g_network_enable;
 }
+
+inline
+int ixc_g_ip6_pass_router_hwaddr_set(unsigned char *hwaddr)
+{
+    memcpy(ip6_passthrough_router_hwaddr,hwaddr,6);
+    
+    return 0;
+}
+
+inline
+unsigned char *ixc_g_ip6_pass_router_hwaddr_get(void)
+{
+    return ip6_passthrough_router_hwaddr;
+}
