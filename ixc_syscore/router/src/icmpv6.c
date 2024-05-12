@@ -172,8 +172,10 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         }
         
         if(length==1 && (type!=1 || type!=5)){
-            is_err=1;
-            break;
+            if(type!=1 && type!=5){
+                is_err=1;
+                break;
+            }
         }
 
         if(type==3 && length!=4){
@@ -194,7 +196,7 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
                 opt_prefix=(struct ixc_icmpv6_opt_prefix_info *)ptr;
                 break;
             case 5:
-                mtu=ntohl(*((unsigned int *)(ptr+2)));
+                mtu=ntohl(*((unsigned int *)(ptr+4)));
                 break;
         }
 
