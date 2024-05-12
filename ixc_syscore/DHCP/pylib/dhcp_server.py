@@ -477,7 +477,7 @@ class dhcp_server(object):
             o = self.__tmp_alloc_addrs[hwaddr]
             old_t = o["time"]
             neg_ok = o["neg_ok"]
-            # 大于30s那么就回收地址
+            # 大于30s那么就回收地址,注意部分客户端dhcp交互报文较慢，因此需要时间久一点
             deleted = False
             if t - old_t > 30 and not neg_ok:
                 deleted = True
