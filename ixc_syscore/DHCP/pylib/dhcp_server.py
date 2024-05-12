@@ -300,7 +300,8 @@ class dhcp_server(object):
         if is_subnet:
             resp_opts.append((53, bytes([5])))
         else:
-            logging.print_alert("client ip address %s is not subnet with router" % request_ip)
+            s_request_ip=socket.inet_ntop(socket.AF_INET, request_ip)
+            logging.print_alert("client ip address %s is not subnet with router" % s_request_ip)
             resp_opts.append((53, bytes([6])))
         self.add_boot_file(opts, request_list, resp_opts)
         resp_opts += self.get_resp_opts_from_request_list(opts, request_list)
