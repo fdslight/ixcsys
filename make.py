@@ -181,6 +181,17 @@ def __install(app_name: str, prefix=None):
         ''''''
     ''''''
 
+def get_cp_cmd_version():
+    """获取cp命令版本"""
+    fdst=os.popen("cp --version | awk 'NR==1 {print $4}'")
+    s=fdst.read().replace("\n","")
+    fdst.close()
+    s=s.replace("\r","")
+
+    main_version,minor_version=s.split(".")
+
+    return int(main_version),int(minor_version)
+
 
 def __install_all(prefix=None):
     root_dir = __get_root_dir()
@@ -194,6 +205,14 @@ def __install_all(prefix=None):
         "ixc_configs_bak",
         "ixc_configs"
     ]
+
+    cp_cmd_version=get_cp_cmd_version()
+
+    if cp_cmd_version[0]>=9 and cp_cmd_version[1]>=4:
+        update_flags="--update=none"
+    else:
+        update_flags="-n"
+
     for x in dirs:
         d = "%s/%s" % (prefix, x)
         if not os.path.isdir(d):
@@ -205,7 +224,7 @@ def __install_all(prefix=None):
             ''''''
         if x == "ixc_configs":
             # 不重写配置文件
-            os.system("cp -r -n %s/%s/* %s" % (root_dir, x, d))
+            os.system("cp -r %s %s/%s/* %s" % (update_flags,root_dir, x, d))
         else:
             os.system("cp -r %s/%s/* %s" % (root_dir, x, d))
 
@@ -218,9 +237,10 @@ def __install_all(prefix=None):
 
     for x in files:
         if x == "net_monitor.ini":
-            os.system("cp -n %s/%s %s" % (root_dir, x, prefix))
+            os.system("cp %s %s/%s %s" % (update_flags,root_dir, x, prefix))
         else:
             os.system("cp %s/%s %s" % (root_dir, x, prefix))
+        ''''''
 
 
 def __rescue_install():
