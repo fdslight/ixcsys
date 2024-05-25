@@ -112,7 +112,7 @@ def __build(build_name, args: list):
     c_includes = cfg["c_includes"]
     libdirs = cfg["lib_dirs"]
     libs = cfg["libs"]
-    ex_cflags=cfg["cflags"]
+    ex_cflags = cfg.get("cflags", "")
 
     m = sys.modules[name]
 
@@ -137,7 +137,7 @@ def __build(build_name, args: list):
         d = ""
 
     cflags = " ".join([d, include, libdir, lib, ])
-    cflags = cflags + " " + "".join(args[0:])+" "+ex_cflags
+    cflags = cflags + " " + "".join(args[0:]) + " " + ex_cflags
 
     abspath = os.path.abspath(__file__)
 
@@ -182,16 +182,17 @@ def __install(app_name: str, prefix=None):
         ''''''
     ''''''
 
+
 def get_cp_cmd_version():
     """获取cp命令版本"""
-    fdst=os.popen("cp --version | awk 'NR==1 {print $4}'")
-    s=fdst.read().replace("\n","")
+    fdst = os.popen("cp --version | awk 'NR==1 {print $4}'")
+    s = fdst.read().replace("\n", "")
     fdst.close()
-    s=s.replace("\r","")
+    s = s.replace("\r", "")
 
-    main_version,minor_version=s.split(".")
+    main_version, minor_version = s.split(".")
 
-    return int(main_version),int(minor_version)
+    return int(main_version), int(minor_version)
 
 
 def __install_all(prefix=None):
@@ -207,12 +208,12 @@ def __install_all(prefix=None):
         "ixc_configs"
     ]
 
-    cp_cmd_version=get_cp_cmd_version()
+    cp_cmd_version = get_cp_cmd_version()
 
-    if cp_cmd_version[0]>=9 and cp_cmd_version[1]>=4:
-        update_flags="--update=none"
+    if cp_cmd_version[0] >= 9 and cp_cmd_version[1] >= 4:
+        update_flags = "--update=none"
     else:
-        update_flags="-n"
+        update_flags = "-n"
 
     for x in dirs:
         d = "%s/%s" % (prefix, x)
@@ -225,7 +226,7 @@ def __install_all(prefix=None):
             ''''''
         if x == "ixc_configs":
             # 不重写配置文件
-            os.system("cp -r %s %s/%s/* %s" % (update_flags,root_dir, x, d))
+            os.system("cp -r %s %s/%s/* %s" % (update_flags, root_dir, x, d))
         else:
             os.system("cp -r %s/%s/* %s" % (root_dir, x, d))
 
@@ -238,7 +239,7 @@ def __install_all(prefix=None):
 
     for x in files:
         if x == "net_monitor.ini":
-            os.system("cp %s %s/%s %s" % (update_flags,root_dir, x, prefix))
+            os.system("cp %s %s/%s %s" % (update_flags, root_dir, x, prefix))
         else:
             os.system("cp %s/%s %s" % (root_dir, x, prefix))
         ''''''
