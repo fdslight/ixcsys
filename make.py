@@ -112,6 +112,7 @@ def __build(build_name, args: list):
     c_includes = cfg["c_includes"]
     libdirs = cfg["lib_dirs"]
     libs = cfg["libs"]
+    ex_cflags=cfg["cflags"]
 
     m = sys.modules[name]
 
@@ -136,7 +137,7 @@ def __build(build_name, args: list):
         d = ""
 
     cflags = " ".join([d, include, libdir, lib, ])
-    cflags = cflags + " " + "".join(args[0:])
+    cflags = cflags + " " + "".join(args[0:])+" "+ex_cflags
 
     abspath = os.path.abspath(__file__)
 

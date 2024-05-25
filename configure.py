@@ -3,13 +3,15 @@
 import getopt, sys, os, json
 
 __helper = """
-    default              auto set default build environment
-    default_debug        auto set default build debug environment
+action:
+    nodebug              set no debug build environment
+    debug                st debug build environment
     help                 print help
+
+default or debug optional arguments:
     --python3_include    python3 incldue
     --python3_lib        python3 library path
-    --debug              debug mode
-    --help               print help
+    --cflags             gcc flags
 """
 
 include_dirs = [
@@ -51,7 +53,7 @@ def have_pkg_config():
     return True
 
 
-def gen_build_config(debug):
+def gen_build_config(debug, cflags):
     for d in include_dirs:
         if not os.path.isdir(d):
             print("ERROR:directory %s not exists" % d)
@@ -69,7 +71,8 @@ def gen_build_config(debug):
     build_config = {"debug": debug,
                     "c_includes": include_dirs,
                     "libs": libs,
-                    "lib_dirs": lib_dirs
+                    "lib_dirs": lib_dirs,
+                    "cflags": cflags
                     }
 
     for d in build_config["c_includes"]:
@@ -84,7 +87,7 @@ def gen_build_config(debug):
     print("configure OK")
 
 
-def config_default(debug=False):
+def config_default(cflags,debug=False):
     if not have_pkg_config():
         print("not found pkg-config")
         return
@@ -115,7 +118,8 @@ def config_default(debug=False):
     build_config = {"debug": debug,
                     "c_includes": includes,
                     "libs": [libname],
-                    "lib_dirs": lib_dirs
+                    "lib_dirs": lib_dirs,
+                    "cflags":cflags,
                     }
 
     fdst = open("build_config.json", "w")
@@ -137,18 +141,8 @@ def main():
         print("ERROR:please install tftpd")
         return
 
-    if len(sys.argv) == 2:
-        if sys.argv[1] == "default":
-            config_default(debug=False)
-        elif sys.argv[1] == "help":
-            print(__helper)
-        elif sys.argv[1] == "default_debug":
-            config_default(debug=True)
-        else:
-            print(__helper)
-        return
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "", ["python3_include=", "python3_lib=", "with_debug", "help"])
+        opts, args = getopt.getopt(sys.argv[2:], "", ["python3_include=", "python3_lib=", "cflags="])
     except getopt.GetoptError:
         print(__helper)
         return
@@ -157,7 +151,18 @@ def main():
         print(__helper)
         return
 
+    if sys.argv[1] not in ("debug","nodebug","help",):
+        print(__helper)
+        return
+
+    if sys.argv[1]=="help":
+        print(__helper)
+        return
+
     debug = False
+    if sys.argv[1]=="debug":
+        debug=True
+    cflags = ""
 
     for name, value in opts:
         if name == "--python3_include":
@@ -166,14 +171,23 @@ def main():
         if name == "--python3_lib":
             lib_dirs.append(value)
             continue
-        if name == "--with_debug":
-            debug = True
-            continue
         if name == "--help":
             print(__helper)
             return
+        if name == "--cflags":
+            cflags = value
+            continue
+        ''''''
 
-    gen_build_config(debug)
+    if not include_dirs or not lib_dirs:
+        if not include_dirs:
+            print("NOTIFY:because of not set python3_include directory,use system default")
+        if not lib_dirs:
+            print("NOTIFY:because of not set python3_lib directory,use system default")
+        config_default(cflags,debug=debug)
+        return
+        
+    gen_build_config(debug, cflags)
 
 
 if __name__ == '__main__': main()
