@@ -445,7 +445,6 @@ class service(dispatcher.dispatcher):
     def handle_msg_from_dnsclient(self, from_fd, message: bytes, address: tuple, is_ipv6=False):
         """处理来自于DNS客户端的消息
         """
-        if not self.__wan_ok: return
         if len(message) < 15: return
 
         dns_id, = struct.unpack("!H", message[0:2])
@@ -509,6 +508,9 @@ class service(dispatcher.dispatcher):
                 del self.__id_wan2lan[new_dns_id]
                 return
             ''''''
+        # WAN无连接允许本地hosts映射
+        if not self.__wan_ok: return
+
         match_rs = self.__matcher.match(host)
 
         logging.print_info("DNS_QUERY: %s from %s" % (host, address[0]))
