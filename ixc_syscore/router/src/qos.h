@@ -3,16 +3,6 @@
 
 #include "mbuf.h"
 
-/// 小包定义
-// 64字节小包
-#define IXC_QOS_MPKT_SIZE64 0
-// 128字节小包
-#define IXC_QOS_MPKT_SIZE128 1
-// 256字节小包
-#define IXC_QOS_MPKT_SIZE256 2
-// 512字节小包
-#define IXC_QOS_MPKT_SIZE512 3
-
 struct ixc_qos_slot{
     struct ixc_mbuf *mbuf_first;
     struct ixc_mbuf *mbuf_last;
@@ -29,7 +19,6 @@ struct ixc_qos{
     struct ixc_qos_slot *slot_objs[IXC_QOS_SLOT_NUM];
     struct ixc_qos_slot *slot_head;
     unsigned char tunnel_addr[16];
-    // 小包大小,如果为0表示未设置
     int qos_mpkt_first_size;
     int tunnel_is_ipv6;
     int tunnel_isset;
@@ -55,6 +44,6 @@ int ixc_qos_tunnel_addr_first_set(unsigned char *addr,int is_ipv6);
 void ixc_qos_tunnel_addr_first_unset(void);
 
 /// 设置小包优先策略
-int ixc_qos_mpkt_first_set(int seq);
+int ixc_qos_mpkt_first_set(int size);
 
 #endif

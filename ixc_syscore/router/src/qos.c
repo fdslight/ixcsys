@@ -126,12 +126,6 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
         }
     }
 
-    // 未设置小包大小的那么按照普通均衡qos流程
-    if(0==ixc_qos.qos_mpkt_first_size){
-        ixc_qos_put(m,iphdr,0);
-        return;
-    }
-
     size=m->tail-m->offset;
     if(size<=ixc_qos.qos_mpkt_first_size){
         ixc_qos_send_to_next(m);
@@ -162,12 +156,6 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
                 return;
             }
         }
-    }
-
-    // 未设置小包大小的那么按照普通均衡qos流程
-    if(0==ixc_qos.qos_mpkt_first_size){
-        ixc_qos_put(m,header,1);
-        return;
     }
 
     size=m->tail-m->offset;
@@ -307,31 +295,14 @@ void ixc_qos_tunnel_addr_first_unset(void)
     ixc_qos.tunnel_isset=0;
 }
 
-int ixc_qos_mpkt_first_set(int mpkt_size_index)
+int ixc_qos_mpkt_first_set(int size)
 {
-    int rs=0;
-
-    if(mpkt_size_index<0){
-        ixc_qos.qos_mpkt_first_size=0;
-        return 0;
+    // 限制小包最大值
+    if(size<64 || size>512){
+        return -1;
     }
 
-    switch(mpkt_size_index){
-        case IXC_QOS_MPKT_SIZE64:
-            ixc_qos.qos_mpkt_first_size=64;
-            break;
-        case IXC_QOS_MPKT_SIZE128:
-            ixc_qos.qos_mpkt_first_size=128;
-            break;
-        case IXC_QOS_MPKT_SIZE256:
-            ixc_qos.qos_mpkt_first_size=256;
-            break;
-        case IXC_QOS_MPKT_SIZE512:
-            ixc_qos.qos_mpkt_first_size=512;
-            break;
-        default:
-            rs=-1;
-            break;
-    }
-    return rs;
+    ixc_qos.qos_mpkt_first_size=size;
+
+    return 0;
 }

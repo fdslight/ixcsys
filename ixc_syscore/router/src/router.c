@@ -834,10 +834,11 @@ router_qos_unset_tunnel(PyObject *self,PyObject *args)
 static PyObject *
 router_qos_set_mpkt_first_size(PyObject *self,PyObject *args)
 {
-    int idx,rs;
-    if(!PyArg_ParseTuple(args,"i",&idx)) return NULL;
+    int size,rs;
+    if(!PyArg_ParseTuple(args,"i",&size)) return NULL;
     
-    rs=ixc_qos_mpkt_first_set(idx);
+    rs=ixc_qos_mpkt_first_set(size);
+
     if(0!=rs){
         Py_RETURN_FALSE;
     }
@@ -1040,11 +1041,6 @@ PyInit_router(void){
 
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_DROP);
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_ACCEPT);
-
-    PyModule_AddIntMacro(m,IXC_QOS_MPKT_SIZE64);
-    PyModule_AddIntMacro(m,IXC_QOS_MPKT_SIZE128);
-    PyModule_AddIntMacro(m,IXC_QOS_MPKT_SIZE256);
-    PyModule_AddIntMacro(m,IXC_QOS_MPKT_SIZE512);
 
     return m;
 }
