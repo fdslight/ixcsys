@@ -297,6 +297,12 @@ void ixc_qos_tunnel_addr_first_unset(void)
 
 int ixc_qos_mpkt_first_set(int size)
 {
+    
+    if(size<=0){
+        ixc_qos.qos_mpkt_first_size=0;
+        return 0;
+    }
+
     // 限制小包最大值
     if(size<64 || size>512){
         return -1;

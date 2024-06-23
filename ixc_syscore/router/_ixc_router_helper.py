@@ -683,9 +683,10 @@ class rpc(object):
         return 0, None
 
     def qos_set_mpkt_first_size(self, size: int):
-        if size < 64 or size > 512:
-            return 0, False
-
+        if size != 0:
+            if size < 64 or size > 512:
+                return 0, False
+            ''''''
         self.__helper.wan_configs["qos"]["mpkt_first_size"] = size
 
         rs = self.__helper.router.qos_set_mpkt_first_size(size)
@@ -1141,9 +1142,9 @@ class helper(object):
 
         self.router.route_add(byte_subnet, 0, byte_gw, False)
 
-        qos=self.wan_configs["qos"]
+        qos = self.wan_configs["qos"]
         try:
-            mpkt_first_size=int(qos['mpkt_first_size'])
+            mpkt_first_size = int(qos['mpkt_first_size'])
         except ValueError:
             mpkt_first_size = 0
 
