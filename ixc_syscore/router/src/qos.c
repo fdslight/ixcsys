@@ -110,6 +110,7 @@ static void ixc_qos_send_to_next(struct ixc_mbuf *m)
 static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr = (struct netutil_iphdr *)(m->data + m->offset);
+    int size;
 
     // 隧道流量优先
     if(ixc_qos.tunnel_isset){
@@ -125,7 +126,19 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
         }
     }
 
-    ixc_qos_put(m,iphdr,0);
+    // 未设置小包大小的那么按照普通均衡qos流程
+    if(0==ixc_qos.qos_mpkt_first_size){
+        ixc_qos_put(m,iphdr,0);
+        return;
+    }
+
+    size=m->tail-m->offset;
+    if(size<=ixc_qos.qos_mpkt_first_size){
+        ixc_qos_send_to_next(m);
+    }else{
+        ixc_qos_put(m,iphdr,0);
+    }
+    
     //if(IXC_MBUF_FROM_LAN==m->from) ixc_qos_put(m,iphdr,0);
     // 只对LAN to WAN的流量进行QOS,因为无法控制WAN to LAN的流量
     //else ixc_qos_send_to_next(m);
@@ -135,6 +148,7 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    int size;
 
     // 隧道流量优先
     if(ixc_qos.tunnel_isset){
@@ -149,8 +163,20 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
             }
         }
     }
+
+    // 未设置小包大小的那么按照普通均衡qos流程
+    if(0==ixc_qos.qos_mpkt_first_size){
+        ixc_qos_put(m,header,1);
+        return;
+    }
+
+    size=m->tail-m->offset;
+    if(size<=ixc_qos.qos_mpkt_first_size){
+        ixc_qos_send_to_next(m);
+    }else{
+        ixc_qos_put(m,header,1);
+    }
     
-    ixc_qos_put(m,header,1);
     //if(IXC_MBUF_FROM_LAN==m->from) ixc_qos_put(m,header,1);
     // 只对LAN to WAN的流量进行QOS,因为无法控制WAN to LAN的流量
     //else ixc_qos_send_to_next(m);
@@ -163,6 +189,8 @@ int ixc_qos_init(void)
     bzero(&ixc_qos, sizeof(struct ixc_qos));
 
     ixc_qos_is_initialized = 1;
+    // 小于0表示不设置小包优先策略
+    ixc_qos.qos_mpkt_first_size=0;
 
     for (int n = 0; n < IXC_QOS_SLOT_NUM; n++){
         slot = malloc(sizeof(struct ixc_qos_slot));
@@ -277,4 +305,33 @@ int ixc_qos_tunnel_addr_first_set(unsigned char *addr,int is_ipv6)
 void ixc_qos_tunnel_addr_first_unset(void)
 {
     ixc_qos.tunnel_isset=0;
+}
+
+int ixc_qos_mpkt_first_set(int mpkt_size_index)
+{
+    int rs=0;
+
+    if(mpkt_size_index<0){
+        ixc_qos.qos_mpkt_first_size=0;
+        return 0;
+    }
+
+    switch(mpkt_size_index){
+        case IXC_QOS_MPKT_SIZE64:
+            ixc_qos.qos_mpkt_first_size=64;
+            break;
+        case IXC_QOS_MPKT_SIZE128:
+            ixc_qos.qos_mpkt_first_size=128;
+            break;
+        case IXC_QOS_MPKT_SIZE256:
+            ixc_qos.qos_mpkt_first_size=256;
+            break;
+        case IXC_QOS_MPKT_SIZE512:
+            ixc_qos.qos_mpkt_first_size=512;
+            break;
+        default:
+            rs=-1;
+            break;
+    }
+    return rs;
 }

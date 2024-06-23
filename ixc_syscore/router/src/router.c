@@ -831,6 +831,20 @@ router_qos_unset_tunnel(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_qos_set_mpkt_first_size(PyObject *self,PyObject *args)
+{
+    int idx,rs;
+    if(!PyArg_ParseTuple(args,"i",&idx)) return NULL;
+    
+    rs=ixc_qos_mpkt_first_set(idx);
+    if(0!=rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
 /// 返回系统的CPU总数
 static PyObject *
 router_cpu_num(PyObject *self,PyObject *args)
@@ -959,6 +973,7 @@ static PyMethodDef routerMethods[]={
     //
     {"qos_set_tunnel_first",(PyCFunction)router_qos_set_tunnel_first,METH_VARARGS,"set qos tunnel traffic is first"},
     {"qos_unset_tunnel",(PyCFunction)router_qos_unset_tunnel,METH_NOARGS,"unset qos tunnel traffic is first"},
+    {"qos_set_mpkt_first_size",(PyCFunction)router_qos_set_mpkt_first_size,METH_VARARGS,"set mpkt first size"},
     //
     {"cpu_num",(PyCFunction)router_cpu_num,METH_NOARGS,"get cpu num"},
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},
@@ -1025,6 +1040,11 @@ PyInit_router(void){
 
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_DROP);
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_ACCEPT);
+
+    PyModule_AddIntMacro(m,IXC_QOS_MPKT_SIZE64);
+    PyModule_AddIntMacro(m,IXC_QOS_MPKT_SIZE128);
+    PyModule_AddIntMacro(m,IXC_QOS_MPKT_SIZE256);
+    PyModule_AddIntMacro(m,IXC_QOS_MPKT_SIZE512);
 
     return m;
 }

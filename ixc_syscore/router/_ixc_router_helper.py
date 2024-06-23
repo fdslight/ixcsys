@@ -76,6 +76,7 @@ class rpc(object):
 
             "qos_set_tunnel_first": self.qos_set_tunnel_first,
             "qos_unset_tunnel": self.qos_unset_tunnel,
+            "qos_set_mpkt_first_size": self.qos_set_mpkt_first_size,
 
             "cpu_num": self.cpu_num,
             "bind_cpu": self.bind_cpu,
@@ -681,6 +682,24 @@ class rpc(object):
     def qos_unset_tunnel(self):
         return 0, None
 
+    def qos_set_mpkt_first_size(self, name: str):
+        dic = {
+            "mpkt_nodef":-1,
+            "mpkt_size64": router.IXC_QOS_MPKT_SIZE64,
+            "mpkt_size128": router.IXC_QOS_MPKT_SIZE128,
+            "mpkt_size256": router.IXC_QOS_MPKT_SIZE256,
+            "mpkt_size512": router.IXC_QOS_MPKT_SIZE512,
+        }
+        if name not in dic:
+            v=dic["mpkt_nodef"]
+            name="mpkt_nodef"
+        else:
+            v=dic[name]
+
+        self.__helper.wan_configs["qos"]["mpkt_first_size"]=name
+        rs = self.__helper.router.qos_set_mpkt_first_size(v)
+        return 0, rs
+
     def cpu_num(self):
         return 0, self.__helper.router.cpu_num()
 
@@ -755,6 +774,12 @@ class helper(object):
     def load_wan_configs(self):
         path = "%s/wan.ini" % self.__conf_dir
         self.__wan_configs = conf.ini_parse_from_file(path)
+        if "qos" not in self.__wan_configs:
+            self.__wan_configs["qos"]={
+                "mpkt_first_size":"mpkt_nodef"
+            }
+        return
+
 
     def save_wan_configs(self):
         path = "%s/wan.ini" % self.__conf_dir
