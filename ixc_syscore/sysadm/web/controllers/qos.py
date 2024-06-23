@@ -28,4 +28,4 @@ class controller(base_controller.BaseController):
 
         RPC.fn_call("router", "/config", "port_map_del", mpkt_first_size)
 
-        self.json_resp(False, "修改小包优先发送临界值成功")
+        self.json_resp(False, None)
