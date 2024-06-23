@@ -687,7 +687,11 @@ class rpc(object):
             return 0, False
 
         self.__helper.wan_configs["qos"]["mpkt_first_size"] = size
+
         rs = self.__helper.router.qos_set_mpkt_first_size(size)
+
+        self.__helper.save_wan_configs()
+
         return 0, rs
 
     def cpu_num(self):
