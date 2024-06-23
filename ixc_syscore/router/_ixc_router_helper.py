@@ -766,7 +766,7 @@ class helper(object):
         self.__wan_configs = conf.ini_parse_from_file(path)
         if "qos" not in self.__wan_configs:
             self.__wan_configs["qos"] = {
-                "mpkt_first_size": "mpkt_nodef"
+                "mpkt_first_size": "0"
             }
         return
 

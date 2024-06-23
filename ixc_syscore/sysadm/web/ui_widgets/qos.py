@@ -5,18 +5,11 @@ import ixc_syslib.pylib.RPCClient as RPC
 
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
-        configs = RPC.fn_call("router", "/config", "lan_config_get")
-        if_config = configs["if_config"]
-        enable_static_ipv6 = if_config["enable_static_ipv6"]
-        enable_ipv6_pass = if_config["enable_ipv6_pass"]
-        ip6_addr = if_config["ip6_addr"]
-        enable_ipv6_security = if_config["enable_ipv6_security"]
+        configs = RPC.fn_call("router", "/config", "wan_config_get")
+        qos=configs["qos"]
 
         configs = {
-            "enable_static_ipv6": enable_static_ipv6,
-            "enable_ipv6_pass": enable_ipv6_pass,
-            "enable_ipv6_security": bool(int(enable_ipv6_security)),
-            "ip6_addr": ip6_addr
+            "mpkt_first_size":qos["mpkt_first_size"],
         }
 
-        return True, "ipv6.html", configs
+        return True, "qos.html", configs
