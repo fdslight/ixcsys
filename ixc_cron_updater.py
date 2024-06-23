@@ -3,7 +3,7 @@
 import os, sys
 
 # 更新文件路径
-UPDATE_FILE = "/tmp/ixcsys/ixcsys_update.tar.gz"
+UPDATE_FILE = "/tmp/ixcsys_update.tar.gz"
 
 
 def main():
