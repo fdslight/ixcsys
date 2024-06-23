@@ -235,7 +235,6 @@ def __install_all(prefix=None):
         "ixc_main.py",
         "net_monitor.ini",
         "version",
-        "ixc_cron_updater.py",
     ]
 
     for x in files:
