@@ -26,6 +26,6 @@ class controller(base_controller.BaseController):
                 return
             ''''''
 
-        RPC.fn_call("router", "/config", "port_map_del", mpkt_first_size)
+        RPC.fn_call("router", "/config", "qos_set_mpkt_first_size", mpkt_first_size)
 
         self.json_resp(False, None)
