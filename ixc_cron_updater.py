@@ -20,7 +20,7 @@ def start(h, m):
         now_m = time.strftime("%M")
 
         if now_h == h and now_m == m:
-            print("NOTIFY:start auto update")
+            print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
             do_update()
 
         time.sleep(30)
