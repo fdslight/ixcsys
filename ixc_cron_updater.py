@@ -15,6 +15,15 @@ def do_update():
 
 
 def start(h, m):
+    pid = os.fork()
+    if pid != 0: sys.exit(0)
+
+    os.setsid()
+    os.umask(0)
+    pid = os.fork()
+
+    if pid != 0: sys.exit(0)
+
     while 1:
         now_h = time.strftime("%H")
         now_m = time.strftime("%M")
