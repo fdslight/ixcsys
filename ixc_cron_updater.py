@@ -8,30 +8,28 @@ UPDATE_FILE = "/tmp/ixcsys_update.tar.gz"
 
 def do_update():
     if not os.path.isfile(UPDATE_FILE):
-        print("NOTIFY:not found update file" % UPDATE_FILE)
         return
 
     cmd = "%s /opt/ixcsys/ixc_main.py restart" % sys.executable
-    print(cmd)
     os.system(cmd)
 
 
 def start(h, m):
-    #pid = os.fork()
-    #if pid != 0: sys.exit(0)
+    pid = os.fork()
+    if pid != 0: sys.exit(0)
 
-    #os.setsid()
-    #os.umask(0)
-    #pid = os.fork()
+    os.setsid()
+    os.umask(0)
+    pid = os.fork()
 
-    #if pid != 0: sys.exit(0)
+    if pid != 0: sys.exit(0)
 
     while 1:
-        now_h = time.strftime("%H")
-        now_m = time.strftime("%M")
+        now_h = int(time.strftime("%H"))
+        now_m = int(time.strftime("%M"))
 
         if now_h == h and now_m == m:
-            print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
+            #print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
             do_update()
 
         time.sleep(30)
