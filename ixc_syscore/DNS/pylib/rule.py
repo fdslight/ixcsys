@@ -113,6 +113,7 @@ class matcher(object):
         o = self.__rule_tree
 
         for x in _list:
+            if x in self.__internal_keywords: x = "__%s" % x
             t = o
             o = o[x]
             o["refcnt"] -= 1
