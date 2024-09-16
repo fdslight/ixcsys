@@ -24,7 +24,7 @@ class dot_client(tcp_handler.tcp_handler):
     __header_ok = None
     __length = 0
 
-    def init_func(self, creator, host, hostname="", conn_timeout=20, is_ipv6=False):
+    def init_func(self, creator, host, hostname="", conn_timeout=30, is_ipv6=False):
         """如果不是IPv4地址和IPv6地址,那么hostname就是host,否则使用hostname
         """
         self.__ssl_handshake_ok = False
@@ -183,7 +183,6 @@ class dot_client(tcp_handler.tcp_handler):
         self.__header_ok = True
 
     def tcp_readable(self):
-        self.__update_time = time.time()
         if not self.__header_ok:
             self.parse_header()
         if not self.__header_ok: return
