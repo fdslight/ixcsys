@@ -14,7 +14,11 @@ class controller(rpc.controller):
 
         self.fobjs = {
             "config_get": self.config_get,
+            "dot_server_get": self.dot_server_get,
         }
 
     def config_get(self):
         return 0, self.__runtime.configs
+
+    def dot_server_get(self):
+        return 0, self.__runtime.dot_configs

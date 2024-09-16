@@ -32,7 +32,7 @@ class controller(rpc.controller):
             "save": self.save,
             "enable_sec_dns": self.enable_sec_dns,
             "is_enabled_sec_dns": self.is_enabled_sec_dns,
-            "set_sec_dns_forward_port": self.set_sec_dns_forward_port,
+            "set_sec_dns_forward": self.set_sec_dns_forward,
         }
 
     def config_get(self):

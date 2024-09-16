@@ -11,6 +11,7 @@ import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.web.handlers.scgi as scgi
 import pywind.lib.netutils as netutils
+import pywind.lib.configfile as configfile
 
 from pywind.global_vars import global_vars
 
@@ -19,6 +20,7 @@ import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 
 import ixc_syscore.secDNS.handlers.dot as dot_handler
+import ixc_syscore.secDNS.handlers.msg_forward as msg_forward
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -63,9 +65,15 @@ def __start_service(debug):
 class service(dispatcher.dispatcher):
     __debug = None
     __scgi_fd = None
+
+    # 连接列表,每一个dict代表一个连接,分别为文件描述符,失败次数,更新时间
+    # 格式为[{"fd":0,"fail_count":0,"time":0}]
     __dot_fds = None
 
+    __msg_fwd_fd = None
+
     __dot_configs = None
+    __secDNS_configs = None
 
     def init_func(self, debug):
         global_vars["ixcsys.secDNS"] = self
@@ -73,11 +81,15 @@ class service(dispatcher.dispatcher):
         self.__debug = debug
         self.__dot_fds = []
         self.__dot_configs = []
+        self.__msg_fwd_fd = -1
 
         RPCClient.wait_processes(["router", "DNS", ])
 
         self.create_poll()
         self.start_scgi()
+
+        self.__msg_fwd_fd = self.create_handler(-1, msg_forward)
+
         self.start()
 
     @property
@@ -85,8 +97,62 @@ class service(dispatcher.dispatcher):
         fpath = "%s/dot.json" % os.getenv("IXC_MYAPP_CONF_DIR")
         return fpath
 
+    @property
+    def secDNS_conf_path(self):
+        fpath = "%s/secDNS.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+        return fpath
+
+    @property
+    def dot_configs(self):
+        return self.__dot_configs
+
+    @property
+    def configs(self):
+        return self.__secDNS_configs
+
+    def tell_conn_ok(self, _id: int, fd: int):
+        """告知连接OK"""
+        o = self.__dot_fds[_id]
+        o["fd"] = fd
+        o["time"] = time.time()
+
+    def tell_conn_fail(self, _id: int):
+        """告知连接失败
+        """
+        o = self.__dot_fds[_id]
+        o["fd"] = -1
+        o["time"] = time.time()
+
     def start(self):
-        pass
+        self.load_configs()
+
+        pub = self.__secDNS_configs.get("public", {})
+        try:
+            enable = bool(int(pub.get("enable", 0)))
+        except ValueError:
+            enable = False
+
+        if not enable: return
+
+        i = 0
+        for o in self.__dot_configs:
+            t = {"fd": "-1", "time": time.time()}
+            self.__dot_fds.append(t)
+            i += 1
+
+    def stop(self):
+        for o in self.__dot_fds:
+            fd = o["fd"]
+            if fd >= 0:
+                self.delete_handler(fd)
+                continue
+            ''''''
+        self.__dot_fds = []
+        ''''''
+
+    def reset(self):
+        self.stop()
+        self.start()
 
     def myloop(self):
         pass
@@ -106,6 +172,9 @@ class service(dispatcher.dispatcher):
             return
 
         self.__dot_configs = js
+
+        secDNS_conf = configfile.ini_parse_from_file(self.secDNS_conf_path)
+        self.__secDNS_configs = secDNS_conf
 
     def save_configs(self):
         s = json.dumps(self.__dot_configs)
@@ -173,9 +242,23 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__scgi_fd).after()
 
     def handle_msg_from_local(self, message: bytes):
-        pass
+        # 首先查找缓存是否存在,如果存在缓存,那么直接返回
+
+        # 逐个发送数据包到DNS服务器
+        i = 0
+        for o in self.__dot_fds:
+            fd = o["fd"]
+            if fd < 0:
+                conf = self.__dot_configs[i]
+                fd = self.create_handler(-1, dot_handler.dot_client, i, conf["host"], hostname=conf["hostname"])
+            if fd < 0: continue
+            self.get_handler(fd).send_to_server(message)
+            o += 1
 
     def release(self):
+        self.stop()
+        if self.__msg_fwd_fd > 0:
+            self.delete_handler(self.__msg_fwd_fd)
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 

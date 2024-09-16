@@ -18,10 +18,12 @@ class dot_client(tcp_handler.tcp_handler):
     __hostname = ""
 
     __tmp_buf = None
+    __id = None
 
-    def init_func(self, creator, host, hostname="", conn_timeout=30, is_ipv6=False):
+    def init_func(self, creator, _id, host, hostname="", conn_timeout=30, is_ipv6=False):
         """如果不是IPv4地址和IPv6地址,那么hostname就是host,否则使用hostname
         """
+        self.__id = _id
         self.__ssl_handshake_ok = False
         self.__hostname = host
         self.__update_time = time.time()
@@ -195,3 +197,6 @@ class dot_client(tcp_handler.tcp_handler):
             return
 
         self.set_timeout(self.fileno, 10)
+
+    def send_to_server(self, message: bytes):
+        pass
