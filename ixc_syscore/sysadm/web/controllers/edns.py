@@ -13,14 +13,19 @@ class controller(base_controller.BaseController):
 
     def handle_add(self):
         host = self.request.get_argument("host", is_seq=False, is_qs=False)
-        hostname = self.request.get_argument("hostname", is_seq=False, is_qs=False)
+        hostname = self.request.get_argument("hostname", is_seq=False, is_qs=False, default="")
         comment = self.request.get_argument("comment", is_seq=False, is_qs=False, default="")
 
         if not netutils.is_ipv4_address(host) and not netutils.is_ipv6_address(host):
             self.json_resp(True, "提交了错误的IP地址,IP地址必须为IPv4或者IPv6")
             return
 
-        self.json_resp(False, "测试成功")
+        if not hostname:
+            self.json_resp(True, "TLS认证主机不能为空")
+            return
+
+        RPC.fn_call("secDNS", "/config", "dot_host_add", host, hostname, comment)
+        self.json_resp(False, "添加成功")
 
     def handle_delete(self):
         host = self.request.get_argument("host", is_seq=False, is_qs=False)
