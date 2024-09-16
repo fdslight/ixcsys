@@ -79,7 +79,7 @@ class dot_client(tcp_handler.tcp_handler):
         self.add_evt_read(self.fileno)
         self.add_evt_write(self.fileno)
 
-        logging.print_info("connected %s" % self.__hostname)
+        logging.print_info("connected %s" % self.__host)
 
     def evt_read(self):
         if not self.is_conn_ok():
@@ -162,12 +162,13 @@ class dot_client(tcp_handler.tcp_handler):
             else:
                 ssl.match_hostname(cert, self.__hostname)
             if self.check_cert_is_expired():
-                logging.print_info("SSL handshake fail %s;certificate is expired" % self.__hostname)
+                logging.print_info("SSL handshake fail %s;certificate is expired" % self.__host)
                 self.delete_handler(self.fileno)
                 return
             self.add_evt_read(self.fileno)
             # 清空发送缓冲,发送数据
             self.flush_sent_buf()
+            logging.print_info("SSL handshake OK %s" % self.__host)
         except ssl.SSLWantReadError:
             self.add_evt_read(self.fileno)
         except ssl.SSLWantWriteError:
@@ -176,7 +177,7 @@ class dot_client(tcp_handler.tcp_handler):
             self.delete_handler(self.fileno)
             # logging.print_error("SSL handshake fail %s" % self.__hostname)
         except:
-            logging.print_info("SSL ERROR %s" % self.__hostname)
+            logging.print_info("SSL ERROR %s" % self.__host)
             self.delete_handler(self.fileno)
         ''''''
 
@@ -208,17 +209,17 @@ class dot_client(tcp_handler.tcp_handler):
         self.close()
 
     def tcp_error(self):
-        logging.print_info("tcp_error %s" % self.__hostname)
+        logging.print_info("tcp_error %s" % self.__host)
         self.delete_handler(self.fileno)
 
     def tcp_timeout(self):
         if not self.is_conn_ok():
-            logging.print_info("connecting_timeout  %s" % self.__hostname)
+            logging.print_info("connecting_timeout  %s" % self.__host)
             self.delete_handler(self.fileno)
             return
         now = time.time()
         if now - self.__update_time >= self.__conn_timeout:
-            logging.print_info("connect_timeout %s" % self.__hostname)
+            logging.print_info("connect_timeout %s" % self.__host)
             self.delete_handler(self.fileno)
             return
         self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
