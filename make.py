@@ -205,8 +205,7 @@ def __install_all(prefix=None):
         "pywind",
         "ixc_syslib",
         "ixc_configs_bak",
-        "ixc_configs",
-        "shared_data",
+        "ixc_configs"
     ]
 
     cp_cmd_version = get_cp_cmd_version()

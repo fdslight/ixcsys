@@ -61,8 +61,6 @@ def set_pub_env():
     os.putenv("IXC_CONF_DIR", conf_dir)
     os.putenv("IXC_PYTHON", sys_py_interpreter)
     os.putenv("IXC_SYSROOT", sys_dir)
-    # 共享文件目录
-    os.putenv("IXC_SHARED_DATA_DIR", sys_dir+"/shared_data")
 
     if not os.path.isdir("/tmp/ixcsys"): os.mkdir("/tmp/ixcsys")
 
