@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from cgitb import enable
 
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
 import ixc_syslib.pylib.RPCClient as RPC
@@ -12,10 +13,18 @@ class controller(base_controller.BaseController):
         return True
 
     def handle(self):
+        enable_edns = self.request.get_argument("enable_edns", is_qs=False, is_seq=False, default="")
         ip4_auto = self.request.get_argument("ipv4.enable_auto", is_qs=False, is_seq=False)
         ip6_auto = self.request.get_argument("ipv6.enable_auto", is_qs=False, is_seq=False)
         enable_dnsv6_drop = self.request.get_argument("enable_dnsv6_drop", is_qs=False, is_seq=False)
         enable_dns_no_system_drop = self.request.get_argument("enable_dns_no_system_drop", is_qs=False, is_seq=False)
+
+        if not enable_edns:
+            enable_edns = 0
+        else:
+            enable_edns = 1
+
+        enable_edns=bool(enable_edns)
 
         if not ip4_auto:
             ip4_auto = False
@@ -87,5 +96,7 @@ class controller(base_controller.BaseController):
         RPC.fn_call("DNS", "/config", "set_dnsv6_drop_enable", enable_dnsv6_drop)
         RPC.fn_call("DNS", "/config", "dns_no_system_drop_enable", enable_dns_no_system_drop)
         RPC.fn_call("DNS", "/config", "save")
+
+        RPC.fn_call("secDNS", "/config", "enable", enable_edns)
 
         self.json_resp(False, {})

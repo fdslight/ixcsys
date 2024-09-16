@@ -158,7 +158,7 @@ class service(dispatcher.dispatcher):
 
         i = 0
         for o in self.__dot_configs:
-            t = {"fd": "-1", "time": time.time()}
+            t = {"fd": -1, "time": time.time()}
             self.__dot_fds.append(t)
             i += 1
 

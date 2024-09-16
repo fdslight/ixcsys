@@ -5,7 +5,7 @@ import ixc_syslib.pylib.RPCClient as RPC
 
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
-        if RPC.RPCReadyOk("DNS"):
+        if RPC.RPCReadyOk("DNS") and RPC.RPCReadyOk("secDNS"):
             configs = RPC.fn_call("DNS", "/config", "config_get")
             rs = configs
 
@@ -23,8 +23,24 @@ class widget(ui_widget.widget):
             pub["enable_dns_no_system_drop"] = bool(int(pub["enable_dns_no_system_drop"]))
 
             uri = "dns-server.html"
+
+            secDNS_configs = RPC.fn_call("DNS", "/config", "config_get")
+            public = secDNS_configs.get("public", {})
+            enable = public.get("enable", 0)
+
+            try:
+                enable = int(enable)
+            except ValueError:
+                enable = 1
+
+            if enable:
+                secDNS_enable = True
+            else:
+                secDNS_enable = False
+            rs['enable_edns'] = secDNS_enable
+
         else:
             uri = "no-proc.html"
-            rs = {"proc_name": "DNS"}
+            rs = {"proc_name": "DNS or secDNS"}
 
         return True, uri, rs
