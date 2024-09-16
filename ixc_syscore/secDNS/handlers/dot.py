@@ -191,9 +191,8 @@ class dot_client(tcp_handler.tcp_handler):
 
         message = self.reader.read(self.__length)
 
-        print("recv:%s", struct.unpack("!H", message[0:2]), message, self.__length)
-
-        self.dispatcher.handle_msg_from_server(message)
+        if len(message) >= 8:
+            self.dispatcher.handle_msg_from_server(message)
         self.delete_handler(self.fileno)
 
     def tcp_writable(self):
@@ -219,8 +218,7 @@ class dot_client(tcp_handler.tcp_handler):
         length = len(message)
         # 限制数据包大小
         if length > 1400: return
-
-        print("send:%s", struct.unpack("!H", message[0:2]), message, length)
+        if length < 8: return
 
         wrap_msg = struct.pack("!H", length) + message
 
