@@ -32,12 +32,8 @@ class widget(ui_widget.widget):
                 enable = int(enable)
             except ValueError:
                 enable = 0
-
-            if enable:
-                secDNS_enable = True
-            else:
-                secDNS_enable = False
-            rs['enable_edns'] = secDNS_enable
+            print(enable)
+            rs['enable_edns'] = bool(enable)
 
         else:
             uri = "no-proc.html"
