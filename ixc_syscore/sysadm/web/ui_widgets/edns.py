@@ -5,6 +5,6 @@ import ixc_syslib.pylib.RPCClient as RPC
 
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
-        uri = "sec-dns-rule.html"
+        uri = "edns.html"
 
         return True, uri, {}
