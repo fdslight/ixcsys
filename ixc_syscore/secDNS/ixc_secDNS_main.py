@@ -152,7 +152,10 @@ class service(dispatcher.dispatcher):
         self.set_dns_forward()
 
     def stop(self):
+        fds = []
         for host, fd in self.__dns_fds.items():
+            fds.append(fd)
+        for fd in fds:
             self.delete_handler(fd)
         self.__dns_fds = {}
         # 停止本地UDP DNS服务器流量转发
