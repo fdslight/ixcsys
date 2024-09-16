@@ -19,12 +19,12 @@ class controller(base_controller.BaseController):
         enable_dnsv6_drop = self.request.get_argument("enable_dnsv6_drop", is_qs=False, is_seq=False)
         enable_dns_no_system_drop = self.request.get_argument("enable_dns_no_system_drop", is_qs=False, is_seq=False)
 
-        if not enable_edns:
+        try:
+            enable_edns = int(enable_edns)
+        except ValueError:
             enable_edns = 0
-        else:
-            enable_edns = 1
 
-        enable_edns=bool(enable_edns)
+        enable_edns = bool(enable_edns)
 
         if not ip4_auto:
             ip4_auto = False
