@@ -85,13 +85,10 @@ class service(dispatcher.dispatcher):
 
         RPCClient.wait_processes(["router", "DNS", ])
 
-        print("AA")
-
         self.create_poll()
-        print("BB")
         self.start_scgi()
 
-        self.__msg_fwd_fd = self.create_handler(-1, msg_forward)
+        self.__msg_fwd_fd = self.create_handler(-1, msg_forward.msg_fwd)
 
         self.start()
 
