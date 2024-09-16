@@ -110,6 +110,11 @@ class service(dispatcher.dispatcher):
     __ip_match = None
     __route_timer = None
 
+    # 是否开启安全DNS
+    __enable_sec_dns = None
+    # 安全DNS重定向端口
+    __sec_dns_forward_port = None
+
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
 
@@ -144,6 +149,9 @@ class service(dispatcher.dispatcher):
         self.__hosts = {}
         self.__ip_match = ip_match.ip_match()
         self.__route_timer = timer.timer()
+
+        self.__enable_sec_dns = False
+        self.__sec_dns_forward_port = 0
 
         RPCClient.wait_processes(["router", ])
 
@@ -378,6 +386,11 @@ class service(dispatcher.dispatcher):
     def send_to_dnsserver(self, message: bytes, is_ipv6=False):
         """发送到DNS服务器
         """
+        # 如果开启了安全DNS,那么把数据发送到安全DNS
+        if self.__enable_sec_dns:
+            self.get_handler(self.__dns_client).send_request_msg(message)
+            return
+        ''''''
         if is_ipv6 and self.__dns_client6 < 0: return
         if not is_ipv6 and self.__dns_client < 0: return
 
@@ -704,6 +717,19 @@ class service(dispatcher.dispatcher):
         self.__matcher.clear()
         # 重新加载内部clear
         self.load_sec_rules()
+
+    @property
+    def sec_dns_forward_port(self):
+        return self.__sec_dns_forward_port
+
+    def enable_sec_dns(self, enable: bool):
+        self.__enable_sec_dns = enable
+
+    def is_enabled_sec_dns(self):
+        return self.__enable_sec_dns
+
+    def set_sec_dns_forward_port(self, port: int):
+        self.__sec_dns_forward_port = port
 
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)

@@ -17,6 +17,7 @@ must_services = [
     "ixc_syscore/PASS",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
+    "ixc_syscore/secDNS",
     "ixc_syscore/sysadm",
     "ixc_syscore/proxy",
 ]
@@ -61,6 +62,7 @@ def set_pub_env():
     os.putenv("IXC_CONF_DIR", conf_dir)
     os.putenv("IXC_PYTHON", sys_py_interpreter)
     os.putenv("IXC_SYSROOT", sys_dir)
+    os.putenv("IXC_SHARED_DATA_DIR", sys_dir + "/shared_data")
 
     if not os.path.isdir("/tmp/ixcsys"): os.mkdir("/tmp/ixcsys")
 

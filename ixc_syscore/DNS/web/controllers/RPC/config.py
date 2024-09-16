@@ -29,7 +29,10 @@ class controller(rpc.controller):
             "set_dnsv6_drop_enable": self.set_dnsv6_drop_enable,
             "dns_no_system_drop_enable": self.dns_no_system_drop_enable,
             "no_proxy_ips_add": self.no_proxy_ips_add,
-            "save": self.save
+            "save": self.save,
+            "enable_sec_dns": self.enable_sec_dns,
+            "is_enabled_sec_dns": self.is_enabled_sec_dns,
+            "set_sec_dns_forward_port": self.set_sec_dns_forward_port,
         }
 
     def config_get(self):
@@ -136,4 +139,21 @@ class controller(rpc.controller):
             return 0, False
 
         self.__runtime.set_no_proxy_ips(_list)
+        return 0, True
+
+    def enable_sec_dns(self, enable: bool):
+        """是否开启安全DNS
+        """
+        self.__runtime.enable_sec_dns(enable)
+        return 0, None
+
+    def is_enabled_sec_dns(self):
+        return 0, self.__runtime.is_enabled_sec_dns()
+
+    def set_sec_dns_forward_port(self, port: int):
+        if port < 1 or port > 65535:
+            return 0, False
+
+        self.__runtime.set_sec_dns_forward_port(port)
+
         return 0, True

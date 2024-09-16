@@ -54,7 +54,7 @@ def update_proxy_rule():
 
 def app_data_update():
     files = [
-        "ixc_syscore/proxy/data/ca-bundle.crt",
+        "shared_data/ca-bundle.crt",
         "ixc_syscore/DHCP/data/ipxe.efi",
         "ixc_syscore/DHCP/data/undionly.kpxe",
         "ixc_syscore/DHCP/data/oui.csv",
@@ -205,7 +205,8 @@ def __install_all(prefix=None):
         "pywind",
         "ixc_syslib",
         "ixc_configs_bak",
-        "ixc_configs"
+        "ixc_configs",
+        "shared_data",
     ]
 
     cp_cmd_version = get_cp_cmd_version()
