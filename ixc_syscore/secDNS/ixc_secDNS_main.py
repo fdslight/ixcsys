@@ -20,7 +20,7 @@ import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 
 import ixc_syscore.secDNS.handlers.dot as dot_handler
-import ixc_syscore.secDNS.handlers.msg_forward as msg_forward
+import ixc_syscore.secDNS.handlers.msg_forward as msg_fwd
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -87,10 +87,15 @@ class service(dispatcher.dispatcher):
 
         self.create_poll()
         self.start_scgi()
-
-        self.__msg_fwd_fd = self.create_handler(-1, msg_forward.msg_fwd)
+        self.start_msg_forward()
 
         self.start()
+
+    def start_msg_forward(self):
+        self.__msg_fwd_fd = self.create_handler(-1, msg_fwd.msg_fwd)
+
+    def stop_msg_forward(self):
+        if self.__msg_fwd_fd >= 0: self.delete_handler(self.__msg_fwd_fd)
 
     @property
     def dot_conf_path(self):
