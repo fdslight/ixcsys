@@ -31,7 +31,7 @@ class widget(ui_widget.widget):
             try:
                 enable = int(enable)
             except ValueError:
-                enable = 1
+                enable = 0
 
             if enable:
                 secDNS_enable = True
