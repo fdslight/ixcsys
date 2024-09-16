@@ -38,7 +38,6 @@ class msg_fwd(udp_handler.udp_handler):
     def send_msg_to_local(self, message: bytes):
         if self.__from_port is None: return
         # 接收需要使用key,发送则不需要
-        print(message)
         self.sendto(message, ("127.0.0.1", self.__from_port))
         self.add_evt_write(self.fileno)
 

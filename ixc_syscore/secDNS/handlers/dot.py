@@ -190,6 +190,9 @@ class dot_client(tcp_handler.tcp_handler):
         if self.__length < self.reader.size(): return
 
         message = self.reader.read(self.__length)
+
+        print("recv:%s",struct.unpack("!H", message[0:2]),message)
+
         self.dispatcher.handle_msg_from_server(message)
         self.delete_handler(self.fileno)
 
@@ -216,6 +219,9 @@ class dot_client(tcp_handler.tcp_handler):
         length = len(message)
         # 限制数据包大小
         if length > 1400: return
+
+        print("send:%s",struct.unpack("!H", message[0:2]),message)
+
         wrap_msg = struct.pack("!H", length) + message
 
         if not self.__ssl_handshake_ok:
