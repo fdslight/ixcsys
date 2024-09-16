@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import struct
 import sys, os, signal, json, time
 
 import dns.message
@@ -19,6 +19,7 @@ from pywind.global_vars import global_vars
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
+import ixc_syslib.pylib.dns_utils as dns_utils
 
 import ixc_syscore.secDNS.handlers.dot as dot_handler
 import ixc_syscore.secDNS.handlers.msg_forward as msg_fwd
@@ -72,6 +73,8 @@ class service(dispatcher.dispatcher):
     __dot_configs = None
     __secDNS_configs = None
     __enable_sec_dns = None
+
+    __up_time = None
 
     def init_func(self, debug):
         global_vars["ixcsys.secDNS"] = self
@@ -278,20 +281,23 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
 
-    def handle_msg_from_local(self, message: bytes):
-        # 首先查找缓存是否存在,如果存在缓存,那么直接返回
-
+    def send_to_dns_server(self, message: bytes):
         # 逐个发送数据包到DNS服务器
         for o in self.__dot_configs:
             fd = self.create_handler(-1, dot_handler.dot_client, o["host"], hostname=o["hostname"])
             if fd < 0: continue
             self.get_handler(fd).send_to_server(message)
-        ''''''
+        return
+
+    def handle_msg_from_local(self, message: bytes):
+        # 首先查找缓存是否存在,如果存在缓存,那么直接返回
+        self.send_to_dns_server(message)
 
     def handle_msg_from_server(self, message: bytes):
-        # 发送数据
+        # 检查缓存是否存在
+
+        # 发送消息到本地
         self.get_handler(self.__msg_fwd_fd).send_msg_to_local(message)
-        # 解析DNS报文,更新缓存
 
     def release(self):
         self.stop()
