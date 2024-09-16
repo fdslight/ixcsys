@@ -195,14 +195,14 @@ class dot_client(tcp_handler.tcp_handler):
             if self.__length > 1500:
                 is_err = True
                 break
-            if self.__length < self.reader.size(): break
+            if self.__length > self.reader.size(): break
 
             message = self.reader.read(self.__length)
 
             if len(message) >= 8:
                 self.dispatcher.handle_msg_from_server(message)
             self.__header_ok = False
-            
+
         if is_err: self.delete_handler(self.fileno)
 
     def tcp_writable(self):
