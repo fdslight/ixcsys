@@ -7,7 +7,7 @@ class msg_fwd(udp_handler.udp_handler):
     __key = None
     __from_port = None
 
-    def init_func(self):
+    def init_func(self, creator):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.set_socket(s)
         self.bind(("127.0.0.1", 0))
