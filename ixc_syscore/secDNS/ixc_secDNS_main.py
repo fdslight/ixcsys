@@ -181,11 +181,44 @@ class service(dispatcher.dispatcher):
         secDNS_conf = configfile.ini_parse_from_file(self.secDNS_conf_path)
         self.__secDNS_configs = secDNS_conf
 
-    def save_configs(self):
+    def save_dot_configs(self):
         s = json.dumps(self.__dot_configs)
         f = open(self.dot_conf_path, "w")
         f.write(s)
         f.close()
+
+    def save_secDNS_configs(self):
+        pass
+
+    def dot_host_add(self, host: str, hostname: str, comment: str):
+        exists = False
+        # 首先检查是否存在
+        for o in self.__dot_configs:
+            if o["host"] != host: continue
+            exists = True
+            break
+        # 如果存在那么不添加
+        if exists: return
+        self.stop()
+        self.__dot_configs.append({"host": host, "comment": comment, "hostname": hostname})
+        self.save_dot_configs()
+        self.start()
+
+    def dot_host_del(self, host: str):
+        # 首先停止所有连接
+        self.stop()
+        del_idx = -1
+        i = 0
+        for o in self.__dot_configs:
+            if o["host"] != host:
+                i += 1
+                continue
+            del_idx = i
+            break
+        if del_idx < 0: return
+        del self.__dot_configs[del_idx]
+        self.save_dot_configs()
+        self.start()
 
     @property
     def debug(self):

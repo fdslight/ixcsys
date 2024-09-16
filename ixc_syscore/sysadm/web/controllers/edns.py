@@ -33,10 +33,9 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "提交了错误的IP地址,IP地址必须为IPv4或者IPv6")
             return
 
-        # RPC.fn_call("DNS", "/config", "hosts_set", host, "", is_ipv6=is_ipv6)
-        # RPC.fn_call("DNS", "/config", "hosts_save")
+        RPC.fn_call("secDNS", "/config", "dot_host_del", host)
 
-        self.json_resp(False, "删除%s记录成功" % host)
+        self.json_resp(False, "删除DoT记录成功(%s)" % host)
 
     def handle(self):
         action = self.request.get_argument("action", is_seq=False, is_qs=False)
