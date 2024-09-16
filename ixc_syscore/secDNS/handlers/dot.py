@@ -187,10 +187,14 @@ class dot_client(tcp_handler.tcp_handler):
         self.__header_ok = True
 
     def tcp_readable(self):
+        is_err = False
         while 1:
             if not self.__header_ok:
                 self.parse_header()
             if not self.__header_ok: break
+            if self.__length > 1500:
+                is_err = True
+                break
             if self.__length < self.reader.size(): break
 
             message = self.reader.read(self.__length)
@@ -198,6 +202,8 @@ class dot_client(tcp_handler.tcp_handler):
             if len(message) >= 8:
                 self.dispatcher.handle_msg_from_server(message)
             self.__header_ok = False
+            
+        if is_err: self.delete_handler(self.fileno)
 
     def tcp_writable(self):
         if self.writer.size() == 0: self.remove_evt_write(self.fileno)
