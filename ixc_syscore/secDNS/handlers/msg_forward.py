@@ -30,11 +30,11 @@ class msg_fwd(udp_handler.udp_handler):
         return self.socket.getsockname()[1]
 
     def udp_readable(self, message, address):
+        print(message)
         if message[0:4] != self.key: return
         self.__from_port = address[1]
         message = message[4:]
         self.dispatcher.handle_msg_from_local(message)
-        print(message)
 
     def send_msg_to_local(self, message: bytes):
         if self.__from_port is None: return
