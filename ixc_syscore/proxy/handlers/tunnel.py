@@ -71,7 +71,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
 
             ciphers = cfgs["ciphers"]
 
-            context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             context.set_alpn_protocols(["http/1.1"])
 
             if ciphers.upper() != "NULL": context.set_ciphers(ciphers)
@@ -86,6 +86,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
                 context.verify_mode = ssl.CERT_REQUIRED
                 context.load_verify_locations(self.dispatcher.ca_path)
             else:
+                context.check_hostname = False
                 context.verify_mode = ssl.CERT_NONE
 
         self.set_socket(s)
