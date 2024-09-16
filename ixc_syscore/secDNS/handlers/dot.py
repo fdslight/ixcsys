@@ -3,6 +3,8 @@
 """
 
 import socket, time, ssl
+import struct
+
 import pywind.evtframework.handlers.tcp_handler as tcp_handler
 import pywind.lib.netutils as netutils
 import ixc_syslib.pylib.logging as logging
@@ -18,16 +20,20 @@ class dot_client(tcp_handler.tcp_handler):
     __hostname = ""
 
     __tmp_buf = None
-    __id = None
 
-    def init_func(self, creator, _id, host, hostname="", conn_timeout=30, is_ipv6=False):
+    __header_ok = None
+    __length = 0
+
+    def init_func(self, creator, host, hostname="", conn_timeout=20, is_ipv6=False):
         """如果不是IPv4地址和IPv6地址,那么hostname就是host,否则使用hostname
         """
-        self.__id = _id
         self.__ssl_handshake_ok = False
         self.__hostname = host
         self.__update_time = time.time()
         self.__conn_timeout = conn_timeout
+        self.__tmp_buf = []
+        self.__header_ok = False
+        self.__length = 0
 
         if netutils.is_ipv6_address(host):
             is_ipv6 = True
@@ -134,6 +140,15 @@ class dot_client(tcp_handler.tcp_handler):
 
         return False
 
+    def flush_sent_buf(self):
+        while 1:
+            try:
+                data = self.__tmp_buf.pop(0)
+            except IndexError:
+                break
+            self.send_to_server(data)
+        ''''''
+
     def do_ssl_handshake(self):
         try:
             self.socket.do_handshake()
@@ -147,8 +162,9 @@ class dot_client(tcp_handler.tcp_handler):
                 logging.print_error("SSL handshake fail %s;certificate is expired" % self.__hostname)
                 self.delete_handler(self.fileno)
                 return
-            logging.print_info("dot tls handshake ok %s" % self.__hostname)
             self.add_evt_read(self.fileno)
+            # 清空发送缓冲,发送数据
+            self.flush_sent_buf()
         except ssl.SSLWantReadError:
             self.add_evt_read(self.fileno)
         except ssl.SSLWantWriteError:
@@ -159,23 +175,31 @@ class dot_client(tcp_handler.tcp_handler):
         except:
             logging.print_error()
             self.delete_handler(self.fileno)
+        ''''''
+
+    def parse_header(self):
+        if not self.__header_ok and self.reader.size() < 2: return
+        self.__length, = struct.unpack("!H", self.reader.read(2))
+        self.__header_ok = True
 
     def tcp_readable(self):
-        rdata = self.reader.read()
         self.__update_time = time.time()
-        return
+        if not self.__header_ok:
+            self.parse_header()
+        if not self.__header_ok: return
+        if self.__length < self.reader.size(): return
+
+        message = self.reader.read(self.__length)
+        self.dispatcher.handle_msg_from_server(message)
+        self.delete_handler(self.fileno)
 
     def tcp_writable(self):
         if self.writer.size() == 0: self.remove_evt_write(self.fileno)
 
     def tcp_delete(self):
-        self.dispatcher.tunnel_conn_fail()
+        self.__tmp_buf = []
         self.unregister(self.fileno)
         self.close()
-
-        if self.is_conn_ok():
-            logging.print_info("disconnect %s" % self.__hostname)
-        return
 
     def tcp_error(self):
         logging.print_info("tcp_error %s" % self.__hostname)
@@ -183,20 +207,19 @@ class dot_client(tcp_handler.tcp_handler):
 
     def tcp_timeout(self):
         if not self.is_conn_ok():
-            self.dispatcher.tunnel_conn_fail()
             logging.print_error("connecting_timeout  %s" % self.__hostname)
             self.delete_handler(self.fileno)
             return
-
-        t = time.time()
-        v = t - self.__update_time
-
-        if v > self.__conn_timeout:
-            self.delete_handler(self.fileno)
-            logging.print_info("connected_timeout %s" % self.__hostname)
-            return
-
-        self.set_timeout(self.fileno, 10)
+        self.delete_handler(self.fileno)
 
     def send_to_server(self, message: bytes):
-        pass
+        length = len(message)
+        # 限制数据包大小
+        if length > 1400: return
+        wrap_msg = struct.pack("!H", length) + message
+
+        if not self.__ssl_handshake_ok:
+            self.__tmp_buf.append(wrap_msg)
+            return
+        self.add_evt_write(self.fileno)
+        self.send(wrap_msg)

@@ -67,10 +67,6 @@ class service(dispatcher.dispatcher):
     __debug = None
     __scgi_fd = None
 
-    # 连接列表,每一个dict代表一个连接,分别为文件描述符,失败次数,更新时间
-    # 格式为[{"fd":0,"fail_count":0,"time":0}]
-    __dot_fds = None
-
     __msg_fwd_fd = None
 
     __dot_configs = None
@@ -81,7 +77,6 @@ class service(dispatcher.dispatcher):
         global_vars["ixcsys.secDNS"] = self
 
         self.__debug = debug
-        self.__dot_fds = []
         self.__dot_configs = []
         self.__msg_fwd_fd = -1
         self.__enable_sec_dns = False
@@ -118,19 +113,6 @@ class service(dispatcher.dispatcher):
     def configs(self):
         return self.__secDNS_configs
 
-    def tell_conn_ok(self, _id: int, fd: int):
-        """告知连接OK"""
-        o = self.__dot_fds[_id]
-        o["fd"] = fd
-        o["time"] = time.time()
-
-    def tell_conn_fail(self, _id: int):
-        """告知连接失败
-        """
-        o = self.__dot_fds[_id]
-        o["fd"] = -1
-        o["time"] = time.time()
-
     def set_dns_forward(self):
         # 获取key以及本地端口
         key = self.get_handler(self.__msg_fwd_fd).key
@@ -156,23 +138,11 @@ class service(dispatcher.dispatcher):
 
         logging.print_info("enable secDNS")
 
-        i = 0
-        for o in self.__dot_configs:
-            t = {"fd": -1, "time": time.time()}
-            self.__dot_fds.append(t)
-            i += 1
+        self.set_dns_forward()
 
     def stop(self):
         # 停止本地UDP DNS服务器流量转发
         RPCClient.fn_call("DNS", "/config", "enable", True)
-
-        for o in self.__dot_fds:
-            fd = o["fd"]
-            if fd >= 0:
-                self.delete_handler(fd)
-                continue
-            ''''''
-        self.__dot_fds = []
         logging.print_info("stop secDNS")
         ''''''
 
@@ -317,14 +287,16 @@ class service(dispatcher.dispatcher):
 
         # 逐个发送数据包到DNS服务器
         i = 0
-        for o in self.__dot_fds:
-            fd = o["fd"]
-            if fd < 0:
-                conf = self.__dot_configs[i]
-                fd = self.create_handler(-1, dot_handler.dot_client, i, conf["host"], hostname=conf["hostname"])
+        for o in self.__dot_configs:
+            fd = self.create_handler(-1, dot_handler.dot_client, i, o["host"], hostname=o["hostname"])
             if fd < 0: continue
             self.get_handler(fd).send_to_server(message)
-            o += 1
+        ''''''
+
+    def handle_msg_from_server(self, message: bytes):
+        # 发送数据
+        self.get_handler(self.__msg_fwd_fd).send_msg_to_local(message)
+        # 解析DNS报文,更新缓存
 
     def release(self):
         self.stop()
