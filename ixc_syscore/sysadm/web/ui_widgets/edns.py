@@ -6,7 +6,6 @@ import ixc_syslib.pylib.RPCClient as RPC
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
         dns_servers = RPC.fn_call("secDNS", "/config", "dot_server_get")
-        print(dns_servers)
         uri = "edns.html"
 
         return True, uri, {"servers": dns_servers}
