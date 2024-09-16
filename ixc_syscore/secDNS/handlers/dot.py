@@ -228,4 +228,4 @@ class dot_client(tcp_handler.tcp_handler):
             self.__tmp_buf.append(wrap_msg)
             return
         self.add_evt_write(self.fileno)
-        self.send(wrap_msg)
+        self.writer.write(wrap_msg)
