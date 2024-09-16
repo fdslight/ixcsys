@@ -136,7 +136,7 @@ class service(dispatcher.dispatcher):
 
         if not enable: return
 
-        logging.print_info("enable secDNS")
+        logging.print_info("start secDNS")
 
         self.set_dns_forward()
 
@@ -217,11 +217,7 @@ class service(dispatcher.dispatcher):
         self.__secDNS_configs["public"]["enable"] = int(enable)
         self.save_secDNS_configs()
 
-        if self.__enable_sec_dns and not enable:
-            self.stop()
-        if not self.__enable_sec_dns and enable:
-            self.start()
-        ''''''
+        self.reset()
 
     @property
     def debug(self):
