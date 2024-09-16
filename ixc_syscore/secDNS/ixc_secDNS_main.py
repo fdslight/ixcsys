@@ -282,9 +282,8 @@ class service(dispatcher.dispatcher):
         # 首先查找缓存是否存在,如果存在缓存,那么直接返回
 
         # 逐个发送数据包到DNS服务器
-        i = 0
         for o in self.__dot_configs:
-            fd = self.create_handler(-1, dot_handler.dot_client, i, o["host"], hostname=o["hostname"])
+            fd = self.create_handler(-1, dot_handler.dot_client, o["host"], hostname=o["hostname"])
             if fd < 0: continue
             self.get_handler(fd).send_to_server(message)
         ''''''
