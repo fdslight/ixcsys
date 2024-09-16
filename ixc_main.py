@@ -17,7 +17,7 @@ must_services = [
     "ixc_syscore/PASS",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
-#    "ixc_syscore/secDNS",
+    "ixc_syscore/secDNS",
     "ixc_syscore/sysadm",
     "ixc_syscore/proxy",
 ]
