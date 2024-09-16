@@ -76,7 +76,7 @@ class service(dispatcher.dispatcher):
 
     __up_time = None
 
-    __dns_free_fds = None
+    __dns_fds = None
 
     def init_func(self, debug):
         global_vars["ixcsys.secDNS"] = self
@@ -85,7 +85,7 @@ class service(dispatcher.dispatcher):
         self.__dot_configs = []
         self.__msg_fwd_fd = -1
         self.__enable_sec_dns = False
-        self.__dns_free_fds = {}
+        self.__dns_fds = {}
 
         RPCClient.wait_processes(["router", "DNS", ])
 
@@ -95,15 +95,10 @@ class service(dispatcher.dispatcher):
 
         self.start()
 
-    def tell_conn_free(self, fd: int):
-        """空闲连接
-        """
-        self.__dns_free_fds[fd] = None
-
-    def tell_conn_nonfree(self, fd: int):
+    def tell_conn_fail(self, host):
         """取消空闲连接
         """
-        if fd in self.__dns_free_fds: del self.__dns_free_fds[fd]
+        if host in self.__dns_fds: del self.__dns_fds[host]
 
     def start_msg_forward(self):
         self.__msg_fwd_fd = self.create_handler(-1, msg_fwd.msg_fwd)
@@ -157,6 +152,9 @@ class service(dispatcher.dispatcher):
         self.set_dns_forward()
 
     def stop(self):
+        for host, fd in self.__dns_fds.items():
+            self.delete_handler(fd)
+        self.__dns_fds = {}
         # 停止本地UDP DNS服务器流量转发
         RPCClient.fn_call("DNS", "/config", "enable_sec_dns", False)
         logging.print_info("stop secDNS")
@@ -295,16 +293,14 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__scgi_fd).after()
 
     def send_to_dns_server(self, message: bytes):
-        # 存在空闲连接那么使用空闲连接
-        if self.__dns_free_fds:
-            for fd, _ in self.__dns_free_fds.items():
-                self.get_handler(fd).send_to_server(message)
-                return
-            ''''''
         # 逐个发送数据包到DNS服务器
         for o in self.__dot_configs:
-            fd = self.create_handler(-1, dot_handler.dot_client, o["host"], hostname=o["hostname"])
-            if fd < 0: continue
+            host = o["host"]
+            if host not in self.__dns_fds:
+                fd = self.create_handler(-1, dot_handler.dot_client, o["host"], hostname=o["hostname"])
+                if fd < 0: continue
+                self.__dns_fds[host] = fd
+            fd = self.__dns_fds[host]
             self.get_handler(fd).send_to_server(message)
         return
 

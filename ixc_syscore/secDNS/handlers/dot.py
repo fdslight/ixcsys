@@ -24,9 +24,12 @@ class dot_client(tcp_handler.tcp_handler):
     __header_ok = None
     __length = 0
 
+    __host = None
+
     def init_func(self, creator, host, hostname="", conn_timeout=30, is_ipv6=False):
         """如果不是IPv4地址和IPv6地址,那么hostname就是host,否则使用hostname
         """
+        self.__host = host
         self.__ssl_handshake_ok = False
         self.__hostname = host
         self.__update_time = time.time()
@@ -178,7 +181,7 @@ class dot_client(tcp_handler.tcp_handler):
         ''''''
 
     def parse_header(self):
-        if not self.__header_ok and self.reader.size() < 2: return
+        if self.reader.size() < 2: return
         self.__length, = struct.unpack("!H", self.reader.read(2))
         self.__header_ok = True
 
@@ -194,14 +197,12 @@ class dot_client(tcp_handler.tcp_handler):
             if len(message) >= 8:
                 self.dispatcher.handle_msg_from_server(message)
             self.__header_ok = False
-        # 执行完任务
-        self.dispatcher.tell_conn_free(self.fileno)
 
     def tcp_writable(self):
         if self.writer.size() == 0: self.remove_evt_write(self.fileno)
 
     def tcp_delete(self):
-        self.dispatcher.tell_conn_nonfree(self.fileno)
+        self.dispatcher.tell_conn_fail(self.__host)
         self.__tmp_buf = []
         self.unregister(self.fileno)
         self.close()
