@@ -183,6 +183,7 @@ class dot_client(tcp_handler.tcp_handler):
         self.__header_ok = True
 
     def tcp_readable(self):
+        print("ZZZ")
         self.__update_time = time.time()
         if not self.__header_ok:
             self.parse_header()
