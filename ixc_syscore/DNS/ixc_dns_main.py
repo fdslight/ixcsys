@@ -392,7 +392,7 @@ class service(dispatcher.dispatcher):
         # 如果开启了安全DNS,那么把数据发送到安全DNS
         if self.__enable_sec_dns:
             self.get_handler(self.__dns_client).send_forward_msg2(message, self.__sec_dns_forward_port,
-                                                                  self.__sec_dns_forward_port)
+                                                                  self.__sec_dns_forward_key)
             return
         ''''''
         if is_ipv6 and self.__dns_client6 < 0: return
