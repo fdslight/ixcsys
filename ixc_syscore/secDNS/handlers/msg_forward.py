@@ -34,6 +34,7 @@ class msg_fwd(udp_handler.udp_handler):
         self.__from_port = address[1]
         message = message[4:]
         self.dispatcher.handle_msg_from_local(message)
+        print(message)
 
     def send_msg_to_local(self, message: bytes):
         if self.__from_port is None: return
