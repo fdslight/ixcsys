@@ -24,7 +24,7 @@ class widget(ui_widget.widget):
 
             uri = "dns-server.html"
 
-            secDNS_configs = RPC.fn_call("DNS", "/config", "config_get")
+            secDNS_configs = RPC.fn_call("secDNS", "/config", "config_get")
             public = secDNS_configs.get("public", {})
             enable = public.get("enable", 0)
 
@@ -32,7 +32,7 @@ class widget(ui_widget.widget):
                 enable = int(enable)
             except ValueError:
                 enable = 0
-            print(enable)
+
             rs['enable_edns'] = bool(enable)
 
         else:
