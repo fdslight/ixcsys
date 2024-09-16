@@ -171,7 +171,7 @@ class dot_client(tcp_handler.tcp_handler):
             self.delete_handler(self.fileno)
             logging.print_error("SSL handshake fail %s" % self.__hostname)
         except:
-            logging.print_error()
+            logging.print_info("SSL ERROR %s" % self.__hostname)
             self.delete_handler(self.fileno)
         ''''''
 
