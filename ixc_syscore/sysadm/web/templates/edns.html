@@ -11,7 +11,7 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalCenterTitle">本地DNS解析添加</h5>
+                    <h5 class="modal-title" id="exampleModalCenterTitle">DoT服务器添加</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -19,19 +19,16 @@
                 <div class="modal-body">
                     <form id="ixc-edns-form">
                         <div class="form-group">
-                            <label>记录类型</label>
-                            <select class="form-control" name="qtype">
-                                <option value="A">A</option>
-                                <option value="AAAA">AAAA</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>域名</label>
+                            <label>服务器IP</label>
                             <input type="text" class="form-control" name="host"/>
                         </div>
                         <div class="form-group">
-                            <label>地址</label>
-                            <input type="text" class="form-control" name="addr"/>
+                            <label>TLS认证主机</label>
+                            <input type="text" class="form-control" name="hostname"/>
+                        </div>
+                        <div class="form-group">
+                            <label>描述</label>
+                            <input type="text" class="form-control" name="comment"/>
                         </div>
                     </form>
                 </div>

@@ -104,7 +104,7 @@ class service(dispatcher.dispatcher):
 
     @property
     def secDNS_conf_path(self):
-        fpath = "%s/secDNS.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+        fpath = "%s/secDNS.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         return fpath
 
     @property
