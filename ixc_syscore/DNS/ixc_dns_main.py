@@ -154,6 +154,7 @@ class service(dispatcher.dispatcher):
 
         self.__enable_sec_dns = False
         self.__sec_dns_forward_port = 0
+        self.__sec_dns_forward_key = os.urandom(4)
 
         RPCClient.wait_processes(["router", ])
 
