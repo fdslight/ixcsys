@@ -49,6 +49,26 @@
         </tr>
         </thead>
         <tbody>
+        <%
+            x=0
+            servers=self.V["servers"]
+            for server in servers:
+                host=server['host']
+                hostname=server['hostname']
+                comment=server['comment']
+                s="""
+                <tr>
+                    <td>%d</td>
+                    <td>%s</td>
+                    <td>%s</td>
+                    <td>%s</td>
+                    <td><a href="#" class="ixc-edns-do" name="%s">删除</a>
+                        <input type="hidden" value="action=delete&host=%s" id="ixc-edns-del-%s"/>
+                    </td>
+                </tr>
+                """ % (x,host,hostname,comment,host,host,x)
+                x+=1
+            %>
         </tbody>
     </table>
 </div>
