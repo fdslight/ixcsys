@@ -42,9 +42,29 @@ class controller(base_controller.BaseController):
 
         self.json_resp(False, "删除DoT记录成功(%s)" % host)
 
+    def enable(self):
+        """开启或者关闭加密DNS
+        """
+        enable = self.request.get_argument("enable", is_seq=False, is_qs=False)
+        if not enable:
+            enable = 0
+        try:
+            enable = int(enable)
+        except ValueError:
+            enable = 1
+
+        if enable >= 0: enable = 1
+
+        b_enable = bool(enable)
+        RPC.fn_call("secDNS", "/config", "enable", b_enable)
+        self.json_resp(False, "设置成功")
+
     def handle(self):
         action = self.request.get_argument("action", is_seq=False, is_qs=False)
+
         if action == "delete":
             self.handle_delete()
+        elif action == "enable":
+            self.enable()
         else:
             self.handle_add()

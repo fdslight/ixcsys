@@ -16,6 +16,7 @@ class controller(rpc.controller):
             "config_get": self.config_get,
             "dot_host_add": self.dot_host_add,
             "dot_host_del": self.dot_host_del,
+            "enable": self.enable,
             "dot_servers_get": self.dot_servers_get,
         }
 
@@ -34,3 +35,6 @@ class controller(rpc.controller):
 
     def dot_host_del(self, host: str):
         return 0, self.__runtime.dot_host_del(host)
+
+    def enable(self, enable: bool):
+        return 0, self.__runtime.secDNS_enable(enable)

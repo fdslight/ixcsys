@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, signal, json, time
+
 import dns.message
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -74,6 +75,7 @@ class service(dispatcher.dispatcher):
 
     __dot_configs = None
     __secDNS_configs = None
+    __enable_sec_dns = None
 
     def init_func(self, debug):
         global_vars["ixcsys.secDNS"] = self
@@ -82,6 +84,7 @@ class service(dispatcher.dispatcher):
         self.__dot_fds = []
         self.__dot_configs = []
         self.__msg_fwd_fd = -1
+        self.__enable_sec_dns = False
 
         RPCClient.wait_processes(["router", "DNS", ])
 
@@ -137,7 +140,11 @@ class service(dispatcher.dispatcher):
         except ValueError:
             enable = False
 
+        self.__enable_sec_dns = enable
+
         if not enable: return
+
+        logging.print_info("enable secDNS")
 
         i = 0
         for o in self.__dot_configs:
@@ -153,6 +160,7 @@ class service(dispatcher.dispatcher):
                 continue
             ''''''
         self.__dot_fds = []
+        logging.print_info("stop secDNS")
         ''''''
 
     def reset(self):
@@ -188,7 +196,7 @@ class service(dispatcher.dispatcher):
         f.close()
 
     def save_secDNS_configs(self):
-        pass
+        configfile.save_to_ini(self.__secDNS_configs, self.secDNS_conf_path)
 
     def dot_host_add(self, host: str, hostname: str, comment: str):
         exists = False
@@ -219,6 +227,18 @@ class service(dispatcher.dispatcher):
         del self.__dot_configs[del_idx]
         self.save_dot_configs()
         self.start()
+
+    def secDNS_enable(self, enable: bool):
+        if "public" not in self.__secDNS_configs:
+            self.__secDNS_configs["public"] = {}
+        self.__secDNS_configs["public"]["enable"] = int(enable)
+        self.save_secDNS_configs()
+
+        if self.__enable_sec_dns and not enable:
+            self.stop()
+        if not self.__enable_sec_dns and enable:
+            self.start()
+        ''''''
 
     @property
     def debug(self):
