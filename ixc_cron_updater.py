@@ -10,7 +10,9 @@ def do_update():
     if not os.path.isfile(UPDATE_FILE):
         return
 
-    cmd = "%s /opt/ixcsys/ixc_main.py restart" % sys.executable
+    cmd = "%s /opt/ixcsys/ixc_main.py stop" % sys.executable
+    os.system(cmd)
+    cmd = "%s /opt/ixcsys/ixc_main.py start" % sys.executable
     os.system(cmd)
 
 
