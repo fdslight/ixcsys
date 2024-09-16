@@ -190,7 +190,6 @@ class dot_client(tcp_handler.tcp_handler):
         if self.__length < self.reader.size(): return
 
         message = self.reader.read(self.__length)
-        print(message)
         self.dispatcher.handle_msg_from_server(message)
         self.delete_handler(self.fileno)
 
