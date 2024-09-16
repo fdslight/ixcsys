@@ -191,12 +191,15 @@ class dot_client(tcp_handler.tcp_handler):
 
         if len(message) >= 8:
             self.dispatcher.handle_msg_from_server(message)
-        self.delete_handler(self.fileno)
+
+        # 执行玩任务
+        self.dispatcher.tell_conn_free(self.fileno)
 
     def tcp_writable(self):
         if self.writer.size() == 0: self.remove_evt_write(self.fileno)
 
     def tcp_delete(self):
+        self.dispatcher.tell_conn_nonfree(self.fileno)
         self.__tmp_buf = []
         self.unregister(self.fileno)
         self.close()
@@ -210,7 +213,9 @@ class dot_client(tcp_handler.tcp_handler):
             logging.print_info("connecting_timeout  %s" % self.__hostname)
             self.delete_handler(self.fileno)
             return
-        self.delete_handler(self.fileno)
+        now = time.time()
+        if now - self.__update_time >= self.__conn_timeout:
+            self.delete_handler(self.fileno)
 
     def send_to_server(self, message: bytes):
         length = len(message)
