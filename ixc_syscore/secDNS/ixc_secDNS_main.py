@@ -121,7 +121,7 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("DNS", "/config", "set_sec_dns_forward", port, key)
 
         # 设置本地UDP DNS服务器,使其转发流量到本进程
-        RPCClient.fn_call("DNS", "/config", "enable", True)
+        RPCClient.fn_call("DNS", "/config", "enable_sec_dns", True)
 
     def start(self):
         self.load_configs()
@@ -142,7 +142,7 @@ class service(dispatcher.dispatcher):
 
     def stop(self):
         # 停止本地UDP DNS服务器流量转发
-        RPCClient.fn_call("DNS", "/config", "enable", True)
+        RPCClient.fn_call("DNS", "/config", "enable_sec_dns", True)
         logging.print_info("stop secDNS")
         ''''''
 
