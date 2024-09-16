@@ -142,7 +142,7 @@ class service(dispatcher.dispatcher):
 
     def stop(self):
         # 停止本地UDP DNS服务器流量转发
-        RPCClient.fn_call("DNS", "/config", "enable_sec_dns", True)
+        RPCClient.fn_call("DNS", "/config", "enable_sec_dns", False)
         logging.print_info("stop secDNS")
         ''''''
 
@@ -225,7 +225,7 @@ class service(dispatcher.dispatcher):
 
     @property
     def ca_path(self):
-        path = "%s/data/ca-bundle.crt" % os.getenv("IXC_SHARED_DATA_DIR")
+        path = "%s/ca-bundle.crt" % os.getenv("IXC_SHARED_DATA_DIR")
         return path
 
     def get_server_ip(self, host, enable_ipv6=False):
