@@ -183,7 +183,6 @@ class dot_client(tcp_handler.tcp_handler):
         self.__header_ok = True
 
     def tcp_readable(self):
-        print("ZZZ")
         self.__update_time = time.time()
         if not self.__header_ok:
             self.parse_header()
@@ -191,6 +190,7 @@ class dot_client(tcp_handler.tcp_handler):
         if self.__length < self.reader.size(): return
 
         message = self.reader.read(self.__length)
+        print(message)
         self.dispatcher.handle_msg_from_server(message)
         self.delete_handler(self.fileno)
 
