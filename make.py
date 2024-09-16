@@ -17,6 +17,7 @@ __builds = [
     "ixc_syscore/PASS",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
+    "ixc_syscore/secDNS",
     "ixc_syscore/proxy",
     "ixc_syscore/init",
 ]
@@ -55,6 +56,7 @@ def update_proxy_rule():
 def app_data_update():
     files = [
         "shared_data/ca-bundle.crt",
+
         "ixc_syscore/DHCP/data/ipxe.efi",
         "ixc_syscore/DHCP/data/undionly.kpxe",
         "ixc_syscore/DHCP/data/oui.csv",
