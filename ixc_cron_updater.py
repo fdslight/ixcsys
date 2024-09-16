@@ -31,7 +31,7 @@ def start(h, m):
         now_m = int(time.strftime("%M"))
 
         if now_h == h and now_m == m:
-            #print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
+            # print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
             do_update()
 
         time.sleep(30)
@@ -42,6 +42,13 @@ def main():
     user = os.getenv("USER")
     if user.lower() != "root":
         print("ERROR:run this script must be root user")
+        return
+
+    if len(sys.argv) == 1:
+        pid = os.fork()
+        if pid != 0: sys.exit(0)
+        print("start updating ixcsys")
+        do_update()
         return
 
     if len(sys.argv) != 2:
