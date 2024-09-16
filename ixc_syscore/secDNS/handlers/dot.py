@@ -183,17 +183,18 @@ class dot_client(tcp_handler.tcp_handler):
         self.__header_ok = True
 
     def tcp_readable(self):
-        if not self.__header_ok:
-            self.parse_header()
-        if not self.__header_ok: return
-        if self.__length < self.reader.size(): return
+        while 1:
+            if not self.__header_ok:
+                self.parse_header()
+            if not self.__header_ok: break
+            if self.__length < self.reader.size(): break
 
-        message = self.reader.read(self.__length)
+            message = self.reader.read(self.__length)
 
-        if len(message) >= 8:
-            self.dispatcher.handle_msg_from_server(message)
-
-        # 执行玩任务
+            if len(message) >= 8:
+                self.dispatcher.handle_msg_from_server(message)
+            self.__header_ok = False
+        # 执行完任务
         self.dispatcher.tell_conn_free(self.fileno)
 
     def tcp_writable(self):
@@ -227,7 +228,6 @@ class dot_client(tcp_handler.tcp_handler):
         if length > 1400: return
         if length < 8: return
 
-        self.dispatcher.tell_conn_nonfree(self.fileno)
         wrap_msg = struct.pack("!H", length) + message
 
         if not self.__ssl_handshake_ok:
