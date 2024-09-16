@@ -10,9 +10,7 @@ def do_update():
     if not os.path.isfile(UPDATE_FILE):
         return
 
-    cmd = "%s /opt/ixcsys/ixc_main.py stop" % sys.executable
-    os.system(cmd)
-    cmd = "%s /opt/ixcsys/ixc_main.py start" % sys.executable
+    cmd = "%s /opt/ixcsys/ixc_main.py restart" % sys.executable
     os.system(cmd)
 
 
@@ -31,7 +29,7 @@ def start(h, m):
         now_m = int(time.strftime("%M"))
 
         if now_h == h and now_m == m:
-            # print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
+            #print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
             do_update()
 
         time.sleep(30)
@@ -46,13 +44,6 @@ def main():
 
     if len(sys.argv) != 2:
         print(helper)
-        return
-
-    if sys.argv[1] == "do_update":
-        pid = os.fork()
-        if pid != 0: sys.exit(0)
-        print("start updating ixcsys")
-        do_update()
         return
 
     _list = sys.argv[1].split(":")
