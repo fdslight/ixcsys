@@ -146,8 +146,8 @@ class dot_client(tcp_handler.tcp_handler):
                 data = self.__tmp_buf.pop(0)
             except IndexError:
                 break
-            self.send_to_server(data)
-        ''''''
+            self.writer.write(data)
+        self.add_evt_write(self.fileno)
 
     def do_ssl_handshake(self):
         try:
@@ -191,7 +191,7 @@ class dot_client(tcp_handler.tcp_handler):
 
         message = self.reader.read(self.__length)
 
-        print("recv:%s",struct.unpack("!H", message[0:2]),message,self.__length)
+        print("recv:%s", struct.unpack("!H", message[0:2]), message, self.__length)
 
         self.dispatcher.handle_msg_from_server(message)
         self.delete_handler(self.fileno)
@@ -220,7 +220,7 @@ class dot_client(tcp_handler.tcp_handler):
         # 限制数据包大小
         if length > 1400: return
 
-        print("send:%s",struct.unpack("!H", message[0:2]),message,length)
+        print("send:%s", struct.unpack("!H", message[0:2]), message, length)
 
         wrap_msg = struct.pack("!H", length) + message
 
