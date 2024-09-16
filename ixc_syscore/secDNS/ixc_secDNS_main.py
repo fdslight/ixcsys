@@ -131,6 +131,16 @@ class service(dispatcher.dispatcher):
         o["fd"] = -1
         o["time"] = time.time()
 
+    def set_dns_forward(self):
+        # 获取key以及本地端口
+        key = self.get_handler(self.__msg_fwd_fd).key
+        port = self.get_handler(self.__msg_fwd_fd).port
+
+        RPCClient.fn_call("DNS", "/config", "set_sec_dns_forward", port, key)
+
+        # 设置本地UDP DNS服务器,使其转发流量到本进程
+        RPCClient.fn_call("DNS", "/config", "enable", True)
+
     def start(self):
         self.load_configs()
 
@@ -153,6 +163,9 @@ class service(dispatcher.dispatcher):
             i += 1
 
     def stop(self):
+        # 停止本地UDP DNS服务器流量转发
+        RPCClient.fn_call("DNS", "/config", "enable", True)
+
         for o in self.__dot_fds:
             fd = o["fd"]
             if fd >= 0:
