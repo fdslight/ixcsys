@@ -23,7 +23,7 @@ class controller(base_controller.BaseController):
         if not hostname:
             self.json_resp(True, "TLS认证主机不能为空")
             return
-        print(host,hostname,comment)
+
         RPC.fn_call("secDNS", "/config", "dot_host_add", host, hostname, comment)
         self.json_resp(False, "添加成功")
 
