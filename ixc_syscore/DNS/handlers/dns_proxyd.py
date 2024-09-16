@@ -2,6 +2,8 @@
 """实现DNS服务器代理,用于实现高级DNS过滤功能
 """
 import socket
+import struct
+
 import pywind.evtframework.handlers.udp_handler as udp_handler
 
 
@@ -78,11 +80,12 @@ class proxy_client(udp_handler.udp_handler):
         self.sendto(message, ("127.0.0.1", self.__forward_port))
         self.add_evt_write(self.fileno)
 
-    def send_forward_msg2(self, message: bytes, port: int):
+    def send_forward_msg2(self, message: bytes, port: int, forward_key: bytes):
         """
         Only support IPv4 address
         """
-        self.sendto(message, ("127.0.0.1", port))
+        new_msg = forward_key + message
+        self.sendto(new_msg, ("127.0.0.1", port))
         self.add_evt_write(self.fileno)
 
     def set_forward_port(self, port: int):

@@ -150,10 +150,13 @@ class controller(rpc.controller):
     def is_enabled_sec_dns(self):
         return 0, self.__runtime.is_enabled_sec_dns()
 
-    def set_sec_dns_forward_port(self, port: int):
+    def set_sec_dns_forward(self, port: int, key: bytes):
         if port < 1 or port > 65535:
             return 0, False
 
-        self.__runtime.set_sec_dns_forward_port(port)
+        if len(bytes) != 4 or not isinstance(key, bytes):
+            return 0, False
+
+        self.__runtime.set_sec_dns_forward(port, key)
 
         return 0, True

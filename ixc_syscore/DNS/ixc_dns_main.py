@@ -19,12 +19,12 @@ from pywind.global_vars import global_vars
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
+import ixc_syslib.pylib.dns_utils as dns_utils
 
 import ixc_syscore.DNS.handlers.dns_proxyd as dns_proxyd
 import ixc_syscore.DNS.pylib.rule as rule
 import ixc_syscore.DNS.pylib.os_resolv as os_resolv
 import ixc_syscore.DNS.pylib.sec_rule as sec_rule
-import ixc_syscore.DNS.pylib.dns_utils as dns_utils
 import ixc_syscore.DNS.pylib.ip_match as ip_match
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
@@ -114,6 +114,8 @@ class service(dispatcher.dispatcher):
     __enable_sec_dns = None
     # 安全DNS重定向端口
     __sec_dns_forward_port = None
+    # 通信key
+    __sec_dns_forward_key = None
 
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
@@ -388,7 +390,8 @@ class service(dispatcher.dispatcher):
         """
         # 如果开启了安全DNS,那么把数据发送到安全DNS
         if self.__enable_sec_dns:
-            self.get_handler(self.__dns_client).send_request_msg(message)
+            self.get_handler(self.__dns_client).send_forward_msg2(message, self.__sec_dns_forward_port,
+                                                                  self.__sec_dns_forward_port)
             return
         ''''''
         if is_ipv6 and self.__dns_client6 < 0: return
@@ -728,8 +731,9 @@ class service(dispatcher.dispatcher):
     def is_enabled_sec_dns(self):
         return self.__enable_sec_dns
 
-    def set_sec_dns_forward_port(self, port: int):
+    def set_sec_dns_forward(self, port: int, key: bytes):
         self.__sec_dns_forward_port = port
+        self.__sec_dns_forward_key = key
 
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)

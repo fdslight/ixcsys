@@ -2,13 +2,12 @@
 """客户端隧道实现
 """
 
-import socket, time, ssl, random, hashlib
+import socket, time, ssl
 import pywind.evtframework.handlers.tcp_handler as tcp_handler
 import pywind.lib.netutils as netutils
 import ixc_syslib.pylib.logging as logging
 
-import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
-import ixc_syscore.proxy.pylib.ssl_backports as ssl_backports
+import ixc_syslib.pylib.ssl_backports as ssl_backports
 
 
 class dot_client(tcp_handler.tcp_handler):
@@ -146,7 +145,7 @@ class dot_client(tcp_handler.tcp_handler):
                 logging.print_error("SSL handshake fail %s;certificate is expired" % self.__hostname)
                 self.delete_handler(self.fileno)
                 return
-            logging.print_general("dot tls handshake ok %s" % self.__hostname)
+            logging.print_info("dot tls handshake ok %s" % self.__hostname)
             self.add_evt_read(self.fileno)
         except ssl.SSLWantReadError:
             self.add_evt_read(self.fileno)
@@ -173,11 +172,11 @@ class dot_client(tcp_handler.tcp_handler):
         self.close()
 
         if self.is_conn_ok():
-            logging.print_general("disconnect %" % self.__hostname)
+            logging.print_info("disconnect %s" % self.__hostname)
         return
 
     def tcp_error(self):
-        logging.print_general("tcp_error %s" % self.__hostname)
+        logging.print_info("tcp_error %s" % self.__hostname)
         self.delete_handler(self.fileno)
 
     def tcp_timeout(self):
@@ -192,7 +191,7 @@ class dot_client(tcp_handler.tcp_handler):
 
         if v > self.__conn_timeout:
             self.delete_handler(self.fileno)
-            logging.print_general("connected_timeout %s" % self.__hostname)
+            logging.print_info("connected_timeout %s" % self.__hostname)
             return
 
         self.set_timeout(self.fileno, 10)

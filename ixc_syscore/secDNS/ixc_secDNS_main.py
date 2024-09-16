@@ -15,6 +15,10 @@ import pywind.lib.netutils as netutils
 from pywind.global_vars import global_vars
 
 import ixc_syslib.web.route as webroute
+import ixc_syslib.pylib.logging as logging
+import ixc_syslib.pylib.RPCClient as RPCClient
+
+import ixc_syscore.secDNS.handlers.dot as dot_handler
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -59,21 +63,55 @@ def __start_service(debug):
 class service(dispatcher.dispatcher):
     __debug = None
     __scgi_fd = None
+    __dot_fds = None
+
+    __dot_configs = None
 
     def init_func(self, debug):
         global_vars["ixcsys.secDNS"] = self
 
         self.__debug = debug
+        self.__dot_fds = []
+        self.__dot_configs = []
+
+        RPCClient.wait_processes(["router", "DNS", ])
 
         self.create_poll()
         self.start_scgi()
         self.start()
+
+    @property
+    def dot_conf_path(self):
+        fpath = "%s/dot.json" % os.getenv("IXC_MYAPP_CONF_DIR")
+        return fpath
 
     def start(self):
         pass
 
     def myloop(self):
         pass
+
+    def load_configs(self):
+        with open(self.dot_conf_path, "r") as f:
+            s = f.read()
+        f.close()
+        try:
+            js = json.loads(s)
+        except:
+            logging.print_error("wrong dot config file")
+            return
+
+        if not isinstance(js, list):
+            logging.print_error("wrong dot config file,it should be a list")
+            return
+
+        self.__dot_configs = js
+
+    def save_configs(self):
+        s = json.dumps(self.__dot_configs)
+        f = open(self.dot_conf_path, "w")
+        f.write(s)
+        f.close()
 
     @property
     def debug(self):
@@ -133,6 +171,9 @@ class service(dispatcher.dispatcher):
         }
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
+
+    def handle_msg_from_local(self, message: bytes):
+        pass
 
     def release(self):
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)

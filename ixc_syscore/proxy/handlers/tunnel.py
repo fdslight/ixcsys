@@ -9,9 +9,10 @@ import pywind.evtframework.handlers.udp_handler as udp_handler
 import pywind.web.lib.httputils as httputils
 import pywind.web.lib.websocket as wslib
 
+import ixc_syslib.pylib.ssl_backports as ssl_backports
+
 import ixc_syscore.proxy.pylib.base_proto.utils as proto_utils
 import ixc_syscore.proxy.pylib.logging as logging
-import ixc_syscore.proxy.pylib.ssl_backports as ssl_backports
 
 
 class tcp_tunnel(tcp_handler.tcp_handler):
