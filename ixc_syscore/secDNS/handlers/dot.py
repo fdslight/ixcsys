@@ -76,6 +76,8 @@ class dot_client(tcp_handler.tcp_handler):
         self.add_evt_read(self.fileno)
         self.add_evt_write(self.fileno)
 
+        logging.print_info("connected %s" % self.__hostname)
+
     def evt_read(self):
         if not self.is_conn_ok():
             super().evt_read()
@@ -215,6 +217,7 @@ class dot_client(tcp_handler.tcp_handler):
             return
         now = time.time()
         if now - self.__update_time >= self.__conn_timeout:
+            logging.print_info("connect_timeout %s" % self.__hostname)
             self.delete_handler(self.fileno)
             return
         self.set_timeout(self.fileno, self.__LOOP_TIMEOUT)
