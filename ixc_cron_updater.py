@@ -44,15 +44,15 @@ def main():
         print("ERROR:run this script must be root user")
         return
 
-    if len(sys.argv) == 1:
+    if len(sys.argv) != 2:
+        print(helper)
+        return
+
+    if sys.argv[1] == "do_update":
         pid = os.fork()
         if pid != 0: sys.exit(0)
         print("start updating ixcsys")
         do_update()
-        return
-
-    if len(sys.argv) != 2:
-        print(helper)
         return
 
     _list = sys.argv[1].split(":")
