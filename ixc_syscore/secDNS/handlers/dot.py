@@ -157,7 +157,7 @@ class dot_client(tcp_handler.tcp_handler):
             else:
                 ssl.match_hostname(cert, self.__hostname)
             if self.check_cert_is_expired():
-                logging.print_error("SSL handshake fail %s;certificate is expired" % self.__hostname)
+                logging.print_info("SSL handshake fail %s;certificate is expired" % self.__hostname)
                 self.delete_handler(self.fileno)
                 return
             self.add_evt_read(self.fileno)
