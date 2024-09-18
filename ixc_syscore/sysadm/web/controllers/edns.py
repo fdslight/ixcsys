@@ -21,14 +21,10 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "提交了错误的IP地址,IP地址必须为IPv4或者IPv6")
             return
 
-        if not port:
-            port = '853'
-
         try:
             port = int(port)
         except ValueError:
-            self.json_resp(True, "错误的DoT服务器端口号值")
-            return
+            port = 853
 
         if port < 1 or port > 65534:
             self.json_resp(True, "错误的DoT服务器端口号值")
