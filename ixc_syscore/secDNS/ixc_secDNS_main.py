@@ -301,18 +301,13 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__scgi_fd).after()
 
     def send_to_dns_server(self, message: bytes):
+        # 检查一遍DoT服务器是否都在线
+        self.monitor_dot_server_conn()
         # 逐个发送数据包到DNS服务器
         for o in self.__dot_configs:
             host = o["host"]
-            if host not in self.__dns_fds:
-                try:
-                    port = int(o.get("port", '853'))
-                except ValueError:
-                    port = 853
-                fd = self.create_handler(-1, dot_handler.dot_client, o["host"], port=port,
-                                         hostname=o["hostname"])
-                if fd < 0: continue
-                self.__dns_fds[host] = fd
+            if host not in self.__dns_fds: continue
+
             fd = self.__dns_fds[host]
             self.get_handler(fd).send_to_server(message)
         return
@@ -323,9 +318,14 @@ class service(dispatcher.dispatcher):
         for o in self.__dot_configs:
             host = o["host"]
             if host not in self.__dns_fds:
-                fd = self.create_handler(-1, dot_handler.dot_client, o["host"], hostname=o["hostname"])
+                try:
+                    port = int(o.get("port", '853'))
+                except ValueError:
+                    port = 853
+                fd = self.create_handler(-1, dot_handler.dot_client, o["host"], port=port, hostname=o["hostname"])
                 if fd < 0: continue
                 self.__dns_fds[host] = fd
+            ''''''
         return
 
     def handle_msg_from_local(self, message: bytes):
@@ -333,8 +333,6 @@ class service(dispatcher.dispatcher):
         self.send_to_dns_server(message)
 
     def handle_msg_from_server(self, message: bytes):
-        # 检查缓存是否存在
-
         # 发送消息到本地
         self.get_handler(self.__msg_fwd_fd).send_msg_to_local(message)
 
