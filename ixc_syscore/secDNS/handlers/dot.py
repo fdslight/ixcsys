@@ -187,6 +187,7 @@ class dot_client(tcp_handler.tcp_handler):
         self.__header_ok = True
 
     def tcp_readable(self):
+        self.__update_time = time.time()
         is_err = False
         while 1:
             if not self.__header_ok:
