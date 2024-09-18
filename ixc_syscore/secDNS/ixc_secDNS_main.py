@@ -19,7 +19,6 @@ from pywind.global_vars import global_vars
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
-import ixc_syslib.pylib.dns_utils as dns_utils
 
 import ixc_syscore.secDNS.handlers.dot as dot_handler
 import ixc_syscore.secDNS.handlers.msg_forward as msg_fwd
@@ -85,6 +84,7 @@ class service(dispatcher.dispatcher):
         self.__dot_configs = []
         self.__msg_fwd_fd = -1
         self.__enable_sec_dns = False
+        self.__up_time = time.time()
         self.__dns_fds = {}
 
         RPCClient.wait_processes(["router", "DNS", ])
@@ -168,7 +168,12 @@ class service(dispatcher.dispatcher):
         self.start()
 
     def myloop(self):
-        pass
+        now = time.time()
+        # 每隔一段时间监控一次,避免DNS查询过慢
+        if now - self.__up_time >= 10:
+            self.monitor_dot_server_conn()
+            self.__up_time = now
+        return
 
     def load_configs(self):
         with open(self.dot_conf_path, "r") as f:
@@ -198,7 +203,7 @@ class service(dispatcher.dispatcher):
     def save_secDNS_configs(self):
         configfile.save_to_ini(self.__secDNS_configs, self.secDNS_conf_path)
 
-    def dot_host_add(self, host: str, hostname: str, comment: str):
+    def dot_host_add(self, host: str, hostname: str, comment: str, port=853):
         exists = False
         # 首先检查是否存在
         for o in self.__dot_configs:
@@ -208,7 +213,7 @@ class service(dispatcher.dispatcher):
         # 如果存在那么不添加
         if exists: return
         self.stop()
-        self.__dot_configs.append({"host": host, "comment": comment, "hostname": hostname})
+        self.__dot_configs.append({"host": host, "port": port, "comment": comment, "hostname": hostname})
         self.save_dot_configs()
         self.start()
 
@@ -300,11 +305,27 @@ class service(dispatcher.dispatcher):
         for o in self.__dot_configs:
             host = o["host"]
             if host not in self.__dns_fds:
-                fd = self.create_handler(-1, dot_handler.dot_client, o["host"], hostname=o["hostname"])
+                try:
+                    port = int(o.get("port", '853'))
+                except ValueError:
+                    port = 853
+                fd = self.create_handler(-1, dot_handler.dot_client, o["host"], port=port,
+                                         hostname=o["hostname"])
                 if fd < 0: continue
                 self.__dns_fds[host] = fd
             fd = self.__dns_fds[host]
             self.get_handler(fd).send_to_server(message)
+        return
+
+    def monitor_dot_server_conn(self):
+        """监控DoT服务器连接,如连接不存在,那么创建连接
+        """
+        for o in self.__dot_configs:
+            host = o["host"]
+            if host not in self.__dns_fds:
+                fd = self.create_handler(-1, dot_handler.dot_client, o["host"], hostname=o["hostname"])
+                if fd < 0: continue
+                self.__dns_fds[host] = fd
         return
 
     def handle_msg_from_local(self, message: bytes):

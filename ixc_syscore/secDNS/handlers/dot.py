@@ -26,7 +26,7 @@ class dot_client(tcp_handler.tcp_handler):
 
     __host = None
 
-    def init_func(self, creator, host, hostname="", conn_timeout=30, is_ipv6=False):
+    def init_func(self, creator, host, port=853, hostname="", conn_timeout=30, is_ipv6=False):
         """如果不是IPv4地址和IPv6地址,那么hostname就是host,否则使用hostname
         """
         self.__host = host
@@ -68,7 +68,7 @@ class dot_client(tcp_handler.tcp_handler):
             s.close()
             return -1
 
-        self.connect((server_ip, 853))
+        self.connect((server_ip, port))
 
         return self.fileno
 

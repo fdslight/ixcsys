@@ -1,11 +1,13 @@
 [
   {
     "host": "223.5.5.5",
+    "port": 853,
     "hostname": "dns.alidns.com",
     "comment": "aliyun DNS"
   },
   {
     "host": "1.12.12.12",
+    "port": 853,
     "hostname": "dot.pub",
     "comment": "DNSPod"
   }

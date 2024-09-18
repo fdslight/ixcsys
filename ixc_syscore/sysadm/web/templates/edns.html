@@ -23,6 +23,10 @@
                             <input type="text" class="form-control" name="host"/>
                         </div>
                         <div class="form-group">
+                            <label>端口</label>
+                            <input type="text" class="form-control" name="port" placeholder="853" />
+                        </div>
+                        <div class="form-group">
                             <label>TLS认证主机</label>
                             <input type="text" class="form-control" name="hostname"/>
                         </div>
@@ -55,6 +59,7 @@
         servers=self.V["servers"]
         for server in servers:
             host=server['host']
+            port=server['port']
             hostname=server['hostname']
             comment=server['comment']
             s="""
@@ -63,11 +68,12 @@
                 <td>%s</td>
                 <td>%s</td>
                 <td>%s</td>
+                <td>%s</td>
                 <td><a href="#" class="ixc-edns-do" name="%s">删除</a>
                     <input type="hidden" value="action=delete&host=%s" id="ixc-edns-del-%s"/>
                 </td>
             </tr>
-            """ % (x,host,hostname,comment,x,host,x)
+            """ % (x,host,port,hostname,comment,x,host,x)
             self.show(s)
             x+=1
         %>
