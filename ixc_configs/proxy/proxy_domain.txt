@@ -277,6 +277,7 @@ security.debian.org:1
 *.godaddy.com:1
 *.tuidang.org:1
 *.gfw.report:1
+*.zoom.us:1
 
 ### 书籍文化
 *.pressstore.com.tw:1
@@ -303,6 +304,7 @@ login.oracle.com:1
 *.llvm.org:1
 *.bitvise.com:1
 *.wireguard.com:1
+*.huggingface.co:1
 
 ### 医学相关
 *.uptodate.com:1

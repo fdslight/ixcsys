@@ -304,6 +304,7 @@ login.oracle.com:1
 *.llvm.org:1
 *.bitvise.com:1
 *.wireguard.com:1
+*.huggingface.co:1
 
 ### 医学相关
 *.uptodate.com:1
