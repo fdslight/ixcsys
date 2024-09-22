@@ -930,6 +930,8 @@ class service(dispatcher.dispatcher):
         if host in self.__routes: return
         # 如果是服务器的地址,那么不设置路由,避免使用ip_rules规则的时候进入死循环,因为服务器地址可能不在ip_rules文件中
         if host == self.__server_ip: return
+        # 如果是管理地址,那么丢弃
+        if host == self.manage_addr: return
 
         if is_ipv6:
             if prefix is None: prefix = 128

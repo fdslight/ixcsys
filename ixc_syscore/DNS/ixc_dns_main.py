@@ -446,7 +446,7 @@ class service(dispatcher.dispatcher):
                     if not flags: continue
                     if self.__ip_match.match(ip, is_ipv6=is_ipv6): continue
                     # DNS自动设置路由后告知proxy程序,由代理程序管理路由
-                    self.set_route(ip, is_ipv6=is_ipv6)
+                    # self.set_route(ip, is_ipv6=is_ipv6)
                     msg = {
                         "action": "proxy_ip",
                         "priv_data": None,

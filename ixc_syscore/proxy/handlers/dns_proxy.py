@@ -20,7 +20,7 @@ class dns_proxy(udp_handler.udp_handler):
         return self.fileno
 
     def udp_readable(self, message, address):
-        if address[0] != "127.0.0.1" and address[0] != self.dispatcher.manage_addr: return
+        if address[0] != "127.0.0.1": return
         if address[1] != self.__forward_port: return
 
         o = pickle.loads(message)
@@ -41,7 +41,7 @@ class dns_proxy(udp_handler.udp_handler):
 
     def send_dns_msg(self, message: bytes):
         self.add_evt_write(self.fileno)
-        self.sendto(message, (self.dispatcher.manage_addr, self.__forward_port))
+        self.sendto(message, ("127.0.0.1", self.__forward_port))
 
     def set_forward(self, port: int):
         self.__forward_port = port
