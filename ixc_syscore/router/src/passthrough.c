@@ -35,11 +35,35 @@ void ixc_passthrough_uninit(void)
 inline
 int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
 {
+    unsigned char *hwaddr;
+    int is_brd=0,x;
+    char is_found=0;
+
     if(!passthrough_is_initialized){
         STDERR("not initialized passthrough");
         return 0;
     }
-    return 0;
+
+    if(IXC_MBUF_FROM_LAN==m->from){
+        hwaddr=m->src_hwaddr;
+    }else{
+        hwaddr=m->dst_hwaddr;
+    }
+
+    is_brd=hwaddr[5] & 0x01;
+    
+    // 源端地址的广播mac地址禁止通过
+    if(is_brd && IXC_MBUF_FROM_LAN==m->from) return 0;
+
+    // 检查MAC地址是否是多播或者广播地址
+    if(!is_brd){
+        map_find(passthrough.permit_map,(char *)hwaddr,&is_found);
+        if(is_found) return 1;
+        return 0;
+    }
+    
+    // 多播和广播返回需要直通
+    return 1;
 }
 
 inline
@@ -81,7 +105,7 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
         return -1;
     }
 
-    data=map_find(passthrough.permit_map,(char *)hwaddr,&is_found);
+    map_find(passthrough.permit_map,(char *)hwaddr,&is_found);
     if(is_found) return 0;
 
     rs=map_add(passthrough.permit_map,(char *)hwaddr,NULL);
@@ -100,5 +124,5 @@ void ixc_passthrough_device_del(unsigned char *hwaddr)
         STDERR("not initialized passthrough");
     }
 
-    map_del(passthrough.permit_map,hwaddr,NULL);
+    map_del(passthrough.permit_map,(char *)hwaddr,NULL);
 }
