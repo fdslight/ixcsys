@@ -698,13 +698,19 @@ class rpc(object):
 
         return 0, rs
 
-    def passthrough_device_add(self, hwaddr: str):
+    def passthrough_device_add(self, hwaddr: str, comment=""):
         if not netutils.is_hwaddr(hwaddr):
             return RPC.ERR_ARGS, "wrong hwaddr value"
 
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
 
-        return self.__helper.passthrough_device_add(byte_hwaddr)
+        b = self.__helper.passthrough_device_add(byte_hwaddr)
+        dic = self.__helper.router_configs['passthrough']
+        dic[hwaddr] = comment
+
+        self.__helper.save_router_configs()
+
+        return 0, b
 
     def passthough_device_del(self, hwaddr: str):
         if not netutils.is_hwaddr(hwaddr):
@@ -712,6 +718,11 @@ class rpc(object):
 
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
         self.__helper.passthrough_device_del(byte_hwaddr)
+        dic = self.__helper.router_configs['passthrough']
+
+        if hwaddr in dic:
+            del dic[hwaddr]
+            self.__helper.save_router_configs()
 
         return 0, None
 
@@ -813,6 +824,9 @@ class helper(object):
             dic["ip_tcp_mss"] = 0
         if "ip6_tcp_mss" not in dic:
             dic["ip6_tcp_mss"] = 0
+
+        if "passthrough" not in self.__router_configs:
+            self.__router_configs["passthrough"] = {}
 
     def load_port_map_configs(self):
         path = "%s/port_map.ini" % self.__conf_dir
