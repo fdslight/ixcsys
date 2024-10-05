@@ -13,7 +13,7 @@ class controller(base_controller.BaseController):
 
     def handle_add(self):
         host = self.request.get_argument("host", is_seq=False, is_qs=False)
-        port = self.request.get_argument("host", is_seq=False, is_qs=False, default="853")
+        port = self.request.get_argument("port", is_seq=False, is_qs=False, default="853")
         hostname = self.request.get_argument("hostname", is_seq=False, is_qs=False, default="")
         comment = self.request.get_argument("comment", is_seq=False, is_qs=False, default="")
 
