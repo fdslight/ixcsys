@@ -8,6 +8,13 @@ static int passthrough_is_initialized=0;
 static struct ixc_passthrough passthrough;
 static struct ixc_mbuf *passthrough_tmp_mbuf=NULL;
 
+static void __ixc_passthrough_del_cb(void *data)
+{
+    struct ixc_passthrough_node *node=data;
+    free(node);
+}
+
+
 int ixc_passthrough_init(void)
 {
     struct map *m;
@@ -31,12 +38,6 @@ void ixc_passthrough_uninit(void)
     passthrough_is_initialized=0;
 
     map_release(passthrough.permit_map,__ixc_passthrough_del_cb);
-}
-
-static void __ixc_passthrough_del_cb(void *data)
-{
-    struct ixc_passthrough_node *node=data;
-    free(node);
 }
 
 inline
@@ -85,12 +86,18 @@ inline
 static void __ixc_passthrough_send_for_brd(void *data)
 {
     struct ixc_passthrough_node *node=data;
+    struct ixc_ether_header *eth_header=NULL;
+
     struct ixc_mbuf *m=ixc_mbuf_clone(passthrough_tmp_mbuf);
 
     if(NULL==m){
         STDERR("no memory for malloc struct ixc_mbuf");
         return;
     }
+
+    // 修改目标MAC地址头部,使其他机器收不到直通MAC广播
+    eth_header=(struct ixc_ether_header *)(m->data+m->begin);
+    memcpy(eth_header->dst_hwaddr,node->hwaddr,6);
 
     ixc_netif_send(m);
 }
@@ -149,7 +156,7 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
     }
 
     memcpy(node->hwaddr,hwaddr,6);
-    
+
     rs=map_add(passthrough.permit_map,(char *)hwaddr,node);
 
     if(rs){
