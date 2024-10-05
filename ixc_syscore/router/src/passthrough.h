@@ -26,7 +26,8 @@ int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m);
 
 /// @智能发送流量到所有直通口
 /// @param m 
-void ixc_passthrough_send_auto(struct ixc_mbuf *m);
+/// @return 如果返回值为空那么不需要经过路由器内部协议栈处理,不为NULL那么继续处理
+struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m);
 
 /// @增加直通设备mac地址
 /// @param hwaddr 

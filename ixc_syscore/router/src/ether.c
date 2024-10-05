@@ -145,8 +145,8 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     mbuf->link_proto=type;
 
     if(ixc_passthrough_is_passthrough_traffic(mbuf)){
-        ixc_passthrough_send_auto(mbuf);
-        return;
+        mbuf=ixc_passthrough_send_auto(mbuf);
+        if(NULL==mbuf) return;
     }
     
     if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){

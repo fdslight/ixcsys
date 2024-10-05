@@ -74,20 +74,39 @@ int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
 }
 
 inline
-void ixc_passthrough_send_auto(struct ixc_mbuf *m)
+struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=NULL;
+    struct ixc_mbuf *new_mbuf;
+    int is_brd;
+    unsigned char *hwaddr;
 
     if(!passthrough_is_initialized){
         STDERR("not initialized passthrough\r\n");
-        return;
+        return NULL;
     }
 
-    if(IXC_MBUF_FROM_LAN==m->from) netif=ixc_netif_get(IXC_NETIF_WAN);
-    else netif=ixc_netif_get(IXC_NETIF_LAN);
+    if(IXC_MBUF_FROM_LAN==m->from){
+        hwaddr=m->src_hwaddr;
+        netif=ixc_netif_get(IXC_NETIF_WAN);
+    }else{
+        hwaddr=m->dst_hwaddr;
+        netif=ixc_netif_get(IXC_NETIF_LAN);
+    }
 
-    m->netif=netif;
-    ixc_netif_send(m);
+    is_brd=hwaddr[0] & 0x01;
+
+    if(is_brd && IXC_MBUF_FROM_WAN==m->from){
+        new_mbuf=ixc_mbuf_clone(m);
+    }else{
+        new_mbuf=m;
+        m=NULL;
+    }
+
+    new_mbuf->netif=netif;
+    ixc_netif_send(new_mbuf);
+
+    return m;
 }
 
 int ixc_passthrough_device_add(unsigned char *hwaddr)
