@@ -23,7 +23,7 @@ int ixc_passthrough_init(void)
     bzero(&passthrough,sizeof(struct ixc_passthrough));
 
     if(rs){
-        STDERR("cannot init passthrough");
+        STDERR("cannot init passthrough\r\n");
         return -1;
     }
 
@@ -48,7 +48,7 @@ int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
     char is_found=0;
 
     if(!passthrough_is_initialized){
-        STDERR("not initialized passthrough");
+        STDERR("not initialized passthrough\r\n");
         return 0;
     }
 
@@ -91,7 +91,7 @@ static void __ixc_passthrough_send_for_brd(void *data)
     struct ixc_mbuf *m=ixc_mbuf_clone(passthrough_tmp_mbuf);
 
     if(NULL==m){
-        STDERR("no memory for malloc struct ixc_mbuf");
+        STDERR("no memory for malloc struct ixc_mbuf\r\n");
         return;
     }
 
@@ -127,7 +127,7 @@ inline
 void ixc_passthrough_send_auto(struct ixc_mbuf *m)
 {
     if(!passthrough_is_initialized){
-        STDERR("not initialized passthrough");
+        STDERR("not initialized passthrough\r\n");
         return;
     }
 
@@ -142,7 +142,7 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
     struct ixc_passthrough_node *node;
 
     if(!passthrough_is_initialized){
-        STDERR("not initialized passthrough");
+        STDERR("not initialized passthrough\r\n");
         return -1;
     }
 
@@ -151,7 +151,7 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
 
     node=malloc(sizeof(struct ixc_passthrough_node));
     if(NULL==node){
-        STDERR("cannot malloc for struct ixc_passthrough_node");
+        STDERR("cannot malloc for struct ixc_passthrough_node\r\n");
         return -1;
     }
 
@@ -160,7 +160,7 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
     rs=map_add(passthrough.permit_map,(char *)hwaddr,node);
 
     if(rs){
-        STDERR("cannot add passthrough device");
+        STDERR("cannot add passthrough device\r\n");
         free(node);
         return -1;
     }
@@ -171,7 +171,7 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
 void ixc_passthrough_device_del(unsigned char *hwaddr)
 {
     if(!passthrough_is_initialized){
-        STDERR("not initialized passthrough");
+        STDERR("not initialized passthrough\r\n");
     }
 
     map_del(passthrough.permit_map,(char *)hwaddr,__ixc_passthrough_del_cb);

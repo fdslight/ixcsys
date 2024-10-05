@@ -1533,12 +1533,6 @@ static void ixc_start(int debug)
         exit(EXIT_SUCCESS);
     }
 
-    rs=ixc_netif_init(&ixc_ev_set);
-    if(rs<0){
-        STDERR("cannot init netif\r\n");
-        exit(EXIT_SUCCESS);
-    }
-
     rs=ixc_npfwd_init(&ixc_ev_set);
     if(rs<0){
         STDERR("cannot init npfwd\r\n");
@@ -1548,6 +1542,18 @@ static void ixc_start(int debug)
     rs=rpc_create(&ixc_ev_set,rpc_path,ixc_rpc_fn_req);
     if(rs<0){
         STDERR("cannot create rpc\r\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    rs=ixc_passthrough_init();
+    if(rs<0){
+        STDERR("cannot passthrough init\r\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    rs=ixc_netif_init(&ixc_ev_set);
+    if(rs<0){
+        STDERR("cannot init netif\r\n");
         exit(EXIT_SUCCESS);
     }
     // 内存缓存
