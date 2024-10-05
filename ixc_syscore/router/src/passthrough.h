@@ -12,6 +12,10 @@ struct ixc_passthrough{
     struct map *permit_map;
 };
 
+struct ixc_passthrough_node{
+    unsigned char hwaddr[6];
+};
+
 int ixc_passthrough_init(void);
 void ixc_passthrough_uninit(void);
 

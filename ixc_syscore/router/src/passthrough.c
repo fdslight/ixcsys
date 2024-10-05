@@ -6,6 +6,7 @@
 
 static int passthrough_is_initialized=0;
 static struct ixc_passthrough passthrough;
+static struct ixc_mbuf *passthrough_tmp_mbuf=NULL;
 
 int ixc_passthrough_init(void)
 {
@@ -29,7 +30,13 @@ void ixc_passthrough_uninit(void)
 {
     passthrough_is_initialized=0;
 
-    map_release(passthrough.permit_map,NULL);
+    map_release(passthrough.permit_map,__ixc_passthrough_del_cb);
+}
+
+static void __ixc_passthrough_del_cb(void *data)
+{
+    struct ixc_passthrough_node *node=data;
+    free(node);
 }
 
 inline
@@ -50,7 +57,7 @@ int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
         hwaddr=m->dst_hwaddr;
     }
 
-    is_brd=hwaddr[5] & 0x01;
+    is_brd=hwaddr[0] & 0x01;
     
     // 源端地址的广播mac地址禁止通过
     if(is_brd && IXC_MBUF_FROM_LAN==m->from) return 0;
@@ -62,7 +69,7 @@ int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
         return 0;
     }
 
-    // 多播和广播返回需要直通
+    // 多播和广播需要直通
     return 1;
 }
 
@@ -75,11 +82,38 @@ static void __ixc_passthrough_send_auto_from_lan(struct ixc_mbuf *m)
 }
 
 inline
+static void __ixc_passthrough_send_for_brd(void *data)
+{
+    struct ixc_passthrough_node *node=data;
+    struct ixc_mbuf *m=ixc_mbuf_clone(passthrough_tmp_mbuf);
+
+    if(NULL==m){
+        STDERR("no memory for malloc struct ixc_mbuf");
+        return;
+    }
+
+    ixc_netif_send(m);
+}
+
+inline
 static void __ixc_passthrough_send_auto_from_wan(struct ixc_mbuf *m)
 {
+    int is_brd;
+
     // 直接发送到LAN网口
     m->netif=ixc_netif_get(IXC_NETIF_LAN);
-    ixc_netif_send(m);
+    is_brd=m->dst_hwaddr[0] & 0x01;
+
+    // 非广播数据包直接发送
+    if(!is_brd){
+        ixc_netif_send(m);
+        return;
+    }
+
+    passthrough_tmp_mbuf=m;
+    map_each(passthrough.permit_map,__ixc_passthrough_send_for_brd);
+    ixc_mbuf_put(m);
+    passthrough_tmp_mbuf=NULL;
 }
 
 inline
@@ -98,6 +132,7 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
 {
     int rs;
     char is_found;
+    struct ixc_passthrough_node *node;
 
     if(!passthrough_is_initialized){
         STDERR("not initialized passthrough");
@@ -107,10 +142,19 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
     map_find(passthrough.permit_map,(char *)hwaddr,&is_found);
     if(is_found) return 0;
 
-    rs=map_add(passthrough.permit_map,(char *)hwaddr,NULL);
+    node=malloc(sizeof(struct ixc_passthrough_node));
+    if(NULL==node){
+        STDERR("cannot malloc for struct ixc_passthrough_node");
+        return -1;
+    }
+
+    memcpy(node->hwaddr,hwaddr,6);
+    
+    rs=map_add(passthrough.permit_map,(char *)hwaddr,node);
 
     if(rs){
         STDERR("cannot add passthrough device");
+        free(node);
         return -1;
     }
 
@@ -123,5 +167,5 @@ void ixc_passthrough_device_del(unsigned char *hwaddr)
         STDERR("not initialized passthrough");
     }
 
-    map_del(passthrough.permit_map,(char *)hwaddr,NULL);
+    map_del(passthrough.permit_map,(char *)hwaddr,__ixc_passthrough_del_cb);
 }

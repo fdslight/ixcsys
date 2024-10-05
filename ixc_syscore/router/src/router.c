@@ -865,7 +865,7 @@ router_passthrough_device_add(PyObject *self,PyObject *args)
 }
 
 static PyObject *
-router_passthrough_hwaddr_del(PyObject *self,PyObject *args)
+router_passthrough_device_del(PyObject *self,PyObject *args)
 {
     unsigned char *hwaddr;
     Py_ssize_t size;
