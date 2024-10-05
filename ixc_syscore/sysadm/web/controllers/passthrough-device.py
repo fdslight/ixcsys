@@ -19,11 +19,13 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "设备MAC地址不能为空")
             return
 
+        hwaddr = hwaddr.replace("-", ":")
+
         if not netutils.is_hwaddr(hwaddr):
             self.json_resp(True, "错误的设备MAC地址格式")
             return
 
-        RPC.fn_call("router", "/config", "passthrough_device_add", hwaddr)
+        RPC.fn_call("router", "/config", "passthrough_device_add", hwaddr, comment=comment)
         self.json_resp(False, "添加成功")
 
     def handle_delete(self):
