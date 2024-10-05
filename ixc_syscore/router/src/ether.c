@@ -121,9 +121,21 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         return;
     }
     
+    // 源mac地址和目标mac地址一致丢弃数据包
     if(!memcmp(header->src_hwaddr,header->dst_hwaddr,6)){
         ixc_mbuf_put(mbuf);
         return;
+    }
+
+    memcpy(mbuf->dst_hwaddr,header->dst_hwaddr,6);
+    memcpy(mbuf->src_hwaddr,header->src_hwaddr,6);
+
+    mbuf->offset+=14;
+    mbuf->link_proto=type;
+
+    if(ixc_passthrough_is_passthrough_traffic(mbuf)){
+        mbuf=ixc_passthrough_send_auto(mbuf);
+        if(NULL==mbuf) return;
     }
     
     // 此处检查MAC地址是否是本地地址,非本地MAC地址丢弃数据包(前提是IPv6直通未开启)
@@ -136,17 +148,6 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
             ixc_mbuf_put(mbuf);
             return;
         }
-    }
-
-    memcpy(mbuf->dst_hwaddr,header->dst_hwaddr,6);
-    memcpy(mbuf->src_hwaddr,header->src_hwaddr,6);
-
-    mbuf->offset+=14;
-    mbuf->link_proto=type;
-
-    if(ixc_passthrough_is_passthrough_traffic(mbuf)){
-        mbuf=ixc_passthrough_send_auto(mbuf);
-        if(NULL==mbuf) return;
     }
     
     if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){
