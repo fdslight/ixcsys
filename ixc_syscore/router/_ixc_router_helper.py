@@ -704,7 +704,7 @@ class rpc(object):
 
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
 
-        b = self.__helper.passthrough_device_add(byte_hwaddr)
+        b = self.__helper.router.passthrough_device_add(byte_hwaddr)
         dic = self.__helper.router_configs['passthrough']
         dic[hwaddr] = comment
 
@@ -717,7 +717,7 @@ class rpc(object):
             return RPC.ERR_ARGS, "wrong hwaddr value"
 
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
-        self.__helper.passthrough_device_del(byte_hwaddr)
+        self.__helper.router.passthrough_device_del(byte_hwaddr)
         dic = self.__helper.router_configs['passthrough']
 
         if hwaddr in dic:
