@@ -10,6 +10,7 @@
 struct ixc_passthrough{
     // 允许的映射HWADDR地址
     struct map *permit_map;
+    unsigned int count;
 };
 
 struct ixc_passthrough_node{

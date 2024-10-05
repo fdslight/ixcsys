@@ -27,6 +27,7 @@ int ixc_passthrough_init(void)
     }
 
     passthrough.permit_map=m;
+    passthrough.count=0;
     passthrough_is_initialized=1;
 
     return 0;
@@ -50,6 +51,9 @@ int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
         STDERR("not initialized passthrough\r\n");
         return 0;
     }
+
+    // 如果没有任何记录,那么不允许直通,主要针对广播报文
+    if(0==passthrough.count) return 0;
 
     if(IXC_MBUF_FROM_LAN==m->from){
         hwaddr=m->src_hwaddr;
@@ -138,15 +142,22 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
         free(node);
         return -1;
     }
+    passthrough.count+=1;
 
     return 0;
 }
 
 void ixc_passthrough_device_del(unsigned char *hwaddr)
 {
+    char is_found;
+
     if(!passthrough_is_initialized){
         STDERR("not initialized passthrough\r\n");
     }
+
+    map_find(passthrough.permit_map,(char *)hwaddr,&is_found);
+
+    if(is_found) passthrough.count-=1;
 
     map_del(passthrough.permit_map,(char *)hwaddr,__ixc_passthrough_del_cb);
 }
