@@ -78,6 +78,9 @@ class rpc(object):
             "qos_unset_tunnel": self.qos_unset_tunnel,
             "qos_set_mpkt_first_size": self.qos_set_mpkt_first_size,
 
+            "passthrough_device_add": self.passthrough_device_add,
+            "passthrough_device_del": self.passthough_device_del,
+
             "cpu_num": self.cpu_num,
             "bind_cpu": self.bind_cpu,
             "router_start_time": self.router_start_time,
@@ -694,6 +697,23 @@ class rpc(object):
         self.__helper.save_wan_configs()
 
         return 0, rs
+
+    def passthrough_device_add(self, hwaddr: str):
+        if not netutils.is_hwaddr(hwaddr):
+            return RPC.ERR_ARGS, "wrong hwaddr value"
+
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+
+        return self.__helper.passthrough_device_add(byte_hwaddr)
+
+    def passthough_device_del(self, hwaddr: str):
+        if not netutils.is_hwaddr(hwaddr):
+            return RPC.ERR_ARGS, "wrong hwaddr value"
+
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+        self.__helper.passthrough_device_del(byte_hwaddr)
+
+        return 0, None
 
     def cpu_num(self):
         return 0, self.__helper.router.cpu_num()
