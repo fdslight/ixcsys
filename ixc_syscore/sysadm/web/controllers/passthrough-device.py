@@ -39,7 +39,7 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的设备MAC地址格式")
             return
 
-        RPC.fn_call("secDNS", "/config", "passthrough_device_del", hwaddr)
+        RPC.fn_call("router", "/config", "passthrough_device_del", hwaddr)
 
         self.json_resp(False, "删除记录成功")
 

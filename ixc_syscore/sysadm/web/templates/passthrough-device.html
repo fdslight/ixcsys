@@ -70,7 +70,7 @@
 <script type="text/javascript">
     $(document).ready(function () {
         $("#ixc-passthrough-device-add").click(function () {
-            let form_content = $("#ixc-passthough-device-form").serialize();
+            let form_content = $("#ixc-passthrough-device-form").serialize();
             $.post("${self.url_prefix}/passthrough-device", form_content, function (result) {
                 let is_error = result["is_error"];
                 let message = result["message"];
