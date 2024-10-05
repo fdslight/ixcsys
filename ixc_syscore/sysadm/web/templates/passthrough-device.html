@@ -49,8 +49,8 @@
         x=0
         devices=self.V["devices"]
         for device in devices:
-            hwaddr=server['hwaddr']
-            comment=server['comment']
+            hwaddr=device['hwaddr']
+            comment=device['comment']
             s="""
             <tr>
                 <td>%d</td>
