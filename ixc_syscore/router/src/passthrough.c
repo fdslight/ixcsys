@@ -36,7 +36,7 @@ inline
 int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
 {
     unsigned char *hwaddr;
-    int is_brd=0,x;
+    int is_brd=0;
     char is_found=0;
 
     if(!passthrough_is_initialized){
@@ -61,7 +61,7 @@ int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
         if(is_found) return 1;
         return 0;
     }
-    
+
     // 多播和广播返回需要直通
     return 1;
 }
@@ -98,7 +98,6 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
 {
     int rs;
     char is_found;
-    void *data;
 
     if(!passthrough_is_initialized){
         STDERR("not initialized passthrough");

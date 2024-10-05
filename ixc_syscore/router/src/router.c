@@ -32,6 +32,7 @@
 #include "sec_net.h"
 #include "traffic_log.h"
 #include "icmpv6.h"
+#include "passthrough.h"
 
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
@@ -846,6 +847,35 @@ router_qos_set_mpkt_first_size(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
+static PyObject *
+router_passthrough_device_add(PyObject *self,PyObject *args)
+{
+    unsigned char *hwaddr;
+    Py_ssize_t size;
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
+
+    rs=ixc_passthrough_device_add(hwaddr);
+    if(rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_passthrough_hwaddr_del(PyObject *self,PyObject *args)
+{
+    unsigned char *hwaddr;
+    Py_ssize_t size;
+    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
+
+    ixc_passthrough_device_del(hwaddr);
+
+    Py_RETURN_NONE;
+}
+
 /// 返回系统的CPU总数
 static PyObject *
 router_cpu_num(PyObject *self,PyObject *args)
@@ -975,6 +1005,9 @@ static PyMethodDef routerMethods[]={
     {"qos_set_tunnel_first",(PyCFunction)router_qos_set_tunnel_first,METH_VARARGS,"set qos tunnel traffic is first"},
     {"qos_unset_tunnel",(PyCFunction)router_qos_unset_tunnel,METH_NOARGS,"unset qos tunnel traffic is first"},
     {"qos_set_mpkt_first_size",(PyCFunction)router_qos_set_mpkt_first_size,METH_VARARGS,"set mpkt first size"},
+    //
+    {"passthrough_device_add",(PyCFunction)router_passthrough_device_add,METH_VARARGS,"add passthrough device"},
+    {"passthrough_device_del",(PyCFunction)router_passthrough_device_del,METH_VARARGS,"delete passthrough device"},
     //
     {"cpu_num",(PyCFunction)router_cpu_num,METH_NOARGS,"get cpu num"},
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},
