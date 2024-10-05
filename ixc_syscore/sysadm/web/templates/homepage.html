@@ -28,9 +28,6 @@ ${self.inherit("base.html")}
                     <a href="${self.url_prefix}/?show=ixc-wan-internet.ixc-${self.V['cur_internet_type']}-dial&page=wan&type=${self.V['cur_internet_type']}">WAN
                         上网设置</a>
                 </li>
-                <li class="list-group-item ixc-left-menu" id="ixc-passthough-device">
-                    <a href="${self.url_prefix}/?show=ixc-passthrough-device&page=passthrough-device">设备直通</a>
-                </li>
                 <li class="list-group-item ixc-left-menu" id="ixc-dhcp-server">
                     <a href="${self.url_prefix}/?show=ixc-dhcp-server&page=dhcp-server">LAN DHCP设置</a>
                 </li>
@@ -45,6 +42,9 @@ ${self.inherit("base.html")}
                 </li>
                 <li class="list-group-item ixc-left-menu" id="ixc-dns-localrr">
                     <a href="${self.url_prefix}/?show=ixc-dns-localrr&page=dns-localrr">本地DNS解析</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-passthrough-device">
+                    <a href="${self.url_prefix}/?show=ixc-passthrough-device&page=passthrough-device">二层设备直通</a>
                 </li>
                 <li class="list-group-item ixc-left-menu" id="ixc-ipv6">
                     <a href="${self.url_prefix}/?show=ixc-ipv6&page=ipv6">IPv6设置</a>
