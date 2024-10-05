@@ -6,7 +6,6 @@
 
 static int passthrough_is_initialized=0;
 static struct ixc_passthrough passthrough;
-static struct ixc_mbuf *passthrough_tmp_mbuf=NULL;
 
 static void __ixc_passthrough_del_cb(void *data)
 {
@@ -75,64 +74,20 @@ int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
 }
 
 inline
-static void __ixc_passthrough_send_auto_from_lan(struct ixc_mbuf *m)
-{
-    // 直接发送流量到WAN网口
-    m->netif=ixc_netif_get(IXC_NETIF_WAN);
-    ixc_netif_send(m);
-}
-
-inline
-static void __ixc_passthrough_send_for_brd(void *data)
-{
-    struct ixc_passthrough_node *node=data;
-    struct ixc_ether_header *eth_header=NULL;
-
-    struct ixc_mbuf *m=ixc_mbuf_clone(passthrough_tmp_mbuf);
-
-    if(NULL==m){
-        STDERR("no memory for malloc struct ixc_mbuf\r\n");
-        return;
-    }
-
-    // 修改目标MAC地址头部,使其他机器收不到直通MAC广播
-    eth_header=(struct ixc_ether_header *)(m->data+m->begin);
-    memcpy(eth_header->dst_hwaddr,node->hwaddr,6);
-
-    ixc_netif_send(m);
-}
-
-inline
-static void __ixc_passthrough_send_auto_from_wan(struct ixc_mbuf *m)
-{
-    int is_brd;
-
-    // 直接发送到LAN网口
-    m->netif=ixc_netif_get(IXC_NETIF_LAN);
-    is_brd=m->dst_hwaddr[0] & 0x01;
-
-    // 非广播数据包直接发送
-    if(!is_brd){
-        ixc_netif_send(m);
-        return;
-    }
-
-    passthrough_tmp_mbuf=m;
-    map_each(passthrough.permit_map,__ixc_passthrough_send_for_brd);
-    ixc_mbuf_put(m);
-    passthrough_tmp_mbuf=NULL;
-}
-
-inline
 void ixc_passthrough_send_auto(struct ixc_mbuf *m)
 {
+    struct ixc_netif *netif=NULL;
+
     if(!passthrough_is_initialized){
         STDERR("not initialized passthrough\r\n");
         return;
     }
 
-    if(IXC_MBUF_FROM_LAN==m->from) __ixc_passthrough_send_auto_from_lan(m);
-    else __ixc_passthrough_send_auto_from_wan(m);
+    if(IXC_MBUF_FROM_LAN==m->from) netif=ixc_netif_get(IXC_NETIF_WAN);
+    else netif=ixc_netif_get(IXC_NETIF_LAN);
+
+    m->netif=netif;
+    ixc_netif_send(m);
 }
 
 int ixc_passthrough_device_add(unsigned char *hwaddr)
