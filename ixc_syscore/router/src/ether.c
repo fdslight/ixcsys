@@ -10,6 +10,7 @@
 #include "pppoe.h"
 #include "route.h"
 #include "traffic_log.h"
+#include "passthrough.h"
 
 #include "../../../pywind/clib/debug.h"
 
@@ -142,6 +143,11 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
 
     mbuf->offset+=14;
     mbuf->link_proto=type;
+
+    if(ixc_passthrough_is_passthrough_traffic(mbuf)){
+        ixc_passthrough_send_auto(mbuf);
+        return;
+    }
     
     if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){
         // 如果WAN口开启PPPoE那么限制只支持PPPoE数据包
