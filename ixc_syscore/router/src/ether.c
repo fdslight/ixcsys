@@ -133,6 +133,7 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     mbuf->offset+=14;
     mbuf->link_proto=type;
 
+    // 注意这段检查直通代码要在检查是否是自己MAC地址之前
     if(ixc_passthrough_is_passthrough_traffic(mbuf)){
         mbuf=ixc_passthrough_send_auto(mbuf);
         if(NULL==mbuf) return;
