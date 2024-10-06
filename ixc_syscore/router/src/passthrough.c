@@ -2,6 +2,8 @@
 
 #include "passthrough.h"
 #include "netif.h"
+#include "route.h"
+
 #include "../../../pywind/clib/debug.h"
 
 static int passthrough_is_initialized=0;
@@ -65,6 +67,9 @@ int ixc_passthrough_is_passthrough_traffic(struct ixc_mbuf *m)
     
     // 源端地址的广播mac地址禁止通过
     if(is_brd && IXC_MBUF_FROM_LAN==m->from) return 0;
+
+    // 当启用IPv6直通功能时禁用IPv6,与IPv6直通功能需要处理路由功能冲突
+    if(m->link_proto==0x86dd && ixc_route_is_enabled_ipv6_pass()) return 0;
 
     // 检查MAC地址是否是多播或者广播地址
     if(!is_brd){
