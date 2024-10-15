@@ -577,11 +577,11 @@ class rpc(object):
     def src_filter_set_protocols(self, protocol: str):
         seq = list(bytes(0xff))
         if protocol == "UDP" or protocol == "ALL":
-            seq[17] = 1
+            seq[17] = 0xff
         if protocol == "TCP" or protocol == "ALL":
-            seq[6] = 1
+            seq[6] = 0xff
         if protocol == "UDPLite" or protocol == "ALL":
-            seq[136] = 1
+            seq[136] = 0xff
 
         byte_data = bytes(seq)
 

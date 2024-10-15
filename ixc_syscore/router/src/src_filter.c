@@ -57,8 +57,6 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
             ixc_qos_add(m);
             return;
         }
-        subnet_calc_with_msk(iphdr->src_addr,src_filter.ip_mask,0,result);
-
         is_subnet=is_same_subnet_with_msk(iphdr->src_addr,src_filter.ip_subnet,src_filter.ip_mask,0);
     }
 
