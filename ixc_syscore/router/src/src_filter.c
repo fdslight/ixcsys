@@ -15,7 +15,7 @@ static struct ixc_src_filter src_filter;
 static void ixc_src_filter_send(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=m->netif;
-    int is_not_subnet,size;
+    int is_subnet,size;
     unsigned char result[16];
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
@@ -49,8 +49,7 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
             ixc_qos_add(m);
             return;
         }
-        subnet_calc_with_msk(ip6hdr->src_addr,src_filter.ip6_mask,1,result);
-        is_not_subnet=memcmp(src_filter.ip6_subnet,result,16);
+        is_subnet=is_same_subnet_with_msk(ip6hdr->src_addr,src_filter.ip6_subnet,src_filter.ip6_mask,1);
         
     }else{
         ipproto=iphdr->protocol;
@@ -59,11 +58,12 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
             return;
         }
         subnet_calc_with_msk(iphdr->src_addr,src_filter.ip_mask,0,result);
-        is_not_subnet=memcmp(src_filter.ip_subnet,result,4);
+
+        is_subnet=is_same_subnet_with_msk(iphdr->src_addr,src_filter.ip_subnet,src_filter.ip_mask,0);
     }
 
     // 不在要求的地址范围内那么直接发送到下一个节点
-    if(is_not_subnet){
+    if(!is_subnet){
         ixc_qos_add(m);
         return;
     }
