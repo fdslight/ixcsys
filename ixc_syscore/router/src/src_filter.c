@@ -38,6 +38,8 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
 
     // 如果是本机的数据包那么就跳过
     if(!memcmp(addr_ptr,pkt_addr_ptr,size)){
+        STDERR("AA:%d.%d.%d.%d\n",pkt_addr_ptr[0],pkt_addr_ptr[1],pkt_addr_ptr[2],pkt_addr_ptr[3]);
+        STDERR("BB:%d.%d.%d.%d\n",addr_ptr[0],addr_ptr[1],addr_ptr[2],addr_ptr[3]);
         ixc_qos_add(m);
         return;
     }
@@ -120,7 +122,6 @@ void ixc_src_filter_handle(struct ixc_mbuf *m)
 {
     // 如果没启用源地址协议过滤,那么直接发送数据
     if(!src_filter.is_opened) {
-        STDERR("no open source filter\r\n");
         ixc_qos_add(m);
     }else{
         ixc_src_filter_send(m);
