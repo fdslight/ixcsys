@@ -21,7 +21,7 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
     unsigned char ipproto=0,*addr_ptr,*pkt_addr_ptr;
 
     // 只处理LAN网卡
-    if(IXC_NETIF_LAN!=netif->type){
+    if(IXC_MBUF_FROM_LAN!=m->from){
         ixc_qos_add(m);
         return;
     }
@@ -38,8 +38,6 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
 
     // 如果是本机的数据包那么就跳过
     if(!memcmp(addr_ptr,pkt_addr_ptr,size)){
-        STDERR("AA:%d.%d.%d.%d\n",pkt_addr_ptr[0],pkt_addr_ptr[1],pkt_addr_ptr[2],pkt_addr_ptr[3]);
-        STDERR("BB:%d.%d.%d.%d\n",addr_ptr[0],addr_ptr[1],addr_ptr[2],addr_ptr[3]);
         ixc_qos_add(m);
         return;
     }
@@ -53,24 +51,19 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
         is_subnet=is_same_subnet_with_msk(ip6hdr->src_addr,src_filter.ip6_subnet,src_filter.ip6_mask,1);
         
     }else{
-        STDERR("AAAA\r\n");
         ipproto=iphdr->protocol;
         if(!src_filter.protocols[ipproto]){
-            STDERR("BBB\r\n");
             ixc_qos_add(m);
             return;
         }
         is_subnet=is_same_subnet_with_msk(iphdr->src_addr,src_filter.ip_subnet,src_filter.ip_mask,0);
-        STDERR("CC\r\n");
     }
 
     // 不在要求的地址范围内那么直接发送到下一个节点
     if(!is_subnet){
-        STDERR("DD\r\n");
         ixc_qos_add(m);
         return;
     }
-    STDERR("EE\r\n");
     //ixc_router_send(netif->type,ipproto,IXC_FLAG_SRC_FILTER,m->data+m->offset,m->tail-m->offset);
     ixc_npfwd_send_raw(m,ipproto,IXC_FLAG_SRC_FILTER);
 }
