@@ -845,7 +845,7 @@ static void ixc_route_handle_for_ip(struct ixc_mbuf *m)
         memcpy(m->next_host,r->gw,4);
     }
 
-    // 如果是LAN节点那么经过UDP source,否则的直接通过qos出去
+    // 如果是LAN节点那么经过src filter,否则的直接通过qos出去
     if(m->from==IXC_MBUF_FROM_LAN){
         ixc_src_filter_handle(m);
     }else{

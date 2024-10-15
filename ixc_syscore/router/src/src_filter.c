@@ -16,7 +16,6 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=m->netif;
     int is_subnet,size;
-    unsigned char result[16];
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
     unsigned char ipproto=0,*addr_ptr,*pkt_addr_ptr;
@@ -52,19 +51,24 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
         is_subnet=is_same_subnet_with_msk(ip6hdr->src_addr,src_filter.ip6_subnet,src_filter.ip6_mask,1);
         
     }else{
+        STDERR("AAAA\r\n");
         ipproto=iphdr->protocol;
         if(!src_filter.protocols[ipproto]){
+            STDERR("BBB\r\n");
             ixc_qos_add(m);
             return;
         }
         is_subnet=is_same_subnet_with_msk(iphdr->src_addr,src_filter.ip_subnet,src_filter.ip_mask,0);
+        STDERR("CC\r\n");
     }
 
     // 不在要求的地址范围内那么直接发送到下一个节点
     if(!is_subnet){
+        STDERR("DD\r\n");
         ixc_qos_add(m);
         return;
     }
+    STDERR("EE\r\n");
     //ixc_router_send(netif->type,ipproto,IXC_FLAG_SRC_FILTER,m->data+m->offset,m->tail-m->offset);
     ixc_npfwd_send_raw(m,ipproto,IXC_FLAG_SRC_FILTER);
 }
