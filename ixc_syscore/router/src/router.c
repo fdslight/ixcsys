@@ -1499,7 +1499,7 @@ static void ixc_start(int debug)
 
     rs=ixc_src_filter_init();
     if(rs<0){
-        STDERR("cannot init P2P\r\n");
+        STDERR("cannot init src filter\r\n");
         exit(EXIT_SUCCESS);
     }
 
