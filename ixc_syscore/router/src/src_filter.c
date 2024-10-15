@@ -118,7 +118,11 @@ int ixc_src_filter_set_protocols(unsigned char *protocols)
 
 void ixc_src_filter_handle(struct ixc_mbuf *m)
 {
-    // 如果没启用P2P那么直接发送数据
-    if(!src_filter.is_opened) ixc_qos_add(m);
-    else ixc_src_filter_send(m);
+    // 如果没启用源地址协议过滤,那么直接发送数据
+    if(!src_filter.is_opened) {
+        STDERR("no open source filter\r\n");
+        ixc_qos_add(m);
+    }else{
+        ixc_src_filter_send(m);
+    }
 }
