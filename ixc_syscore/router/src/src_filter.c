@@ -14,7 +14,6 @@ static struct ixc_src_filter src_filter;
 
 static void ixc_src_filter_send(struct ixc_mbuf *m)
 {
-    struct ixc_netif *netif=m->netif;
     int is_subnet,size;
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
