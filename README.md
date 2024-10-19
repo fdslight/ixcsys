@@ -21,7 +21,7 @@ X86_64 with SSE2,ARM64 with NEON or other 64bit CPU.
 10. sudo apt install curl 
 
 # build ixcsys
-1.first you need run "python3 configure.py" for configure your environment(for example,"python3 build_config.py default")     
+1.first you need run "python3 configure.py" for configure your environment(for example,"python3 build_config.py nodebug")     
 2.secondly you need run "python3 make.py build_all" for build all apps     
 3.last run "python3 make.py install_all" for install to directory "/opt/ixcsys"    
 
