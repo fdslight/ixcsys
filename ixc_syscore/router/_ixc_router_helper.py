@@ -79,7 +79,7 @@ class rpc(object):
             "qos_set_mpkt_first_size": self.qos_set_mpkt_first_size,
 
             "passthrough_device_add": self.passthrough_device_add,
-            "passthrough_device_del": self.passthough_device_del,
+            "passthrough_device_del": self.passthrough_device_del,
 
             "cpu_num": self.cpu_num,
             "bind_cpu": self.bind_cpu,
@@ -712,7 +712,7 @@ class rpc(object):
 
         return 0, b
 
-    def passthough_device_del(self, hwaddr: str):
+    def passthrough_device_del(self, hwaddr: str):
         if not netutils.is_hwaddr(hwaddr):
             return RPC.ERR_ARGS, "wrong hwaddr value"
 

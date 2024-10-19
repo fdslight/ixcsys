@@ -164,7 +164,7 @@ int ixc_ip6sec_check_ok(struct ixc_mbuf *m)
     sec_info=map_find(ip6sec.m,key,&is_found);
     // 检查WAN网口流进来的流量
     if(m->from==IXC_MBUF_FROM_WAN){
-        // 找不到访问记录那么旧删除
+        // 找不到访问记录那么就删除
         if(NULL==sec_info){
             IXC_PRINT_IP6("src address ",header->src_addr);
             IXC_PRINT_IP6("dst address ",header->dst_addr);
