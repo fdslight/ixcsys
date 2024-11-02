@@ -112,7 +112,6 @@ class dispatcher(object):
             if wait_time < 0: wait_time = 0
             if self.__loop_tasks: wait_time = 0
 
-            print(wait_time)
             event_set = self.__poll.poll(wait_time)
 
             self.__handle_events(event_set)
