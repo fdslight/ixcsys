@@ -203,6 +203,7 @@ podcasts.captivate.fm:1
 *.github.io:1
 *.githubusercontent.com:1
 *.githubapp.com:1
+*.github.com:1
 *.bit.ly:1
 *.dyndns.org:1
 *.fastly.net:1
