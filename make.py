@@ -25,6 +25,7 @@ __builds = [
 __helper = """
     help                            show help
     build build_name [cflags]       build software
+    dev_build build_name [cflags]   build software for developer
     build_all [cflags]              build all
     install_lib                     install system library
     gen_update                      generate update archive
@@ -96,8 +97,8 @@ def build_config_args(insert_s: str, _list: list):
     return " ".join(results)
 
 
-def __build(build_name, args: list):
-    if build_name not in __builds:
+def __build(build_name, args: list, for_developer=False):
+    if build_name not in __builds and not for_developer:
         print("ERROR:not found build name %s" % build_name)
         return
 
@@ -387,7 +388,8 @@ def main():
 
     action = sys.argv[1]
     if action not in (
-            "help", "build", "build_all", "install", "install_all", "show_builds", "gen_update", "rescue_install",
+            "help", "build", "dev_build", "build_all", "install", "install_all", "show_builds", "gen_update",
+            "rescue_install",
             "install_lib", "gen_bin_install", "proxy_rule_update", "app_data_update"):
         print(__helper)
         return
@@ -403,11 +405,15 @@ def main():
         build_binary_install_pkg()
         return
 
-    if action == "build":
+    if action in ("build", "dev_build",):
         if len(sys.argv) < 3:
             print(__helper)
             return
-        __build(sys.argv[2], sys.argv[3:])
+        if action == "dev_build":
+            for_developer = True
+        else:
+            for_developer = False
+        __build(sys.argv[2], sys.argv[3:], for_developer=for_developer)
         return
 
     if action == "build_all":
