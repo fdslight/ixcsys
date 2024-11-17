@@ -1,5 +1,7 @@
 #!/bin/sh
 
+unset LANG
+
 cd ../ipxe-1.21.1/src
 
 make -j8 bin/undionly.kpxe EMBED=../../ixcsys/ixc_syscore/sysadm/data/ipxe_embed.php CERT=../../ixcsys/shared_data/ca-bundle.crt TRUST=../../ixcsys/shared_data/ca-bundle.crt NO_WERROR=1
