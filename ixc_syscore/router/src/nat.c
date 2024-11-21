@@ -268,7 +268,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             }
         }else{
             //DBG_FLAGS;
-            // 处理WAN的非ICMP echo relay数据包
+            // 处理WAN的非ICMP echo reply数据包
             if(8!=icmphdr->type &&  0!=icmphdr->type){
                 if(icmphdr->type!=3 && icmphdr->type!=11 && icmphdr->type!=12 && icmphdr->type!=4){
                     ixc_mbuf_put(m);
