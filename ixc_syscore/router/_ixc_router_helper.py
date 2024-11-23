@@ -305,7 +305,7 @@ class rpc(object):
     def wan_ready_ok(self):
         return 0, self.__helper.router.wan_ready_ok()
 
-    def set_fwd_port(self, flags: int, _id: bytes, fwd_port: int):
+    def set_fwd_port(self, flags: int, _id: bytes, fwd_port: int, address="127.0.0.1"):
         if not isinstance(_id, bytes):
             return 0, (False, "Wrong _id data type")
         if len(_id) != 16:
@@ -323,7 +323,12 @@ class rpc(object):
         except ValueError:
             return RPC.ERR_ARGS, "wrong flags value type"
 
-        rs = self.__helper.router.netpkt_forward_set(_id, fwd_port, flags)
+        if netutils.is_ipv6_address(address):
+            return RPC.ERR_ARGS, "wrong ip address value"
+
+        byte_ip = socket.inet_pton(socket.AF_INET, address)
+
+        rs = self.__helper.router.netpkt_forward_set(_id, byte_ip, fwd_port, flags)
 
         return 0, (rs, "")
 

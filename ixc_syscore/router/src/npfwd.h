@@ -11,9 +11,10 @@
 
 struct ixc_npfwd_info{
     unsigned char key[16];
+    unsigned char address[16];
     int is_used;
-    unsigned char pad[2];
     unsigned short port;
+    unsigned char pad[2];
 };
 
 #pragma pack(push)
@@ -47,7 +48,8 @@ void ixc_npfwd_uninit(void);
 int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char flags);
 
 /// 设置重定向
-int ixc_npfwd_set_forward(unsigned char *key,unsigned short port,int flags);
+int ixc_npfwd_set_forward(unsigned char *key,unsigned char *v4addr,unsigned short port,int flags);
+
 /// 取消重定向
 void ixc_npfwd_disable(int flags);
 

@@ -685,17 +685,23 @@ static PyObject *
 router_netpkt_forward_set(PyObject *self,PyObject *args)
 {
     unsigned char *key;
+    unsigned char *address;
     Py_ssize_t key_size;
+    Py_ssize_t addr_len;
     unsigned short port;
     int flags,rs;
 
-    if(!PyArg_ParseTuple(args,"y#Hi",&key,&key_size,&port,&flags)) return NULL;
+    if(!PyArg_ParseTuple(args,"y#y#Hi",&key,&key_size,&address,&addr_len,&port,&flags)) return NULL;
 
     if(key_size!=16){
         Py_RETURN_FALSE;
     }
 
-    rs=ixc_npfwd_set_forward(key,port,flags);
+    if(addr_len!=4){
+        Py_RETURN_FALSE;
+    }
+
+    rs=ixc_npfwd_set_forward(key,address,port,flags);
     if(rs<0){
         Py_RETURN_FALSE;
     }

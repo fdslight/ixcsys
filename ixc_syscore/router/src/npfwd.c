@@ -24,6 +24,7 @@ static void ixc_npfwd_rx_data(int fd)
     struct ixc_mbuf *m;
     ssize_t recv_size;
     struct sockaddr from;
+    struct sockaddr_in *from_addr;
     socklen_t fromlen;
     struct ixc_npfwd_header *header;
     struct ixc_npfwd_info *info;
@@ -50,6 +51,7 @@ static void ixc_npfwd_rx_data(int fd)
             continue;
         }
 
+
         //DBG_FLAGS;
         m->begin=IXC_MBUF_BEGIN;
         m->offset=IXC_MBUF_BEGIN;
@@ -70,6 +72,14 @@ static void ixc_npfwd_rx_data(int fd)
             ixc_mbuf_put(m);
             continue;
         }
+
+        // 验证地址来源,发送的地址必须和接收的地址一致
+        from_addr=(struct sockaddr_in *)(&from);
+        if(memcmp(&(from_addr->sin_addr.s_addr),info->address,4)){
+            ixc_mbuf_put(m);
+            continue;
+        }
+
         //DBG_FLAGS;
         // 验证key是否一致
         if(memcmp(header->key,info->key,16)){
@@ -119,10 +129,6 @@ static void ixc_npfwd_tx_data(void)
     struct ev *ev;
     ssize_t sent_size;
     socklen_t tolen;
-    unsigned char buf[16];
-
-    inet_pton(AF_INET,"127.0.0.1",buf);
-    memcpy(&(sent_addr.sin_addr.s_addr),buf,4);
 
     // 常量提前赋值,加快速度
     sent_addr.sin_family=AF_INET;
@@ -152,6 +158,7 @@ static void ixc_npfwd_tx_data(void)
             continue;
         }
 
+        memcpy(&(sent_addr.sin_addr.s_addr),info->address,4);
         sent_addr.sin_port=info->port;
 
         sent_size=sendto(npfwd.fileno,m->data+m->begin,m->end-m->begin,0,(struct sockaddr *)&sent_addr,tolen);
@@ -228,7 +235,7 @@ int ixc_npfwd_init(struct ev_set *ev_set)
     memset(&in_addr,'0',sizeof(struct sockaddr_in));
 
     in_addr.sin_family=AF_INET;
-    inet_pton(AF_INET,"127.0.0.1",buf);
+    inet_pton(AF_INET,"0.0.0.0",buf);
 
     memcpy(&(in_addr.sin_addr.s_addr),buf,4);
 	in_addr.sin_port=htons(8964);
@@ -335,7 +342,7 @@ int ixc_npfwd_send_raw(struct ixc_mbuf *m,unsigned char ipproto,unsigned char fl
     return 0;
 }
 
-int ixc_npfwd_set_forward(unsigned char *key,unsigned short port,int flags)
+int ixc_npfwd_set_forward(unsigned char *key,unsigned char *v4addr,unsigned short port,int flags)
 {
     struct ixc_npfwd_info *info;
 
@@ -356,6 +363,8 @@ int ixc_npfwd_set_forward(unsigned char *key,unsigned short port,int flags)
     // 直接转换为网络序,避免发送再多转换一次
     info->port=htons(port);
     info->is_used=1;
+    
+    memcpy(info->address,v4addr,4);
 
     return 0;
 }
