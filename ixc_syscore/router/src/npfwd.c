@@ -30,7 +30,7 @@ static void ixc_npfwd_rx_data(int fd)
     struct ixc_npfwd_info *info;
     struct ixc_netif *netif;
 
-    for(int n=0;n<10;n++){
+    for(int n=0;n<32;n++){
         m=ixc_mbuf_get();
         if(NULL==m){
             STDERR("cannot get mbuf\r\n");
@@ -50,7 +50,6 @@ static void ixc_npfwd_rx_data(int fd)
             ixc_mbuf_put(m);
             continue;
         }
-
 
         //DBG_FLAGS;
         m->begin=IXC_MBUF_BEGIN;
@@ -76,6 +75,11 @@ static void ixc_npfwd_rx_data(int fd)
         // 验证地址来源,发送的地址必须和接收的地址一致
         from_addr=(struct sockaddr_in *)(&from);
         if(memcmp(&(from_addr->sin_addr.s_addr),info->address,4)){
+            ixc_mbuf_put(m);
+            continue;
+        }
+        // 验证端口是否合法
+        if(from_addr->sin_port!=info->port){
             ixc_mbuf_put(m);
             continue;
         }

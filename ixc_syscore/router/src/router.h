@@ -18,6 +18,8 @@
 #define IXC_FLAG_TRAFFIC_LOG 5
 /// 以太网直通数据包
 #define IXC_FLAG_ETHER_PASS 6
+/// 系统日志
+#define IXC_FLAG_SYSLOG 7
 
 
 #include<sys/types.h>
