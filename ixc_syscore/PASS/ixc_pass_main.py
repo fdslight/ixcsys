@@ -17,6 +17,7 @@ from pywind.global_vars import global_vars
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
+import ixc_syslib.pylib.osnet as osnet
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -153,6 +154,10 @@ class service(dispatcher.dispatcher):
 
     def enable_pass(self):
         ifname = self.configs['config']['if_name']
+        if_devs = osnet.get_if_net_devices()
+        if ifname not in if_devs:
+            logging.print_error("cannot found PASS NIC %s" % ifname)
+            return
         RPCClient.fn_call("router", "/config", "start_pass", ifname)
 
     def disable_pass(self):
