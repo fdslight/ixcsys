@@ -82,7 +82,7 @@ class service(dispatcher.dispatcher):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
         RPCClient.wait_processes(["router", ])
-        time.sleep(5)
+        time.sleep(10)
         self.load_configs()
 
         self.create_poll()
