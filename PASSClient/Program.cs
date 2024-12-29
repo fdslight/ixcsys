@@ -153,6 +153,7 @@ namespace MyProject{
             }
 
             IntPtr x=_memcpy(buf,Key,16);
+            buf[16]=2;
             buf[19]=6;
 
             TunnelSocket.SendTo(buf,0,size,SocketFlags.None,new IPEndPoint(PeerAddress,8964));
