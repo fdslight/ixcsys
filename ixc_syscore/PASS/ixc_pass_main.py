@@ -95,6 +95,13 @@ class service(dispatcher.dispatcher):
 
     def load_configs(self):
         self.__configs = conf.ini_parse_from_file(self.__conf_path)
+        myconf = self.__configs["config"]
+        if "key" not in myconf:
+            myconf["key"] = "key"
+        if "peer_host" not in myconf:
+            myconf["peer_host"] = "router.ixcsys.com"
+        if "peer_port" not in myconf:
+            myconf["peer_port"] = 8964
 
     def change_pass(self):
         enable = bool(int(self.__configs['config']['enable']))
@@ -110,8 +117,8 @@ class service(dispatcher.dispatcher):
         return self.__configs
 
     def get_peer_address(self):
-        conf = self.configs["config"]
-        peer_host = conf.get("peer_host", "")
+        myconf = self.configs["config"]
+        peer_host = myconf.get("peer_host", "")
 
         if netutils.is_ipv6_address(peer_host): return ""
         if netutils.is_ipv4_address(peer_host): return peer_host
@@ -162,14 +169,14 @@ class service(dispatcher.dispatcher):
         consts = RPCClient.fn_call("router", "/config", "get_all_consts")
         self.__router_consts = consts
 
-        conf = self.configs["config"]
-        key = conf.get("key", "key").encode()
+        myconf = self.configs["config"]
+        key = myconf.get("key", "key").encode()
         md5 = hashlib.md5()
         md5.update(key)
         rand_key = md5.digest()
 
         try:
-            port = int(conf.get("peer_port", "8964"))
+            port = int(myconf.get("peer_port", "8964"))
         except ValueError:
             port = 8964
 

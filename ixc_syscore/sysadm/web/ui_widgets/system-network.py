@@ -54,6 +54,9 @@ class widget(ui_widget.widget):
             mask = ""
             ip_addr = ""
             ip4_mtu = ""
+            peer_host = config["peer_host"]
+            peer_port = config["peer_port"]
+            pass_key = config["key"]
         else:
             configs = RPC.fn_call("router", "/config", "lan_config_get")
             if_config = configs["if_config"]
@@ -72,4 +75,7 @@ class widget(ui_widget.widget):
                                              "ip4_mtu": ip4_mtu,
                                              "net_devices": avaliable_devices,
                                              "enable_pass": enable_pass,
+                                             "peer_host": peer_host,
+                                             "peer_port": peer_port,
+                                             "pass_key": pass_key,
                                              }
