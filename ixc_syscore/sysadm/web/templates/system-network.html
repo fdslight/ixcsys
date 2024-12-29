@@ -123,9 +123,24 @@
         </div>
         <p class="ixc-prompt">开启之后需要有安装ixcpass的终端</p>
         <div class="form-group row">
-            <div class="col-sm-2">当前连接设备</div>
+            <div class="col-sm-2">客户端地址</div>
             <div class="col-sm-10">
-                <strong>${self.V['connected_device'][0]}&nbsp;&nbsp;${self.V['connected_device'][1]}&nbsp;&nbsp;&nbsp;${self.V['client_update_time']}</strong>
+                <input type="text" class="form-control" name="peer_host" value=""
+                       placeholder="router.ixcsys.com">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">客户端端口</div>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" name="peer_port" value=""
+                       placeholder="8964">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-2">通讯密钥</div>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" name="key" value=""
+                       placeholder="key">
             </div>
         </div>
         <div class="form-group row">

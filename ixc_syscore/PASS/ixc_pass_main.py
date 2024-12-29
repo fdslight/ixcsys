@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import hashlib
+import socket
 import sys, os, signal, time
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -9,14 +11,12 @@ import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.lib.configfile as conf
 import pywind.web.handlers.scgi as scgi
+import pywind.lib.netutils as netutils
 from pywind.global_vars import global_vars
 
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPCClient
 import ixc_syslib.web.route as webroute
-
-import ixc_syscore.PASS.handlers.TrafficPass as TrafficPass
-import ixc_syscore.PASS.handlers.forward as forward
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -61,27 +61,18 @@ def __start_service(debug):
 
 class service(dispatcher.dispatcher):
     __scgi_fd = None
-    __pass_fd = None
-    __forward_fd = None
     __router_consts = None
-
-    __server_port = None
-    __rand_key = None
-
     __debug = None
-    __manage_addr = None
     __conf_path = None
-    # 是否开启了直通功能
-    __enable_pass_flags = None
     __configs = None
+
+    __peer_ipaddr = None
+    __up_time = None
 
     def init_func(self, debug):
         self.__debug = debug
         self.__scgi_fd = -1
-        self.__pass_fd = -1
-        self.__forward_fd = -1
-        self.__rand_key = os.urandom(16)
-        self.__enable_pass_flags = False
+        self.__up_time = time.time()
 
         self.__conf_path = "%s/pass.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
 
@@ -97,13 +88,6 @@ class service(dispatcher.dispatcher):
 
         self.start_pass()
         self.start_scgi()
-
-    def send_message_to_router(self, message: bytes):
-        if self.__pass_fd < 0: return
-        self.get_handler(self.__pass_fd).send_msg(message)
-
-    def send_message_to_client(self, message: bytes):
-        self.get_handler(self.__forward_fd).send_msg(message)
 
     @property
     def conf_dir(self):
@@ -125,23 +109,22 @@ class service(dispatcher.dispatcher):
     def configs(self):
         return self.__configs
 
+    def get_peer_address(self):
+        conf = self.configs["config"]
+        peer_host = conf.get("peer_host", "")
+
+        if netutils.is_ipv6_address(peer_host): return ""
+        if netutils.is_ipv4_address(peer_host): return peer_host
+
+        try:
+            ipaddr = socket.gethostbyname(peer_host)
+        except:
+            return ""
+        # 获取地址
+        return ipaddr
+
     def start_pass(self):
-        consts = RPCClient.fn_call("router", "/config", "get_all_consts")
-        self.__router_consts = consts
-
-        lan_configs = RPCClient.fn_call("router", "/config", "lan_config_get")
-        if_config = lan_configs["if_config"]
-        self.__manage_addr = if_config["manage_addr"]
-
-        self.__pass_fd = self.create_handler(-1, TrafficPass.pass_service)
-        port = self.get_handler(self.__pass_fd).get_sock_port()
-
-        RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_ETHER_PASS"])
-        ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_ETHER_PASS"],
-                                        self.__rand_key, port)
-
-        self.get_handler(self.__pass_fd).set_message_auth(self.__rand_key)
-        self.__forward_fd = self.create_handler(-1, forward.forward_handler)
+        self.reset_pass_address()
         self.change_pass()
 
     def start_scgi(self):
@@ -152,10 +135,6 @@ class service(dispatcher.dispatcher):
         }
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
-
-    @property
-    def manage_addr(self):
-        return self.__manage_addr
 
     @property
     def debug(self):
@@ -176,13 +155,51 @@ class service(dispatcher.dispatcher):
     def device(self):
         return self.get_handler(self.__forward_fd).device
 
-    @property
-    def client_update_time(self):
-        if self.__forward_fd < 0: return ""
-        return self.get_handler(self.__forward_fd).client_update_time
-
     def myloop(self):
-        pass
+        self.update_peer_address()
+
+    def reset_pass_address(self):
+        consts = RPCClient.fn_call("router", "/config", "get_all_consts")
+        self.__router_consts = consts
+
+        conf = self.configs["config"]
+        key = conf.get("key", "key").encode()
+        md5 = hashlib.md5()
+        md5.update(key)
+        rand_key = md5.digest()
+
+        try:
+            port = int(conf.get("peer_port", "8964"))
+        except ValueError:
+            port = 8964
+
+        if port < 1 or port >= 65536:
+            port = 8964
+
+        RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_ETHER_PASS"])
+
+        peer_address = self.get_peer_address()
+        if not peer_address:
+            logging.print_error("cannot find the peer address or peer address error")
+            return
+
+        ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_ETHER_PASS"],
+                                        rand_key, port, address=peer_address)
+
+    def update_peer_address(self):
+        enable = bool(int(self.__configs['config']['enable']))
+
+        now = time.time()
+        if now - self.__up_time >= 0 or now - self.__up_time < 60:
+            return
+
+        if not enable: return
+
+        peer_addr = self.get_peer_address()
+        if peer_addr == "": return
+        if peer_addr != self.__peer_ipaddr:
+            self.reset_pass_address()
+        self.__peer_ipaddr = peer_addr
 
     def release(self):
         self.disable_pass()
