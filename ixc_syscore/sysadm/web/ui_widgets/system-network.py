@@ -44,7 +44,6 @@ class widget(ui_widget.widget):
             ip_addr = ""
             ip4_mtu = public.get("ip4_mtu", 1500)
         elif _type == "pass":
-            connected_device = RPC.fn_call('PASS', "/runtime", "get_connected_device")
             config = RPC.fn_call("PASS", "/config", "config_get")
             if_name = config['if_name']
             if if_name not in avaliable_devices:
@@ -55,7 +54,6 @@ class widget(ui_widget.widget):
             mask = ""
             ip_addr = ""
             ip4_mtu = ""
-            client_update_time = RPC.fn_call('PASS', "/runtime", "get_client_update_time")
         else:
             configs = RPC.fn_call("router", "/config", "lan_config_get")
             if_config = configs["if_config"]
@@ -74,6 +72,4 @@ class widget(ui_widget.widget):
                                              "ip4_mtu": ip4_mtu,
                                              "net_devices": avaliable_devices,
                                              "enable_pass": enable_pass,
-                                             "connected_device": connected_device,
-                                             "client_update_time": client_update_time
                                              }
