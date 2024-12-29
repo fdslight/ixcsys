@@ -100,7 +100,7 @@ class service(dispatcher.dispatcher):
         if "key" not in myconf:
             myconf["key"] = "key"
         if "peer_host" not in myconf:
-            myconf["peer_host"] = "router.ixcsys.com"
+            myconf["peer_host"] = "www.example.com"
         if "peer_port" not in myconf:
             myconf["peer_port"] = 8964
 
