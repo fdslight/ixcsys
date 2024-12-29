@@ -107,7 +107,10 @@ class service(dispatcher.dispatcher):
     def change_pass(self):
         enable = bool(int(self.__configs['config']['enable']))
         self.disable_pass()
-        if enable: self.enable_pass()
+        if enable:
+            self.reset_pass_address()
+            self.enable_pass()
+        return
 
     def save_configs(self):
         self.change_pass()
