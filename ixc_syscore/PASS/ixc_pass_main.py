@@ -195,6 +195,7 @@ class service(dispatcher.dispatcher):
             logging.print_error("cannot find the peer address or peer address error")
             return
 
+        self.__peer_ipaddr = peer_address
         ok, message = RPCClient.fn_call("router", "/config", "set_fwd_port", consts["IXC_FLAG_ETHER_PASS"],
                                         rand_key, port, address=peer_address)
 
