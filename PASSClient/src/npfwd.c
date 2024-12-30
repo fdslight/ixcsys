@@ -34,7 +34,7 @@ static void ixc_npfwd_rx_data(int fd)
         }
 
         recv_size=recvfrom(fd,m->data+IXC_MBUF_BEGIN,IXC_MBUF_DATA_MAX_SIZE-IXC_MBUF_BEGIN,0,&from,&fromlen);
-
+        DBG_FLAGS;
         if(recv_size<0){
             ixc_mbuf_put(m);
             break;
@@ -90,7 +90,7 @@ static void ixc_npfwd_rx_data(int fd)
             ixc_mbuf_put(m);
             return;
         }
-        DBG_FLAGS;
+       
         ixc_netif_send(m);
     }
 }
