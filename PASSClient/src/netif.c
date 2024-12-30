@@ -137,6 +137,7 @@ void ixc_netif_delete()
 int ixc_netif_send(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=&my_netif;
+    int size=0;
 
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -144,6 +145,14 @@ int ixc_netif_send(struct ixc_mbuf *m)
     }
 
     m->next=NULL;
+
+    size=m->end-m->begin;
+    if(size<60){
+        bzero(m->data+m->end,60-size);
+        m->end+=(60-size);
+        m->tail=m->end;
+    }
+
 
     if(NULL==netif->sent_first){
         netif->sent_first=m;
