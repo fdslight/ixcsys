@@ -67,11 +67,13 @@ static void ixc_npfwd_rx_data(int fd)
         // 验证地址来源,发送的地址必须和接收的地址一致
         from_addr=(struct sockaddr_in *)(&from);
         if(memcmp(&(from_addr->sin_addr.s_addr),info->address,4)){
+            DBG_FLAGS;
             ixc_mbuf_put(m);
             continue;
         }
         // 验证端口是否合法
         if(from_addr->sin_port!=info->port){
+            DBG_FLAGS;
             ixc_mbuf_put(m);
             continue;
         }
@@ -79,6 +81,7 @@ static void ixc_npfwd_rx_data(int fd)
         //DBG_FLAGS;
         // 验证key是否一致
         if(memcmp(header->key,info->key,16)){
+            DBG_FLAGS;
             ixc_mbuf_put(m);
             continue;
         }
@@ -86,6 +89,7 @@ static void ixc_npfwd_rx_data(int fd)
         //DBG_FLAGS;
         m->begin=m->offset=m->begin+20;
         if(6!=header->flags){
+            DBG_FLAGS;
             ixc_mbuf_put(m);
             return;
         }
