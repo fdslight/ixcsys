@@ -155,8 +155,8 @@ namespace MyProject{
             IntPtr x=_memcpy(buf,Key,16);
             buf[16]=2;
             buf[19]=6;
-
-            TunnelSocket.SendTo(buf,0,size,SocketFlags.None,new IPEndPoint(PeerAddress,8964));
+            // 这里需要加上头部的20个字节
+            TunnelSocket.SendTo(buf,0,size+20,SocketFlags.None,new IPEndPoint(PeerAddress,8964));
         }
 
 
