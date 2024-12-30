@@ -64,7 +64,7 @@ class helper(object):
     def release(self):
         if self.__tap_fd >= 0:
             self.__runtime.netif_delete()
-        # self.delete_bridge()
+        self.delete_bridge()
 
     def get_peer_address(self, hostname: str):
         if netutils.is_ipv4_address(hostname):
@@ -83,6 +83,9 @@ class helper(object):
 
         self.__peer_address = s
         self.update_peer_address()
+
+    def check_bridge(self):
+        pass
 
     def loop(self):
         self.update_peer_address()
