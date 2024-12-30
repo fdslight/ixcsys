@@ -203,7 +203,7 @@ class service(dispatcher.dispatcher):
         enable = bool(int(self.__configs['config']['enable']))
 
         now = time.time()
-        if now - self.__up_time >= 0 or now - self.__up_time < 60:
+        if 0 <= now - self.__up_time < 60:
             return
 
         if not enable: return
@@ -213,6 +213,7 @@ class service(dispatcher.dispatcher):
         if peer_addr != self.__peer_ipaddr:
             self.reset_pass_address()
         self.__peer_ipaddr = peer_addr
+        self.__up_time = now
 
     def release(self):
         self.disable_pass()
