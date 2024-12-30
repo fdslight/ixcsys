@@ -32,8 +32,9 @@ class widget(ui_widget.widget):
         mask = ""
         avaliable_devices = network.get_available_net_devices()
         enable_pass = False
-        connected_device = ['', '']
-        client_update_time = ""
+        peer_host = ""
+        peer_port = ""
+        pass_key = ""
 
         if _type == "wan":
             configs = RPC.fn_call("router", "/config", "wan_config_get")
