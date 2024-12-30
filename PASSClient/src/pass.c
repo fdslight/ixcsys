@@ -442,7 +442,7 @@ static void ixc_myloop(void)
 static void ixc_start(int debug,char *argv[])
 {
     int rs;
-    int port=9999;
+    int port=atoi(argv[3]);
     if(port<1 || port >= 0xffff){
         printf("ERRROR:wrong port number %s",argv[3]);
         exit(-1);
@@ -487,7 +487,7 @@ static void ixc_start(int debug,char *argv[])
         exit(EXIT_SUCCESS);
     }
 
-    rs=ixc_npfwd_init(&ixc_ev_set,8888);
+    rs=ixc_npfwd_init(&ixc_ev_set,port);
     if(rs<0){
         STDERR("cannot init npfwd\r\n");
         exit(EXIT_SUCCESS);
