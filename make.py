@@ -20,6 +20,7 @@ __builds = [
     "ixc_syscore/secDNS",
     "ixc_syscore/proxy",
     "ixc_syscore/init",
+    "PASSClient",
 ]
 
 __helper = """

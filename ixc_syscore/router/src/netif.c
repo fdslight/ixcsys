@@ -11,7 +11,6 @@
 #include "ether.h"
 #include "addr_map.h"
 #include "route.h"
-#include "debug.h"
 #include "ip6.h"
 #include "debug.h"
 #include "npfwd.h"
