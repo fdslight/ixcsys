@@ -275,6 +275,7 @@ int ixc_npfwd_send(struct ixc_mbuf *m)
 {
     struct ixc_npfwd_info *info;
     struct ixc_npfwd_header *header;
+    int size=0;
 
     if(NULL==m) return -1;
 
@@ -283,6 +284,13 @@ int ixc_npfwd_send(struct ixc_mbuf *m)
     if(!info->is_used){
         ixc_mbuf_put(m);
         return -3;
+    }
+
+    size=m->end-m->begin;
+    if(size<60){
+        bzero(m->data+m->end,60-size);
+        m->end+=(60-size);
+        m->tail=m->end;
     }
 
     m->begin=m->begin-20;
