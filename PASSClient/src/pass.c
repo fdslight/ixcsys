@@ -383,7 +383,7 @@ static int ixc_init_python(int debug,char *argv[])
     }
 
     v=PyBool_FromLong(debug);
-    args=Py_BuildValue("(Nssss)",v,argv[2],argv[4],argv[5]);
+    args=Py_BuildValue("(Nsss)",v,argv[2],argv[4],argv[5]);
 
     pfunc=PyObject_GetAttrString(py_module,"helper");
     cls=PyObject_CallObject(pfunc, args);
@@ -442,7 +442,7 @@ static void ixc_myloop(void)
 static void ixc_start(int debug,char *argv[])
 {
     int rs;
-    int port=atoi(argv[3]);
+    int port=9999;
     if(port<1 || port >= 0xffff){
         printf("ERRROR:wrong port number %s",argv[3]);
         exit(-1);
@@ -487,7 +487,7 @@ static void ixc_start(int debug,char *argv[])
         exit(EXIT_SUCCESS);
     }
 
-    rs=ixc_npfwd_init(&ixc_ev_set,(unsigned short)port);
+    rs=ixc_npfwd_init(&ixc_ev_set,8888);
     if(rs<0){
         STDERR("cannot init npfwd\r\n");
         exit(EXIT_SUCCESS);
@@ -530,13 +530,18 @@ int main(int argc,char *argv[])
     }
 
     ixc_set_run_env(argv);
+    
+    if(!strcmp(argv[1],"stop")){
+        ixc_stop();
+        return 0;
+    }
+
+    if(argc!=6){
+        printf("%s\r\n",helper);
+        return -1;
+    }
 
     if(!strcmp(argv[1],"start")){
-        if(argc!=6){
-            printf("%s\r\n",helper);
-            return -1;
-        }
-
         pid=fork();
         if(pid!=0) exit(EXIT_SUCCESS);
 
@@ -551,16 +556,8 @@ int main(int argc,char *argv[])
         return 0;
     }
 
-    if(!strcmp(argv[1],"stop")){
-        ixc_stop();
-        return 0;
-    }
 
     if(!strcmp(argv[1],"debug")){
-        if(argc!=6){
-            printf("%s\r\n",helper);
-            return -1;
-        }
         ixc_start(1,argv);
         return 0;
     }
