@@ -23,7 +23,7 @@ class helper(object):
     __debug = None
     __tap_fd = None
 
-    def __init__(self, debug, ifname: str, LocalPort: int, host: str, key: str):
+    def __init__(self, debug, ifname: str, host: str, key: str):
         self.__debug = debug
         self.__tapname = "ixcpass"
         self.__br_name = "ixcpassbr"
@@ -39,17 +39,6 @@ class helper(object):
             print("ERROR:not support IPv6 address %s" % host)
             sys.exit(1)
 
-        try:
-            i_local_port = int(LocalPort)
-        except ValueError:
-            print("ERROR:wrong local port %s value" % LocalPort)
-            sys.exit(1)
-            return
-
-        if i_local_port < 1 or i_local_port >= 65535:
-            print("ERROR:wrong local port %s value" % LocalPort)
-            sys.exit(1)
-
         self.__peer_address = self.get_peer_address(host)
         self.__ifname = ifname
         byte_key = key.encode()
@@ -61,7 +50,7 @@ class helper(object):
         if self.__tap_fd < 0:
             print("ERROR:cannot create tap device %s" % self.__tapname)
             sys.exit(1)
-        # self.linux_br_create(self.__br_name, [self.__ifname, self.__tapname])
+        self.linux_br_create(self.__br_name, [self.__ifname, self.__tapname])
 
         if self.__peer_address is None: return
         self.set_forward()
@@ -88,7 +77,7 @@ class helper(object):
 
     def update_peer_address(self):
         s = self.get_peer_address(self.__peer_hostname)
-        
+
         if s is None: return
         if s == self.__peer_address: return
 

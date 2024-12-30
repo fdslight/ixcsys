@@ -383,7 +383,7 @@ static int ixc_init_python(int debug,char *argv[])
     }
 
     v=PyBool_FromLong(debug);
-    args=Py_BuildValue("(Nssss)",v,argv[2],argv[3],argv[4],argv[5]);
+    args=Py_BuildValue("(Nssss)",v,argv[2],argv[4],argv[5]);
 
     pfunc=PyObject_GetAttrString(py_module,"helper");
     cls=PyObject_CallObject(pfunc, args);
@@ -487,7 +487,7 @@ static void ixc_start(int debug,char *argv[])
         exit(EXIT_SUCCESS);
     }
 
-    rs=ixc_npfwd_init(&ixc_ev_set);
+    rs=ixc_npfwd_init(&ixc_ev_set,(unsigned short)port);
     if(rs<0){
         STDERR("cannot init npfwd\r\n");
         exit(EXIT_SUCCESS);
@@ -528,7 +528,6 @@ int main(int argc,char *argv[])
         printf("%s\r\n",helper);
         return -1;  
     }
-
 
     ixc_set_run_env(argv);
 

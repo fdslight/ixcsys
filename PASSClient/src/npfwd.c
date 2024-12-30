@@ -189,7 +189,7 @@ static int ixc_npfwd_del_fn(struct ev *ev)
     return 0;
 }
 
-int ixc_npfwd_init(struct ev_set *ev_set)
+int ixc_npfwd_init(struct ev_set *ev_set,unsigned short localPort)
 {
     int listenfd,rs;
     struct sockaddr_in in_addr;
@@ -211,7 +211,7 @@ int ixc_npfwd_init(struct ev_set *ev_set)
     inet_pton(AF_INET,"0.0.0.0",buf);
 
     memcpy(&(in_addr.sin_addr.s_addr),buf,4);
-	in_addr.sin_port=htons(8964);
+	in_addr.sin_port=htons(localPort);
 
     rs=bind(listenfd,(struct sockaddr *)&in_addr,sizeof(struct sockaddr));
 

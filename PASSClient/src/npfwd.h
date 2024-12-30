@@ -39,7 +39,7 @@ struct ixc_npfwd{
     int fileno;
 };
 
-int ixc_npfwd_init(struct ev_set *ev_set);
+int ixc_npfwd_init(struct ev_set *ev_set,unsigned short localPort);
 void ixc_npfwd_uninit(void);
 
 int ixc_npfwd_send(struct ixc_mbuf *m);
