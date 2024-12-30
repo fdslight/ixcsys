@@ -85,10 +85,18 @@ class helper(object):
         self.update_peer_address()
 
     def check_bridge(self):
-        pass
+        """定期检查网卡桥接状态"""
+        fd = os.popen("ip addr | grep %s | grep master" % self.__ifname)
+        s = fd.read()
+        fd.close()
+        if not s:
+            cmd = "ip link set dev %s master %s" % (self.__ifname, self.__br_name,)
+            os.system(cmd)
+        ''''''
 
     def loop(self):
         self.update_peer_address()
+        self.check_bridge()
 
     def linux_br_create(self, br_name: str, added_bind_ifs: list):
         cmds = [
