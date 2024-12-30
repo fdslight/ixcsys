@@ -442,6 +442,11 @@ static void ixc_myloop(void)
 static void ixc_start(int debug,char *argv[])
 {
     int rs;
+    int port=atoi(argv[3]);
+    if(port<1 || port >= 0xffff){
+        printf("ERRROR:wrong port number %s",argv[3]);
+        exit(-1);
+    }
 
     if(!access(pid_path,F_OK)){
         STDERR("process ixc_pass_core exists\r\n");
@@ -519,14 +524,20 @@ int main(int argc,char *argv[])
     const char *helper="start | stop | debug NICName LocalPort Host Key";
     pid_t pid;
 
-    if(argc!=6){
+    if(argc<2){
         printf("%s\r\n",helper);
-        return -1;
+        return -1;  
     }
+
 
     ixc_set_run_env(argv);
 
     if(!strcmp(argv[1],"start")){
+        if(argc!=6){
+            printf("%s\r\n",helper);
+            return -1;
+        }
+
         pid=fork();
         if(pid!=0) exit(EXIT_SUCCESS);
 
@@ -547,6 +558,10 @@ int main(int argc,char *argv[])
     }
 
     if(!strcmp(argv[1],"debug")){
+        if(argc!=6){
+            printf("%s\r\n",helper);
+            return -1;
+        }
         ixc_start(1,argv);
         return 0;
     }
