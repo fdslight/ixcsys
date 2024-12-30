@@ -109,6 +109,7 @@ class helper(object):
         for if_name in added_bind_ifs:
             cmd = "ip link set dev %s master %s" % (if_name, br_name,)
             os.system(cmd)
+            os.system("ip link set %s promisc on" % if_name)
 
     def delete_bridge(self):
         os.system("ip link set %s nomaster" % self.__tapname)
