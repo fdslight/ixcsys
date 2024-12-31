@@ -252,8 +252,14 @@ void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m)
 void ixc_passthrough_send2passdev(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_PASS);
-    m->netif=netif;
+    
+    // 可能直通设备未开启
+    if(NULL==netif){
+        ixc_mbuf_put(m);
+        return;
+    }
 
+    m->netif=netif;
     ixc_netif_send(m);
 }
 
