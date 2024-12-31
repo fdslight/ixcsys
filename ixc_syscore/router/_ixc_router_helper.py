@@ -800,7 +800,7 @@ class helper(object):
         if "passthrough" not in self.__lan_configs:
             self.__lan_configs["passthrough"] = {}
         o = self.__lan_configs["passthrough"]
-        if "if_name" in o: o["if_name"] = ""
+        if "if_name" not in o: o["if_name"] = ""
         if "enable" not in o: o["enable"] = "0"
 
     def save_lan_configs(self):
