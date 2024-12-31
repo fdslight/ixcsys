@@ -19,8 +19,12 @@ class controller(base_controller.BaseController):
         if not s_is_passdev:
             is_passdev = False
         else:
-            is_passdev = True
-
+            try:
+                is_passdev = bool(int(s_is_passdev))
+            except ValueError:
+                is_passdev = False
+            ''''''
+        ''''''
         if hwaddr is None:
             self.json_resp(True, "设备MAC地址不能为空")
             return
