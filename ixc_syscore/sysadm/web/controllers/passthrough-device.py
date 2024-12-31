@@ -14,7 +14,12 @@ class controller(base_controller.BaseController):
     def handle_add(self):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
         comment = self.request.get_argument("comment", is_seq=False, is_qs=False, default="")
-        is_passdev = False
+        s_is_passdev = self.request.get_argument("is_passdev", is_seq=False, is_qs=False, default=None)
+
+        if not s_is_passdev:
+            is_passdev = False
+        else:
+            is_passdev = True
 
         if hwaddr is None:
             self.json_resp(True, "设备MAC地址不能为空")
