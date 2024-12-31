@@ -140,6 +140,11 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
             return;
         }
     }
+
+    if(IXC_NETIF_PASS==netif->type){
+        ixc_passthrough_handle_from_passdev(mbuf);
+        return;
+    }
     
     // 检查是否需要直通到WAN口或者LAN口
     // 注意这段检查直通代码要在检查是否是自己MAC地址之前
