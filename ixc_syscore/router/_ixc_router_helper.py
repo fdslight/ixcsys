@@ -947,8 +947,6 @@ class helper(object):
             self.router.netif_delete(router.IXC_NETIF_LAN)
         if self.__if_wan_fd > 0:
             self.router.netif_delete(router.IXC_NETIF_WAN)
-        if self.__if_pass_fd > 0:
-            self.router.netif_delete(router.IXC_NETIF_PASS)
 
         self.__if_lan_fd = -1
         self.__if_wan_fd = -1
@@ -1300,6 +1298,7 @@ class helper(object):
         self.reset_port_map()
 
         self.start_security()
+        self.start_pass()
 
     @property
     def router(self):
