@@ -19,9 +19,14 @@ def is_stopped_all_process():
         # 去除非ixcsys进程
         if line.find("tftpd") >= 0: continue
         if line.find("grep") >= 0: continue
+        if line.find("cron_updater") >= 0: continue
         results.append(line)
+        print(line)
 
-    print(results)
+    #print(results)
+    if not results:
+        return True
+    return False
 
 
 def do_update():
