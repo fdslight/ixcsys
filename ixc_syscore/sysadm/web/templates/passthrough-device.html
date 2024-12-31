@@ -23,6 +23,10 @@
                             <input type="text" class="form-control" name="hwaddr"/>
                         </div>
                         <div class="form-group">
+                            <label>是否使用直通专用网口</label>
+                            <input type="text" class="form-control" name="is_passdev"/>
+                        </div>
+                        <div class="form-group">
                             <label>描述</label>
                             <input type="text" class="form-control" name="comment"/>
                         </div>
@@ -40,6 +44,7 @@
         <tr>
             <th scope="col">序号</th>
             <th scope="col">设备MAC</th>
+            <th>直通专用网口</th>
             <th scope="col">描述</th>
             <th scope="col">操作</th>
         </tr>
@@ -48,19 +53,18 @@
         <%
         x=0
         devices=self.V["devices"]
-        for device in devices:
-            hwaddr=device
-            comment=devices[hwaddr]
+        for hwaddr,is_passdev,comment in devices:
             s="""
             <tr>
                 <td>%d</td>
+                <td>%s</td>
                 <td>%s</td>
                 <td>%s</td>
                 <td><a href="#" class="ixc-passthrough-device-do" name="%s">删除</a>
                     <input type="hidden" value="action=delete&hwaddr=%s" id="ixc-passthrough-device-del-%s"/>
                 </td>
             </tr>
-            """ % (x,hwaddr,comment,x,hwaddr,x)
+            """ % (x,hwaddr,is_passdev,comment,x,hwaddr,x)
             self.show(s)
             x+=1
         %>

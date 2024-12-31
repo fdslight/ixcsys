@@ -698,15 +698,20 @@ class rpc(object):
 
         return 0, rs
 
-    def passthrough_device_add(self, hwaddr: str, comment=""):
+    def passthrough_device_add(self, hwaddr: str, is_passdev=False, comment=""):
         if not netutils.is_hwaddr(hwaddr):
             return RPC.ERR_ARGS, "wrong hwaddr value"
 
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
 
-        b = self.__helper.router.passthrough_device_add(byte_hwaddr)
+        b = self.__helper.router.passthrough_device_add(byte_hwaddr, is_passdev)
         dic = self.__helper.router_configs['passthrough']
-        dic[hwaddr] = comment
+
+        # 这里的0和1表示是否是直通到passdev设备
+        if is_passdev:
+            dic[hwaddr] = "0|%s" % comment
+        else:
+            dic[hwaddr] = "1|%s" % comment
 
         self.__helper.save_router_configs()
 
@@ -1234,6 +1239,20 @@ class helper(object):
             self.save_router_configs()
             return
         self.router.bind_cpu(cpu_no)
+
+        passthrough = self.__router_configs["passthrough"]
+        for hwaddr, enable_with_comment in passthrough.items():
+            p = enable_with_comment.find("|")
+            if p != 1:
+                is_passdev = False
+            else:
+                try:
+                    is_passdev = bool(int(enable_with_comment[0:p]))
+                except ValueError:
+                    is_passdev = False
+                ''''''
+            ''''''
+            self.router.passthrough_device_add(hwaddr, is_passdev)
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
         self.__port_map_configs[alias_name] = {

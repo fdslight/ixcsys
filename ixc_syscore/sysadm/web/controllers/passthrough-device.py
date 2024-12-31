@@ -15,6 +15,7 @@ class controller(base_controller.BaseController):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
         comment = self.request.get_argument("comment", is_seq=False, is_qs=False, default="")
 
+
         if hwaddr is None:
             self.json_resp(True, "设备MAC地址不能为空")
             return

@@ -137,8 +137,8 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     if(IXC_NETIF_LAN==netif->type){
         if(ixc_passthrough_is_passthrough2passdev_traffic(mbuf->src_hwaddr)){
             ixc_passthrough_send2passdev(mbuf);
+            return;
         }
-        return;
     }
     
     // 检查是否需要直通到WAN口或者LAN口
