@@ -6,12 +6,34 @@ import os, sys, time
 UPDATE_FILE = "/tmp/ixcsys_update.tar.gz"
 
 
+def is_stopped_all_process():
+    """检查所有进程是否都已经停止
+    """
+    results = []
+    fdst = os.popen("ps -ef | grep ixc_")
+
+    for line in fdst:
+        _list = []
+        line = line.replace("\n", "")
+        line = line.replace("\r", "")
+        # 去除非ixcsys进程
+        if line.find("tftpd") >= 0: continue
+        if line.find("grep") >= 0: continue
+        results.append(line)
+
+    print(results)
+
+
 def do_update():
     if not os.path.isfile(UPDATE_FILE):
         return
 
     cmd = "%s /opt/ixcsys/ixc_main.py restart" % sys.executable
     os.system(cmd)
+
+
+def do_update_immediately():
+    is_stopped_all_process()
 
 
 def start(h, m):
@@ -29,14 +51,14 @@ def start(h, m):
         now_m = int(time.strftime("%M"))
 
         if now_h == h and now_m == m:
-            #print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
+            # print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
             do_update()
 
         time.sleep(30)
 
 
 def main():
-    helper = """argument   HOUR:MINUTE"""
+    helper = """argument   HOUR:MINUTE or immediately"""
     user = os.getenv("USER")
     if user.lower() != "root":
         print("ERROR:run this script must be root user")
@@ -44,6 +66,10 @@ def main():
 
     if len(sys.argv) != 2:
         print(helper)
+        return
+
+    if sys.argv[1] == "immediately":
+        do_update_immediately()
         return
 
     _list = sys.argv[1].split(":")

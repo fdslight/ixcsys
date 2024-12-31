@@ -14,6 +14,8 @@ def get_if_net_devices():
         if if_name[0:3] == "ixc": continue
         # 去除wiregurad网卡
         if if_name[0:2] == "wg": continue
+        # 丢弃无线网卡
+        if if_name[0:2] == "wl": continue
         results.append(if_name)
 
     return results
