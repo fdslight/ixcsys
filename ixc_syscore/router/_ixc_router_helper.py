@@ -126,6 +126,8 @@ class rpc(object):
             "IXC_NETIF_PASS": router.IXC_NETIF_PASS,
             "IXC_SEC_NET_ACT_DROP": router.IXC_SEC_NET_ACT_DROP,
             "IXC_SEC_NET_ACT_ACCEPT": router.IXC_SEC_NET_ACT_ACCEPT,
+
+            "IXC_PASSTHROUGH_DEV_MAX": router.IXC_PASSTHROUGH_DEV_MAX,
         }
 
         return 0, values
@@ -1252,7 +1254,8 @@ class helper(object):
                     is_passdev = False
                 ''''''
             ''''''
-            self.router.passthrough_device_add(hwaddr, is_passdev)
+            byte_hwaddr=netutils.str_hwaddr_to_bytes(hwaddr)
+            self.router.passthrough_device_add(byte_hwaddr, is_passdev)
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
         self.__port_map_configs[alias_name] = {

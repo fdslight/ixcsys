@@ -35,6 +35,14 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的设备MAC地址格式")
             return
 
+        consts = RPC.fn_call("router", "/config", "get_all_consts")
+        router_configs = RPC.fn_call("router", "/config", "router_config_get")
+        passthrough_devices = router_configs["passthrough"]
+
+        if len(passthrough_devices) == consts['IXC_PASSTHROUGH_DEV_MAX']:
+            self.json_resp(True, "支持的设备数超过系统限制,最大支持设备数目为%s" % consts['IXC_PASSTHROUGH_DEV_MAX'])
+            return
+
         RPC.fn_call("router", "/config", "passthrough_device_add", hwaddr, is_passdev=is_passdev, comment=comment)
         self.json_resp(False, "添加成功")
 
