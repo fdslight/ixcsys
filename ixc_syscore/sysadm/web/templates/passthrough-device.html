@@ -68,7 +68,7 @@
                     <input type="hidden" value="action=delete&hwaddr=%s" id="ixc-passthrough-device-del-%s"/>
                 </td>
             </tr>
-            """ % (x,hwaddr,is_passdev,comment,x,hwaddr,x)
+            """ % (x,hwaddr,str(is_passdev),comment,x,hwaddr,x)
             self.show(s)
             x+=1
         %>
