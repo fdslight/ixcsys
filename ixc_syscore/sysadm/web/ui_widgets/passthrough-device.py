@@ -23,14 +23,10 @@ class widget(ui_widget.widget):
                     comment = enable_with_comment
                     is_passdev = False
                 ''''''
-            if is_passdev:
-                s = '是'
-            else:
-                s = '否'
             devices.append(
-                (hwaddr, s, comment)
+                (hwaddr, is_passdev, comment)
             )
 
         uri = "passthrough-device.html"
-        print(devices)
+
         return True, uri, {"devices": devices}
