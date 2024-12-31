@@ -57,8 +57,7 @@ def is_stopped_all_process():
         results.append(line)
 
     # print(results)
-    if not results:
-        return True
+    if not results: return True
     return False
 
 
