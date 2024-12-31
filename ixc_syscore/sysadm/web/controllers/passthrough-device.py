@@ -14,7 +14,7 @@ class controller(base_controller.BaseController):
     def handle_add(self):
         hwaddr = self.request.get_argument("hwaddr", is_seq=False, is_qs=False)
         comment = self.request.get_argument("comment", is_seq=False, is_qs=False, default="")
-
+        is_passdev = False
 
         if hwaddr is None:
             self.json_resp(True, "设备MAC地址不能为空")
@@ -26,7 +26,7 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的设备MAC地址格式")
             return
 
-        RPC.fn_call("router", "/config", "passthrough_device_add", hwaddr, comment=comment)
+        RPC.fn_call("router", "/config", "passthrough_device_add", hwaddr, is_passdev=is_passdev, comment=comment)
         self.json_resp(False, "添加成功")
 
     def handle_delete(self):

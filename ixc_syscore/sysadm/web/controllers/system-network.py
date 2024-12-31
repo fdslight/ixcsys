@@ -147,9 +147,6 @@ class controller(base_controller.BaseController):
     def handle_pass_submit(self):
         ifname = self.request.get_argument('ifname', default='', is_qs=False, is_seq=False)
         enable = self.request.get_argument('enable-pass', default='0', is_qs=False, is_seq=False)
-        peer_host = self.request.get_argument('peer_host', is_qs=False, is_seq=False)
-        peer_port = self.request.get_argument('peer_port', is_qs=False, is_seq=False)
-        pass_key = self.request.get_argument('key', is_qs=False, is_seq=False)
 
         try:
             bool_enable = bool(int(enable))
@@ -169,37 +166,6 @@ class controller(base_controller.BaseController):
         if ifname not in devices:
             self.json_resp(True, "未知的网卡%s" % ifname)
             return
-
-        if not peer_host:
-            self.json_resp(True, "空的客户端主机地址")
-            return
-
-        if netutils.is_ipv6_address(peer_host):
-            self.json_resp(True, "客户端主机地址不能为IPv6地址")
-            return
-
-        try:
-            nport = int(peer_port)
-        except ValueError:
-            self.json_resp(True, "错误的客户端端口值")
-            return
-
-        if nport < 1 or nport >= 0xffff:
-            self.json_resp(True, "错误的客户端端口值,值范围只能为1到65535之间")
-            return
-
-        if not pass_key:
-            self.json_resp(True, "通讯key不能为空值")
-            return
-
-        ch_set = "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM"
-        for c in pass_key:
-            p = ch_set.find(c)
-            if p < 0:
-                self.json_resp(True, "错误的通讯key值,key只能为字母和数字")
-                return
-            ''''''
-        ''''''
 
         config = {
             'enable': enable,
