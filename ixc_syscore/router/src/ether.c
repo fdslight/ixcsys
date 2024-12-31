@@ -133,6 +133,15 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     mbuf->offset+=14;
     mbuf->link_proto=type;
 
+    // 检查是否LAN的数据包是否需要直通PASS网卡
+    if(IXC_NETIF_LAN==netif->type){
+        if(ixc_passthrough_is_passthrough2passdev_traffic(mbuf->src_hwaddr)){
+            ixc_passthrough_send2passdev(mbuf);
+        }
+        return;
+    }
+    
+    // 检查是否需要直通到WAN口或者LAN口
     // 注意这段检查直通代码要在检查是否是自己MAC地址之前
     if(ixc_passthrough_is_passthrough_traffic(mbuf)){
         mbuf=ixc_passthrough_send_auto(mbuf);

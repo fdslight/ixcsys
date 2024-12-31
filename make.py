@@ -14,7 +14,6 @@ import ixc_syslib.pylib.os_info as os_info
 __builds = [
     "ixc_syscore/router",
     "ixc_syscore/sysadm",
-    "ixc_syscore/PASS",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
     "ixc_syscore/secDNS",

@@ -12,6 +12,13 @@ static struct ixc_passthrough passthrough;
 static void __ixc_passthrough_del_cb(void *data)
 {
     struct ixc_passthrough_node *node=data;
+    int idx;
+
+    if(node->is_passdev){
+        idx=node->index;
+        passthrough.passdev_nodes[idx]=NULL;
+    }
+
     free(node);
 }
 
@@ -105,6 +112,7 @@ struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m)
 
     is_brd=hwaddr[0] & 0x01;
 
+    // clone的原因为IPv6的多播报文在直通模式需要特殊处理
     if(is_brd && IXC_MBUF_FROM_WAN==m->from){
         new_mbuf=ixc_mbuf_clone(m);
     }else{
@@ -118,14 +126,19 @@ struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m)
     return m;
 }
 
-int ixc_passthrough_device_add(unsigned char *hwaddr)
+int ixc_passthrough_device_add(unsigned char *hwaddr,int is_passdev)
 {
     int rs;
     char is_found;
-    struct ixc_passthrough_node *node;
+    struct ixc_passthrough_node *node,*tmp_node;
 
     if(!passthrough_is_initialized){
         STDERR("not initialized passthrough\r\n");
+        return -1;
+    }
+
+    if(passthrough.count>=IXC_PASSTHROUGH_DEV_MAX){
+        STDERR("limit passthrough device,the number of devices is %d\r\n",IXC_PASSTHROUGH_DEV_MAX);
         return -1;
     }
 
@@ -147,7 +160,21 @@ int ixc_passthrough_device_add(unsigned char *hwaddr)
         free(node);
         return -1;
     }
+
     passthrough.count+=1;
+    node->is_passdev=is_passdev;
+
+    if(!is_passdev) return 0;
+
+    // 把PASS设备放置在数组索引中,便于多播转换成淡泊
+    for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
+        tmp_node=passthrough.passdev_nodes[n];
+        if(NULL==tmp_node){
+            passthrough.passdev_nodes[n]=node;
+            node->index=n;
+            break;
+        }
+    }
 
     return 0;
 }
@@ -165,4 +192,79 @@ void ixc_passthrough_device_del(unsigned char *hwaddr)
     if(is_found) passthrough.count-=1;
 
     map_del(passthrough.permit_map,(char *)hwaddr,__ixc_passthrough_del_cb);
+}
+
+void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m)
+{
+    struct ixc_netif *netif=NULL;
+    struct ixc_mbuf *new_mbuf;
+    int is_brd;
+    unsigned char *hwaddr;
+    struct ixc_passthrough_node *node;
+    char is_found;
+
+    if(!passthrough_is_initialized){
+        STDERR("not initialized passthrough\r\n");
+        return;
+    }
+
+    hwaddr=m->dst_hwaddr;
+    is_brd=hwaddr[0] & 0x01;
+
+    // 此处发送给LAN网卡
+    netif=ixc_netif_get(IXC_NETIF_LAN);
+    m->netif=netif;
+
+    if(!is_brd){
+        node=map_find(passthrough.permit_map,(char *)hwaddr,&is_found);
+        if(!is_found){
+            ixc_mbuf_put(m);
+            return;
+        }
+        ixc_netif_send(m);
+        return;
+    }
+
+    // 把多播地址转换成单播
+    for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
+        node=passthrough.passdev_nodes[n];
+        if(NULL==node) continue;
+
+        // 去除以太网头部
+        m->begin=m->begin+14;
+        m->offset=m->begin;
+
+        // 修改以太网头部并发送
+        memcpy(m->dst_hwaddr,node->hwaddr,6);
+
+        new_mbuf=ixc_mbuf_clone(m);
+        if(NULL==new_mbuf){
+            STDERR("cannot clone mbuf\r\n");
+            continue;
+        }
+        ixc_ether_send(new_mbuf,1);
+    }
+
+    // 回收旧的mbuf
+    ixc_mbuf_put(m);
+}
+
+void ixc_passthrough_send2passdev(struct ixc_mbuf *m)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_PASS);
+    m->netif=netif;
+
+    ixc_netif_send(m);
+}
+
+int ixc_passthrough_is_passthrough2passdev_traffic(unsigned char *hwaddr)
+{
+    struct ixc_passthrough_node *node;
+    char is_found;
+
+    node=map_find(passthrough.permit_map,(char *)hwaddr,&is_found);
+
+    if(NULL==node) return 0;
+
+    return node->is_passdev;
 }

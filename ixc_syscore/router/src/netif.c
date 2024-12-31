@@ -14,6 +14,7 @@
 #include "ip6.h"
 #include "debug.h"
 #include "npfwd.h"
+#include "passthrough.h"
 
 #include "../../../pywind/clib/ev/ev.h"
 #include "../../../pywind/clib/netif/tuntap.h"
@@ -411,15 +412,13 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
             m->from=IXC_MBUF_FROM_LAN;
         }else if(IXC_NETIF_WAN==netif->type){
             m->from=IXC_MBUF_FROM_WAN;
+        }else if(IXC_NETIF_PASS==netif->type){
+            m->from=IXC_MBUF_FROM_PASS;
         }else{
             m->from=-1;
         }
-
-        if(IXC_NETIF_PASS!=netif->type){
-             ixc_ether_handle(m);
-        }else{
-            ixc_npfwd_send_raw(m,0,IXC_FLAG_ETHER_PASS);
-        }
+        
+        ixc_ether_handle(m);
     }
 
     ixc_netif_calc_speed(netif);

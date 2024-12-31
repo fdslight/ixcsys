@@ -120,7 +120,6 @@ class rpc(object):
             "IXC_FLAG_SRC_FILTER": router.IXC_FLAG_SRC_FILTER,
             "IXC_FLAG_ROUTE_FWD": router.IXC_FLAG_ROUTE_FWD,
             "IXC_FLAG_TRAFFIC_LOG": router.IXC_FLAG_TRAFFIC_LOG,
-            "IXC_FLAG_ETHER_PASS": router.IXC_FLAG_ETHER_PASS,
 
             "IXC_NETIF_LAN": router.IXC_NETIF_LAN,
             "IXC_NETIF_WAN": router.IXC_NETIF_WAN,
@@ -1107,7 +1106,6 @@ class helper(object):
         else:
             os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
         self.__router.netif_delete(router.IXC_NETIF_PASS)
-        self.__router.netpkt_forward_disable(router.IXC_FLAG_ETHER_PASS)
         self.__if_pass_fd = -1
 
     def start_wan(self):

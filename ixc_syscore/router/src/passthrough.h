@@ -7,14 +7,23 @@
 
 #include "../../../pywind/clib/map.h"
 
+/// 最多支持8台设备
+#define IXC_PASSTHROUGH_DEV_MAX 8
+
+struct ixc_passthrough_node;
+
 struct ixc_passthrough{
     // 允许的映射HWADDR地址
     struct map *permit_map;
+    struct ixc_passthrough_node *passdev_nodes[IXC_PASSTHROUGH_DEV_MAX];
     unsigned int count;
 };
 
 struct ixc_passthrough_node{
     unsigned char hwaddr[6];
+    char index;
+    // 是否是直通网卡
+    char is_passdev;
 };
 
 int ixc_passthrough_init(void);
@@ -33,11 +42,17 @@ struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m);
 /// @增加直通设备mac地址
 /// @param hwaddr 
 /// @return 
-int ixc_passthrough_device_add(unsigned char *hwaddr);
+int ixc_passthrough_device_add(unsigned char *hwaddr,int is_passdev);
 
 /// @删除直通设备地址
 /// @param hwaddr 
 void ixc_passthrough_device_del(unsigned char *hwaddr);
 
+/// @处理来自于PASS网卡的报文
+void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m);
+/// @发送到PASS网卡
+void ixc_passthrough_send2passdev(struct ixc_mbuf *m);
+/// 是否是直通PASS的设备
+int ixc_passthrough_is_passthrough2passdev_traffic(unsigned char *hwaddr);
 
 #endif

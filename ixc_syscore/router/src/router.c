@@ -858,11 +858,11 @@ router_passthrough_device_add(PyObject *self,PyObject *args)
 {
     unsigned char *hwaddr;
     Py_ssize_t size;
-    int rs;
+    int rs,is_passdev;
 
-    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
+    if(!PyArg_ParseTuple(args,"y#p",&hwaddr,&size,&is_passdev)) return NULL;
 
-    rs=ixc_passthrough_device_add(hwaddr);
+    rs=ixc_passthrough_device_add(hwaddr,is_passdev);
     if(rs){
         Py_RETURN_FALSE;
     }
@@ -1069,7 +1069,6 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
     PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_LOG);
-    PyModule_AddIntMacro(m,IXC_FLAG_ETHER_PASS);
     PyModule_AddIntMacro(m,IXC_FLAG_SYSLOG);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
@@ -1081,6 +1080,8 @@ PyInit_router(void){
 
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_DROP);
     PyModule_AddIntMacro(m,IXC_SEC_NET_ACT_ACCEPT);
+
+    PyModule_AddIntMacro(m,IXC_PASSTHROUGH_DEV_MAX);
 
     return m;
 }

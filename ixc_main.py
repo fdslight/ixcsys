@@ -14,7 +14,6 @@ import ixc_syslib.pylib.os_info as os_info
 must_services = [
     "ixc_syscore/init",
     "ixc_syscore/router",
-    "ixc_syscore/PASS",
     "ixc_syscore/DHCP",
     "ixc_syscore/DNS",
     "ixc_syscore/secDNS",

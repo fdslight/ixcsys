@@ -107,8 +107,6 @@ static void ixc_npfwd_rx_data(int fd)
             case IXC_FLAG_ARP:
             case IXC_FLAG_DHCP_CLIENT:
             case IXC_FLAG_DHCP_SERVER:
-            case IXC_FLAG_ETHER_PASS:
-                //DBG_FLAGS;
                 ixc_ether_send2(m);
                 break;
             case IXC_FLAG_ROUTE_FWD:
@@ -239,7 +237,7 @@ int ixc_npfwd_init(struct ev_set *ev_set)
     memset(&in_addr,'0',sizeof(struct sockaddr_in));
 
     in_addr.sin_family=AF_INET;
-    inet_pton(AF_INET,"0.0.0.0",buf);
+    inet_pton(AF_INET,"127.0.0.1",buf);
 
     memcpy(&(in_addr.sin_addr.s_addr),buf,4);
 	in_addr.sin_port=htons(8964);
