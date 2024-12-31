@@ -11,6 +11,7 @@ class widget(ui_widget.widget):
 
         for hwaddr, enable_with_comment in passthrough_devices.items():
             p = enable_with_comment.find("|")
+            print(enable_with_comment,p)
             if p != 1:
                 is_passdev = False
                 comment = enable_with_comment
