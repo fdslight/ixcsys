@@ -204,11 +204,9 @@ class controller(base_controller.BaseController):
         config = {
             'enable': enable,
             'if_name': ifname,
-            "peer_host": peer_host,
-            "peer_port": nport,
-            "key": pass_key,
         }
-        RPC.fn_call("PASS", "/config", "config_save", config)
+        RPC.fn_call("router", "/config", "passdev_set", config)
+        RPC.fn_call("router", "/config", "config_save")
 
         self.json_resp(False, '修改成功')
 

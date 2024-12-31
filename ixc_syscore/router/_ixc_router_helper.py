@@ -8,6 +8,7 @@ import router
 import ixc_syscore.router.pylib.pppoe as pppoe
 
 import ixc_syslib.pylib.RPCClient as RPC
+import ixc_syslib.pylib.osnet as osnet
 import pywind.lib.netutils as netutils
 import pywind.lib.configfile as conf
 
@@ -21,8 +22,6 @@ class rpc(object):
 
         self.__fn_objects = {
             "get_all_consts": self.get_all_consts,
-            "start_pass": self.start_pass,
-            "stop_pass": self.stop_pass,
             "get_wan_ipaddr_info": self.get_wan_ipaddr_info,
             "get_lan_ipaddr_info": self.get_lan_ipaddr_info,
             "add_route": self.add_route,
@@ -57,6 +56,7 @@ class rpc(object):
             "lan_static_ipv6_enable": self.lan_static_ipv6_enable,
             "lan_static_ipv6_set": self.lan_static_ipv6_set,
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
+            "passdev_set": self.passdev_set,
             "pppoe_set": self.pppoe_set,
             "router_config_get": self.router_config_get,
             "port_map_add": self.port_map_add,
@@ -129,14 +129,6 @@ class rpc(object):
         }
 
         return 0, values
-
-    def start_pass(self, ifname: str):
-        self.__helper.start_pass(ifname)
-        return 0, None
-
-    def stop_pass(self):
-        self.__helper.stop_pass()
-        return 0, None
 
     def get_wan_hwaddr(self):
         """获取WAN硬件地址
@@ -515,6 +507,10 @@ class rpc(object):
 
         return 0, None
 
+    def passdev_set(self, config: dict):
+        self.__helper.passdev_set(config)
+        return 0, None
+
     def dhcp_positive_heartbeat_set(self, positive_heartbeat=False):
         dhcp = self.__helper.wan_configs["dhcp"]
         if positive_heartbeat:
@@ -796,6 +792,11 @@ class helper(object):
     def load_lan_configs(self):
         path = "%s/lan.ini" % self.__conf_dir
         self.__lan_configs = conf.ini_parse_from_file(path)
+        if "passthrough" not in self.__lan_configs:
+            self.__lan_configs["passthrough"] = {}
+        o = self.__lan_configs["passthrough"]
+        if "if_name" in o: o["if_name"] = ""
+        if "enable" not in o: o["enable"] = "0"
 
     def save_lan_configs(self):
         path = "%s/lan.ini" % self.__conf_dir
@@ -1082,8 +1083,23 @@ class helper(object):
         self.router.ip6sec_enable(enable_ipv6_security)
         self.router.g_manage_addr_set(manage_addr, False)
 
-    def start_pass(self, ifname: str):
+    def passdev_set(self, config: dict):
+        configs = self.lan_configs["passthrough"]
+        configs["if_name"] = config["if_name"]
+        configs["enable"] = config["enable"]
+
+        self.stop_pass()
+        self.start_pass()
+
+    def start_pass(self):
+        configs = self.lan_configs["passthrough"]
+        enable = bool(int(configs["enable"]))
+        if not enable: return
         if self.__if_pass_fd >= 0: return
+
+        ifname = configs["if_name"]
+        if ifname not in osnet.get_if_net_devices(): return
+
         self.__if_pass_fd, self.__PASS_NAME = self.__router.netif_create("ixcpass", router.IXC_NETIF_PASS)
         if self.is_linux:
             self.linux_br_create(self.__PASS_BR_NAME, [ifname, self.__PASS_NAME, ])
