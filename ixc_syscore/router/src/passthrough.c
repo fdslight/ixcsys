@@ -225,19 +225,18 @@ void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m)
         return;
     }
 
+    // 去除以太网头部
+    m->begin=m->begin+14;
+    m->offset=m->begin;
+    // 修改目的以太网头部
+    memcpy(m->dst_hwaddr,node->hwaddr,6);
     // 把多播地址转换成单播
     for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
         node=passthrough.passdev_nodes[n];
         if(NULL==node) continue;
 
-        // 去除以太网头部
-        m->begin=m->begin+14;
-        m->offset=m->begin;
-
-        // 修改以太网头部并发送
-        memcpy(m->dst_hwaddr,node->hwaddr,6);
-
         new_mbuf=ixc_mbuf_clone(m);
+        
         if(NULL==new_mbuf){
             STDERR("cannot clone mbuf\r\n");
             continue;
