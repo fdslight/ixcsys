@@ -708,7 +708,7 @@ class rpc(object):
         dic = self.__helper.router_configs['passthrough']
 
         # 这里的0和1表示是否是直通到passdev设备
-        if is_passdev:
+        if not is_passdev:
             dic[hwaddr] = "0|%s" % comment
         else:
             dic[hwaddr] = "1|%s" % comment
