@@ -115,8 +115,9 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     type=ntohs(header->type);
 
     ixc_ether_traffic_statistics(mbuf,IXC_TRAFFIC_LOG_DIR_OUT);
-    // 限定只支持以太网
-    if(type<0x200){
+
+    // 限定数据帧
+    if(type < 0x0800){
         ixc_mbuf_put(mbuf);
         return;
     }
