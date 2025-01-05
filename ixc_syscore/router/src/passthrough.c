@@ -166,7 +166,7 @@ int ixc_passthrough_device_add(unsigned char *hwaddr,int is_passdev)
 
     if(!is_passdev) return 0;
 
-    // 把PASS设备放置在数组索引中,便于多播转换成淡泊
+    // 把PASS设备放置在数组索引中,便于多播转换成单播
     for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
         tmp_node=passthrough.passdev_nodes[n];
         if(NULL==tmp_node){
