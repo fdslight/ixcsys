@@ -35,6 +35,8 @@ class widget(ui_widget.widget):
         peer_host = ""
         peer_port = ""
         pass_key = ""
+        router_config = RPC.fn_call("router", "/config", "router_config_get")
+        vid = router_config["vlanid_for_passdev"]
 
         if _type == "wan":
             configs = RPC.fn_call("router", "/config", "wan_config_get")
@@ -74,4 +76,5 @@ class widget(ui_widget.widget):
                                              "ip4_mtu": ip4_mtu,
                                              "net_devices": avaliable_devices,
                                              "enable_pass": enable_pass,
+                                             "vlan_id": vid
                                              }

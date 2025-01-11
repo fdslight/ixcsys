@@ -147,6 +147,7 @@ class controller(base_controller.BaseController):
     def handle_pass_submit(self):
         ifname = self.request.get_argument('ifname', default='', is_qs=False, is_seq=False)
         enable = self.request.get_argument('enable-pass', default='0', is_qs=False, is_seq=False)
+        vid = self.request.get_argument("vid", default='0', is_qs=False, is_seq=False)
 
         try:
             bool_enable = bool(int(enable))
@@ -167,11 +168,22 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "未知的网卡%s" % ifname)
             return
 
+        try:
+            vid = int(vid)
+        except ValueError:
+            self.json_resp(True, "错误的VLAN ID值类型")
+            return
+
+        if vid < 0 or vid > 4094:
+            self.json_resp(True, "错误的VLAN ID值范围,值必须为0到4094之间")
+            return
+
         config = {
             'enable': enable,
             'if_name': ifname,
         }
         RPC.fn_call("router", "/config", "passdev_set", config)
+        RPC.fn_call("router", "/config", "passthrough_set_vid_for_passdev", vid)
         RPC.fn_call("router", "/config", "config_save")
 
         self.json_resp(False, '修改成功')

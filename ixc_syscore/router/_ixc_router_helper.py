@@ -737,6 +737,10 @@ class rpc(object):
     def passthrough_set_vid_for_passdev(self, vid: int):
         if vid < 0 or vid > 4094: return 0, False
 
+        dic = self.__helper.router_configs['config']
+        dic['vlanid_for_passdev'] = vid
+        self.__helper.save_router_configs()
+
         return 0, self.__helper.router.passthrough_set_vid_for_passdev(vid)
 
     def cpu_num(self):
@@ -842,6 +846,8 @@ class helper(object):
             dic["ip_tcp_mss"] = 0
         if "ip6_tcp_mss" not in dic:
             dic["ip6_tcp_mss"] = 0
+        if "vlanid_for_passdev" not in dic:
+            dic["vlanid_for_passdev"] = 0
 
         if "passthrough" not in self.__router_configs:
             self.__router_configs["passthrough"] = {}
@@ -1262,6 +1268,7 @@ class helper(object):
             ''''''
             byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
             self.router.passthrough_device_add(byte_hwaddr, is_passdev)
+        self.router.passthrough_set_vid_for_passdev(int(conf["vlanid_for_passdev"]))
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
         self.__port_map_configs[alias_name] = {
