@@ -882,6 +882,22 @@ router_passthrough_device_del(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_passthrough_set_vid_for_passdev(PyObject *self,PyObject *args)
+{
+    unsigned short vid;
+    int rs;
+    if(!PyArg_ParseTuple(args,"H",&vid)) return NULL;
+
+    rs=ixc_passthrough_set_vid_for_passdev(vid);
+
+    if(rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
 /// 返回系统的CPU总数
 static PyObject *
 router_cpu_num(PyObject *self,PyObject *args)
@@ -1014,6 +1030,7 @@ static PyMethodDef routerMethods[]={
     //
     {"passthrough_device_add",(PyCFunction)router_passthrough_device_add,METH_VARARGS,"add passthrough device"},
     {"passthrough_device_del",(PyCFunction)router_passthrough_device_del,METH_VARARGS,"delete passthrough device"},
+    {"passthrough_set_vid_for_passdev",(PyCFunction)router_passthrough_set_vid_for_passdev,METH_VARARGS,"set vlan id for passdev"},
     //
     {"cpu_num",(PyCFunction)router_cpu_num,METH_NOARGS,"get cpu num"},
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},

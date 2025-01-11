@@ -247,6 +247,43 @@ int ixc_ether_send2(struct ixc_mbuf *m)
     return 0;
 }
 
+int ixc_ether_send3(struct ixc_mbuf *m,unsigned short tpid,unsigned short vlan_id)
+{
+    struct ixc_ether_vlan_header *header;
+    int size;
+
+    // PVID必须使用0x8100
+    if(0x8100!=tpid){
+        ixc_mbuf_put(m);
+        return -1;
+    }
+
+    if(vlan_id<1 || vlan_id>4094){
+        ixc_mbuf_put(m);
+        return -2;
+    }
+
+    m->begin=m->offset=m->begin-sizeof(struct ixc_ether_vlan_header);
+
+    header=(struct ixc_ether_vlan_header *)(m->data+m->begin);
+    header->tpid=htons(tpid);
+    header->vlan_info=htons(vlan_id);
+    header->type=htons(m->link_proto);
+
+    memcpy(header->dst_hwaddr,m->dst_hwaddr,6);
+    memcpy(header->src_hwaddr,m->src_hwaddr,6);
+
+    size=m->end-m->begin;
+    if(size<60){
+        bzero(m->data+m->end,60-size);
+        m->end+=(60-size);
+    }
+
+    ixc_ether_send(m,0);
+
+    return 0;
+}
+
 int ixc_ether_get_multi_hwaddr_by_ip(unsigned char *ip,unsigned char *result)
 {
     result[0]=0x01;

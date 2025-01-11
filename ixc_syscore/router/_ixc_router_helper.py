@@ -80,6 +80,7 @@ class rpc(object):
 
             "passthrough_device_add": self.passthrough_device_add,
             "passthrough_device_del": self.passthrough_device_del,
+            "passthrough_set_vid_for_passdev": None,
 
             "cpu_num": self.cpu_num,
             "bind_cpu": self.bind_cpu,
@@ -733,6 +734,11 @@ class rpc(object):
 
         return 0, None
 
+    def passthrough_set_vid_for_passdev(self, vid: int):
+        if vid < 0 or vid > 4094: return 0, False
+
+        return 0, self.__helper.router.passthrough_set_vid_for_passdev(vid)
+
     def cpu_num(self):
         return 0, self.__helper.router.cpu_num()
 
@@ -1254,7 +1260,7 @@ class helper(object):
                     is_passdev = False
                 ''''''
             ''''''
-            byte_hwaddr=netutils.str_hwaddr_to_bytes(hwaddr)
+            byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
             self.router.passthrough_device_add(byte_hwaddr, is_passdev)
 
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):

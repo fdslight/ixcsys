@@ -1,4 +1,5 @@
 #include<string.h>
+#include<arpa/inet.h>
 
 #include "passthrough.h"
 #include "netif.h"
@@ -243,7 +244,13 @@ void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m)
             STDERR("cannot clone mbuf\r\n");
             continue;
         }
-        ixc_ether_send(new_mbuf,1);
+
+        if(0==passthrough.vlan_id_tagged_for_passdev){
+            ixc_ether_send(new_mbuf,1);
+            continue;
+        }
+        
+        ixc_ether_send3(new_mbuf,0x8100,passthrough.vlan_id_tagged_for_passdev);
     }
 
     // 回收旧的mbuf
@@ -253,6 +260,8 @@ void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m)
 void ixc_passthrough_send2passdev(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_PASS);
+    struct ixc_ether_vlan_header *vlan_header;
+    unsigned short vlan_id;
     
     // 可能直通设备未开启
     if(NULL==netif){
@@ -261,7 +270,37 @@ void ixc_passthrough_send2passdev(struct ixc_mbuf *m)
     }
 
     m->netif=netif;
-    ixc_netif_send(m);
+
+    // 检查是否开启VLAN,未开启VLAN则直接发送
+    if(0==passthrough.vlan_id_tagged_for_passdev){
+        ixc_netif_send(m);
+        return;
+    }
+
+    // 如果开启VLAN之后,那么需要对VLAN进行untag再发送
+    if(0x8100!=m->link_proto){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    vlan_header=(struct ixc_ether_vlan_header *)(m->data+m->begin);
+    vlan_id=ntohs(vlan_header->vlan_info) & 0x0fff;
+
+    if(vlan_id!=passthrough.vlan_id_tagged_for_passdev){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    m->begin=m->offset=m->begin+sizeof(struct ixc_ether_header);
+    m->link_proto=ntohs(vlan_header->type);
+
+    // 限制协议
+    if(m->link_proto<0x0800){
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    ixc_ether_send(m,1);
 }
 
 int ixc_passthrough_is_passthrough2passdev_traffic(unsigned char *hwaddr)
@@ -274,4 +313,14 @@ int ixc_passthrough_is_passthrough2passdev_traffic(unsigned char *hwaddr)
     if(NULL==node) return 0;
 
     return node->is_passdev;
+}
+
+int ixc_passthrough_set_vid_for_passdev(unsigned short vid)
+{
+    if(vid<0 || vid>4094) {
+        return -1;
+    }
+    
+    passthrough.vlan_id_tagged_for_passdev=vid;
+    return 0;
 }

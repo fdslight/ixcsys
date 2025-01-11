@@ -17,6 +17,8 @@ struct ixc_passthrough{
     struct map *permit_map;
     struct ixc_passthrough_node *passdev_nodes[IXC_PASSTHROUGH_DEV_MAX];
     unsigned int count;
+    // 标记passdev过来的流量的VLAN ID,如果为0表示不标记
+    unsigned short vlan_id_tagged_for_passdev;
 };
 
 struct ixc_passthrough_node{
@@ -54,5 +56,8 @@ void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m);
 void ixc_passthrough_send2passdev(struct ixc_mbuf *m);
 /// 是否是直通PASS的设备
 int ixc_passthrough_is_passthrough2passdev_traffic(unsigned char *hwaddr);
+
+/// 设置passdev穿透过来流量的VID
+int ixc_passthrough_set_vid_for_passdev(unsigned short vid);
 
 #endif
