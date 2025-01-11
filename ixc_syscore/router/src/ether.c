@@ -252,7 +252,7 @@ int ixc_ether_send3(struct ixc_mbuf *m,unsigned short tpid,unsigned short vlan_i
     struct ixc_ether_vlan_header *header;
     int size;
 
-    // PVID必须使用0x8100
+    // TPID必须使用0x8100
     if(0x8100!=tpid){
         ixc_mbuf_put(m);
         return -1;

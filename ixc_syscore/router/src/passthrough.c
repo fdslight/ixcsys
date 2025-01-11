@@ -230,6 +230,12 @@ void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m)
     m->begin=m->begin+14;
     m->offset=m->begin;
 
+    // 开启了VLAN功能不需要转换MAC地址
+    if(0!=passthrough.vlan_id_tagged_for_passdev){
+        ixc_ether_send3(m,0x8100,passthrough.vlan_id_tagged_for_passdev);
+        return;
+    }
+
     // 把多播地址转换成单播
     for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
         node=passthrough.passdev_nodes[n];
