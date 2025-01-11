@@ -36,7 +36,7 @@ class widget(ui_widget.widget):
         peer_port = ""
         pass_key = ""
         router_config = RPC.fn_call("router", "/config", "router_config_get")
-        vid = router_config["vlanid_for_passdev"]
+        vid = router_config['config']["vlanid_for_passdev"]
 
         if _type == "wan":
             configs = RPC.fn_call("router", "/config", "wan_config_get")
