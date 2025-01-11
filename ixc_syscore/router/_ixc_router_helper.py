@@ -80,7 +80,7 @@ class rpc(object):
 
             "passthrough_device_add": self.passthrough_device_add,
             "passthrough_device_del": self.passthrough_device_del,
-            "passthrough_set_vid_for_passdev": None,
+            "passthrough_set_vid_for_passdev": self.passthrough_set_vid_for_passdev,
 
             "cpu_num": self.cpu_num,
             "bind_cpu": self.bind_cpu,
