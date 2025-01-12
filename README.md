@@ -32,6 +32,14 @@ X86_64 with SSE2,ARM64 with NEON or other 64bit CPU.
 3.last you can open "http://192.168.11.254 or http://router.ixcsys.com" manage router by your browser  
 4.the ixcsys default user is "admin" and password "admin"
 
+# software update
+1. git pull origin master
+2. python3 make.py build_all
+3. python3 make.py gen_update
+4. cd /opt/ixcsys
+5. sudo python3 ixc_main.py restart
+6. plan update: sudo python3 ixc_cron_updater hours:minutes
+
 # about Packet forwarding speed(the software only support single-core forward packet)
 1.Intel J1800 CPU or arm cortex-a53:100Mbit/s  
 2.Intel N5105:1000Mbit/s     
@@ -39,4 +47,4 @@ X86_64 with SSE2,ARM64 with NEON or other 64bit CPU.
 4.AMD Opteron x3421:500Mbit/s   
 
 # why use Linux tuntap
-netmap is not the part of Linux kernel,though FreeBSD support netmap,but FreeBSD is difficult for the most people.
+netmap is not the part of Linux kernel,though FreeBSD support netmap,but FreeBSD less hardware is supported.
