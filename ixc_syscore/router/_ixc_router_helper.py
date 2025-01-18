@@ -1015,7 +1015,7 @@ class helper(object):
         for br_device in br_devices:
             cmd = "echo 0 > %s/bridge/multicast_snooping" % br_device
             os.system(cmd)
-        return
+        os.chdir(cur_pwd)
 
     def start_security(self):
         """打开安全网络
