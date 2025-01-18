@@ -982,6 +982,7 @@ class helper(object):
         for if_name in added_bind_ifs:
             cmd = "ip link set dev %s master %s" % (if_name, br_name,)
             os.system(cmd)
+        self.config_multicast_snooping()
 
     def freebsd_br_create(self, added_bind_ifs: list):
         fd = os.popen("ifconfig bridge create")
@@ -998,6 +999,23 @@ class helper(object):
         os.system(cmd)
 
         return s
+
+    def config_multicast_snooping(self):
+        """桥接网络不支持igmp multicast snooping,导致IPv6可能在工作一段时间后异常,需要关闭
+        """
+        cur_pwd = os.getcwd()
+        os.chdir("/sys/devices/virtual/net")
+        _listdir = os.listdir()
+        br_devices = []
+        for name in _listdir:
+            p = name.find("br")
+            if p < 0: continue
+            br_devices.append(name)
+
+        for br_device in br_devices:
+            cmd = "echo 0 > %s/bridge/multicast_snooping" % br_device
+            os.system(cmd)
+        return
 
     def start_security(self):
         """打开安全网络
