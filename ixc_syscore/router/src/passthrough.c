@@ -13,13 +13,11 @@ static struct ixc_passthrough passthrough;
 static void __ixc_passthrough_del_cb(void *data)
 {
     struct ixc_passthrough_node *node=data;
+
     int idx;
-
-    if(node->is_passdev){
-        idx=node->index;
-        passthrough.passdev_nodes[idx]=NULL;
-    }
-
+    idx=node->index;
+    passthrough.passdev_nodes[idx]=NULL;
+    
     free(node);
 }
 
@@ -97,6 +95,7 @@ struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m)
     struct ixc_mbuf *new_mbuf;
     int is_brd;
     unsigned char *hwaddr;
+    struct ixc_passthrough_node *node;
 
     if(!passthrough_is_initialized){
         STDERR("not initialized passthrough\r\n");
@@ -115,14 +114,26 @@ struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m)
 
     // clone的原因为IPv6的多播报文在直通模式需要特殊处理
     if(is_brd && IXC_MBUF_FROM_WAN==m->from){
-        new_mbuf=ixc_mbuf_clone(m);
+        // 转换为单播
+        for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
+            node=passthrough.pass_nodes[n];
+            if(NULL==node) continue;
+            // 直通网卡跳过
+            if(node->is_passdev) continue;
+            new_mbuf=ixc_mbuf_clone(m);
+            // 修改目的MAC地址
+            memcpy(new_mbuf->dst_hwaddr,node->hwaddr,6);
+
+            new_mbuf->netif=netif;
+            
+            ixc_ether_send(new_mbuf,1);
+        }        
     }else{
         new_mbuf=m;
+        new_mbuf->netif=netif;
+        ixc_netif_send(new_mbuf);
         m=NULL;
     }
-
-    new_mbuf->netif=netif;
-    ixc_netif_send(new_mbuf);
 
     return m;
 }
@@ -165,11 +176,11 @@ int ixc_passthrough_device_add(unsigned char *hwaddr,int is_passdev)
     passthrough.count+=1;
     node->is_passdev=is_passdev;
 
-    if(!is_passdev) return 0;
+    //if(!is_passdev) return 0;
 
     // 把PASS设备放置在数组索引中,便于多播转换成单播
     for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
-        tmp_node=passthrough.passdev_nodes[n];
+        tmp_node=passthrough.pass_nodes[n];
         if(NULL==tmp_node){
             passthrough.passdev_nodes[n]=node;
             node->index=n;
@@ -238,8 +249,10 @@ void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m)
 
     // 把多播地址转换成单播
     for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
-        node=passthrough.passdev_nodes[n];
+        node=passthrough.pass_nodes[n];
         if(NULL==node) continue;
+        // 非直通网卡跳过
+        if(!node->is_passdev) continue;
 
         // 修改目的以太网头部
         memcpy(m->dst_hwaddr,node->hwaddr,6);

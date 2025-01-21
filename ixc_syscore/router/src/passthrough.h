@@ -15,7 +15,7 @@ struct ixc_passthrough_node;
 struct ixc_passthrough{
     // 允许的映射HWADDR地址
     struct map *permit_map;
-    struct ixc_passthrough_node *passdev_nodes[IXC_PASSTHROUGH_DEV_MAX];
+    struct ixc_passthrough_node *pass_nodes[IXC_PASSTHROUGH_DEV_MAX];
     unsigned int count;
     // 标记passdev过来的流量的VLAN ID,如果为0表示不标记
     unsigned short vlan_id_tagged_for_passdev;
@@ -23,9 +23,11 @@ struct ixc_passthrough{
 
 struct ixc_passthrough_node{
     unsigned char hwaddr[6];
+    //
     char index;
+    char pad;
     // 是否是直通网卡
-    char is_passdev;
+    int is_passdev;
 };
 
 int ixc_passthrough_init(void);
