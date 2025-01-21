@@ -16,7 +16,7 @@ static void __ixc_passthrough_del_cb(void *data)
 
     int idx;
     idx=node->index;
-    passthrough.passdev_nodes[idx]=NULL;
+    passthrough.pass_nodes[idx]=NULL;
     
     free(node);
 }
@@ -182,7 +182,7 @@ int ixc_passthrough_device_add(unsigned char *hwaddr,int is_passdev)
     for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
         tmp_node=passthrough.pass_nodes[n];
         if(NULL==tmp_node){
-            passthrough.passdev_nodes[n]=node;
+            passthrough.pass_nodes[n]=node;
             node->index=n;
             break;
         }
