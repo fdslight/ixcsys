@@ -112,7 +112,7 @@ struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m)
 
     is_brd=hwaddr[0] & 0x01;
 
-    // clone的原因为IPv6的多播报文在直通模式需要特殊处理
+    // 多播报文转换为单播
     if(is_brd && IXC_MBUF_FROM_WAN==m->from){
         // 转换为单播
         for(int n=0;n<IXC_PASSTHROUGH_DEV_MAX;n++){
@@ -139,7 +139,7 @@ struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m)
         ixc_netif_send(new_mbuf);
         m=NULL;
     }
-
+    // 本地协议栈也需要处理报文
     return m;
 }
 
