@@ -120,7 +120,12 @@ struct ixc_mbuf *ixc_passthrough_send_auto(struct ixc_mbuf *m)
             if(NULL==node) continue;
             // 直通网卡跳过
             if(node->is_passdev) continue;
+            
             new_mbuf=ixc_mbuf_clone(m);
+            if(NULL==new_mbuf){
+                STDERR("cannot malloc mbuf\r\n");
+                continue;
+            }
             // 修改目的MAC地址
             memcpy(new_mbuf->dst_hwaddr,node->hwaddr,6);
 
