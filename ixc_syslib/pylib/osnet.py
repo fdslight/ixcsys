@@ -16,6 +16,10 @@ def get_if_net_devices():
         if if_name[0:2] == "wg": continue
         # 丢弃无线网卡
         if if_name[0:2] == "wl": continue
+        # 丢弃tap网卡
+        if if_name[0:3] == "tap": continue
+        # 丢弃tun网卡
+        if if_name[0:3] == "tun": continue
         results.append(if_name)
 
     return results
