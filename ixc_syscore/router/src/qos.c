@@ -111,6 +111,7 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr = (struct netutil_iphdr *)(m->data + m->offset);
     int size;
+    struct ixc_addr_map_record *addr_map_record;
 
     // 隧道流量优先
     if(ixc_qos.tunnel_isset){
@@ -120,6 +121,16 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
                 return;
             }
             if(!memcmp(iphdr->src_addr,ixc_qos.tunnel_addr,4)){
+                ixc_qos_send_to_next(m);
+                return;
+            }
+        }
+    }
+
+    if(IXC_MBUF_FROM_WAN==m->from){
+        addr_map_record=ixc_addr_map_get(iphdr->dst_addr,0);
+        if(NULL!=addr_map_record){
+            if(ixc_qos_is_first_host(addr_map_record->hwaddr)){
                 ixc_qos_send_to_next(m);
                 return;
             }
@@ -142,6 +153,7 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    struct ixc_addr_map_record *addr_map_record;
     int size;
 
     // 隧道流量优先
@@ -152,6 +164,16 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
                 return;
             }
             if(!memcmp(header->src_addr,ixc_qos.tunnel_addr,16)){
+                ixc_qos_send_to_next(m);
+                return;
+            }
+        }
+    }
+
+    if(IXC_MBUF_FROM_WAN==m->from){
+        addr_map_record=ixc_addr_map_get(header->dst_addr,1);
+        if(NULL!=addr_map_record){
+            if(ixc_qos_is_first_host(addr_map_record->hwaddr)){
                 ixc_qos_send_to_next(m);
                 return;
             }
@@ -174,6 +196,9 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 int ixc_qos_init(void)
 {
     struct ixc_qos_slot *slot;
+    struct map *m;
+    int is_err;
+
     bzero(&ixc_qos, sizeof(struct ixc_qos));
 
     ixc_qos_is_initialized = 1;
@@ -198,17 +223,36 @@ int ixc_qos_init(void)
         return -1;
     }
 
+    is_err=map_new(&m,6);
+    if(is_err){
+        STDERR("cannot create map for qos\r\n");
+        return -1;
+    }
+
+    ixc_qos.first_host_hwaddr_map=m;
+
     return 0;
 }
 
 void ixc_qos_uninit(void)
 {
     if(NULL!=qos_sysloop) sysloop_del(qos_sysloop);
+    if(NULL!=ixc_qos.first_host_hwaddr_map){
+        map_release(ixc_qos.first_host_hwaddr_map,NULL);
+    }
     ixc_qos_is_initialized = 0;
 }
 
 void ixc_qos_add(struct ixc_mbuf *m)
 {
+    
+    if(IXC_MBUF_FROM_LAN==m->from){
+        if(ixc_qos_is_first_host(m->src_hwaddr)){
+            ixc_qos_send_to_next(m);
+            return;
+        }
+    }
+
     if (m->is_ipv6){
         ixc_qos_add_for_ipv6(m);
     }else{
@@ -311,4 +355,32 @@ int ixc_qos_mpkt_first_set(int size)
     ixc_qos.qos_mpkt_first_size=size;
 
     return 0;
+}
+
+/// 增加优先主机
+int ixc_qos_add_first_host(const unsigned char *hwaddr)
+{
+    char is_found;
+    int is_err;
+    map_find(ixc_qos.first_host_hwaddr_map,(char *)hwaddr,&is_found);
+
+    if(is_found) return 0;
+
+    is_err=map_add(ixc_qos.first_host_hwaddr_map,(char *)hwaddr,NULL);
+    
+    return is_err;
+}
+
+/// 删除优先主机
+void ixc_qos_del_first_host(const unsigned char *hwaddr)
+{
+    map_del(ixc_qos.first_host_hwaddr_map,(char *)hwaddr,NULL);
+}
+
+int ixc_qos_is_first_host(const unsigned char *hwaddr)
+{
+    char is_found;
+    map_find(ixc_qos.first_host_hwaddr_map,(char *)hwaddr,&is_found);
+
+    return is_found;
 }

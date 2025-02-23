@@ -13,6 +13,7 @@
 #include "sec_net.h"
 #include "router.h"
 #include "npfwd.h"
+#include "qos.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -81,7 +82,8 @@ static int ixc_ip6_is_dhcp(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 
 static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
-    ixc_route_handle(m);
+    //ixc_route_handle(m);
+    ixc_qos_add(m);
 }
 
 /// @是否是系统DNS请求

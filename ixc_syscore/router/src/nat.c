@@ -12,6 +12,7 @@
 #include "ipunfrag.h"
 #include "port_map.h"
 #include "router.h"
+#include "qos.h"
 
 #include "../../../pywind/clib/netutils.h"
 #include "../../../pywind/clib/sysloop.h"
@@ -125,7 +126,7 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
         offset+=data_size/8;
         cur_len+=data_size;
 
-        if(from_wan) ixc_route_handle(new_mbuf);
+        if(from_wan) ixc_qos_add(new_mbuf);
         else ixc_addr_map_handle(new_mbuf);
     }
 
@@ -461,7 +462,7 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
     }
     
     if(m->netif->mtu_v4>=m->tail-m->offset){
-        ixc_route_handle(m);
+        ixc_qos_add(m);
     }else{
         //DBG_FLAGS;
         ixc_nat_ipfrag_send(m,1);

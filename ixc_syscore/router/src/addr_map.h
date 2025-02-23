@@ -30,6 +30,8 @@ struct ixc_addr_map_record{
 int ixc_addr_map_init(void);
 void ixc_addr_map_uninit(void);
 
+struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6);
+
 int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hwaddr,int is_ipv6);
 struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6);
 void ixc_addr_map_handle(struct ixc_mbuf *m);

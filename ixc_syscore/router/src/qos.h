@@ -2,6 +2,7 @@
 #define IXC_QOS_H
 
 #include "mbuf.h"
+#include "../../../pywind/clib/map.h"
 
 struct ixc_qos_slot{
     struct ixc_mbuf *mbuf_first;
@@ -18,6 +19,8 @@ struct ixc_qos_slot{
 struct ixc_qos{
     struct ixc_qos_slot *slot_objs[IXC_QOS_SLOT_NUM];
     struct ixc_qos_slot *slot_head;
+    // 优先发送数据的主机map地址
+    struct map *first_host_hwaddr_map;
     unsigned char tunnel_addr[16];
     int qos_mpkt_first_size;
     int tunnel_is_ipv6;
@@ -45,5 +48,13 @@ void ixc_qos_tunnel_addr_first_unset(void);
 
 /// 设置小包优先策略
 int ixc_qos_mpkt_first_set(int size);
+
+/// 增加优先主机
+int ixc_qos_add_first_host(const unsigned char *hwaddr);
+/// 删除优先主机
+void ixc_qos_del_first_host(const unsigned char *hwaddr);
+
+/// 是否是首先要发送流量的主机
+int ixc_qos_is_first_host(const unsigned char *hwaddr);
 
 #endif

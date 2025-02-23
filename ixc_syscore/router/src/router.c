@@ -854,6 +854,42 @@ router_qos_set_mpkt_first_size(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_qos_add_first_host_hwaddr(PyObject *self,PyObject *args){
+    unsigned char *hwaddr;
+    Py_ssize_t size;
+    int is_err;
+
+    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
+
+    if(6!=size){
+        STDERR("wrong hwaddr length\r\n");
+        Py_RETURN_FALSE;
+    }
+
+    is_err=ixc_qos_add_first_host(hwaddr);
+    if(is_err){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_qos_del_first_host_hwaddr(PyObject *self,PyObject *args){
+    unsigned char *hwaddr;
+    Py_ssize_t size;
+
+    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
+    if(6!=size){
+        STDERR("wrong hwaddr length\r\n");
+        Py_RETURN_FALSE;
+    }
+
+    ixc_qos_del_first_host(hwaddr);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 router_passthrough_device_add(PyObject *self,PyObject *args)
 {
     unsigned char *hwaddr;
@@ -876,6 +912,11 @@ router_passthrough_device_del(PyObject *self,PyObject *args)
     unsigned char *hwaddr;
     Py_ssize_t size;
     if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
+
+    if(6!=size){
+        STDERR("wrong hwaddr length\r\n");
+        Py_RETURN_NONE;
+    }
 
     ixc_passthrough_device_del(hwaddr);
 
@@ -1027,6 +1068,8 @@ static PyMethodDef routerMethods[]={
     {"qos_set_tunnel_first",(PyCFunction)router_qos_set_tunnel_first,METH_VARARGS,"set qos tunnel traffic is first"},
     {"qos_unset_tunnel",(PyCFunction)router_qos_unset_tunnel,METH_NOARGS,"unset qos tunnel traffic is first"},
     {"qos_set_mpkt_first_size",(PyCFunction)router_qos_set_mpkt_first_size,METH_VARARGS,"set mpkt first size"},
+    {"qos_add_first_host_hwaddr",(PyCFunction)router_qos_add_first_host_hwaddr,METH_VARARGS,"add host hwaddr send first for qos"},
+    {"qos_del_first_host_hwaddr",(PyCFunction)router_qos_del_first_host_hwaddr,METH_VARARGS,"delete host hwaddr send first for qos"},
     //
     {"passthrough_device_add",(PyCFunction)router_passthrough_device_add,METH_VARARGS,"add passthrough device"},
     {"passthrough_device_del",(PyCFunction)router_passthrough_device_del,METH_VARARGS,"delete passthrough device"},
