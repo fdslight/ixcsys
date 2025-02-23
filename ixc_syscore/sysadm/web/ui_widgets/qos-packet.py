@@ -12,4 +12,4 @@ class widget(ui_widget.widget):
             "mpkt_first_size":qos["mpkt_first_size"],
         }
 
-        return True, "qos.html", configs
+        return True, "qos-packet.html", configs

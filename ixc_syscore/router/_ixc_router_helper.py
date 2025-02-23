@@ -703,15 +703,30 @@ class rpc(object):
 
         return 0, rs
 
-    def qos_add_first_host_hwaddr(self, hwaddr: str):
+    def qos_add_first_host_hwaddr(self, hwaddr: str, comment=""):
+        dic = self.__helper.router_configs['qos_first_host']
+
+        if hwaddr in dic:
+            return 0, False
+
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
         rs = self.__helper.router.qos_add_first_host_hwaddr(byte_hwaddr)
+
+        dic[hwaddr] = comment
+        self.__helper.save_router_configs()
 
         return 0, rs
 
     def qos_del_first_host_hwaddr(self, hwaddr: str):
+        dic = self.__helper.router_configs['qos_first_host']
+
+        if hwaddr not in dic:
+            return 0, None
+
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
         rs = self.__helper.router.qos_del_first_host_hwaddr(byte_hwaddr)
+
+        self.__helper.save_router_configs()
 
         return 0, rs
 
@@ -865,6 +880,9 @@ class helper(object):
 
         if "passthrough" not in self.__router_configs:
             self.__router_configs["passthrough"] = {}
+
+        if "qos_first_host" not in self.__router_configs:
+            self.__router_configs["qos_first_host"] = {}
 
     def load_port_map_configs(self):
         path = "%s/port_map.ini" % self.__conf_dir
