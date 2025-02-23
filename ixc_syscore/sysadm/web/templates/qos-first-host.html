@@ -49,7 +49,7 @@
         <%
         x=0
         devices=self.V["devices"]
-        for hwaddr,comment in devices:
+        for hwaddr,comment in devices.items():
             s="""
             <tr>
                 <td>%d</td>
