@@ -726,6 +726,7 @@ class rpc(object):
         byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
         rs = self.__helper.router.qos_del_first_host_hwaddr(byte_hwaddr)
 
+        del dic[hwaddr]
         self.__helper.save_router_configs()
 
         return 0, rs
