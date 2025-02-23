@@ -77,6 +77,8 @@ class rpc(object):
             "qos_set_tunnel_first": self.qos_set_tunnel_first,
             "qos_unset_tunnel": self.qos_unset_tunnel,
             "qos_set_mpkt_first_size": self.qos_set_mpkt_first_size,
+            "qos_add_first_host_hwaddr": self.qos_add_first_host_hwaddr,
+            "qos_del_first_host_hwaddr": self.qos_del_first_host_hwaddr,
 
             "passthrough_device_add": self.passthrough_device_add,
             "passthrough_device_del": self.passthrough_device_del,
@@ -698,6 +700,18 @@ class rpc(object):
         rs = self.__helper.router.qos_set_mpkt_first_size(size)
 
         self.__helper.save_wan_configs()
+
+        return 0, rs
+
+    def qos_add_first_host_hwaddr(self, hwaddr: str):
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+        rs = self.__helper.router.qos_add_first_host_hwaddr(byte_hwaddr)
+
+        return 0, rs
+
+    def qos_del_first_host_hwaddr(self, hwaddr: str):
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+        rs = self.__helper.router.qos_del_first_host_hwaddr(byte_hwaddr)
 
         return 0, rs
 
