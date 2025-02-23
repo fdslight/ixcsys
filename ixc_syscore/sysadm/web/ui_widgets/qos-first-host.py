@@ -8,6 +8,8 @@ class widget(ui_widget.widget):
         router_configs = RPC.fn_call("router", "/config", "router_config_get")
         devices = router_configs["qos_first_host"]
 
+        print(devices)
+
         uri = "qos-first-host.html"
 
         return True, uri, {"devices": devices}
