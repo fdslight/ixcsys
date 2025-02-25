@@ -32,6 +32,8 @@ class resolv(object):
 
         # 文件不存在首先创建一个空文件
         if not os.path.isfile(fpath):
+            # 有时候存在链接存在文件不存在的情况,遇到此情况删除链接
+            if os.path.islink(fpath): os.remove(fpath)
             fdst = open(fpath, "w")
             fdst.close()
 
