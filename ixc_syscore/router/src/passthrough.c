@@ -232,7 +232,7 @@ void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m)
     netif=ixc_netif_get(IXC_NETIF_LAN);
     m->netif=netif;
 
-    if(!is_brd){
+    if(!is_brd && 0==passthrough.vlan_id_tagged_for_passdev){
         node=map_find(passthrough.permit_map,(char *)hwaddr,&is_found);
         if(!is_found){
             ixc_mbuf_put(m);
@@ -269,12 +269,14 @@ void ixc_passthrough_handle_from_passdev(struct ixc_mbuf *m)
             continue;
         }
 
-        if(0==passthrough.vlan_id_tagged_for_passdev){
-            ixc_ether_send(new_mbuf,1);
-            continue;
-        }
+        ixc_ether_send(new_mbuf,1);
+
+        //if(0==passthrough.vlan_id_tagged_for_passdev){
+        //    ixc_ether_send(new_mbuf,1);
+        //    continue;
+        //}
         
-        ixc_ether_send3(new_mbuf,0x8100,passthrough.vlan_id_tagged_for_passdev);
+        //ixc_ether_send3(new_mbuf,0x8100,passthrough.vlan_id_tagged_for_passdev);
     }
 
     // 回收旧的mbuf
