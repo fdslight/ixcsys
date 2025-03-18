@@ -331,6 +331,7 @@ login.oracle.com:1
 *.chinese-family.com:1
 *.yanjinggongju.com:1
 *.bible:1
+*.zanmei.ai:1
 
 # 台湾
 *.tw:1
