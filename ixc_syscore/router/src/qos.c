@@ -4,7 +4,7 @@
 #include "qos.h"
 #include "nat.h"
 #include "route.h"
-//#include "addr_map.h"
+#include "addr_map.h"
 #include "debug.h"
 #include "netif.h"
 
