@@ -4,7 +4,7 @@
 #include "qos.h"
 #include "nat.h"
 #include "route.h"
-#include "addr_map.h"
+//#include "addr_map.h"
 #include "debug.h"
 #include "netif.h"
 
@@ -112,7 +112,7 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr = (struct netutil_iphdr *)(m->data + m->offset);
     int size;
-    struct ixc_addr_map_record *addr_map_record;
+    //struct ixc_addr_map_record *addr_map_record;
 
     // 隧道流量优先
     if(ixc_qos.tunnel_isset){
@@ -157,7 +157,7 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
-    struct ixc_addr_map_record *addr_map_record;
+    //struct ixc_addr_map_record *addr_map_record;
     int size;
 
     // 隧道流量优先
