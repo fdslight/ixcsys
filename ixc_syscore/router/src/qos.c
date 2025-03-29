@@ -129,13 +129,16 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
     }
 
     if(IXC_MBUF_FROM_WAN==m->from){
+        ixc_qos_send_to_next(m);
+        return;
+        /*
         addr_map_record=ixc_addr_map_get(iphdr->dst_addr,0);
         if(NULL!=addr_map_record){
             if(ixc_qos_is_first_host(addr_map_record->hwaddr)){
                 ixc_qos_send_to_next(m);
                 return;
             }
-        }
+        }*/
     }
 
     size=m->tail-m->offset;
@@ -172,13 +175,16 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
     }
 
     if(IXC_MBUF_FROM_WAN==m->from){
+        ixc_qos_send_to_next(m);
+        return;
+        /*
         addr_map_record=ixc_addr_map_get(header->dst_addr,1);
         if(NULL!=addr_map_record){
             if(ixc_qos_is_first_host(addr_map_record->hwaddr)){
                 ixc_qos_send_to_next(m);
                 return;
             }
-        }
+        }*/
     }
 
     size=m->tail-m->offset;
