@@ -18,7 +18,6 @@ static struct sysloop *qos_sysloop=NULL;
 static void ixc_qos_sysloop_cb(struct sysloop *lp)
 {
     while(ixc_netif_wan_sendable() && ixc_qos_have_data()) ixc_qos_pop();
-    //while(ixc_qos_have_data()) ixc_qos_pop();
 }
 
 inline static int ixc_qos_calc_slot(void *header,int is_ipv6)
