@@ -1449,11 +1449,13 @@ static void ixc_myloop(void)
 
     sysloop_do();
     
+    /*
     if(ixc_qos_have_data()){
         ixc_ev_set.wait_timeout=0;
     }else{
         ixc_ev_set.wait_timeout=IXC_IO_WAIT_TIMEOUT;
-    }
+    }*/
+   
     if(now-loop_time_up<30) return;
 
     // 每隔30s调用一次python循环
