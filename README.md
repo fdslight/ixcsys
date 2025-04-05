@@ -28,10 +28,11 @@ A software router for Linux
 
 
 # run ixcsys
-1.first you must tell ixcsys your computer physical network card by run "python3 ixc_cfg.py" configure network card   
-2.secondly run command "python3 ixc_main.py start" as root user   
-3.last you can open "http://192.168.11.254 or http://router.ixcsys.com" manage router by your browser  
-4.the ixcsys default user is "admin" and password "admin"
+1.tell ixcsys your computer physical network card by run "python3 ixc_cfg.py" configure network card  
+2.stop System NetworkManager,for example systemctl stop NetworkManager  
+3.run command "python3 ixc_main.py start" as root user   
+4.you can open "http://192.168.11.254 or http://router.ixcsys.com" manage router by your browser  
+5.the ixcsys default user is "admin" and password "admin"
 
 # software update
 1. git pull origin master
