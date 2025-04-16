@@ -15,6 +15,7 @@
 #include "ip6sec.h"
 #include "npfwd.h"
 #include "global.h"
+#include "pppoe.h"
 
 #include "../../../pywind/clib/map.h"
 #include "../../../pywind/clib/netutils.h"
@@ -869,6 +870,11 @@ int ixc_route_is_enabled_ipv6_pass(void)
 
 int ixc_route_ipv6_pass_enable(int enable)
 {
+    // 如果开启pppoe那么ipv6就禁止直通
+    if(ixc_pppoe_is_enabled()){
+        route.ipv6_pass=0;
+        return 0;
+    }
     route.ipv6_pass=enable;
 
     return 0;
