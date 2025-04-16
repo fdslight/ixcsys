@@ -2,6 +2,10 @@
 
 class dhcpv6c(object):
     __pppoe_enable = None
+    __duid = None
+    __iaid = None
+    # IPv6地址前缀
+    __address_prefix = None
 
     def __init__(self):
         self.__pppoe_enable = False
