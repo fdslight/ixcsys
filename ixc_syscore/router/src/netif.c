@@ -367,7 +367,7 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
 {
     ssize_t rsize;
     struct ixc_mbuf *m;
-    int rs=0;
+    int rs=0,have_data=0;
     
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -391,6 +391,7 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
             if(EAGAIN==errno){
                 ixc_mbuf_put(m);
                 rs=0;
+                have_data=1;
                 break;
             }else{
                 ixc_mbuf_put(m);
@@ -422,6 +423,11 @@ int ixc_netif_rx_data(struct ixc_netif *netif)
     }
 
     ixc_netif_calc_speed(netif);
+
+    // 如果还有数据那么取消读事件,否则加入读事件
+    if(have_data){
+    }else{
+    }
     
     return rs;
 }

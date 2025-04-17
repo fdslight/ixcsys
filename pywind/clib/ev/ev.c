@@ -247,3 +247,15 @@ void ev_each(struct ev_set *ev_set,ev_each_fn_t fn)
 		ev=ev->next;
 	}
 }
+
+void ev_each_if_no_add_readable_event_and_call_read_handler(struct ev_set *ev_set)
+{
+	struct ev *ev=ev_set->ev_head;
+	
+	while(NULL!=ev){
+		if(!ev->is_added_read){
+			ev->readable_fn(ev);
+		}
+		ev=ev->next;
+	}
+}
