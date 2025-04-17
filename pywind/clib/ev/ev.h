@@ -135,9 +135,4 @@ int ev_setnonblocking(int fd);
 /// 遍历事件
 void ev_each(struct ev_set *ev_set,ev_each_fn_t fn);
 
-/// 遍历没有加入读事件触发的文件对象,并且调用读处理函数
-//  此函数作用是减少read事件的触发次数,减少系统调用,提升性能
-//  return:未加入read事件的数量
-int ev_each_if_no_add_readable_event_and_call_read_handler(struct ev_set *ev_set);
-
 #endif
