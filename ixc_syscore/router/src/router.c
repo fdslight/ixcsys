@@ -1446,6 +1446,7 @@ static int ixc_start_python(void)
 static void ixc_myloop(void)
 {
     time_t now=time(NULL);
+    int no_add_read_ev_count=0;
 
     sysloop_do();
     
@@ -1453,6 +1454,13 @@ static void ixc_myloop(void)
         ixc_ev_set.wait_timeout=0;
     }else{
         ixc_ev_set.wait_timeout=IXC_IO_WAIT_TIMEOUT;
+    }
+
+    no_add_read_ev_count=ev_each_if_no_add_readable_event_and_call_read_handler(&ixc_ev_set);
+
+    // 如果还有未加入到读事件的文件,那么io wait等待时间重置为0
+    if(no_add_read_ev_count>0){
+        ixc_ev_set.wait_timeout=0;
     }
    
     if(now-loop_time_up<30) return;
