@@ -9,14 +9,14 @@ import router
 
 class IPv6CP(ncp.NCP):
     __try_count = None
-    __my_ipaddr_ok = None
-    __my_ipaddr_subnet = None
+    __interface_id = None
+    __peer_id = None
     __my_id = None
 
     def my_init(self):
         self.reset()
 
-    def send_ncp_ipv6addr_request(self):
+    def send_ncp_ipv6id_request(self):
         self.__try_count += 1
         self.__my_id = random.randint(1, 0xf0)
         data = self.build_opt_value(1, bytes(8))
@@ -25,6 +25,7 @@ class IPv6CP(ncp.NCP):
     def handle_cfg_request(self, _id: int, byte_data: bytes):
         """重写这个方法
         """
+        # 对端接口ID
         self.send_ncp_packet(0x8057, lcp.CFG_ACK, _id, byte_data)
 
     def handle_cfg_ack(self, _id: int, byte_data: bytes):
@@ -34,11 +35,8 @@ class IPv6CP(ncp.NCP):
 
         if _id != self.__my_id: return
 
-        self.__my_ipaddr_subnet = byte_data[2:]
-        self.__my_ipaddr_ok = True
+        self.__interface_id = byte_data[2:]
         self.__try_count = 0
-
-        self.pppoe.runtime.router.netif_set_ip(router.IXC_NETIF_LAN, self.__my_ipaddr_subnet, 64, True)
 
     def handle_cfg_nak(self, _id: int, byte_data: bytes):
         if len(byte_data) != 10: return
@@ -55,17 +53,16 @@ class IPv6CP(ncp.NCP):
         self.send_ncp_packet(ncp.PPP_IPCP, lcp.TERM_ACK, _id, byte_data)
 
     def start(self):
-        self.send_ncp_ipv6addr_request()
+        self.send_ncp_ipv6id_request()
 
     def loop(self):
-        if not self.__my_ipaddr_ok and self.__try_count > 3:
+        if not self.__interface_id and self.__try_count > 3:
             return
-        if not self.__my_ipaddr_ok:
-            self.send_ncp_ipv6addr_request()
+        if not self.__interface_id:
+            self.send_ncp_ipv6id_request()
             return
 
     def reset(self):
         self.__try_count = 0
-        self.__my_ipaddr_ok = False
-        self.__my_ipaddr_subnet = None
+        self.__interface_id = False
         self.__my_id = 0
