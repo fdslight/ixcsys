@@ -589,6 +589,20 @@ router_pppoe_reset(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+/// 强制指定PPPoE AC
+static PyObject *
+router_pppoe_force_ac_name(PyObject *self,PyObject *args)
+{
+    const char *ac_name;
+    int is_forced;
+
+    if(!PyArg_ParseTuple(args,"sp",&ac_name,&is_forced)) return NULL;
+
+    ixc_pppoe_force_ac_name(ac_name,is_forced);
+
+    Py_RETURN_NONE;
+}
+
 /// 端口映射添加
 static PyObject *
 router_port_map_add(PyObject *self,PyObject *args)
@@ -1045,6 +1059,7 @@ static PyMethodDef routerMethods[]={
     {"pppoe_set_ok",(PyCFunction)router_pppoe_set_ok,METH_VARARGS,"set pppoe ok or not ok"},
     {"pppoe_data_send",(PyCFunction)router_pppoe_data_send,METH_VARARGS,"send pppoe session data"},
     {"pppoe_reset",(PyCFunction)router_pppoe_reset,METH_VARARGS,"reset pppoe session"},
+    {"pppoe_force_ac_name",(PyCFunction)router_pppoe_force_ac_name,METH_VARARGS,"force pppoe ac name"},
     //
     {"port_map_add",(PyCFunction)router_port_map_add,METH_VARARGS,"port map add"},
     {"port_map_del",(PyCFunction)router_port_map_del,METH_VARARGS,"port map delete"},

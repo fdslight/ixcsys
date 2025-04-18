@@ -9,6 +9,7 @@
 #include "addr_map.h"
 #include "route.h"
 #include "global.h"
+#include "pppoe.h"
 
 static int icmpv6_isset_dns=0;
 static unsigned char icmpv6_dnsserver[16];
@@ -62,6 +63,13 @@ static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,uns
     m->offset=m->offset-40;
     m->begin=m->offset;
 
+    // 如果开启了PPPoE,那么使用PPPoE封装
+    if(IXC_NETIF_WAN==netif->type && ixc_pppoe_is_enabled()){
+        DBG_FLAGS;
+        ixc_pppoe_send(m);
+        return 0;
+    }
+
     ixc_ether_send(m,1);
 
     return 0;
@@ -104,7 +112,7 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     struct ixc_netif *netif=m->netif;
     struct ixc_icmpv6_opt_link_addr *opt;
     unsigned char ip6addr_all_routers[]=IXC_IP6ADDR_ALL_ROUTERS;
-
+    
     if(netif->type==IXC_NETIF_WAN || icmp_code!=0){
         ixc_mbuf_put(m);
         return;
@@ -135,7 +143,7 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 /// 处理路由宣告报文
 static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,unsigned char icmp_code)
 {
-    struct ixc_netif *netif=m->netif;
+    struct ixc_netif *netif=m->netif,*if_lan;
     //struct ixc_icmpv6_ra_header *ra_header;
     struct ixc_icmpv6_opt_prefix_info *opt_prefix=NULL;
 
@@ -143,17 +151,19 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     unsigned char type,length;
     int is_err=0,A=0,v,size=0;
     unsigned char gw_hwaddr[6],byte,slaac_addr[16];
-    //unsigned char unspec_addr[]=IXC_IP6ADDR_UNSPEC;
+    unsigned char unspec_addr[]=IXC_IP6ADDR_UNSPEC;
     unsigned int mtu=netif->mtu_v6;
 
-    v=(m->tail-m->offset)/8;
+    v=(m->tail-m->offset) % 8;
 
     if(0!=v){
+        DBG("Wrong IPv6 packet length %d\r\n",v);
         ixc_mbuf_put(m);
         return;
     }
 
     if(netif->type==IXC_NETIF_LAN || icmp_code!=0){
+        DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
@@ -205,11 +215,13 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     }
 
     if(is_err){
+        DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
 
     if(NULL==opt_prefix){
+        DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
@@ -218,12 +230,14 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 
     // 首先检查地址是否合法
     if(byte==0x00 || byte==0xff || byte==0xfe){
+        DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
 
     // 检查前缀是否符合无状态地址配置要求
     if(opt_prefix->prefix_len>64 || opt_prefix->prefix_len < 48){
+        DBG_FLAGS;
         STDERR("cannot apply to stateless address set because of RA prefix is %d\r\n",opt_prefix->prefix_len);
         ixc_mbuf_put(m);
         return;
@@ -243,22 +257,34 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
 
-    memcpy(slaac_addr,opt_prefix->prefix,opt_prefix->length);
+    memcpy(slaac_addr,opt_prefix->prefix,16);
     
-    ixc_ip6_eui64_get(netif->hwaddr,slaac_addr);
+    //ixc_ip6_eui64_get(netif->hwaddr,slaac_addr);
     // 为LAN和WAN各分配一个IP地址
     // 为WAN分配地址
-    ixc_netif_set_ip(IXC_NETIF_WAN,slaac_addr,64,1);
+    //ixc_netif_set_ip(IXC_NETIF_WAN,slaac_addr,64,1);
     // 此处发送邻居请求,检查地址是否冲突
     //ixc_icmpv6_send_ns(netif,unspec_addr,slaac_addr);
 
     // 为LAN分配一个地址
-    //if_lan=ixc_netif_get(IXC_NETIF_LAN);
-    //ixc_ip6_eui64_get(if_lan->hwaddr,slaac_addr);
-    //ixc_netif_set_ip(IXC_NETIF_LAN,slaac_addr,64,1);
+    if_lan=ixc_netif_get(IXC_NETIF_LAN);
+
+    if(opt_prefix->prefix_len>64){
+        STDERR("Unsupport IPv6 prefix length for RA %d\r\n",opt_prefix->prefix_len);
+        ixc_mbuf_put(m);
+        return;
+    }
+
+    ixc_ip6_addr_get(if_lan->hwaddr,opt_prefix->prefix,slaac_addr);
+    ixc_netif_set_ip(IXC_NETIF_LAN,slaac_addr,opt_prefix->prefix_len,1);
+    
+    IXC_PRINT_IP6("IPv6 RA Prefix Address is ",opt_prefix->prefix);
 
     netif->mtu_v6=mtu;
     memcpy(netif->ip6_default_router_hwaddr,gw_hwaddr,6);
+
+    // 设置默认路由
+    ixc_route_add(unspec_addr,0,unspec_addr,1);
 
     ixc_mbuf_put(m);
 }
@@ -427,6 +453,8 @@ void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr)
     struct ixc_netif *netif=m->netif;
     struct netutil_icmpv6hdr *icmp_header;
 
+    //DBG("netif address %lu\r\n",netif);
+
     icmp_header=(struct netutil_icmpv6hdr *)(m->data+m->offset+40);
     // 指向到ICMP头部
     m->offset+=40;
@@ -561,7 +589,7 @@ int ixc_icmpv6_send_rs(void)
     ixc_ether_get_multi_hwaddr_by_ipv6(all_routers,dst_hwaddr);
     ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,all_routers,buf,16);
 
-    //DBG_FLAGS;
+    DBG("send icmpv6 RS packet\r\n");
 
     return 0;
 }

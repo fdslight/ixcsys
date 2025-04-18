@@ -34,7 +34,11 @@ static void ixc_ip6_sysloop_cb(struct sysloop *loop)
     /**if(!ixc_pppoe_is_enabled()){
         ixc_icmpv6_send_rs();
     }**/
-    
+
+    if(ixc_pppoe_is_enabled()){
+        ixc_icmpv6_send_rs();
+    }
+
     // 如果设置了IPv6并且不开启直通那么定时发送RA
     if(netif->isset_ip6 && !ixc_route_is_enabled_ipv6_pass()) ixc_icmpv6_send_ra(NULL,NULL);
 
@@ -168,13 +172,14 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
     struct ixc_netif *netif=mbuf->netif;
 
     // 未启用IPv6地址并且未开启IPv6穿透那么丢弃数据包
-    if(!netif->isset_ip6 && !ixc_route_is_enabled_ipv6_pass()){
+    if(!ixc_route_is_enabled_ipv6_pass() && !ixc_pppoe_is_enabled()){
         ixc_mbuf_put(mbuf);
         return;
     }
 
     //DBG_FLAGS;
     if(!ixc_ip6_check_ok(mbuf)){
+        //DBG_FLAGS;
         ixc_mbuf_put(mbuf);
         return;
     }
@@ -188,6 +193,7 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
     //ixc_addr_map_check(header->src_addr,mbuf->src_hwaddr,1);
 
     if(IXC_NETIF_WAN==netif->type){
+        //DBG_FLAGS;
         ixc_ip6_handle_from_wan(mbuf,header);
     }else{
         ixc_ip6_handle_from_lan(mbuf,header);

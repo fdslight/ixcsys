@@ -1366,7 +1366,7 @@ class helper(object):
 
         if not debug: self.__router.clog_set("/tmp/ixcsys/router/stdout.log", "/tmp/ixcsys/router/stderr.log")
 
-        # FreeBSDif_tap.ko
+        # FreeBSD if_tap.ko
         if not self.is_linux:
             fd = os.popen("kldstat")
             s = fd.read()
@@ -1429,13 +1429,25 @@ class helper(object):
 
         return self.__rpc_instance.call(name, *args, **kwargs)
 
-    def tell(self, cmd: str, *args):
+    def tell(self, s: str, *args):
         """
         """
+        p = s.find(" ")
+        v = ""
+        if p <= 0:
+            cmd = s
+        else:
+            cmd = s[0:p]
+            p += 1
+            v = s[p:]
         if cmd == "lcp_start":
             if self.__pppoe: self.__pppoe.start_lcp()
         if cmd == "lcp_stop":
             if self.__pppoe: self.__pppoe.stop_lcp()
+        if cmd == "pppoe_ac_name":
+            ac_name = v
+            self.__pppoe.record_ac_name(ac_name)
+        return
 
     def calc_md5(self, byte_data: bytes):
         """计算MD5

@@ -128,6 +128,7 @@ class IPCP(ncp.NCP):
                 if self.debug: print("PPPoE My IP address:%s" % socket.inet_ntop(socket.AF_INET, value))
                 self.__ipaddr_ok = True
                 self.pppoe.runtime.router.netif_set_ip(router.IXC_NETIF_WAN, self.__my_ipaddr, 32, False)
+                self.pppoe.runtime.router.route_add(bytes(4), 0, bytes(4), False)
                 break
             if _type == 129:
                 if len(value) != 4:

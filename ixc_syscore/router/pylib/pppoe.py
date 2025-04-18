@@ -20,6 +20,8 @@ class pppoe(object):
     __ipcp = None
     __ipv6cp = None
 
+    __ac_names = None
+
     def __init__(self, runtime):
         self.__runtime = runtime
         self.__start = False
@@ -28,6 +30,12 @@ class pppoe(object):
         self.__pap = pap.PAP(self)
         self.__ipcp = ipcp.IPCP(self)
         self.__ipv6cp = ipv6cp.IPv6CP(self)
+
+        self.__ac_names = []
+
+    @property
+    def router(self):
+        return self.__runtime.router
 
     @property
     def debug(self):
@@ -164,3 +172,10 @@ class pppoe(object):
     def ncp_start(self):
         self.__ipcp.start()
         self.__ipv6cp.start()
+
+    def record_ac_name(self, ac_name: str):
+        """记录AC name
+        """
+        if ac_name not in self.__ac_names:
+            self.__ac_names.append(ac_name)
+        return

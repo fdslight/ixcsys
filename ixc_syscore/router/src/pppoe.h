@@ -57,7 +57,11 @@ struct ixc_pppoe{
     // PPPoE的密码
     char passwd[512];
     char ac_name[2048];
+    char force_ac_name[2048];
     unsigned char ac_cookie[2048];
+    
+    int is_forced_ac_name;
+
     unsigned short session_id;
     // 选择的PPPoE服务器
     unsigned char selected_server_hwaddr[6];
@@ -93,5 +97,8 @@ void ixc_pppoe_send_session_packet(unsigned short ppp_protocol,unsigned short le
 void ixc_pppoe_reset(void);
 
 struct ixc_pppoe *ixc_pppoe(void);
+
+/// 强制指定AC
+int ixc_pppoe_force_ac_name(const char *name,int is_forced);
 
 #endif

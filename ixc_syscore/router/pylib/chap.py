@@ -45,6 +45,9 @@ class CHAP(object):
 
     def handle_success(self, _id: int, byte_data: bytes):
         self.__pppoe.ncp_start()
+        self.__pppoe.router.pppoe_set_ok(True)
+
+        logging.print_alert("PPPoE chap auth OK\r\n")
 
     def handle_failure(self, _id: int, byte_data: bytes):
         if byte_data:

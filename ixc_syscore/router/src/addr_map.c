@@ -210,13 +210,13 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     }
 
     // 如果是WAN口并且不是同网段地址那么直接使用默认网关
-    if(netif->type==IXC_NETIF_WAN && !ixc_netif_is_subnet(netif,header->dst_addr,1,0)){
+    /*if(netif->type==IXC_NETIF_WAN && !ixc_netif_is_subnet(netif,header->dst_addr,1,0)){
         memcpy(m->src_hwaddr,netif->hwaddr,6);
         memcpy(m->dst_hwaddr,netif->ip6_default_router_hwaddr,6);
         ixc_ether_send(m,1);
         return;
-    }
-   
+    }*/
+
     r=ixc_addr_map_get(m->next_host,1);
 
     if(NULL==r) is_sent=1;
@@ -272,10 +272,10 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
 
 void ixc_addr_map_handle(struct ixc_mbuf *m)
 {
-    struct ixc_netif *netif=m->netif;
+    //struct ixc_netif *netif=m->netif;
 
     // 如果目标网卡是WAN并且数据来自于LAN那么直接发送到PPPoE
-    if(ixc_pppoe_is_enabled() && netif->type==IXC_NETIF_WAN && m->from==IXC_MBUF_FROM_LAN){
+    if(ixc_pppoe_is_enabled() && m->from==IXC_MBUF_FROM_LAN){
         ixc_pppoe_handle(m);
         return;
     }

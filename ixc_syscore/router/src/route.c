@@ -645,8 +645,14 @@ static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip
     // 先修改再克隆,一些透传参数要修改,比如DNS
     ixc_icmpv6_filter_and_modify(m);
 
+    //DBG("netif address %lu\r\n",m->netif);
+
     clone_m=ixc_mbuf_clone(m);
+    //DBG("netif address %lu\r\n",m->netif);
+
     if(NULL!=clone_m){
+        //DBG_FLAGS;
+        //DBG("netif clone address %lu\r\n",clone_m->netif);
         clone_header=(struct netutil_ip6hdr *)(clone_m->data+clone_m->offset);
         ixc_icmpv6_handle(clone_m,clone_header);
     }
@@ -870,7 +876,7 @@ int ixc_route_is_enabled_ipv6_pass(void)
 
 int ixc_route_ipv6_pass_enable(int enable)
 {
-    // 如果开启pppoe那么ipv6就禁止直通
+    // pppoe强制不生效
     if(ixc_pppoe_is_enabled()){
         route.ipv6_pass=0;
         return 0;

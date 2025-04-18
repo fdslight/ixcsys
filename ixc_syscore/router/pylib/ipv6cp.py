@@ -13,6 +13,14 @@ class IPv6CP(ncp.NCP):
     __peer_id = None
     __my_id = None
 
+    def byte_to_hex(self, byte_data: bytes):
+        results = []
+        for n in byte_data:
+            ch = hex(n)[2:].lower()
+            results.append(ch)
+
+        return results
+
     def my_init(self):
         self.reset()
 
@@ -25,7 +33,25 @@ class IPv6CP(ncp.NCP):
     def handle_cfg_request(self, _id: int, byte_data: bytes):
         """重写这个方法
         """
-        # 对端接口ID
+        if byte_data[0] != 1: return
+        if byte_data[1] != 10: return
+
+        peer_id = byte_data[2:]
+        if len(peer_id) != 8: return
+
+        # 此处检查对端interface id是否合法
+        """
+        should_peer_id = b""
+        
+        if should_peer_id != peer_id:
+            self.send_ncp_packet(0x8057, lcp.CFG_NAK, _id, should_peer_id)
+            return
+        """
+
+        if self.debug:
+            results = self.byte_to_hex(peer_id)
+            print("PPPoE Peer Ipv6 interface ID: %s" % ":".join(results))
+
         self.send_ncp_packet(0x8057, lcp.CFG_ACK, _id, byte_data)
 
     def handle_cfg_ack(self, _id: int, byte_data: bytes):
@@ -37,6 +63,11 @@ class IPv6CP(ncp.NCP):
 
         self.__interface_id = byte_data[2:]
         self.__try_count = 0
+
+        if self.debug:
+            results = self.byte_to_hex(self.__interface_id)
+            print("PPPoE My Ipv6 interface ID: %s" % ":".join(results))
+        ''''''
 
     def handle_cfg_nak(self, _id: int, byte_data: bytes):
         if len(byte_data) != 10: return

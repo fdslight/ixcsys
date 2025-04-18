@@ -202,7 +202,7 @@ class LCP(object):
             if _type == OPT_AUTH_PROTO:
                 if not self.check_auth_proto_fmt(value):
                     is_error = True
-                    if self.debug: print("wrong auth protocol")
+                    if self.debug: logging.print_alert("wrong PPPoE auth protocol")
                     continue
 
                 method, flags = self.get_auth_method(value)
@@ -294,6 +294,8 @@ class LCP(object):
     def handle_term_req(self, _id: int, byte_data: bytes):
         self.send(TERM_ACK, _id, byte_data)
         self.__pppoe.reset()
+
+        logging.print_alert("PPPoE server teminate session")
 
     def handle_term_ack(self, _id: int, byte_data: bytes):
         pass
