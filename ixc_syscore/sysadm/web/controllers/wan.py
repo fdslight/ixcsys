@@ -12,6 +12,12 @@ class controller(base_controller.BaseController):
         return True
 
     def handle_pppoe(self):
+        action = self.request.get_argument('action', is_qs=True, is_seq=False)
+        if action == "force-re-dial":
+            RPC.fn_call("router", "/config", "pppoe_force_re_dial")
+            self.json_resp(False, "PPPoE强制拨号成功")
+            return
+        ''''''
         username = self.request.get_argument("username", is_seq=False, is_qs=False)
         passwd = self.request.get_argument("passwd", is_seq=False, is_qs=False)
         s_heartbeat_enable = self.request.get_argument("heartbeat", is_qs=False, is_seq=False)

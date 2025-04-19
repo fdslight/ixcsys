@@ -34,8 +34,20 @@
     </div>
     <div class="form-group row">
         <div class="col-sm-12">
-            <a href="#" class="btn float-lg-right">强制重新拨号</a>
             <button type="submit" class="btn btn-primary float-lg-right">确定</button>
+            <a href="#" class="btn float-lg-right" id="ixc-pppoe-force-dial">强制重新拨号</a>
         </div>
     </div>
+    <script type="text/javascript">
+        $(document).ready(function (e){
+            $("#ixc-pppoe-force-dial").click(function () {
+                $.get("${self.url_prefix}/wan", {"type":"pppoe","action":"force-re-dial"}, function (result) {
+                    let is_error = result["is_error"];
+                    let message = result["message"];
+
+                    alert(message);
+                });
+            });
+        });
+    </script>
 </form>

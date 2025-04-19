@@ -60,6 +60,7 @@ class rpc(object):
             "passdev_set": self.passdev_set,
             "pppoe_set": self.pppoe_set,
             "pppoe_dnsservers_get": self.pppoe_dnsservers_get,
+            "pppoe_force_re_dial": self.pppoe_force_re_dial,
             "router_config_get": self.router_config_get,
             "port_map_add": self.port_map_add,
             "port_map_del": self.port_map_del,
@@ -443,6 +444,9 @@ class rpc(object):
 
     def pppoe_dnsservers_get(self):
         return 0, self.__helper.pppoe_dnsservers
+
+    def pppoe_force_re_dial(self):
+        return 0, self.__helper.pppoe_force_re_dial()
 
     def internet_type_set(self, _type: str):
         types = (
@@ -1419,6 +1423,11 @@ class helper(object):
     @property
     def pppoe_heartbeat(self):
         return self.__pppoe_heartbeat
+
+    def pppoe_force_re_dial(self):
+        """强制重新连接
+        """
+        self.__pppoe.reset()
 
     def rpc_fn_call(self, name: str, arg_data: bytes):
         """
