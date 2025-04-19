@@ -1198,7 +1198,6 @@ class helper(object):
         self.__if_pass_fd = -1
 
     def start_wan(self):
-        self.__pppoe = pppoe.pppoe(self)
         self.load_wan_configs()
 
         wan_public = self.__wan_configs["public"]
@@ -1206,6 +1205,7 @@ class helper(object):
         wan_ifhwaddr = wan_public["hwaddr"]
         ipv4 = self.__wan_configs["ipv4"]
 
+        self.__pppoe = pppoe.pppoe(self)
         self.__if_wan_fd, self.__WAN_NAME = self.__router.netif_create(self.__WAN_NAME, router.IXC_NETIF_WAN)
         self.router.netif_set_hwaddr(router.IXC_NETIF_WAN, netutils.str_hwaddr_to_bytes(wan_ifhwaddr))
 
@@ -1234,7 +1234,8 @@ class helper(object):
         if self.__pppoe_enable:
             # PPPoE需要减去头部的8个字节
             ip4_mtu -= 8
-            ip6_mtu -= 8
+            # 由于IPv6最小mtu为1280,只有大于1288时才减去8
+            if ip6_mtu >= 1288: ip6_mtu -= 8
             self.__pppoe_user = wan_pppoe["user"]
             self.__pppoe_passwd = wan_pppoe["passwd"]
             self.__pppoe_heartbeat = bool(int(wan_pppoe["heartbeat"]))

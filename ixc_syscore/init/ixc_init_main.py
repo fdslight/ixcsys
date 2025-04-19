@@ -60,8 +60,13 @@ def __start_service(debug):
 class service(dispatcher.dispatcher):
     __debug = None
     __log_fd = None
-    __logs = None
-    __log_count = None
+
+    __logs_generic = None
+    __logs_important = None
+
+    __logs_generic_count = None
+    __logs_important_count = None
+
     __log_max = None
 
     __errlog_path = None
@@ -75,15 +80,19 @@ class service(dispatcher.dispatcher):
         global_vars["ixcsys.init"] = self
 
         self.__debug = debug
-        self.__logs = []
-        self.__log_count = 0
-        self.__log_max = 200
+        self.__logs_generic = []
+        self.__logs_important = []
+        self.__logs_generic_count = 0
+        self.__logs_important_count = 0
+        self.__log_max = 1000
 
         self.__errlog_path = "/var/log/ixcsys_error.log"
         self.__syslog_path = "/var/log/ixcsys_syslog.log"
 
         # 限制最大为256KB
         self.__errlog_file_max_size = 256 * 1024
+
+        self.load_syslog()
 
         self.create_poll()
         self.start_scgi()
@@ -135,11 +144,22 @@ class service(dispatcher.dispatcher):
 
         o = {"level": level_map[level], "application": name, "message": message,
              "time": time.strftime("%Y-%m-%d %H:%M:%S %Z")}
-        if self.__log_count >= self.__log_max:
-            self.__logs.pop(0)
+
+        if level == logging.LEVEL_INFO:
+            _list = self.__logs_generic
+            count = self.__logs_generic_count
         else:
-            self.__log_count += 1
-        self.__logs.append(o)
+            _list = self.__logs_important
+            count = self.__logs_important_count
+
+        if count >= self.__log_max: _list.pop(0)
+
+        if level == logging.LEVEL_INFO:
+            self.__logs_generic_count += 1
+        else:
+            self.__logs_important_count += 1
+
+        _list.append(o)
 
     def write_err_log(self, name: str, message: str):
         s1 = time.strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -152,19 +172,43 @@ class service(dispatcher.dispatcher):
 
     def save_log_to_file(self):
         fpath = self.__syslog_path
-        s = json.dumps(self.__logs)
+
+        new_list = self.__logs_generic + self.__logs_important
+
+        s = json.dumps(new_list)
         with open(fpath, "wb") as f: f.write(s.encode())
         f.close()
 
-    def get_syslog(self, from_file=False):
-        if not from_file: return self.__logs
+    def get_info_syslog(self):
+        return self.__logs_generic
 
+    def get_alert_syslog(self):
+        return self.__logs_important
+
+    def load_syslog(self):
         fpath = self.__syslog_path
+
         if not os.path.isfile(fpath): return []
+
         with open(fpath, "rb") as f:
             byte_s = f.read()
         f.close()
-        return json.loads(byte_s.decode())
+        try:
+            r = json.loads(byte_s.decode())
+        except:
+            return
+
+        for dic in r:
+            try:
+                if dic["level"].lower() == "info":
+                    self.__logs_generic.append(dic)
+                else:
+                    self.__logs_important.append(dic)
+                ''''''
+            except KeyError:
+                continue
+            ''''''
+        return
 
     def get_errlog(self):
         if not os.path.isfile(self.__errlog_path): return ""

@@ -178,6 +178,10 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     //ra_header=(struct ixc_icmpv6_ra_header *)(m->data+m->offset);
     ptr=m->data+m->offset+16;
 
+    // 清空DNS
+    bzero(icmpv6_wan_dnsserver_a,16);
+    bzero(icmpv6_wan_dnsserver_b,16);
+
     while(size<(m->end-m->offset-16)){
         type=ptr[0];
         length=ptr[1];

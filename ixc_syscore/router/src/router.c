@@ -1144,7 +1144,6 @@ PyInit_router(void){
     PyModule_AddIntMacro(m,IXC_FLAG_SRC_FILTER);
     PyModule_AddIntMacro(m,IXC_FLAG_ROUTE_FWD);
     PyModule_AddIntMacro(m,IXC_FLAG_TRAFFIC_LOG);
-    PyModule_AddIntMacro(m,IXC_FLAG_SYSLOG);
 
     PyModule_AddIntMacro(m,IXC_NETIF_LAN);
     //

@@ -16,8 +16,6 @@
 #define IXC_FLAG_ROUTE_FWD 4
 /// 流量日志
 #define IXC_FLAG_TRAFFIC_LOG 5
-/// 系统日志
-#define IXC_FLAG_SYSLOG 6
 
 
 #include<sys/types.h>

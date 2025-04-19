@@ -2,8 +2,10 @@
 
 import time, random
 
+import pywind.lib.netutils as netutils
 import ixc_syscore.router.pylib.ncp as ncp
 import ixc_syscore.router.pylib.lcp as lcp
+import ixc_syslib.pylib.logging as logging
 import router
 
 
@@ -24,10 +26,21 @@ class IPv6CP(ncp.NCP):
     def my_init(self):
         self.reset()
 
+    def set_my_interface_id(self):
+        mac_address = self.pppoe.runtime.wan_configs['public']['hwaddr']
+
+        binary_mac = bin(int(mac_address[:2], 16))[2:].zfill(8)
+        flipped_mac = binary_mac[:7] + "1" + binary_mac[8:]
+        flipped_mac_hex = hex(int(flipped_mac, 2))[2:].zfill(2)
+        eui64 = flipped_mac_hex + mac_address[2:6] + "FF:FE:" + mac_address[6:]
+
+        self.__interface_id = netutils.str_hwaddr_to_bytes(eui64)
+
     def send_ncp_ipv6id_request(self):
+        self.set_my_interface_id()
         self.__try_count += 1
         self.__my_id = random.randint(1, 0xf0)
-        data = self.build_opt_value(1, bytes(8))
+        data = self.build_opt_value(1, self.__interface_id)
         self.send_ncp_packet(ncp.PPP_IPv6CP, lcp.CFG_REQ, self.__my_id, data)
 
     def handle_cfg_request(self, _id: int, byte_data: bytes):
@@ -48,9 +61,8 @@ class IPv6CP(ncp.NCP):
             return
         """
 
-        if self.debug:
-            results = self.byte_to_hex(peer_id)
-            print("PPPoE Peer Ipv6 interface ID: %s" % ":".join(results))
+        results = self.byte_to_hex(peer_id)
+        logging.print_alert("PPPoE Peer Ipv6 interface ID: %s" % ":".join(results))
 
         self.send_ncp_packet(0x8057, lcp.CFG_ACK, _id, byte_data)
 
@@ -64,10 +76,8 @@ class IPv6CP(ncp.NCP):
         self.__interface_id = byte_data[2:]
         self.__try_count = 0
 
-        if self.debug:
-            results = self.byte_to_hex(self.__interface_id)
-            print("PPPoE My Ipv6 interface ID: %s" % ":".join(results))
-        ''''''
+        results = self.byte_to_hex(self.__interface_id)
+        logging.print_alert("PPPoE My Ipv6 interface ID: %s" % ":".join(results))
 
     def handle_cfg_nak(self, _id: int, byte_data: bytes):
         if len(byte_data) != 10: return

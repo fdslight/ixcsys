@@ -1,9 +1,9 @@
-<div id="ixc-syslog-view" class="ixc-menu-content">
+<div id="ixc-syslog-error-view" class="ixc-menu-content">
     <div><input type="button" class="btn float-right btn-info" value="清理" id="ixc-syslog-clear"/>
         <div class="clearfix"></div>
     </div>
     <h6>错误日志</h6>
-    <textarea disabled>${self.V['important']}</textarea>
+    <textarea cols="120" rows="82" style="resize:none;" disabled>${self.V['syslog']}</textarea>
     <script type="text/javascript">
         $(document).ready(function () {
             $("#ixc-syslog-clear").click(function () {

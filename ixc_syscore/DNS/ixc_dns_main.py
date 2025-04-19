@@ -117,6 +117,10 @@ class service(dispatcher.dispatcher):
     # 通信key
     __sec_dns_forward_key = None
 
+    #
+    __router_wan_configs = None
+    __read_pppoe_dns_time = None
+
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
 
@@ -158,10 +162,21 @@ class service(dispatcher.dispatcher):
 
         RPCClient.wait_processes(["router", ])
 
+        wan_configs = RPCClient.fn_call("router", "/config", "wan_config_get")
+        self.__router_wan_configs = wan_configs
+        self.__read_pppoe_dns_time = time.time()
+
         self.create_poll()
         self.start_dns()
         self.start_scgi()
         self.add_ns_os_resolv()
+
+    def is_pppoe_dial(self):
+        """是否是PPPoE拨号
+        """
+        wan_pub = self.__router_wan_configs["public"]
+        if wan_pub["internet_type"] != "pppoe": return False
+        return True
 
     def set_no_proxy_ips(self, ip_list: str):
         """加入IP匹配规则
@@ -785,6 +800,27 @@ class service(dispatcher.dispatcher):
         _list.insert(0, ("options", "single-request-reopen"))
         cls.write_to_file(_list)
 
+    def update_pppoe_dns(self):
+        now = time.time()
+        if now - self.__read_pppoe_dns_time < 30: return
+
+        ip4_nameservers = []
+
+        nameservers = RPCClient.fn_call("router", "/config", "pppoe_dnsservers_get")
+        for nameserver in nameservers:
+            if not nameserver: continue
+            ip4_nameservers.append(nameserver)
+
+        if ip4_nameservers:
+            ns1 = ip4_nameservers[0]
+            if len(ip4_nameservers) >= 2:
+                ns2 = ip4_nameservers[1]
+                self.set_nameservers(ns1, ns2, is_ipv6=False)
+            else:
+                self.set_nameservers(ns1, "", is_ipv6=False)
+            ''''''
+        self.__read_pppoe_dns_time = now
+
     def myloop(self):
         now = time.time()
 
@@ -804,6 +840,9 @@ class service(dispatcher.dispatcher):
         if now - self.__up_check_os_resolv_time > 60:
             self.add_ns_os_resolv()
             self.__up_check_os_resolv_time = now
+
+        if self.is_pppoe_dial():
+            self.update_pppoe_dns()
 
 
 def main():

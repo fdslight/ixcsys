@@ -2,22 +2,16 @@
 
 import time, traceback, sys
 
+import ixc_syslib.pylib.logging as _logging
+
 
 def print_general(text, address):
-    s1 = time.strftime("%Y-%m-%d %H:%M:%S %Z")
-    print("%s\t%s:%s\t%s" % (text, address[0], address[1], s1))
-    sys.stdout.flush()
+    s = "%s\t%s:%s" % (text, address[0], address[1])
+    _logging.print_alert(s)
 
 
 def print_error(text=""):
-    s1 = "<error time='%s'>" % time.strftime("%Y-%m-%d %H:%M:%S %Z")
-    s2 = "</error>"
+    if not text:
+        text = traceback.format_exc()
 
-    if text:
-        text = "%s\r\n%s\r\n%s\r\n" % (s1, text, s2,)
-        sys.stderr.write(text)
-    else:
-        excpt = traceback.format_exc()
-        error = "%s\r\n%s\r\n%s" % (s1, excpt, s2)
-        sys.stderr.write(error)
-    sys.stderr.flush()
+    _logging.print_error(text)

@@ -214,7 +214,7 @@ class LCP(object):
             if _type == OPT_AUTH_PROTO:
                 if not self.check_auth_proto_fmt(value):
                     is_error = True
-                    if self.debug: logging.print_alert("wrong PPPoE auth protocol")
+                    logging.print_alert("wrong PPPoE auth protocol")
                     continue
 
                 method, flags = self.get_auth_method(value)

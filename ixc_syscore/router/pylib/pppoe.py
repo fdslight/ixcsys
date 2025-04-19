@@ -220,7 +220,7 @@ class pppoe(object):
         """系统选择的AC name
         """
         self.__selected_ac_name = ac_name
-        logging.print_info("PPPoE Client select ac name %s" % ac_name)
+        logging.print_alert("PPPoE Client select ac name %s" % ac_name)
 
     def change_ac_server(self):
         if not self.__ac_names:
