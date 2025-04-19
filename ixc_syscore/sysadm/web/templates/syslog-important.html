@@ -1,0 +1,24 @@
+<div id="ixc-syslog-view" class="ixc-menu-content">
+    <div><input type="button" class="btn float-right btn-info" value="清理" id="ixc-syslog-clear"/>
+        <div class="clearfix"></div>
+    </div>
+    <h6>重要日志</h6>
+    <textarea disabled>${self.V['important']}</textarea>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#ixc-syslog-clear").click(function () {
+                $.post("${self.url_prefix}/syslog",{"type":"important"}, function (result) {
+                    let is_error = result["is_error"];
+                    let message = result["message"];
+
+                    if (is_error) {
+                        alert(message);
+                    } else {
+                        window.location.reload(true);
+                    }
+                });
+                $(window).reload();
+            });
+        });
+    </script>
+</div>

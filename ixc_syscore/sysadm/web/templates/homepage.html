@@ -149,8 +149,14 @@ ${self.inherit("base.html")}
                 <li class="list-group-item ixc-left-menu" id="ixc-traffic-log">
                     <a href="${self.url_prefix}/?show=ixc-traffic-log&page=traffic-log">流量查看</a>
                 </li>
-                <li class="list-group-item ixc-left-menu" id="ixc-syslog">
-                    <a href="${self.url_prefix}/?show=ixc-syslog&page=syslog">系统日志</a>
+                <li class="list-group-item ixc-left-menu" id="ixc-syslog-important">
+                    <a href="${self.url_prefix}/?show=ixc-syslog&page=syslog-important">重要日志</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-syslog-generic">
+                    <a href="${self.url_prefix}/?show=ixc-syslog&page=syslog-error">一般日志</a>
+                </li>
+                <li class="list-group-item ixc-left-menu" id="ixc-syslog-error">
+                    <a href="${self.url_prefix}/?show=ixc-syslog&page=syslog-error">错误日志</a>
                 </li>
             </ul>
         </div>
