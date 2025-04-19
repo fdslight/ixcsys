@@ -55,6 +55,10 @@ struct ixc_netif{
     // IPv6 MTU大小
     int mtu_v6;
 
+    // ipv6地址生命周期
+    unsigned int v6_prefix_valid_lifetime;
+    unsigned int v6_prefix_preferred_lifetime;
+
     unsigned char ipaddr[4];
     unsigned char ip_mask[4];
     unsigned char ip_subnet[4];

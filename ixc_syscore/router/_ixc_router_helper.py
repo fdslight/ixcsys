@@ -1281,6 +1281,9 @@ class helper(object):
 
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip, prefix, False)
 
+    def set_wan_mtu(self, mtu: int, is_ipv6=False):
+        self.router.netif_set_mtu(router.IXC_NETIF_WAN, mtu, is_ipv6)
+
     def get_manage_addr(self):
         return self.lan_configs["if_config"]["manage_addr"]
 
@@ -1447,6 +1450,10 @@ class helper(object):
         if cmd == "pppoe_ac_name":
             ac_name = v
             self.__pppoe.record_ac_name(ac_name)
+        if cmd == "pppoe_selected_ac_name":
+            ac_name = v
+            self.__pppoe.tell_selected_ac_name(ac_name)
+
         return
 
     def calc_md5(self, byte_data: bytes):

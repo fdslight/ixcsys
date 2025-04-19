@@ -41,6 +41,11 @@ class LCP(object):
 
     __is_first = None
 
+    # 是否开启LCP心跳探测
+    __enable_lcp_heartbeat = None
+    # 失败次数,超过此数字pppoe将会断开连接
+    __lcp_heartbeat_try_fail_count = 0
+
     def __init__(self, o):
         self.__pppoe = o
         self.__lcp_code_map_fn_set = {
@@ -57,6 +62,8 @@ class LCP(object):
             DISCARD_REQ: self.handle_discard_req,
         }
         self.__up_time = time.time()
+        self.__enable_lcp_heartbeat = False
+        self.__lcp_heartbeat_try_fail_count = 0
 
         self.reset()
 
@@ -65,7 +72,7 @@ class LCP(object):
         return self.__pppoe.debug
 
     def send(self, code: int, _id: int, byte_data: bytes):
-        #if self.lcp_ok():
+        # if self.lcp_ok():
         #    self.__up_time = time.time()
 
         length = len(byte_data) + 4
@@ -75,7 +82,9 @@ class LCP(object):
         self.__pppoe.send_data_to_ns(0xc021, sent_data)
 
     def send_echo_request(self):
-        self.send(ECHO_REQ, self.__my_id, struct.pack("4s",os.urandom(4)))
+        self.send(ECHO_REQ, self.__my_id, struct.pack("4s", os.urandom(4)))
+        self.__lcp_heartbeat_try_fail_count += 1
+        self.__up_time = time.time()
 
     def send_cfg_req(self, options: list):
         _id = random.randint(1, 0xf0)
@@ -194,6 +203,9 @@ class LCP(object):
                     self.__server_neg_status[OPT_MAX_RECV_UNIT]['value'] = value
                     self.__server_neg_status[OPT_MAX_RECV_UNIT]['neg_ok'] = True
 
+                    # 按照最小MRU进行数据发送,设置网卡MTU值
+                    self.__pppoe.runtime.set_wan_mtu(value, is_ipv6=False)
+
                     acks.append(self.build_opt_value(_type, struct.pack("!H", value)))
                     continue
             if _type == OPT_MAGIC_NUM:
@@ -307,10 +319,12 @@ class LCP(object):
         pass
 
     def handle_echo_request(self, _id: int, byte_data: bytes):
+        self.__up_time = time.time()
         self.send(ECHO_REPLY, _id, byte_data)
 
     def handle_echo_reply(self, _id: int, byte_data: bytes):
         self.__up_time = time.time()
+        self.__lcp_heartbeat_try_fail_count = 0
 
     def handle_discard_req(self, _id: int, byte_data: bytes):
         pass
@@ -319,7 +333,6 @@ class LCP(object):
         if code not in self.__lcp_code_map_fn_set:
             if self.debug: print("not found LCP code map value %d" % code)
             return
-
         self.__lcp_code_map_fn_set[code](_id, byte_data)
 
     def send_mru_neg_request(self):
@@ -372,20 +385,22 @@ class LCP(object):
                 self.send_mru_neg_request()
                 return
             ''''''
-
         # 30s LCP未协商成功那么重新协商
         if x >= 30 and not self.lcp_ok():
             self.__pppoe.reset()
             return
 
         if self.lcp_ok():
-            if x >= 60:
-                self.send_echo_request()
+            # 如果开启了心跳那么就发送lcp echo请求
+            if x >= 30 and self.__enable_lcp_heartbeat:
+                # 每隔30s发送一次,超过3次未回应就断开连接
+                if self.__lcp_heartbeat_try_fail_count > 3:
+                    self.__pppoe.reset()
+                else:
+                    self.send_echo_request()
                 return
-            # 大于90秒未回应那么重置PPPoE请求
-            if x >= 90:
-                self.__pppoe.reset()
-                return
+            ''''''
+        ''''''
 
     def reset(self):
         magic_num = random.randint(1, 0xfffffff0)
@@ -411,3 +426,8 @@ class LCP(object):
 
     def auth_method_get(self):
         return self.__server_neg_status[OPT_AUTH_PROTO]['value']
+
+    def lcp_heartbeat_enable(self, enable: bool):
+        """开启或者关闭LCP echo请求
+        """
+        self.__enable_lcp_heartbeat = enable

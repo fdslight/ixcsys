@@ -153,6 +153,8 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     unsigned char gw_hwaddr[6],byte,slaac_addr[16];
     unsigned char unspec_addr[]=IXC_IP6ADDR_UNSPEC;
     unsigned int mtu=netif->mtu_v6;
+    struct ixc_icmpv6_opt_dns *opt_dns;
+    unsigned char *dnsserver;
 
     v=(m->tail-m->offset) % 8;
 
@@ -207,6 +209,15 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
                 break;
             case 5:
                 mtu=ntohl(*((unsigned int *)(ptr+4)));
+                break;
+                // 处理下发的DNS
+            case 25:
+                opt_dns=(struct ixc_icmpv6_opt_dns *)ptr;
+                dnsserver=opt_dns->dnsserver;
+                memcpy(icmpv6_wan_dnsserver_a,dnsserver,16);
+                if(length>=5){
+                    memcpy(icmpv6_wan_dnsserver_b,dnsserver+16,16);
+                }
                 break;
         }
 
@@ -497,6 +508,8 @@ void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr)
 int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
 {
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_LAN);
+    struct ixc_netif *wan_if=ixc_netif_get(IXC_NETIF_WAN);
+    
     struct ixc_icmpv6_ra_header *ra_header;
     struct ixc_icmpv6_opt_ra *ra_opt;
     unsigned char dst_ipaddr[]=IXC_IP6ADDR_ALL_NODES;
@@ -524,15 +537,26 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
 
     ra_opt->type_mtu=5;
     ra_opt->length_mtu=1;
-    ra_opt->mtu=htonl(1280);
 
+    if(ixc_pppoe_is_enabled()){
+        ra_opt->mtu=htonl(wan_if->mtu_v6);
+
+        ra_opt->prefix_valid_lifetime=htonl(wan_if->v6_prefix_valid_lifetime);
+        ra_opt->prefix_preferred_lifetime=htonl(wan_if->v6_prefix_preferred_lifetime);
+        
+        ra_opt->prefix_length=wan_if->ip6_prefix;
+    }else{
+        ra_opt->mtu=htonl(netif->mtu_v6);
+
+        ra_opt->prefix_valid_lifetime=0xffffffff;
+        ra_opt->prefix_preferred_lifetime=0xffffffff;
+        ra_opt->prefix_length=64;
+    }
+    
     ra_opt->type_prefix=3;
     ra_opt->length_prefix=4;
-    ra_opt->prefix_length=64;
     ra_opt->prefix_flags=0xc0;
-    ra_opt->prefix_valid_lifetime=0xffffffff;
-    ra_opt->prefix_preferred_lifetime=0xffffffff;
-    
+
     memcpy(ra_opt->prefix,netif->ip6_subnet,16);
 
     if(NULL==hwaddr){

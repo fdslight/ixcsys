@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import struct
+import struct, time
 
 import ixc_syscore.router.pylib.lcp as lcp
 import ixc_syscore.router.pylib.ipcp as ipcp
@@ -22,6 +22,14 @@ class pppoe(object):
 
     __ac_names = None
 
+    # pppoe是否认证成功
+    __auth_ok = None
+    __time = None
+    __selected_ac_name = None
+    __selected_ac_count = None
+
+    __is_first = None
+
     def __init__(self, runtime):
         self.__runtime = runtime
         self.__start = False
@@ -30,8 +38,13 @@ class pppoe(object):
         self.__pap = pap.PAP(self)
         self.__ipcp = ipcp.IPCP(self)
         self.__ipv6cp = ipv6cp.IPv6CP(self)
+        self.__time = time.time()
 
         self.__ac_names = []
+        self.__auth_ok = False
+        self.__selected_ac_name = ""
+        self.__selected_ac_count = 0
+        self.__is_first = False
 
     @property
     def router(self):
@@ -52,6 +65,7 @@ class pppoe(object):
     def start_lcp(self):
         self.__start = True
         self.__lcp.start_lcp()
+        self.__time = time.time()
 
     def stop_lcp(self):
         self.__start = False
@@ -151,6 +165,11 @@ class pppoe(object):
         self.__lcp.handle_packet(code, _id, data)
 
     def reset(self):
+        if self.__is_first:
+            self.__is_first = False
+        else:
+            # 尝试该表pppoe server进行协商,多个pppoe server可能个别存在问题
+            self.change_ac_server()
         # 注意这里不能条用self.__lcp.reset(),避免可能循环调用
         self.__runtime.router.pppoe_reset()
         self.__lcp.reset()
@@ -163,11 +182,17 @@ class pppoe(object):
         if not self.__start: return
         self.__lcp.loop()
         if not self.__lcp.lcp_ok(): return
+        if self.__lcp.auth_method_get() == "pap": self.__pap.loop()
+
+        now = time.time()
+        # 超过60秒还未认证成功那么更改AC进行认证
+        if now - self.__time >= 60 and not self.is_auth_ok():
+            self.reset()
+            logging.print_alert("PPPoE auth handshake timeout with ac %s" % self.__selected_ac_name)
+            return
 
         self.__ipcp.loop()
         self.__ipv6cp.loop()
-
-        if self.__lcp.auth_method_get() == "pap": self.__pap.loop()
 
     def ncp_start(self):
         self.__ipcp.start()
@@ -179,3 +204,35 @@ class pppoe(object):
         if ac_name not in self.__ac_names:
             self.__ac_names.append(ac_name)
         return
+
+    def is_auth_ok(self):
+        return self.__auth_ok
+
+    def set_auth_ok(self, auth_ok: bool):
+        self.__auth_ok = auth_ok
+
+    def tell_selected_ac_name(self, ac_name: str):
+        """系统选择的AC name
+        """
+        self.__selected_ac_name = ac_name
+        logging.print_info("PPPoE Client select ac name %s" % ac_name)
+
+    def change_ac_server(self):
+        if not self.__ac_names:
+            logging.print_alert("no found avaliable ac for change ac server")
+            return
+
+        ac_len = len(self.__ac_names)
+
+        self.__selected_ac_count += 1
+        # 如果超过ac清单,那么从头开始认证
+        if self.__selected_ac_count == ac_len:
+            self.__selected_ac_count = 0
+
+        ac_name = self.__ac_names[self.__selected_ac_count]
+        self.runtime.router.pppoe_force_ac_name(ac_name, True)
+
+        logging.print_alert("PPPoE Client change ac name to %s" % ac_name)
+
+    def current_ac_name_get(self):
+        return self.__selected_ac_name

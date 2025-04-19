@@ -230,6 +230,8 @@ static void ixc_pppoe_send_discovery_padr(void)
 {
     struct ixc_pppoe_header *header;
     struct ixc_pppoe_tag_header *tag_header;
+    
+    char content[4096];
 
     unsigned short tot_size=6;
 
@@ -294,6 +296,10 @@ static void ixc_pppoe_send_discovery_padr(void)
 
     memcpy(m->src_hwaddr,m->netif->hwaddr,6);
     memcpy(m->dst_hwaddr,pppoe.selected_server_hwaddr,6);
+
+    // 告知选择的ac设备
+    strcat(content,"pppoe_selected_ac_name ");
+    strcat(content,pppoe.ac_name);
 
     ixc_ether_send(m,1);
 }

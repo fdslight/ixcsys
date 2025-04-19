@@ -37,7 +37,9 @@ class PAP(object):
         self.__pppoe.send_data_to_ns(0xc023, b"".join(seq))
 
     def handle_success(self):
-        if self.debug: print("PPPoE PAP auth OK")
+        self.__pppoe.set_auth_ok(True)
+        
+        if self.debug: logging.print_info("PPPoE PAP auth OK")
 
     def handle_fail(self, msg: bytes):
         logging.print_error("PPPoE PAP auth fail,msg:%s" % msg.decode("iso-8859-1"))
