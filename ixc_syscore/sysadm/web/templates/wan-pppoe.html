@@ -41,7 +41,7 @@
     <script type="text/javascript">
         $(document).ready(function (e){
             $("#ixc-pppoe-force-dial").click(function () {
-                $.get("${self.url_prefix}/wan", {"type":"pppoe","action":"force-re-dial"}, function (result) {
+                $.post("${self.url_prefix}/wan", {"type":"pppoe","action":"force-re-dial"}, function (result) {
                     let is_error = result["is_error"];
                     let message = result["message"];
 
