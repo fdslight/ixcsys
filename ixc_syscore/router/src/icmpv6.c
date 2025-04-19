@@ -145,6 +145,18 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     ixc_mbuf_put(m);
 }
 
+/// @检查前缀是否发生变化
+/// @param netif 
+/// @param prefix
+/// @param prefix_length 
+static int ixc_icmpv6_prefix_is_changed(struct ixc_netif *netif,unsigned char *prefix_addr,unsigned char prefix_length)
+{
+    if(netif->ip6_prefix!=prefix_length) return 1;
+    if(memcmp(netif->ip6_subnet,prefix_addr,16)) return 1;
+
+    return 0;
+}
+
 /// 处理路由宣告报文
 static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr,unsigned char icmp_code)
 {
@@ -295,8 +307,18 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
 
+    // 前缀发生改变,发送失效RA
+    // 发送路由无效报文
+    if(ixc_icmpv6_prefix_is_changed(if_lan,opt_prefix->prefix,opt_prefix->prefix_len)){
+        if_lan->v6_prefix_valid_lifetime=0;
+        ixc_icmpv6_send_ra(NULL,NULL);
+    }
+
     ixc_ip6_addr_get(if_lan->hwaddr,opt_prefix->prefix,slaac_addr);
     ixc_netif_set_ip(IXC_NETIF_LAN,slaac_addr,opt_prefix->prefix_len,1);
+
+    if_lan->v6_prefix_valid_lifetime=ntohl(opt_prefix->valid_lifetime);
+    if_lan->v6_prefix_preferred_lifetime=ntohl(opt_prefix->preferred_lifetime);
     
     IXC_PRINT_IP6("IPv6 RA Prefix Address is ",opt_prefix->prefix);
 
@@ -548,10 +570,11 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
     ra_opt->length_mtu=1;
 
     if(ixc_pppoe_is_enabled()){
+        // mtu按照WAN口优先,因为PPPoE协商会改变MTU
         ra_opt->mtu=htonl(wan_if->mtu_v6);
 
-        ra_opt->prefix_valid_lifetime=htonl(wan_if->v6_prefix_valid_lifetime);
-        ra_opt->prefix_preferred_lifetime=htonl(wan_if->v6_prefix_preferred_lifetime);
+        ra_opt->prefix_valid_lifetime=htonl(netif->v6_prefix_valid_lifetime);
+        ra_opt->prefix_preferred_lifetime=htonl(netif->v6_prefix_preferred_lifetime);
         
         // 前缀长度取LAN口
         ra_opt->prefix_length=netif->ip6_prefix;
