@@ -114,17 +114,20 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     unsigned char ip6addr_all_routers[]=IXC_IP6ADDR_ALL_ROUTERS;
     
     if(netif->type==IXC_NETIF_WAN || icmp_code!=0){
+        //DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
 
     if(m->tail-m->offset!=16){
+        //DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
 
     // 目标地址必须是所有的路由器
     if(memcmp(iphdr->dst_addr,ip6addr_all_routers,16)){
+        //DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
@@ -132,10 +135,12 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     opt=(struct ixc_icmpv6_opt_link_addr *)(m->data+m->offset+8);
 
     if(!netif->isset_ip6){
+        //DBG_FLAGS;
         ixc_mbuf_put(m);
         return;
     }
     
+    //DBG_FLAGS;
     ixc_icmpv6_send_ra(opt->hwaddr,iphdr->src_addr);
     ixc_mbuf_put(m);
 }
@@ -544,7 +549,8 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
         ra_opt->prefix_valid_lifetime=htonl(wan_if->v6_prefix_valid_lifetime);
         ra_opt->prefix_preferred_lifetime=htonl(wan_if->v6_prefix_preferred_lifetime);
         
-        ra_opt->prefix_length=wan_if->ip6_prefix;
+        // 前缀长度取LAN口
+        ra_opt->prefix_length=netif->ip6_prefix;
     }else{
         ra_opt->mtu=htonl(netif->mtu_v6);
 

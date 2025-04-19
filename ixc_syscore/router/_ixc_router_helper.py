@@ -9,6 +9,7 @@ import ixc_syscore.router.pylib.pppoe as pppoe
 
 import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.pylib.osnet as osnet
+import ixc_syslib.pylib.logging as logging
 import pywind.lib.netutils as netutils
 import pywind.lib.configfile as conf
 
@@ -58,6 +59,7 @@ class rpc(object):
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
             "passdev_set": self.passdev_set,
             "pppoe_set": self.pppoe_set,
+            "pppoe_dnsservers_get": self.pppoe_dnsservers_get,
             "router_config_get": self.router_config_get,
             "port_map_add": self.port_map_add,
             "port_map_del": self.port_map_del,
@@ -438,6 +440,9 @@ class rpc(object):
             pppoe["heartbeat"] = 0
 
         return 0, None
+
+    def pppoe_dnsservers_get(self):
+        return 0, self.__helper.pppoe_dnsservers
 
     def internet_type_set(self, _type: str):
         types = (
@@ -1390,6 +1395,10 @@ class helper(object):
         self.start_pass()
 
     @property
+    def pppoe_dnsservers(self):
+        return self.__pppoe.ipcp.get_dnsservers()
+
+    @property
     def router(self):
         return self.__router
 
@@ -1445,16 +1454,19 @@ class helper(object):
             v = s[p:]
         if cmd == "lcp_start":
             if self.__pppoe: self.__pppoe.start_lcp()
+            return
         if cmd == "lcp_stop":
             if self.__pppoe: self.__pppoe.stop_lcp()
+            return
         if cmd == "pppoe_ac_name":
             ac_name = v
             self.__pppoe.record_ac_name(ac_name)
+            return
         if cmd == "pppoe_selected_ac_name":
             ac_name = v
             self.__pppoe.tell_selected_ac_name(ac_name)
-
-        return
+            return
+        logging.print_error("not found system command %s" % cmd)
 
     def calc_md5(self, byte_data: bytes):
         """计算MD5

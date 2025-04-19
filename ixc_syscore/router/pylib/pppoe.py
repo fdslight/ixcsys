@@ -62,6 +62,10 @@ class pppoe(object):
     def lcp(self):
         return self.__lcp
 
+    @property
+    def ipcp(self):
+        return self.__ipcp
+
     def start_lcp(self):
         self.__start = True
         self.__lcp.start_lcp()
@@ -186,10 +190,11 @@ class pppoe(object):
 
         now = time.time()
         # 超过60秒还未认证成功那么更改AC进行认证
-        if now - self.__time >= 60 and not self.is_auth_ok():
+        if now - self.__time >= 30 and not self.is_auth_ok():
             self.reset()
             logging.print_alert("PPPoE auth handshake timeout with ac %s" % self.__selected_ac_name)
             return
+        if not self.is_auth_ok(): return
 
         self.__ipcp.loop()
         self.__ipv6cp.loop()

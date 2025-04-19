@@ -298,8 +298,11 @@ static void ixc_pppoe_send_discovery_padr(void)
     memcpy(m->dst_hwaddr,pppoe.selected_server_hwaddr,6);
 
     // 告知选择的ac设备
-    strcat(content,"pppoe_selected_ac_name ");
+    strcpy(content,"pppoe_selected_ac_name ");
     strcat(content,pppoe.ac_name);
+    ixc_router_tell(content);
+
+    //DBG_FLAGS;
 
     ixc_ether_send(m,1);
 }
@@ -376,7 +379,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     }
     
     // 告知AC name
-    strcat(content,"pppoe_ac_name ");
+    strcpy(content,"pppoe_ac_name ");
     strcat(content,ac_name);
     ixc_router_tell(content);
 
@@ -533,7 +536,7 @@ void ixc_pppoe_handle(struct ixc_mbuf *m)
     }
 
     if(IXC_MBUF_FROM_LAN==m->from){
-        DBG_FLAGS;
+        //DBG_FLAGS;
         ixc_pppoe_send(m);
         return;
     }

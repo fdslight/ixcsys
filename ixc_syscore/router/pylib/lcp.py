@@ -62,7 +62,7 @@ class LCP(object):
             DISCARD_REQ: self.handle_discard_req,
         }
         self.__up_time = time.time()
-        self.__enable_lcp_heartbeat = False
+        self.__enable_lcp_heartbeat = self.__pppoe.runtime.pppoe_heartbeat
         self.__lcp_heartbeat_try_fail_count = 0
 
         self.reset()
@@ -427,7 +427,3 @@ class LCP(object):
     def auth_method_get(self):
         return self.__server_neg_status[OPT_AUTH_PROTO]['value']
 
-    def lcp_heartbeat_enable(self, enable: bool):
-        """开启或者关闭LCP echo请求
-        """
-        self.__enable_lcp_heartbeat = enable
