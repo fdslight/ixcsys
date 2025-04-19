@@ -78,6 +78,8 @@ void ixc_route_handle(struct ixc_mbuf *m);
 int ixc_route_is_enabled_ipv6_pass(void);
 /// 启用或者关闭IPv6透传
 int ixc_route_ipv6_pass_enable(int enable);
+// 强制开启或者关闭ipv6透传,此函数无任何判断
+int ixc_route_ipv6_pass_force_enable(int enable);
 /// 是否开启IPv6隧道
 int ixc_route_ip6_tunnel_enable(int enable);
 /// 修改TCP MSS

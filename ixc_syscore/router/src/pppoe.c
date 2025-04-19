@@ -18,6 +18,7 @@ static struct sysloop *pppoe_sysloop=NULL;
 
 static void ixc_pppoe_send_discovery(void);
 static void ixc_pppoe_send_discovery_padr(void);
+static void ixc_pppoe_send_padt(void);
 
 /// PPPoE标签解析
 static int ixc_pppoe_parse_tags(struct ixc_mbuf *m,struct ixc_pppoe_tag **tag_first)
@@ -107,10 +108,10 @@ static void ixc_pppoe_discovery_loop(void)
     }
     
     // 如果当前是PADR阶段,那么发送PADR数据包
-    if(pppoe.cur_discovery_stage==IXC_PPPOE_CODE_PADR){
+    /*if(pppoe.cur_discovery_stage==IXC_PPPOE_CODE_PADR){
         ixc_pppoe_send_discovery_padr();
         return;
-    }
+    }*/
 }
 
 static void ixc_pppoe_sysloop_cb(struct sysloop *lp)
@@ -307,6 +308,37 @@ static void ixc_pppoe_send_discovery_padr(void)
     ixc_ether_send(m,1);
 }
 
+static void ixc_pppoe_send_padt(void)
+{
+    struct ixc_pppoe_header *header;
+    struct ixc_mbuf *m=ixc_mbuf_get();
+
+    if(NULL==m){
+        STDERR("cannot get mbuf\r\n");
+        return;
+    }
+
+    m->netif=ixc_netif_get(IXC_NETIF_WAN);
+    m->next=NULL;
+    m->from=IXC_MBUF_FROM_WAN;
+    m->begin=IXC_MBUF_BEGIN;
+    m->offset=m->begin;
+    m->link_proto=0x8863;
+
+    header=(struct ixc_pppoe_header *)(m->data+m->offset);
+    header->ver_and_type=0x11;
+    header->code=IXC_PPPOE_CODE_PADT;
+    header->session_id=htons(pppoe.session_id);
+    header->length=0;
+
+    m->tail=m->end=m->begin+6;
+
+    memcpy(m->src_hwaddr,m->netif->hwaddr,6);
+    memcpy(m->dst_hwaddr,pppoe.selected_server_hwaddr,6);
+
+    ixc_ether_send(m,1);
+}
+
 static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pppoe_header *header)
 {
     struct ixc_pppoe_tag *first_tag=NULL,*tmp_tag;
@@ -371,6 +403,16 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
 
     ixc_pppoe_free_tags(first_tag);
     ixc_mbuf_put(m);
+    
+
+    // PADT不带任何标签,因此逻辑要放在最前面
+    if(error || header->code==IXC_PPPOE_CODE_PADT){
+        ixc_router_tell("lcp_stop");
+        ixc_pppoe_reset();
+        //STDERR("errcode:0x%x %s\r\n",error,err_msg);
+        DBG("PPPoE server terminate session,errcode 0x%x,error message is %s\r\n",error,err_msg);
+        return;
+    }
 
     // 必须包含ac_name
     if(!have_ac_name) {
@@ -406,17 +448,6 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
         pppoe.discovery_ok=1;
         pppoe.session_id=ntohs(header->session_id);
         ixc_router_tell("lcp_start");
-        return;
-    }
-
-    // 检查是否是选中的AC,只有选中的AC发送的PADT才能处理
-    if(strcmp(pppoe.ac_name,ac_name)) return;
-
-    if(error || header->code==IXC_PPPOE_CODE_PADT){
-        ixc_router_tell("lcp_stop");
-        ixc_pppoe_reset();
-        //STDERR("errcode:0x%x %s\r\n",error,err_msg);
-        DBG("PPPoE server terminate session,errcode 0x%x,error message is %s\r\n",error,err_msg);
         return;
     }
 
@@ -456,6 +487,11 @@ static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
             ixc_mbuf_put(m);
             return;
         }
+        // 检查是否是同一台PPPoE服务器
+        if(!pppoe.is_selected_server || memcmp(pppoe.selected_server_hwaddr,m->src_hwaddr,6)){
+            ixc_mbuf_put(m);
+            return;
+        }
         ixc_pppoe_handle_discovery_response(m,header);
         return;
     }
@@ -487,12 +523,19 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
         return;
     }
 
+    // 检查mac地址是否是选中的PPPoE Server
+    if(memcmp(pppoe.selected_server_hwaddr,m->src_hwaddr,6)){
+        ixc_mbuf_put(m);
+        return;
+    }
+
     memcpy(&ppp_proto,m->data+m->offset+6,2);
     ppp_proto=ntohs(ppp_proto);
     length=htons(pppoe_header->length);
     
-    // 此处增加偏移量
+    // 此处增加偏移量和屏蔽pppoe头部
     m->offset+=8;
+    m->begin=m->offset;
 
     switch(ppp_proto){
         // LCP
@@ -591,9 +634,18 @@ int ixc_pppoe_enable(int status)
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
     pppoe.enable=status;
 
-    // 设置MTU的值为1492
-    netif->mtu_v4=1492;
-    netif->mtu_v6=1492;
+    if(status){
+        // 设置MTU的值为1492
+        netif->mtu_v4=1492;
+        netif->mtu_v6=1492;
+    }else{
+        // 恢复默认mtu
+        netif->mtu_v4=1500;
+        netif->mtu_v6=1500;
+    }
+
+    // 关闭直通,某些程序可能会在pppoe开启之前通过普通ipv6_pass_enable开启直通,这里强制关闭
+    ixc_route_ipv6_pass_force_enable(0);
     
     return 0;
 }
@@ -722,6 +774,11 @@ void ixc_pppoe_send_session_packet(unsigned short ppp_protocol,unsigned short le
 /// 重置会话
 void ixc_pppoe_reset()
 {
+    // 如果此处发现成功,那么发送PPPoE终止报文
+    if(pppoe.discovery_ok){
+        ixc_pppoe_send_padt();
+    }
+
     // 这里需要更新时间,否则会导致超时不发送请求包
     pppoe.up_time=time(NULL);
     pppoe.discovery_ok=0;

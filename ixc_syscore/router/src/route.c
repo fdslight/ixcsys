@@ -886,6 +886,13 @@ int ixc_route_ipv6_pass_enable(int enable)
     return 0;
 }
 
+int ixc_route_ipv6_pass_force_enable(int enable)
+{
+    route.ipv6_pass=enable;
+    
+    return 0;
+}
+
 int ixc_route_tcp_mss_set(unsigned short mss,int is_ipv6)
 {
     // 如果tcp mss为0那么就是默认行为

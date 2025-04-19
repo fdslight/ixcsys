@@ -1318,6 +1318,22 @@ class helper(object):
             return
         self.router.bind_cpu(cpu_no)
 
+        # 设置TCP MSS
+        try:
+            ip4_tcp_mss = int(conf['ip_tcp_mss'])
+        except ValueError:
+            ip4_tcp_mss = 0
+        if ip4_tcp_mss < 0: ip4_tcp_mss = 0
+
+        try:
+            ip6_tcp_mss = int(conf['ip6_tcp_mss'])
+        except ValueError:
+            ip6_tcp_mss = 0
+        if ip6_tcp_mss < 0: ip6_tcp_mss = 0
+
+        self.__router.route_tcp_mss_set(ip4_tcp_mss, False)
+        self.__router.route_tcp_mss_set(ip6_tcp_mss, True)
+
         passthrough = self.__router_configs["passthrough"]
         for hwaddr, enable_with_comment in passthrough.items():
             p = enable_with_comment.find("|")
@@ -1427,6 +1443,10 @@ class helper(object):
     def pppoe_force_re_dial(self):
         """强制重新连接
         """
+        # 未开启PPPoE那么不执行
+        if not self.__pppoe_enable: return
+
+        logging.print_alert("start PPPoE re-dial")
         self.__pppoe.reset()
 
     def rpc_fn_call(self, name: str, arg_data: bytes):

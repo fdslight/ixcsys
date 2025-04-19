@@ -79,6 +79,8 @@ class pppoe(object):
         self.__chap.reset()
         self.__pap.reset()
 
+        logging.print_alert("PPPoE LCP STOP and reset")
+
     def send_data_to_ns(self, protocol: int, byte_data: bytes):
         """发送数据到协议栈
         :param protocol,PPP协议
@@ -169,6 +171,8 @@ class pppoe(object):
         self.__lcp.handle_packet(code, _id, data)
 
     def reset(self):
+        self.__start = False
+
         if self.__is_first:
             self.__is_first = False
         else:
@@ -181,6 +185,8 @@ class pppoe(object):
         self.__ipv6cp.reset()
         self.__chap.reset()
         self.__pap.reset()
+
+        logging.print_alert("PPPoE reset")
 
     def loop(self):
         if not self.__start: return
