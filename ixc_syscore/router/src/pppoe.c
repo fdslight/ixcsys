@@ -531,7 +531,7 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
 
     memcpy(&ppp_proto,m->data+m->offset+6,2);
     ppp_proto=ntohs(ppp_proto);
-    length=htons(pppoe_header->length);
+    length=ntohs(pppoe_header->length);
     
     // 此处增加偏移量和屏蔽pppoe头部
     m->offset+=8;
