@@ -552,12 +552,10 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
             break;
         // IPv6协议
         case 0x0057:
-            m->link_proto=0x86dd;
             ixc_ip6_handle(m);
             break;
         // IP协议
         case 0x0021:
-            m->link_proto=0x0800;
             ixc_ip_handle(m);
             break;
         default:
@@ -605,14 +603,14 @@ void ixc_pppoe_handle(struct ixc_mbuf *m)
     }
 
     // 这里不是等于号的理由是以太网会填充字段
-    if(length > m->tail-m->offset){
+    /*if(length > m->tail-m->offset){
         DBG("Wrong PPPoE length\r\n");
         ixc_mbuf_put(m);
         return;
-    }
+    }*/
 
     // 屏蔽以太网的填充字段
-    m->tail=m->offset+length+6;
+    m->end=m->tail=m->offset+length+6;
 
     // 如果PPPoE第一阶段没成功那么丢弃session数据包
     if(m->link_proto==0x8864 && !pppoe.discovery_ok){
