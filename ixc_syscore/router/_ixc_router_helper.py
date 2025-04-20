@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import pickle, os, socket, sys, hashlib
+import time
 import traceback
 
 import router
@@ -993,6 +994,8 @@ class helper(object):
     def release(self):
         if self.__pppoe_enable:
             self.router.pppoe_reset()
+            # 等待一段时间,以便系统能够结束相关清理工作
+            time.sleep(10)
         if self.is_linux:
             os.system("ip link set %s down" % self.__LAN_NAME)
             os.system("ip link set %s down" % self.__WAN_NAME)
