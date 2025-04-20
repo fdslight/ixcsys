@@ -991,6 +991,8 @@ class helper(object):
         return self.__sec_net_rules
 
     def release(self):
+        if self.__pppoe_enable:
+            self.router.pppoe_reset()
         if self.is_linux:
             os.system("ip link set %s down" % self.__LAN_NAME)
             os.system("ip link set %s down" % self.__WAN_NAME)
