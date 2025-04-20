@@ -552,10 +552,12 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
             break;
         // IPv6协议
         case 0x0057:
+            m->link_proto=0x86dd;
             ixc_ip6_handle(m);
             break;
         // IP协议
         case 0x0021:
+            m->link_proto=0x0800;
             ixc_ip_handle(m);
             break;
         default:
