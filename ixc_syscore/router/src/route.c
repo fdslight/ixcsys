@@ -625,8 +625,8 @@ static void ixc_route_ipv6_pass_do(struct ixc_mbuf *m)
 static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
 
-    struct ixc_mbuf *clone_m;
-    struct netutil_ip6hdr *clone_header;
+    //struct ixc_mbuf *clone_m;
+    //struct netutil_ip6hdr *clone_header;
 
     //DBG_FLAGS;
     // 只支持ICMPv6协议
@@ -647,15 +647,15 @@ static void ixc_route_handle_for_ipv6_local(struct ixc_mbuf *m,struct netutil_ip
 
     //DBG("netif address %lu\r\n",m->netif);
 
-    clone_m=ixc_mbuf_clone(m);
+    //clone_m=ixc_mbuf_clone(m);
     //DBG("netif address %lu\r\n",m->netif);
 
-    if(NULL!=clone_m){
+    //if(NULL!=clone_m){
         //DBG_FLAGS;
         //DBG("netif clone address %lu\r\n",clone_m->netif);
-        clone_header=(struct netutil_ip6hdr *)(clone_m->data+clone_m->offset);
-        ixc_icmpv6_handle(clone_m,clone_header);
-    }
+        //clone_header=(struct netutil_ip6hdr *)(clone_m->data+clone_m->offset);
+        //ixc_icmpv6_handle(clone_m,clone_header);
+    //}
 
     ixc_route_ipv6_pass_do(m);
 }

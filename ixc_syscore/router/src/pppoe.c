@@ -644,9 +644,11 @@ int ixc_pppoe_enable(int status)
         netif->mtu_v6=1500;
     }
 
-    // 关闭直通,某些程序可能会在pppoe开启之前通过普通ipv6_pass_enable开启直通,这里强制关闭
-    ixc_route_ipv6_pass_force_enable(0);
-    
+    if(status){
+        // 关闭直通,某些程序可能会在pppoe开启之前通过普通ipv6_pass_enable开启直通,这里强制关闭
+        ixc_route_ipv6_pass_force_enable(0);
+    }
+
     return 0;
 }
 
