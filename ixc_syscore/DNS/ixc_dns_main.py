@@ -246,7 +246,7 @@ class service(dispatcher.dispatcher):
                 logging.print_alert("cannot create dns server socket for IPv6")
                 return
             self.__ip6_mngaddr = ip6_mngaddr
-            RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
+        RPCClient.fn_call("router", "/config", "icmpv6_dns_set", socket.inet_pton(socket.AF_INET6, ip6_mngaddr))
 
         if not enable_auto: return
 
