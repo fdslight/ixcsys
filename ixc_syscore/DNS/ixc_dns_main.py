@@ -97,6 +97,9 @@ class service(dispatcher.dispatcher):
     __up_dns_record_time = None
     __up_wan_ready_time = None
     __up_autoset_icmpv6_dns_time = None
+    __from_dhcpv6_dns = None
+    __dhcpv6_dns_a = None
+    __dhcpv6_dns_b = None
     # 自动检查os resolv时间
     __up_check_os_resolv_time = None
     # IPv6管理地址
@@ -141,6 +144,9 @@ class service(dispatcher.dispatcher):
         self.__up_dns_record_time = time.time()
         self.__up_wan_ready_time = time.time()
         self.__up_autoset_icmpv6_dns_time = time.time()
+        self.__from_dhcpv6_dns = False
+        self.__dhcpv6_dns_a = ""
+        self.__dhcpv6_dns_b = ""
         self.__up_check_os_resolv_time = time.time()
 
         self.__scgi_fd = -1
@@ -263,9 +269,12 @@ class service(dispatcher.dispatcher):
             if ip6_ns2[0].lower() == 'f':
                 ip6_ns2 = ""
             ''''''
-        if ip6_ns1 == "" and ip6_ns2 == "":
+        if ip6_ns1 == "" and ip6_ns2 == "" and not self.__from_dhcpv6_dns:
             RPCClient.fn_call("router", "/config", "icmpv6_dns_unset")
 
+        if self.__from_dhcpv6_dns:
+            ip6_ns1 = self.__dhcpv6_dns_a
+            ip6_ns2 = self.__dhcpv6_dns_b
         self.set_nameservers(ip6_ns1, ip6_ns2, is_ipv6=True)
 
     def rule_forward_set(self, port: int):
@@ -649,6 +658,12 @@ class service(dispatcher.dispatcher):
             self.get_handler(self.__dns_client6).set_nameservers(ns1, ns2)
         else:
             self.get_handler(self.__dns_client).set_nameservers(ns1, ns2)
+
+    def set_ip6_nameservers_from_dhcpv6(self, ns1: str, ns2: str):
+        self.__from_dhcpv6_dns = True
+        self.__dhcpv6_dns_a = ns1
+        self.__dhcpv6_dns_b = ns2
+        self.set_nameservers(ns1, ns2, is_ipv6=True)
 
     def forward_dns_result(self, enable: bool):
         self.__forward_result = enable

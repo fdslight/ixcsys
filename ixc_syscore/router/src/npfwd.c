@@ -8,6 +8,7 @@
 #include "router.h"
 #include "ether.h"
 #include "ip.h"
+#include "pppoe.h"
 
 #include "../../../pywind/clib/debug.h"
 #include "../../../pywind/clib/ev/ev.h"
@@ -18,6 +19,35 @@ static struct ixc_npfwd_info npfwd_info[IXC_NPFWD_INFO_MAX];
 static struct ixc_mbuf *npfwd_mbuf_first=NULL;
 static struct ixc_mbuf *npfwd_mbuf_last=NULL;
 static int npfwd_is_initialized=0;
+
+static void ixc_npfwd_send2if_for_pppoe(struct ixc_mbuf *m)
+{
+    struct ixc_netif *netif=m->netif;
+    int ip_ver;
+    unsigned char *x,n;
+    // 当发给PPPoE的时候,去除14字节以太网头部
+    m->begin=m->begin+14;
+    m->offset=m->begin;
+
+    x=m->data+m->begin;
+    n=x[0];
+
+    ip_ver=(n & 0xf0) >> 4;
+
+    if(4!=ip_ver && 6!=ip_ver){
+        ixc_mbuf_put(m);
+        return;
+    }
+    
+    if(4==ip_ver){
+        m->link_proto=0x0800;
+    }else{
+        m->link_proto=0x86dd;
+    }
+
+    memcpy(m->src_hwaddr,netif->hwaddr,6);
+    ixc_pppoe_send(m);
+}
 
 static void ixc_npfwd_rx_data(int fd)
 {
@@ -107,7 +137,12 @@ static void ixc_npfwd_rx_data(int fd)
             case IXC_FLAG_ARP:
             case IXC_FLAG_DHCP_CLIENT:
             case IXC_FLAG_DHCP_SERVER:
-                ixc_ether_send2(m);
+                // 如果是WAN口并开启了PPPoE,那么使用PPPoE封装
+                if(IXC_NETIF_WAN==netif->type && ixc_pppoe_is_enabled()){
+                    ixc_npfwd_send2if_for_pppoe(m);
+                }else{
+                    ixc_ether_send2(m);
+                }
                 break;
             case IXC_FLAG_ROUTE_FWD:
                 //DBG_FLAGS;

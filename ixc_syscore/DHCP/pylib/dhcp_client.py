@@ -144,7 +144,7 @@ class dhcp_client(object):
 
         self.__dhcp_builder.reset()
         self.__dhcp_builder.xid = self.__xid
-        self.__dhcp_builder.chaddr=self.__hwaddr
+        self.__dhcp_builder.chaddr = self.__hwaddr
 
         new_opts = [
             (53, struct.pack("!B", 3)),
@@ -152,7 +152,7 @@ class dhcp_client(object):
             (12, self.__hostname.encode()),
             # (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
-            (55, struct.pack("BBBBB",1, 3, 6, 28, 50))
+            (55, struct.pack("BBBBB", 1, 3, 6, 28, 50))
         ]
 
         byte_data = self.__dhcp_builder.build_to_link_data(
@@ -250,7 +250,7 @@ class dhcp_client(object):
 
         new_opts = [
             (53, struct.pack("!B", 4)),
-            #(54, self.__dhcp_server_id),
+            # (54, self.__dhcp_server_id),
             (12, self.__hostname.encode()),
             # (61, struct.pack("!B6s", 0x01, self.__hwaddr)),
             (50, self.__dhcp_parser.yiaddr),
@@ -379,3 +379,4 @@ class dhcp_client(object):
             self.__is_sent_renew = True
             if self.__runtime.debug: print("renew request send")
             self.send_dhcp_request(dst_hwaddr=bytes(self.__dhcp_server_hwaddr))
+        return

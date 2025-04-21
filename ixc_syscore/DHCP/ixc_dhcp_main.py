@@ -213,7 +213,7 @@ class service(dispatcher.dispatcher):
 
     def start_dhcp_client(self, port: int):
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__wan_hwaddr)
-        self.__dhcp_client6 = dhcpv6c.dhcpv6c(self.__hostname, self.__wan_hwaddr)
+        self.__dhcp_client6 = dhcpv6c.dhcpv6c(self, self.__hostname, self.__wan_hwaddr)
 
         consts = self.__router_consts
 
