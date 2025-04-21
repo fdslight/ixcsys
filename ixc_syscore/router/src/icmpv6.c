@@ -420,6 +420,9 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     //inet_ntop(AF_INET6,iphdr->src_addr,addr,128);
     //DBG("from:%s %x:%x:%x:%x\r\n",addr,ns_opt->hwaddr[0],ns_opt->hwaddr[1],ns_opt->hwaddr[2],ns_opt->hwaddr[3]);
 
+    // 加入到addr map中
+    //ixc_addr_map_add(netif,ns_hdr->target_addr,na_opt->hw,1);
+
     ixc_icmpv6_send(netif,dst_hwaddr,ptr,dst_ipaddr,buf,size);
     ixc_mbuf_put(m);
 }
