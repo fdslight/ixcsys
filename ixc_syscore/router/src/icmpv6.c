@@ -613,7 +613,7 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
         opt_dns.lifetime=htonl(1800);
         memcpy(opt_dns.dnsserver,icmpv6_dnsserver,16);
         
-        memcpy(((char *)(ra_opt))+size,&opt_dns,sizeof(struct ixc_icmpv6_opt_dns));
+        memcpy(((char *)(ra_opt))+sizeof(struct ixc_icmpv6_opt_ra),&opt_dns,sizeof(struct ixc_icmpv6_opt_dns));
         size+=sizeof(struct ixc_icmpv6_opt_dns);
     }
     
