@@ -32,6 +32,7 @@ class rpc(object):
             "dns_drop_no_system_enable": self.dns_drop_no_system_enable,
             "set_wan_ipaddr": self.set_wan_ipaddr,
             "wan_ready_ok": self.wan_ready_ok,
+            "wan_ip6_ready_ok": self.wan_ip6_ready_ok,
 
             "set_fwd_port": self.set_fwd_port,
             "unset_fwd_port": self.unset_fwd_port,
@@ -60,6 +61,7 @@ class rpc(object):
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
             "passdev_set": self.passdev_set,
             "pppoe_set": self.pppoe_set,
+            "pppoe_is_enabled": self.pppoe_is_enabled,
             "pppoe_dnsservers_get": self.pppoe_dnsservers_get,
             "pppoe_force_re_dial": self.pppoe_force_re_dial,
             "router_config_get": self.router_config_get,
@@ -304,6 +306,9 @@ class rpc(object):
 
     def wan_ready_ok(self):
         return 0, self.__helper.router.wan_ready_ok()
+
+    def wan_ip6_ready_ok(self):
+        return 0, self.__helper.router.wan_ip6_ready_ok()
 
     def set_fwd_port(self, flags: int, _id: bytes, fwd_port: int, address="127.0.0.1"):
         if not isinstance(_id, bytes):

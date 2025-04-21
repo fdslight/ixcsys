@@ -670,15 +670,29 @@ static PyObject *
 router_wan_ready_ok(PyObject *self,PyObject *args)
 {
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+    struct ixc_netif *lan_if=ixc_netif_get(IXC_NETIF_LAN);
 
     if(netif->isset_ip){
         Py_RETURN_TRUE;
     }
 
-    if(netif->isset_ip6 && ixc_pppoe_is_enabled()){
+    if(lan_if->isset_ip6){
         Py_RETURN_TRUE; 
     }
 
+    Py_RETURN_FALSE;
+}
+
+static PyObject *
+router_wan_ip6_ready_ok(PyObject *self,PyObject *args)
+{
+    //获取IPv6地址时程序只会设置lan口的ip地址
+    struct ixc_netif *lan_if=ixc_netif_get(IXC_NETIF_LAN);
+
+    if(lan_if->isset_ip6){
+        Py_RETURN_TRUE;
+    }
+    
     Py_RETURN_FALSE;
 }
 
@@ -1067,6 +1081,7 @@ static PyMethodDef routerMethods[]={
     {"clog_set",(PyCFunction)router_clog_set,METH_VARARGS,"set c language log path"},
     //
     {"wan_ready_ok",(PyCFunction)router_wan_ready_ok,METH_NOARGS,"check wan ready ok"},
+    {"wan_ip6_ready_ok",(PyCFunction)router_wan_ip6_ready_ok,METH_VARARGS,"check ipv6 ready OK"},
     //
     //
     {"network_enable",(PyCFunction)router_network_enable,METH_VARARGS,"enable or disable network"},

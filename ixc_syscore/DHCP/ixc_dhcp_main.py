@@ -101,6 +101,9 @@ class service(dispatcher.dispatcher):
     __tftp_configs = None
     __tftp_conf_fpath = None
 
+    __dhcpv6c_time = None
+    __slaac_ready_ok = None
+
     def init_func(self, debug):
         self.__debug = debug
         self.__scgi_fd = -1
@@ -112,6 +115,8 @@ class service(dispatcher.dispatcher):
         self.__dhcp_ip_bind_path = "%s/ip_bind.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__ieee_mac_map = self.parse_ieee_ma_info("%s/data/oui.csv" % os.getenv("IXC_MYAPP_DIR"))
         self.__tftp_conf_fpath = "%s/tftpd.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
+        self.__dhcpv6c_time = time.time()
+        self.__slaac_ready_ok = False
 
         global_vars["ixcsys.DHCP"] = self
 
@@ -403,10 +408,22 @@ class service(dispatcher.dispatcher):
     def debug(self):
         return self.__debug
 
-    def is_pppoe_dial(self):
-        """是否为PPPoE拨号
+    def ipv6_slaac_ready_ok(self):
+        """检查ipv6 slaac是否准备完毕
         """
-        return False
+        now = time.time()
+        if now - self.__dhcpv6c_time < 30: return self.__slaac_ready_ok
+
+        ip6_ready_ok = RPCClient.fn_call("router", "/config", "wan_ip6_ready_ok")
+        pppoe_is_enabled = RPCClient.fn_call("router", "/config", "pppoe_is_enabled")
+
+        if ip6_ready_ok and pppoe_is_enabled:
+            self.__slaac_ready_ok = True
+        else:
+            self.__slaac_ready_ok = False
+
+        self.__dhcpv6c_time = now
+        return self.__slaac_ready_ok
 
     @property
     def dhcp_ip_bind_conf_path(self):
@@ -415,8 +432,8 @@ class service(dispatcher.dispatcher):
     def myloop(self):
         if self.dhcp_client_enable: self.client.loop()
         if self.dhcp_server_enable: self.server.loop()
-        # 如果是PPPoE拨号,那么尝试使用dhcpv6c
-        if self.is_pppoe_dial(): self.client6.loop()
+        # 如果IPv6准备成功,那么开启dhcpv6c
+        if self.ipv6_slaac_ready_ok(): self.client6.loop()
 
     def release(self):
         if self.__scgi_fd > 0:
