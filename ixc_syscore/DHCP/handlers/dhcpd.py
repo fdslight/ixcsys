@@ -40,10 +40,20 @@ class dhcp_service(udp_handler.udp_handler):
         if ipproto != 0: return
         ether_data = message[20:]
 
+        dst_hwaddr, src_hwaddr, link_proto = struct.unpack("!6s6sH", ether_data[0:14])
+
         if flags == self.consts["IXC_FLAG_ARP"]:
             self.dispatcher.handle_arp_data(ether_data)
             return
 
+        # 对IPv6 DHCP进行处理
+        if link_proto == 0x86dd:
+            if if_type == self.consts["IXC_NETIF_WAN"] and flags == self.consts["IXC_FLAG_DHCP_CLIENT"]:
+                self.dispatcher.client.handle_dhcp6_msg(ether_data)
+                return
+            else:
+                return
+            ''''''
         if if_type == self.consts["IXC_NETIF_LAN"] and flags == self.consts["IXC_FLAG_DHCP_SERVER"]:
             if self.dispatcher.dhcp_server_enable: self.dispatcher.server.handle_dhcp_msg(ether_data)
             return

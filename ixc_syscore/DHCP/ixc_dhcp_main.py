@@ -15,6 +15,7 @@ from pywind.global_vars import global_vars
 
 import ixc_syscore.DHCP.handlers.dhcpd as dhcp
 import ixc_syscore.DHCP.pylib.dhcp_client as dhcp_client
+import ixc_syscore.DHCP.pylib.dhcpv6c as dhcpv6c
 import ixc_syscore.DHCP.pylib.dhcp_server as dhcp_server
 import ixc_syscore.DHCP.pylib.netpkt as netpkt
 
@@ -68,6 +69,7 @@ class service(dispatcher.dispatcher):
     __dhcp_fd = None
 
     __dhcp_client = None
+    __dhcp_client6 = None
     __dhcp_server = None
 
     __hostname = "ixcsys"
@@ -206,6 +208,8 @@ class service(dispatcher.dispatcher):
 
     def start_dhcp_client(self, port: int):
         self.__dhcp_client = dhcp_client.dhcp_client(self, self.__hostname, self.__wan_hwaddr)
+        self.__dhcp_client6 = dhcpv6c.dhcpv6c(self.__hostname, self.__wan_hwaddr)
+
         consts = self.__router_consts
 
         RPCClient.fn_call("router", "/config", "unset_fwd_port", consts["IXC_FLAG_DHCP_CLIENT"])
@@ -304,6 +308,10 @@ class service(dispatcher.dispatcher):
         return self.__dhcp_client
 
     @property
+    def client6(self):
+        return self.__dhcp_client6
+
+    @property
     def dhcp_client_enable(self):
         wan_pub = self.__router_wan_configs["public"]
         if wan_pub["internet_type"] != "dhcp": return False
@@ -395,6 +403,11 @@ class service(dispatcher.dispatcher):
     def debug(self):
         return self.__debug
 
+    def is_pppoe_dial(self):
+        """是否为PPPoE拨号
+        """
+        return False
+
     @property
     def dhcp_ip_bind_conf_path(self):
         return self.__dhcp_ip_bind_path
@@ -402,6 +415,8 @@ class service(dispatcher.dispatcher):
     def myloop(self):
         if self.dhcp_client_enable: self.client.loop()
         if self.dhcp_server_enable: self.server.loop()
+        # 如果是PPPoE拨号,那么尝试使用dhcpv6c
+        if self.is_pppoe_dial(): self.client6.loop()
 
     def release(self):
         if self.__scgi_fd > 0:
