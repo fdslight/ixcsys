@@ -420,8 +420,6 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     //inet_ntop(AF_INET6,iphdr->src_addr,addr,128);
     //DBG("from:%s %x:%x:%x:%x\r\n",addr,ns_opt->hwaddr[0],ns_opt->hwaddr[1],ns_opt->hwaddr[2],ns_opt->hwaddr[3]);
 
-    // 加入到addr map中
-    ixc_addr_map_add(netif,ns_hdr->target_addr,na_opt->hwaddr,1);
 
     ixc_icmpv6_send(netif,dst_hwaddr,ptr,dst_ipaddr,buf,size);
     ixc_mbuf_put(m);
@@ -511,6 +509,12 @@ void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr)
             return;
         }
         ixc_icmpv6_handle_echo(m,iphdr,icmp_header);
+        return;
+    }
+
+    // 直通模式只处理icmpv6 na响应
+    if(icmp_header->type!=136 && ixc_route_is_enabled_ipv6_pass()){
+        ixc_mbuf_put(m);
         return;
     }
 
@@ -681,7 +685,7 @@ int ixc_icmpv6_send_ns(struct ixc_netif *netif,unsigned char *src_ipaddr,unsigne
     memcpy(opt->hwaddr,netif->hwaddr,6);
     memcpy(&sol_addr[13],&dst_ipaddr[13],3);
 
-    ixc_ether_get_multi_hwaddr_by_ipv6(dst_ipaddr,dst_hwaddr);
+    ixc_ether_get_multi_hwaddr_by_ipv6(sol_addr,dst_hwaddr);
 
     return ixc_icmpv6_send(netif,dst_hwaddr,src_ipaddr,sol_addr,buf,32);
 }
