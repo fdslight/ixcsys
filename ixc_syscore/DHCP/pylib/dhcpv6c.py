@@ -168,7 +168,7 @@ class dhcpv6c(object):
 
     def loop(self):
         now = time.time()
-        if now - self.__up_time < 30:
+        if now - self.__up_time < 60:
             return
         self.__up_time = now
         self.send_dhcp_request()
