@@ -313,7 +313,7 @@ class ixc_main_d(object):
         stop_all()
         self.__is_isset_rescue = False
         self.__net_monitor_up_time = time.time()
-        time.sleep(30)
+        time.sleep(120)
         # 检查是否有更新,有更新那么执行更新
         if self.have_update(): self.do_update()
         start_all()
@@ -453,6 +453,7 @@ def main():
 
     if action == "restart":
         stop(uri)
+        time.sleep(30)
         start(uri)
         return
 
