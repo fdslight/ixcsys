@@ -166,7 +166,7 @@ class dhcpv6c(object):
         if len(nameservers) == 1:
             nameservers.append("")
         # print(opts)
-        self.__nameservers = []
+        self.__nameservers = nameservers
         logging.print_alert("dhcpv6 get ipv6 nameservers %s" % " ".join(nameservers))
         self.set_system_dnsserver()
 
