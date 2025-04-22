@@ -18,12 +18,15 @@ class dhcpv6c(object):
 
     __up_time = None
 
+    __nameservers = None
+
     def __init__(self, runtime, hostname, wan_hwaddr):
         self.__runtime = runtime
         self.__hostname = hostname
         self.__wan_hwaddr = wan_hwaddr
         self.__up_time = time.time()
         self.__duid_ll = netutils.str_hwaddr_to_bytes(wan_hwaddr)
+        self.__nameservers = []
 
     def get_my_local_address(self, mac_address):
         binary_mac = bin(int(mac_address[:2], 16))[2:].zfill(8)
@@ -162,13 +165,23 @@ class dhcpv6c(object):
         # 如果少于2台服务器,添加一个空的
         if len(nameservers) == 1:
             nameservers.append("")
-        #print(opts)
+        # print(opts)
+        self.__nameservers = []
         logging.print_alert("dhcpv6 get ipv6 nameservers %s" % " ".join(nameservers))
+        self.set_system_dnsserver()
+
+    def set_system_dnsserver(self):
+        nameservers = self.__nameservers
         RPC.fn_call("DNS", "/config", "set_ip6_nameservers_from_dhcpv6", nameservers[0], nameservers[1])
 
     def loop(self):
         now = time.time()
-        if now - self.__up_time < 60:
+        # 如果已经获取到DNS服务器,那么1小时获取一次,否则60秒查找一次
+        if self.__nameservers:
+            timeout = 3600
+        else:
+            timeout = 60
+        if now - self.__up_time < timeout:
             return
         self.__up_time = now
         self.send_dhcp_request()

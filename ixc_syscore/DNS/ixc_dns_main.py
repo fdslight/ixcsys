@@ -236,7 +236,7 @@ class service(dispatcher.dispatcher):
             self.__dns_server6 = -1
             return
 
-        #RPCClient.fn_call("router", "/config", "manage_addr_set", ip6_mngaddr, is_ipv6=True)
+        # RPCClient.fn_call("router", "/config", "manage_addr_set", ip6_mngaddr, is_ipv6=True)
 
         if self.__ip6_mngaddr != ip6_mngaddr:
             if self.__dns_server6 >= 0:
@@ -663,6 +663,9 @@ class service(dispatcher.dispatcher):
         self.__from_dhcpv6_dns = True
         self.__dhcpv6_dns_a = ns1
         self.__dhcpv6_dns_b = ns2
+        # 获取不到地址,那么认为dhcpv6获取不到DNS地址
+        if ns1 == "" and ns2 == "":
+            self.__from_dhcpv6_dns = False
         self.set_nameservers(ns1, ns2, is_ipv6=True)
 
     def forward_dns_result(self, enable: bool):
