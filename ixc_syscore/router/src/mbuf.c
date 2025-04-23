@@ -20,6 +20,11 @@ int ixc_mbuf_init(size_t pre_alloc_num)
     struct ixc_mbuf *m=NULL;
     ixc_mbuf_is_initialized=1;
 
+    if(pre_alloc_num>IXC_MBUF_MAX){
+        STDERR("cannot init mbuf,pre alloc num is %lu,but MAX IS %d",pre_alloc_num,IXC_MBUF_MAX);
+        return -1;
+    }
+
     for(size_t n=0;n<pre_alloc_num;n++){
         m=malloc(sizeof(struct ixc_mbuf));
         if(NULL==m){
