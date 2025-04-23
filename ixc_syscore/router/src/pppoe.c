@@ -402,13 +402,12 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     }
 
     ixc_pppoe_free_tags(first_tag);
-    ixc_mbuf_put(m);
     
-
     // PADT不带任何标签,因此逻辑要放在最前面
     if(error || header->code==IXC_PPPOE_CODE_PADT){
         ixc_router_tell("lcp_stop");
         ixc_pppoe_reset();
+        ixc_mbuf_put(m);
         //STDERR("errcode:0x%x %s\r\n",error,err_msg);
         DBG("PPPoE server terminate session,errcode 0x%x,error message is %s\r\n",error,err_msg);
         return;
@@ -416,6 +415,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
 
     // 必须包含ac_name
     if(!have_ac_name) {
+        ixc_mbuf_put(m);
         DBG_FLAGS;
         return;
     }
@@ -426,11 +426,13 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     ixc_router_tell(content);
 
     if(!is_same_ac){
+        ixc_mbuf_put(m);
         DBG("PPPoE receive new AC %s,system ignore it\r\n",ac_name);
         return;
     }
 
     if(pppoe.is_forced_ac_name && strcmp(pppoe.force_ac_name,ac_name)!=0){
+        ixc_mbuf_put(m);
         DBG("PPPoE force ac name %s,but current ac name is %s\r\n",pppoe.force_ac_name,ac_name);
         return;
     }
@@ -440,6 +442,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
         pppoe.cur_discovery_stage=IXC_PPPOE_CODE_PADR;
         // 发送PPPoE PADR数据包
         ixc_pppoe_send_discovery_padr();
+        ixc_mbuf_put(m);
         return;
     }
 
@@ -447,10 +450,11 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
         pppoe.cur_discovery_stage=IXC_PPPOE_CODE_PADS;
         pppoe.discovery_ok=1;
         pppoe.session_id=ntohs(header->session_id);
+        ixc_mbuf_put(m);
         ixc_router_tell("lcp_start");
         return;
     }
-
+    ixc_mbuf_put(m);
 }
 
 static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
