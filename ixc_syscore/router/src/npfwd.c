@@ -138,7 +138,7 @@ static void ixc_npfwd_rx_data(int fd)
             case IXC_FLAG_DHCP_CLIENT:
             case IXC_FLAG_DHCP_SERVER:
                 // 如果是WAN口并开启了PPPoE,那么使用PPPoE封装
-                if(IXC_NETIF_WAN==netif->type && ixc_pppoe_is_enabled()){
+                if(IXC_NETIF_WAN==netif->type && ixc_pppoe_is_enabled() && IXC_FLAG_DHCP_CLIENT==header->flags){
                     ixc_npfwd_send2if_for_pppoe(m);
                 }else{
                     ixc_ether_send2(m);
