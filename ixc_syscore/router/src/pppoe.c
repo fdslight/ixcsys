@@ -553,6 +553,7 @@ static void ixc_pppoe_handle_session(struct ixc_mbuf *m)
         // IPv6CP
         case 0x8057:
             ixc_router_pppoe_session_send(ppp_proto,length-2,m->data+m->offset);
+            ixc_mbuf_put(m);
             break;
         // IPv6协议
         case 0x0057:
