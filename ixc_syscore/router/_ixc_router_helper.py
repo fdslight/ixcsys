@@ -121,7 +121,7 @@ class rpc(object):
         return is_error, pickle.dumps(msg)
 
     def mbuf_alloc_info_get_for_debug(self):
-        return self.__helper.router.mbuf_alloc_info_get_for_debug()
+        return 0, self.__helper.router.mbuf_alloc_info_get_for_debug()
 
     def get_all_consts(self):
         """获取所有转发数据包的flags
