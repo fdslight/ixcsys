@@ -151,6 +151,7 @@ static void ixc_icmpv6_handle_rs(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 /// @param prefix_length 
 static int ixc_icmpv6_prefix_is_changed(struct ixc_netif *netif,unsigned char *prefix_addr,unsigned char prefix_length)
 {
+    if(!netif->isset_ip6) return 0;
     if(netif->ip6_prefix!=prefix_length) return 1;
     if(memcmp(netif->ip6_subnet,prefix_addr,16)) return 1;
 
