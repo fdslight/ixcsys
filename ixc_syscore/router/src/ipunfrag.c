@@ -141,7 +141,7 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
         }
 
         // 检查是否超过分片会话上限,超过那么就丢弃数据包,避免碎片攻击造成mbuf消耗过多
-        if(ipunfrag.m->key_tot_num==IXC_IPUNFRAG_MAX_NUM){
+        if(IXC_IPUNFRAG_MAX_NUM==ipunfrag.m->key_tot_num){
             ixc_mbuf_put(m);
             STDERR("ipunfrag max is %d,but now is %u",IXC_IPUNFRAG_MAX_NUM,ipunfrag.m->key_tot_num);
             return NULL;
