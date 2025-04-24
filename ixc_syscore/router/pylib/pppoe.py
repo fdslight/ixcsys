@@ -28,6 +28,8 @@ class pppoe(object):
     __selected_ac_name = None
     __selected_ac_count = None
 
+    __ac_names_time = None
+
     __is_first = None
 
     def __init__(self, runtime):
@@ -44,6 +46,7 @@ class pppoe(object):
         self.__auth_ok = False
         self.__selected_ac_name = ""
         self.__selected_ac_count = 0
+        self.__ac_names_time = time.time()
         self.__is_first = False
 
     @property
@@ -189,13 +192,16 @@ class pppoe(object):
         logging.print_alert("PPPoE reset")
 
     def loop(self):
+        now = time.time()
         if not self.__start: return
         self.__lcp.loop()
         if not self.__lcp.lcp_ok(): return
         if self.__lcp.auth_method_get() == "pap": self.__pap.loop()
-
-        now = time.time()
-        # 超过60秒还未认证成功那么更改AC进行认证
+        # 一小时清理ac清单一次
+        if now - self.__ac_names_time > 3600:
+            self.__ac_names = []
+            self.__ac_names_time = now
+        # 超过30秒还未认证成功那么更改AC进行认证
         if now - self.__time >= 30 and not self.is_auth_ok():
             self.reset()
             logging.print_alert("PPPoE auth handshake timeout with ac %s" % self.__selected_ac_name)
@@ -213,6 +219,8 @@ class pppoe(object):
         """记录AC name
         """
         if ac_name not in self.__ac_names:
+            # 超过256个ac那么不记录,避免记录过多浪费内存,过多的ac name可能存在网络攻击,不限制会导致内存被占用过多导致系统内存不足
+            if len(self.__ac_names) > 256: return
             self.__ac_names.append(ac_name)
         return
 

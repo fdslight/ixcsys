@@ -20,12 +20,15 @@ int ixc_mbuf_init(size_t pre_alloc_num)
     struct ixc_mbuf *m=NULL;
     ixc_mbuf_is_initialized=1;
 
+    // 首先分配部分mbuf,随后按需要增长,也可以减少内存占用
+    size_t need_alloc_num=pre_alloc_num/4;
+
     if(pre_alloc_num>IXC_MBUF_MAX){
         STDERR("cannot init mbuf,pre alloc num is %lu,but MAX IS %d",pre_alloc_num,IXC_MBUF_MAX);
         return -1;
     }
 
-    for(size_t n=0;n<pre_alloc_num;n++){
+    for(size_t n=0;n<need_alloc_num;n++){
         m=malloc(sizeof(struct ixc_mbuf));
         if(NULL==m){
             STDERR("no memory for pre alloc struct ixc_mbuf\r\n");
@@ -37,7 +40,7 @@ int ixc_mbuf_init(size_t pre_alloc_num)
         ixc_mbuf_empty_head=m;
     }
 
-    ixc_mbuf_used_num=pre_alloc_num;
+    ixc_mbuf_used_num=need_alloc_num;
     ixc_mbuf_pre_alloc_num=pre_alloc_num;
 
     return 0;

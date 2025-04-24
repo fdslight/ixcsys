@@ -140,6 +140,13 @@ struct ixc_mbuf *ixc_ipunfrag_add(struct ixc_mbuf *m)
             return NULL;
         }
 
+        // 检查是否超过分片会话上限,超过那么就丢弃数据包,避免碎片攻击造成mbuf消耗过多
+        if(ipunfrag.m->key_tot_num==IXC_IPUNFRAG_MAX_NUM){
+            ixc_mbuf_put(m);
+            STDERR("ipunfrag max is %d,but now is %u",IXC_IPUNFRAG_MAX_NUM,ipunfrag.m->key_tot_num);
+            return NULL;
+        }
+
         new_mbuf=ixc_mbuf_get();
         if(NULL==new_mbuf){
             STDERR("cannot get mbuf for ip ipunfrag\r\n");
