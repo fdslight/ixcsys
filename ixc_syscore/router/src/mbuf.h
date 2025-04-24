@@ -78,6 +78,6 @@ struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m);
 /// @param pre_alloc_num 
 /// @param used_num 
 /// @param max_num 
-void mbuf_alloc_info_get_for_debug(size_t *pre_alloc_num,size_t *used_num,size_t *max_num);
+void mbuf_alloc_info_get_for_debug(size_t *pre_alloc_num,size_t *used_num,size_t *cur_pool_num,size_t *max_num);
 
 #endif

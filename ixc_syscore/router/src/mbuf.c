@@ -12,6 +12,8 @@ static struct ixc_mbuf *ixc_mbuf_empty_head=NULL;
 static size_t ixc_mbuf_used_num=0;
 /// 预先分配的mbuf数目
 static size_t ixc_mbuf_pre_alloc_num=0;
+/// 当前内存池中的mbuf数目
+static size_t ixc_mbuf_cur_mem_pool_num=0;
 /// 是否初始化
 static int ixc_mbuf_is_initialized=0;
 
@@ -42,6 +44,7 @@ int ixc_mbuf_init(size_t pre_alloc_num)
 
     ixc_mbuf_used_num=need_alloc_num;
     ixc_mbuf_pre_alloc_num=pre_alloc_num;
+    ixc_mbuf_cur_mem_pool_num=need_alloc_num;
 
     return 0;
 }
@@ -81,6 +84,8 @@ struct ixc_mbuf *ixc_mbuf_get(void)
         m->priv_flags=0;
         m->loop_trace=0;
         m->passthrough=0;
+        
+        ixc_mbuf_cur_mem_pool_num-=1;
 
         return m;
     }
@@ -123,9 +128,11 @@ void ixc_mbuf_put(struct ixc_mbuf *m)
         DBG("mbuf free\r\n");
         return;
     }
+
     m->next=NULL;
     m->next=ixc_mbuf_empty_head;
     ixc_mbuf_empty_head=m;
+    ixc_mbuf_cur_mem_pool_num+=1;
 }
 
 struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m)
@@ -161,9 +168,10 @@ struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m)
     return new_mbuf;
 }
 
-void mbuf_alloc_info_get_for_debug(size_t *pre_alloc_num,size_t *used_num,size_t *max_num)
+void mbuf_alloc_info_get_for_debug(size_t *pre_alloc_num,size_t *used_num,size_t *cur_pool_num,size_t *max_num)
 {
     *pre_alloc_num=ixc_mbuf_pre_alloc_num;
     *used_num=ixc_mbuf_used_num;
+    *cur_pool_num=ixc_mbuf_cur_mem_pool_num;
     *max_num=IXC_MBUF_MAX;
 }

@@ -87,11 +87,11 @@ router_init(routerObject *self,PyObject *args,PyObject *kwds)
 static PyObject *
 router_mbuf_alloc_info_get_for_debug(PyObject *self,PyObject *args)
 {
-    size_t pre_alloc_num,used_num,max_num;
+    size_t pre_alloc_num,used_num,cur_pool_num,max_num;
 
-    mbuf_alloc_info_get_for_debug(&pre_alloc_num,&used_num,&max_num);
+    mbuf_alloc_info_get_for_debug(&pre_alloc_num,&used_num,&cur_pool_num,&max_num);
     
-    return Py_BuildValue("(nnn)",pre_alloc_num,used_num,max_num);
+    return Py_BuildValue("(nnnn)",pre_alloc_num,used_num,cur_pool_num,max_num);
 }
 
 static PyObject *
