@@ -85,6 +85,16 @@ router_init(routerObject *self,PyObject *args,PyObject *kwds)
 }
 
 static PyObject *
+router_mbuf_alloc_info_get_for_debug(PyObject *self,PyObject *args)
+{
+    size_t pre_alloc_num,used_num,max_num;
+
+    mbuf_alloc_info_get_for_debug(&pre_alloc_num,&used_num,&max_num);
+    
+    return Py_BuildValue("(nnn)",pre_alloc_num,used_num,max_num);
+}
+
+static PyObject *
 router_netif_create(PyObject *self,PyObject *args)
 {
     const char *name;
@@ -1039,6 +1049,7 @@ static PyMemberDef router_members[]={
 };
 
 static PyMethodDef routerMethods[]={
+    {"mbuf_alloc_info_get_for_debug",(PyCFunction)router_mbuf_alloc_info_get_for_debug,METH_NOARGS,"get mbuf info"},
     {"netif_create",(PyCFunction)router_netif_create,METH_VARARGS,"create tap device"},
     {"netif_delete",(PyCFunction)router_netif_delete,METH_VARARGS,"delete tap device"},
     {"netif_get_ip",(PyCFunction)router_netif_get_ip,METH_VARARGS,"get netif ip address"},

@@ -160,3 +160,10 @@ struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m)
 
     return new_mbuf;
 }
+
+void mbuf_alloc_info_get_for_debug(size_t *pre_alloc_num,size_t *used_num,size_t *max_num)
+{
+    *pre_alloc_num=ixc_mbuf_pre_alloc_num;
+    *used_num=ixc_mbuf_used_num;
+    *max_num=IXC_MBUF_MAX;
+}
