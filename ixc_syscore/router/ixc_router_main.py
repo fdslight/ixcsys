@@ -11,9 +11,11 @@ from pywind.global_vars import global_vars
 import pywind.evtframework.evt_dispatcher as dispatcher
 import pywind.lib.proc as proc
 import pywind.web.handlers.scgi as scgi
+import pywind.lib.crpc as crpc
+
+import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
-import ixc_syslib.pylib.RPCClient as RPC
 
 import ixc_syscore.router.handlers.conn_mon as conn_mon_handler
 
@@ -68,8 +70,14 @@ class service(dispatcher.dispatcher):
     __net_status_up_time = None
 
     __chk_host_info = None
+    __chk_net_try_count = None
+    __is_pppoe_dial = None
 
     def report_network_status(self, is_ok: bool):
+        if not is_ok:
+            self.__chk_net_try_count += 1
+        else:
+            self.__chk_net_try_count = 0
         self.__network_status = is_ok
 
     def clear_os_route(self, is_ipv6=False):
@@ -103,15 +111,40 @@ class service(dispatcher.dispatcher):
     def debug(self):
         return self.__debug
 
+    def router_runtime_fn_call(self, fname: str, *args, **kwargs):
+        client = crpc.RPCClient(self.__runtime.rpc_sock_path)
+        is_error, msg = client.fn_call(fname, *args, **kwargs)
+
+        return is_error, msg
+
     def check_network_status(self):
         """检查网络状态
         """
         # 未设置那么不检查
-        if not self.__chk_host_info: return
         now = time.time()
-        # 10分钟检查一次
-        if now - self.__net_status_up_time < 600: return
+        # 未连接成功,增加频率
+        if self.__chk_net_try_count > 0:
+            timeout = 30
+        else:
+            timeout = 600
+        if now - self.__net_status_up_time < timeout: return
+        if not self.__chk_host_info: return
 
+        is_err, is_enabled = self.router_runtime_fn_call("pppoe_is_enabled")
+        if not is_enabled: return
+
+        # 检查wan准备成功之后再联
+        is_err, ok = self.router_runtime_fn_call("wan_ready_ok")
+        if not ok: return
+
+        if self.__chk_net_try_count > 3:
+            # 超过3次重置为默认状态,然后重新pppoe拨号
+            self.__network_status = True
+            self.__chk_net_try_count = 0
+            self.router_runtime_fn_call("pppoe_force_re_dial")
+            return
+
+        self.__net_status_up_time = now
         host, addr, is_ipv6 = self.__chk_host_info
         fd = conn_mon_handler.conn_mon_client(host, addr, is_ipv6=is_ipv6)
 
@@ -138,6 +171,8 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = -1
         self.__network_status = True
         self.__net_status_up_time = time.time()
+        self.__chk_net_try_count = 0
+        self.__is_pppoe_dial = False
 
         RPC.wait_proc("init")
 
@@ -147,6 +182,9 @@ class service(dispatcher.dispatcher):
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
         os.system("%s/ixc_router_core start" % os.getenv("IXC_MYAPP_DIR"))
+
+        # 等待router_core核心启动完成
+        time.sleep(10)
 
         if not self.debug:
             sys.stdout = logging.stdout()
