@@ -58,9 +58,13 @@ struct ixc_pppoe{
     char passwd[512];
     char ac_name[2048];
     char force_ac_name[2048];
+    char service_name[2048];
+
     unsigned char ac_cookie[2048];
+    unsigned char host_uniq[2048];
     
     int is_forced_ac_name;
+    int host_uniq_length;
 
     unsigned short session_id;
     // 选择的PPPoE服务器
@@ -100,5 +104,10 @@ struct ixc_pppoe *ixc_pppoe(void);
 
 /// 强制指定AC
 int ixc_pppoe_force_ac_name(const char *name,int is_forced);
+
+/// 设置host_uniq
+int ixc_pppoe_set_host_uniq(const char *uniq,size_t length);
+/// 设置服务名
+int ixc_pppoe_set_service_name(const char *service_name);
 
 #endif

@@ -21,6 +21,8 @@ class widget(ui_widget.widget):
             kwargs['chk_net_enable'] = bool(int(pppoe_net_monitor['enable']))
             kwargs['chk_net_host'] = pppoe_net_monitor['host']
             kwargs['chk_net_port'] = pppoe_net_monitor['port']
+            kwargs['service_name'] = kwargs.get('service_name', '')
+            kwargs['host_uniq'] = kwargs.get('host_uniq', '')
 
         if _type == "static-ip":
             kwargs = configs["ipv4"]

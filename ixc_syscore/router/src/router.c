@@ -613,6 +613,39 @@ router_pppoe_force_ac_name(PyObject *self,PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+router_pppoe_set_service_name(PyObject *self,PyObject *args)
+{
+    const char *service_name;
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"s",&service_name)) return NULL;
+    rs=ixc_pppoe_set_service_name(service_name);
+    if(rs<0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_pppoe_set_host_uniq(PyObject *self,PyObject *args)
+{
+    const char *s;
+    Py_ssize_t length;
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"y#",&s,&length)) return NULL;
+
+    rs=ixc_pppoe_set_host_uniq(s,length);
+
+    if(rs<0){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
 /// 端口映射添加
 static PyObject *
 router_port_map_add(PyObject *self,PyObject *args)
@@ -1085,6 +1118,8 @@ static PyMethodDef routerMethods[]={
     {"pppoe_data_send",(PyCFunction)router_pppoe_data_send,METH_VARARGS,"send pppoe session data"},
     {"pppoe_reset",(PyCFunction)router_pppoe_reset,METH_VARARGS,"reset pppoe session"},
     {"pppoe_force_ac_name",(PyCFunction)router_pppoe_force_ac_name,METH_VARARGS,"force pppoe ac name"},
+    {"pppoe_set_service_name",(PyCFunction)router_pppoe_set_service_name,METH_VARARGS,"set pppoe service name"},
+    {"pppoe_set_host_uniq",(PyCFunction)router_pppoe_set_host_uniq,METH_VARARGS,"set pppoe host uniq"},
     //
     {"port_map_add",(PyCFunction)router_port_map_add,METH_VARARGS,"port map add"},
     {"port_map_del",(PyCFunction)router_port_map_del,METH_VARARGS,"port map delete"},

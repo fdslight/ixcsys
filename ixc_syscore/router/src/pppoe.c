@@ -52,7 +52,7 @@ static int ixc_pppoe_parse_tags(struct ixc_mbuf *m,struct ixc_pppoe_tag **tag_fi
         if(type==0x0000) break;
 
         // 检查tag长度值是否合法
-        if(length>1492){
+        if(length>256){
             DBG("Wrong tag length value\r\n");
             rs=-1;
             break;
@@ -137,6 +137,8 @@ static void ixc_pppoe_send_discovery(void)
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
     struct ixc_pppoe_header *header;
     struct ixc_pppoe_tag_header *tag_header;
+    int offset;
+    char *ptr;
 
     unsigned char brd[]={
         0xff,0xff,0xff,
@@ -163,17 +165,44 @@ static void ixc_pppoe_send_discovery(void)
     m->offset=IXC_MBUF_BEGIN;
 
     header=(struct ixc_pppoe_header *)(m->data+m->offset);
+    ptr=(char *)(m->data+m->offset);
 
     header->ver_and_type=0x11;
     header->code=IXC_PPPOE_CODE_PADI;
     header->session_id=0x0000;
     header->length=htons(4);
 
-    tag_header=(struct ixc_pppoe_tag_header *)(((char *)header)+6);
+    offset=6;
+    
+    // pppoe service name
+    tag_header=(struct ixc_pppoe_tag_header *)(ptr+offset);
     tag_header->type=htons(0x0101);
+    tag_header->length=strlen(pppoe.service_name);
+
+    offset+=4;
+
+    strcpy(ptr+offset,pppoe.service_name);
+    offset+=strlen(pppoe.service_name);
+
+    // pppoe host uniq
+    if(pppoe.host_uniq_length>0){
+        tag_header=(struct ixc_pppoe_tag_header *)(ptr+offset);
+        tag_header->type=htons(0x0103);
+        tag_header->length=pppoe.host_uniq_length;
+
+        offset+=4;
+        memcpy(ptr+offset,pppoe.host_uniq,pppoe.host_uniq_length);
+        
+        offset+=pppoe.host_uniq_length;
+    }
+    
+    tag_header=(struct ixc_pppoe_tag_header *)(ptr+offset);
+    tag_header->type=htons(0x0000);
     tag_header->length=0;
 
-    m->tail=m->begin+10;
+    offset+=4;
+
+    m->tail=m->begin+offset;
     m->end=m->tail;
 
     pppoe.up_time=time(NULL);
@@ -238,15 +267,24 @@ static void ixc_pppoe_send_discovery_padr(void)
 
     unsigned short tags[]={
         0x0101,
-        0x0102,0x0104,0x0000
+        0x0102,
+        0x0103,
+        0x0104,
+        0x0000
     },tag;
     unsigned short lengths[]={
-        0,
-        strlen(pppoe.ac_name),pppoe.ac_cookie_len,0
+        strlen(pppoe.service_name),
+        strlen(pppoe.ac_name),
+        pppoe.host_uniq_length,
+        pppoe.ac_cookie_len,
+        0
     },length;
     unsigned char *data_set[]={
-        NULL,
-        (unsigned char *)pppoe.ac_name,pppoe.ac_cookie,NULL
+        (unsigned char *)pppoe.service_name,
+        (unsigned char *)pppoe.ac_name,
+        pppoe.host_uniq,
+        pppoe.ac_cookie,
+        NULL
     },*data;
 
     struct ixc_mbuf *m=ixc_mbuf_get();
@@ -275,8 +313,9 @@ static void ixc_pppoe_send_discovery_padr(void)
 
         tag=tags[n];
         length=lengths[n];
-
-        if(0==length && 0x0000!=tag) continue;
+        
+        // 未设置host uniq跳过
+        if(0==length && 0x0103==tag) continue;
         
         data=data_set[n];
  
@@ -812,6 +851,39 @@ int ixc_pppoe_force_ac_name(const char *name,int is_forced)
     }
 
     pppoe.force_ac_name[0]='\0';
+
+    return 0;
+}
+
+/// 设置host_uniq
+int ixc_pppoe_set_host_uniq(const char *uniq,size_t length)
+{
+    pppoe.host_uniq_length=length;
+
+    if(length>2048){
+        return -1;
+    }
+
+    memcpy(pppoe.host_uniq,uniq,length);
+
+    return 0;
+}
+
+/// 设置服务名
+int ixc_pppoe_set_service_name(const char *service_name)
+{
+    if(NULL==service_name){
+        pppoe.service_name[0]='\0';
+        return 0;
+    }
+
+    // 检查字符串长度
+    if(strlen(service_name)>2047){
+        pppoe.service_name[0]='\0';
+        return -1;
+    }
+
+    strcpy(pppoe.service_name,service_name);
 
     return 0;
 }

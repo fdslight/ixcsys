@@ -11,6 +11,21 @@ class controller(base_controller.BaseController):
         self.request.set_allow_methods(["POST"])
         return True
 
+    def pppoe_host_uniq_check_ok(self, host_uniq: str):
+        if len(host_uniq) % 2 != 0:
+            host_uniq = "0" + host_uniq
+        i = 0
+        size = len(host_uniq)
+        while i < size:
+            x = "0x" + host_uniq[i:i + 2]
+            i = i + 2
+            try:
+                int(x, 16)
+            except ValueError:
+                return False
+            ''''''
+        return True
+
     def handle_pppoe(self):
         action = self.request.get_argument('action', is_qs=False, is_seq=False)
         if action == "force-re-dial":
@@ -25,6 +40,8 @@ class controller(base_controller.BaseController):
         chk_net_host = self.request.get_argument("chk-net-host", is_seq=False, is_qs=False)
         chk_net_port = self.request.get_argument("chk-net-port", is_seq=False, is_qs=False)
         s_chk_net_enable = self.request.get_argument("chk-net-enable", is_seq=False, is_qs=False)
+        service_name = self.request.get_argument("service-name", is_qs=False, is_seq=False)
+        host_uniq = self.request.get_argument("host-uniq", is_qs=False, is_seq=False)
 
         if not s_heartbeat_enable:
             heartbeat_enable = False
@@ -40,6 +57,23 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "用户名或者密码为空")
             return
 
+        if not service_name:
+            service_name = ""
+        if not host_uniq:
+            host_uniq = ""
+
+        if host_uniq:
+            if host_uniq[0:2].lowe() != "0x":
+                self.json_resp(True, "错误的pppoe host uniq 值")
+                return
+            if len(host_uniq) == 2:
+                self.json_resp(True, "错误的pppoe host uniq 值")
+                return
+            host_uniq = host_uniq[2:]
+            if not self.pppoe_host_uniq_check_ok(host_uniq):
+                self.json_resp(True, "错误的pppoe host uniq 值")
+                return
+            ''''''
         if chk_net_enable:
             try:
                 chk_net_port = int(chk_net_port)
@@ -61,7 +95,8 @@ class controller(base_controller.BaseController):
 
         RPC.fn_call("router", "/config", "wan_pppoe_chk_net_info_set", chk_net_host, chk_net_port, chk_net_enable)
 
-        RPC.fn_call("router", "/config", "pppoe_set", username, passwd, heartbeat=heartbeat_enable)
+        RPC.fn_call("router", "/config", "pppoe_set", username, passwd, heartbeat=heartbeat_enable, host_uniq=host_uniq,
+                    service_name=service_name)
         RPC.fn_call("router", "/config", "internet_type_set", "pppoe")
         RPC.fn_call("router", "/config", "config_save")
 

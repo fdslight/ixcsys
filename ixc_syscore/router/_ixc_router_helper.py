@@ -468,7 +468,7 @@ class rpc(object):
 
         return 0, public["internet_type"]
 
-    def pppoe_set(self, username: str, passwd: str, heartbeat=False):
+    def pppoe_set(self, username: str, passwd: str, heartbeat=False, host_uniq="", service_name=""):
         if not username or not passwd:
             return RPC.ERR_ARGS, "empty username or password"
         configs = self.__helper.wan_configs
@@ -476,6 +476,8 @@ class rpc(object):
 
         pppoe["user"] = username
         pppoe["passwd"] = passwd
+        pppoe['host_uniq'] = host_uniq
+        pppoe['service_name'] = service_name
 
         if heartbeat:
             pppoe["heartbeat"] = 1
@@ -1254,6 +1256,26 @@ class helper(object):
         self.__router.netif_delete(router.IXC_NETIF_PASS)
         self.__if_pass_fd = -1
 
+    def hex2bytes(self, v: str, err_msg: str):
+        if not v: return b""
+        if len(v) % 2 != 0:
+            v = "0" + v
+
+        i = 0
+        size = len(v)
+        seq = []
+        while i < size:
+            x = "0x" + v[i:i + 2]
+            i = i + 2
+            try:
+                n = int(x, 16)
+            except ValueError:
+                logging.print_error(err_msg)
+                return b""
+            seq.append(n)
+
+        return bytes(seq)
+
     def start_wan(self):
         self.load_wan_configs()
 
@@ -1296,6 +1318,14 @@ class helper(object):
             self.__pppoe_user = wan_pppoe["user"]
             self.__pppoe_passwd = wan_pppoe["passwd"]
             self.__pppoe_heartbeat = bool(int(wan_pppoe["heartbeat"]))
+
+            host_uniq = wan_pppoe.get("host_uniq", "")
+            host_uniq_bytes = self.hex2bytes(host_uniq, "wrong host uniq value format for pppoe")
+
+            self.router.pppoe_set_host_uniq(host_uniq_bytes)
+
+            service_name = wan_pppoe.get("service_name", "")
+            self.router.pppoe_set_service_name(service_name)
 
             self.router.pppoe_enable(True)
             self.router.pppoe_start()
