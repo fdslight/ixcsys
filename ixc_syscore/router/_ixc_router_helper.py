@@ -387,6 +387,10 @@ class rpc(object):
         return 0, pppoe_net_monitor
 
     def wan_pppoe_chk_net_info_set(self, host: str, port: int, enable: bool):
+        router_configs = self.__helper.router_configs
+        pppoe_net_monitor = router_configs['pppoe_net_monitor']
+        pppoe_net_monitor['enable'] = int(enable)
+
         if not enable:
             return 0, True
         if not netutils.is_ipv4_address(host) and not netutils.is_ipv6_address(host):
@@ -399,11 +403,8 @@ class rpc(object):
         if n_port < 1 or n_port > 65535:
             return 0, False
 
-        router_configs = self.__helper.router_configs
-        pppoe_net_monitor = router_configs['pppoe_net_monitor']
         pppoe_net_monitor['host'] = host
         pppoe_net_monitor['port'] = n_port
-        pppoe_net_monitor['enable'] = int(enable)
 
         return 0, True
 
