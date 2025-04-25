@@ -15,6 +15,8 @@ import ixc_syslib.web.route as webroute
 import ixc_syslib.pylib.logging as logging
 import ixc_syslib.pylib.RPCClient as RPC
 
+import ixc_syscore.router.handlers.conn_mon as conn_mon_handler
+
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
 
@@ -62,6 +64,14 @@ class service(dispatcher.dispatcher):
     __is_linux = None
     __scgi_fd = None
 
+    __network_status = None
+    __net_status_up_time = None
+
+    __chk_host_info = None
+
+    def report_network_status(self, is_ok: bool):
+        self.__network_status = is_ok
+
     def clear_os_route(self, is_ipv6=False):
         """清除系统的路由表
         """
@@ -93,6 +103,18 @@ class service(dispatcher.dispatcher):
     def debug(self):
         return self.__debug
 
+    def check_network_status(self):
+        """检查网络状态
+        """
+        # 未设置那么不检查
+        if not self.__chk_host_info: return
+        now = time.time()
+        # 10分钟检查一次
+        if now - self.__net_status_up_time < 600: return
+
+        host, addr, is_ipv6 = self.__chk_host_info
+        fd = conn_mon_handler.conn_mon_client(host, addr, is_ipv6=is_ipv6)
+
     def release(self):
         if self.__scgi_fd:
             self.delete_handler(self.__scgi_fd)
@@ -114,9 +136,11 @@ class service(dispatcher.dispatcher):
     def init_func(self, debug):
         self.__debug = debug
         self.__scgi_fd = -1
+        self.__network_status = True
+        self.__net_status_up_time = time.time()
 
         RPC.wait_proc("init")
-        
+
         self.clear_os_route()
         self.clear_os_route(is_ipv6=True)
 
@@ -137,6 +161,9 @@ class service(dispatcher.dispatcher):
     @property
     def rpc_sock_path(self):
         return "/tmp/ixcsys/router/rpc.sock"
+
+    def myloop(self):
+        self.check_network_status()
 
 
 def main():
