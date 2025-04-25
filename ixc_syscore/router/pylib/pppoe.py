@@ -181,13 +181,15 @@ class pppoe(object):
         else:
             # 尝试该表pppoe server进行协商,多个pppoe server可能个别存在问题
             self.change_ac_server()
-        # 注意这里不能条用self.__lcp.reset(),避免可能循环调用
-        self.__runtime.router.pppoe_reset()
+
+        # 避免在lcp,lpcp...中调用self.reset()方法,会导致死循环
         self.__lcp.reset()
         self.__ipcp.reset()
         self.__ipv6cp.reset()
         self.__chap.reset()
         self.__pap.reset()
+
+        self.__runtime.router.pppoe_reset()
 
         logging.print_alert("PPPoE reset")
 
