@@ -36,25 +36,18 @@
         <label for="pppoe-host-uniq" class="col-sm-2 col-form-label">Host-Uniq</label>
         <div class="col-sm-10">
             <input type="text" class="form-control" name="host-uniq" value="${self.V['host_uniq']}"
-                   placeholder="">
+                   placeholder="选填">
+        <div class="ixc-prompt">16进制的host uniq,除非ISP要求,一般不填,例如0xffff</div>
         </div>
-        <p class="ixc-alert">16进制的host uniq,除非ISP要求,一般不填,例如0xffff</p>
     </div>
     <div class="form-group row">
         <label for="service-name" class="col-sm-2 col-form-label">服务名</label>
         <div class="col-sm-10">
             <input type="text" class="form-control" name="service-name" value="${self.V['service_name']}"
-                   placeholder="">
+                   placeholder="选填">
+        <div class="ixc-prompt">除非ISP以及特殊要求,一般不填</div>
         </div>
-        <p class="ixc-alert">除非ISP以及特殊要求,一般不填</p>
-    </div>
-    <div class="form-group row">
-        <label for="pppoe-chk-host" class="col-sm-2 col-form-label">Host-Uniq</label>
-        <div class="col-sm-10">
-            <input type="text" class="form-control" name="chk-net-host" value="${self.V['chk_net_host']}"
-                   placeholder="1.12.12.12">
-        </div>
-        <p class="ixc-alert">16进制的host uniq,除非ISP要求,一般不填</p>
+
     </div>
     <div class="form-group row">
         <label for="pppoe-chk-host" class="col-sm-2 col-form-label">网络探测主机</label>
@@ -84,6 +77,7 @@
                     &nbsp;&nbsp;开启
                 </label>
             </div>
+        <div class="ixc-prompt">如果开启网络探测,到指定主机不通那么会重新进行拨号</div>
         </div>
     </div>
     <div class="form-group row">

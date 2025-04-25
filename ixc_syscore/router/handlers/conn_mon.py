@@ -24,8 +24,9 @@ class conn_mon_client(tcp_handler.tcp_handler):
 
         self.set_socket(s)
         self.register(self.fileno)
+        self.connect((host, port))
 
-        return self.connect((host, port))
+        return self.fileno
 
     def connect_ok(self):
         self.dispatcher.report_network_status(True)

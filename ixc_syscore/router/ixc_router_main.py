@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import pickle
 import sys, os, signal, time
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
@@ -152,10 +152,10 @@ class service(dispatcher.dispatcher):
         return self.__debug
 
     def router_runtime_fn_call(self, fname: str, *args, **kwargs):
-        client = crpc.RPCClient(self.__runtime.rpc_sock_path)
+        client = crpc.RPCClient(self.rpc_sock_path)
         is_error, msg = client.fn_call(fname, *args, **kwargs)
 
-        return is_error, msg
+        return is_error, pickle.loads(msg)
 
     def check_network_status(self):
         """检查网络状态
@@ -189,7 +189,7 @@ class service(dispatcher.dispatcher):
             self.router_runtime_fn_call("pppoe_force_re_dial")
             return
 
-        conn_mon_handler.conn_mon_client(host, port, is_ipv6=is_ipv6)
+        self.create_handler(-1, conn_mon_handler.conn_mon_client, host, port, is_ipv6=is_ipv6)
 
     def release(self):
         if self.__scgi_fd:

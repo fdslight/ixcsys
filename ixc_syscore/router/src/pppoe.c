@@ -170,14 +170,14 @@ static void ixc_pppoe_send_discovery(void)
     header->ver_and_type=0x11;
     header->code=IXC_PPPOE_CODE_PADI;
     header->session_id=0x0000;
-    header->length=htons(4);
+    
 
     offset=6;
     
     // pppoe service name
     tag_header=(struct ixc_pppoe_tag_header *)(ptr+offset);
     tag_header->type=htons(0x0101);
-    tag_header->length=strlen(pppoe.service_name);
+    tag_header->length=htons(strlen(pppoe.service_name));
 
     offset+=4;
 
@@ -188,7 +188,7 @@ static void ixc_pppoe_send_discovery(void)
     if(pppoe.host_uniq_length>0){
         tag_header=(struct ixc_pppoe_tag_header *)(ptr+offset);
         tag_header->type=htons(0x0103);
-        tag_header->length=pppoe.host_uniq_length;
+        tag_header->length=htons(pppoe.host_uniq_length);
 
         offset+=4;
         memcpy(ptr+offset,pppoe.host_uniq,pppoe.host_uniq_length);
@@ -201,6 +201,9 @@ static void ixc_pppoe_send_discovery(void)
     tag_header->length=0;
 
     offset+=4;
+
+    // 除去头部的大小
+    header->length=htons(offset-6);
 
     m->tail=m->begin+offset;
     m->end=m->tail;
@@ -316,6 +319,9 @@ static void ixc_pppoe_send_discovery_padr(void)
         
         // 未设置host uniq跳过
         if(0==length && 0x0103==tag) continue;
+        // 未设置ac cookie跳过
+        if(0==length && 0x0104==tag) continue;
+        
         
         data=data_set[n];
  
@@ -858,6 +864,9 @@ int ixc_pppoe_force_ac_name(const char *name,int is_forced)
 /// 设置host_uniq
 int ixc_pppoe_set_host_uniq(const char *uniq,size_t length)
 {
+
+    //DBG("host uniq length %lu\r\n",length);
+
     pppoe.host_uniq_length=length;
 
     if(length>2048){
@@ -883,6 +892,7 @@ int ixc_pppoe_set_service_name(const char *service_name)
         return -1;
     }
 
+    //DBG("service name is %s\r\n",service_name);
     strcpy(pppoe.service_name,service_name);
 
     return 0;
