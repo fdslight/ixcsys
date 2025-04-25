@@ -905,6 +905,9 @@ class helper(object):
         if "qos_first_host" not in self.__router_configs:
             self.__router_configs["qos_first_host"] = {}
 
+        if "pppoe_net_monitor" not in self.__router_configs:
+            self.__router_configs['pppoe_net_monitor'] = {}
+
     def load_port_map_configs(self):
         path = "%s/port_map.ini" % self.__conf_dir
         self.__port_map_configs = conf.ini_parse_from_file(path)
