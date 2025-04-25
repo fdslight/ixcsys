@@ -42,8 +42,12 @@ class rpc(object):
             "wan_config_get": self.wan_config_get,
             "lan_config_get": self.lan_config_get,
             "manage_addr_get": self.manage_addr_get,
+
             "wan_hwaddr_set": self.wan_hwaddr_set,
             "wan_ifname_set": self.wan_ifname_set,
+            "wan_pppoe_chk_net_info_get": self.wan_pppoe_chk_net_info_get,
+            "wan_pppoe_chk_net_info_set": self.wan_pppoe_chk_net_info_set,
+
             "lan_hwaddr_set": self.lan_hwaddr_set,
             "wan_mtu_set": self.wan_mtu_set,
             "wan_traffic_get": self.wan_traffic_get,
@@ -375,6 +379,33 @@ class rpc(object):
         configs["public"]["phy_ifname"] = ifname
 
         return 0, None
+
+    def wan_pppoe_chk_net_info_get(self):
+        configs = self.__helper.router_configs
+        pppoe_net_monitor = configs['pppoe_net_monitor']
+
+        return 0, pppoe_net_monitor
+
+    def wan_pppoe_chk_net_info_set(self, host: str, port: int, enable: bool):
+        if not enable:
+            return 0, True
+        if not netutils.is_ipv4_address(host) and not netutils.is_ipv6_address(host):
+            return 0, False
+        try:
+            n_port = int(port)
+        except ValueError:
+            return 0, False
+
+        if n_port < 1 or n_port > 65535:
+            return 0, False
+
+        router_configs = self.__helper.router_configs
+        pppoe_net_monitor = router_configs['pppoe_net_monitor']
+        pppoe_net_monitor['host'] = host
+        pppoe_net_monitor['port'] = n_port
+        pppoe_net_monitor['enable'] = int(enable)
+
+        return 0, True
 
     def lan_hwaddr_set(self, hwaddr: str):
         lan_configs = self.__helper.lan_configs
@@ -906,7 +937,11 @@ class helper(object):
             self.__router_configs["qos_first_host"] = {}
 
         if "pppoe_net_monitor" not in self.__router_configs:
-            self.__router_configs['pppoe_net_monitor'] = {}
+            self.__router_configs['pppoe_net_monitor'] = {
+                "enable": 0,
+                "host": "",
+                "port": 443,
+            }
 
     def load_port_map_configs(self):
         path = "%s/port_map.ini" % self.__conf_dir

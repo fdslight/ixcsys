@@ -22,14 +22,44 @@ class controller(base_controller.BaseController):
         passwd = self.request.get_argument("passwd", is_seq=False, is_qs=False)
         s_heartbeat_enable = self.request.get_argument("heartbeat", is_qs=False, is_seq=False)
 
+        chk_net_host = self.request.get_argument("chk-net-host", is_seq=False, is_qs=False)
+        chk_net_port = self.request.get_argument("chk-net-port", is_seq=False, is_qs=False)
+        s_chk_net_enable = self.request.get_argument("chk-net-enable", is_seq=False, is_qs=False)
+
         if not s_heartbeat_enable:
             heartbeat_enable = False
         else:
             heartbeat_enable = True
 
+        if s_chk_net_enable:
+            chk_net_enable = True
+        else:
+            chk_net_enable = False
+
         if not username or not passwd:
-            self.json_resp(True, "username or passwd cannot empty")
+            self.json_resp(True, "用户名或者密码为空")
             return
+
+        if chk_net_enable:
+            try:
+                chk_net_port = int(chk_net_port)
+            except ValueError:
+                self.json_resp(True, "错误的网络探测主机端口号")
+                return
+            if chk_net_port < 1 or chk_net_port > 65535:
+                self.json_resp(True, "错误的网络探测主机端口号")
+                return
+            if not netutils.is_ipv4_address(chk_net_host) and not netutils.is_ipv6_address(chk_net_host):
+                self.json_resp(True, "主机必须为IPv4地址或者IPv6地址")
+                return
+            ''''''
+        else:
+            # 未开启那么不保存配置
+            chk_net_host = ""
+            chk_net_port = 0
+            ''''''
+
+        RPC.fn_call("router", "/config", "wan_pppoe_chk_net_info_set", chk_net_host, chk_net_port, chk_net_enable)
 
         RPC.fn_call("router", "/config", "pppoe_set", username, passwd, heartbeat=heartbeat_enable)
         RPC.fn_call("router", "/config", "internet_type_set", "pppoe")
