@@ -221,6 +221,7 @@ class pppoe(object):
         """记录AC name
         """
         if ac_name not in self.__ac_names:
+            logging.print_alert("PPPoE report ac name %s" % ac_name)
             # 超过256个ac那么不记录,避免记录过多浪费内存,过多的ac name可能存在网络攻击,不限制会导致内存被占用过多导致系统内存不足
             if len(self.__ac_names) > 256: return
             self.__ac_names.append(ac_name)

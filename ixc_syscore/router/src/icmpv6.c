@@ -313,6 +313,8 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     // 发送路由无效报文
     if(ixc_icmpv6_prefix_is_changed(if_lan,opt_prefix->prefix,opt_prefix->prefix_len)){
         if_lan->v6_prefix_valid_lifetime=0;
+        if_lan->v6_prefix_preferred_lifetime=0;
+        
         ixc_icmpv6_send_ra(NULL,NULL);
     }
 
