@@ -120,6 +120,5 @@ int ixc_icmpv6_dns_set(unsigned char *dnsserver);
 void ixc_icmpv6_dns_unset(void);
 /// 获取WAN DNSserver
 int ixc_icmpv6_wan_dnsserver_get(unsigned char *dns_a,unsigned char *dns_b);
-/// 发送ICMPv6 
 
 #endif
