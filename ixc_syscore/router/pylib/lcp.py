@@ -320,6 +320,8 @@ class LCP(object):
 
     def handle_echo_request(self, _id: int, byte_data: bytes):
         self.__up_time = time.time()
+        # 对方有发送echo请求视为通讯正常
+        self.__lcp_heartbeat_try_fail_count = 0
         self.send(ECHO_REPLY, _id, byte_data)
 
     def handle_echo_reply(self, _id: int, byte_data: bytes):
