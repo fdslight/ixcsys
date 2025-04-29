@@ -3,7 +3,7 @@
 
 import os
 
-URL = "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-domains.txt"
+URL = "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/refs/heads/master/anti-ad-domains.txt"
 
 # 核外加入的匹配规则
 EXTRA_ADDS = [
@@ -18,8 +18,8 @@ EXTRA_DROPS = [
     "microsoft",
     "bing",
     ".qy.net",
-    "doubleclick.net",
-    "doubleclick.com",
+ #   "doubleclick.net",
+ #   "doubleclick.com",
     "sentry.io",
     "app-measurement",
     "cloudflare.com",
