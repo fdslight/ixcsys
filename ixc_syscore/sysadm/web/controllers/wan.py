@@ -66,7 +66,7 @@ class controller(base_controller.BaseController):
             chk_net_port = ""
 
         if host_uniq:
-            if host_uniq[0:2].lowe() != "0x":
+            if host_uniq[0:2].lower() != "0x":
                 self.json_resp(True, "错误的pppoe host uniq 值")
                 return
             if len(host_uniq) == 2:
