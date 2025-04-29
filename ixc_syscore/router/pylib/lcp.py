@@ -395,6 +395,7 @@ class LCP(object):
             if x >= 30 and self.__enable_lcp_heartbeat:
                 # 每隔30s发送一次,超过3次未回应就断开连接
                 if self.__lcp_heartbeat_try_fail_count > 3:
+                    logging.print_alert("PPPoE heartbeat timeout,will reset")
                     self.__pppoe.reset()
                 else:
                     self.send_echo_request()
@@ -426,4 +427,3 @@ class LCP(object):
 
     def auth_method_get(self):
         return self.__server_neg_status[OPT_AUTH_PROTO]['value']
-

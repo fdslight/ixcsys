@@ -480,6 +480,11 @@ class rpc(object):
         pppoe['host_uniq'] = host_uniq
         pppoe['service_name'] = service_name
 
+        byte_host_uniq = self.__helper.hex2bytes(host_uniq, "wrong host uniq value")
+
+        self.__helper.router.pppoe_set_host_uniq(byte_host_uniq)
+        self.__helper.router.pppoe_set_service_name(service_name)
+
         if heartbeat:
             pppoe["heartbeat"] = 1
         else:
@@ -883,9 +888,6 @@ class helper(object):
 
     __pppoe = None
     __pppoe_enable = None
-    __pppoe_user = None
-    __pppoe_passwd = None
-    __pppoe_heartbeat = None
 
     __conf_dir = None
     __rpc_instance = None
@@ -1025,14 +1027,6 @@ class helper(object):
     @property
     def debug(self):
         return self.__debug
-
-    @property
-    def pppoe_user(self):
-        return self.__pppoe_user
-
-    @property
-    def pppoe_passwd(self):
-        return self.__pppoe_passwd
 
     @property
     def net_monitor_configs(self):
@@ -1316,9 +1310,6 @@ class helper(object):
             ip4_mtu -= 8
             # 由于IPv6最小mtu为1280,只有大于1288时才减去8
             if ip6_mtu >= 1288: ip6_mtu -= 8
-            self.__pppoe_user = wan_pppoe["user"]
-            self.__pppoe_passwd = wan_pppoe["passwd"]
-            self.__pppoe_heartbeat = bool(int(wan_pppoe["heartbeat"]))
 
             host_uniq = wan_pppoe.get("host_uniq", "")
             host_uniq_bytes = self.hex2bytes(host_uniq, "wrong host uniq value format for pppoe")
@@ -1504,6 +1495,10 @@ class helper(object):
         return self.__pppoe.ipcp.get_dnsservers()
 
     @property
+    def pppoe_configs(self):
+        return self.__wan_configs["pppoe"]
+
+    @property
     def router(self):
         return self.__router
 
@@ -1514,15 +1509,23 @@ class helper(object):
 
     @property
     def pppoe_user(self):
-        return self.__pppoe_user
+        user = self.pppoe_configs["user"]
+        return user
 
     @property
     def pppoe_passwd(self):
-        return self.__pppoe_passwd
+        passwd = self.pppoe_configs["passwd"]
+        return passwd
 
     @property
     def pppoe_heartbeat(self):
-        return self.__pppoe_heartbeat
+        try:
+            heartbeat = bool(int(self.pppoe_configs["heartbeat"]))
+        except ValueError:
+            return False
+        except TypeError:
+            return False
+        return heartbeat
 
     def pppoe_force_re_dial(self):
         """强制重新连接
