@@ -482,13 +482,8 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
         return;
     }
 
-    // 如果选择了服务器,检查硬件地址,可能存在多个相同ac不同硬件地址的情况
-    if(pppoe.is_selected_server && memcmp(pppoe.selected_server_hwaddr,m->src_hwaddr,6)){
-        ixc_mbuf_put(m);
-        return;
-    }
-
     if(header->code==IXC_PPPOE_CODE_PADO){
+        memcpy(pppoe.selected_server_hwaddr,m->src_hwaddr,6);
         pppoe.is_selected_server=1;
         pppoe.cur_discovery_stage=IXC_PPPOE_CODE_PADR;
         // 发送PPPoE PADR数据包
@@ -518,16 +513,15 @@ static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
         return;
     }
 
-    // 处理PADO报文
-    if(header->code==IXC_PPPOE_CODE_PADO){
-        memcpy(pppoe.selected_server_hwaddr,m->src_hwaddr,6);
-        ixc_pppoe_handle_discovery_response(m,header);
-        return;
-    }
-
     // 检查是否是选择的PPPoE服务器
     if(memcmp(pppoe.selected_server_hwaddr,m->src_hwaddr,6)){
         ixc_mbuf_put(m);
+        return;
+    }
+
+    // 处理PADO报文
+    if(header->code==IXC_PPPOE_CODE_PADO){
+        ixc_pppoe_handle_discovery_response(m,header);
         return;
     }
 
