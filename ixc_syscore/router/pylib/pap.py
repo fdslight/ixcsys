@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import os
 import struct, time
 import ixc_syslib.pylib.logging as logging
 
@@ -9,9 +9,11 @@ class PAP(object):
     __up_time = None
     __try_count = None
     __auth_ok = None
+    __pap_id = None
 
     def __init__(self, pppoe):
         self.__pppoe = pppoe
+        self.__pap_id = 0
         self.reset()
 
     @property
@@ -34,7 +36,13 @@ class PAP(object):
             byte_pass
         ]
 
-        self.__pppoe.send_data_to_ns(0xc023, b"".join(seq))
+        t = os.urandom(1)
+        self.__pap_id = t[0]
+        z = b"".join(seq)
+        length = len(z) + 4
+        sent_data = struct.pack("!B", 1) + t + struct.pack("!H", length) + z
+
+        self.__pppoe.send_data_to_ns(0xc023, sent_data)
 
     def handle_success(self):
         self.__pppoe.set_auth_ok(True)
@@ -47,6 +55,9 @@ class PAP(object):
 
     def handle_packet(self, code: int, _id: int, bye_data: bytes):
         if code not in (2, 3,): return
+        if _id != self.__pap_id:
+            logging.print_alert("PPPoE wrong pap id response")
+            return
         if code == 2:
             self.handle_success()
         else:
