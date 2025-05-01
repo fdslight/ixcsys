@@ -197,8 +197,9 @@ class pppoe(object):
         now = time.time()
         if not self.__start: return
         self.__lcp.loop()
-        if not self.__lcp.lcp_ok(): return
         if self.__lcp.auth_method_get() == "pap": self.__pap.loop()
+        # 这个语句要在要在pap认证后面,因为如果有一项不通过,那么会返回False,导致pap认证无法执行
+        if not self.__lcp.lcp_ok(): return
         # 一小时清理ac清单一次
         if now - self.__ac_names_time > 3600:
             self.__ac_names = []

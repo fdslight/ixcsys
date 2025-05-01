@@ -483,7 +483,7 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
     }
 
     // 检查是否是选择的PPPoE服务器
-    if(pppoe.is_selected_server && (pppoe.selected_server_hwaddr,m->src_hwaddr,6)){
+    if(pppoe.is_selected_server && memcmp(pppoe.selected_server_hwaddr,m->src_hwaddr,6)){
         ixc_mbuf_put(m);
         return;
     }
