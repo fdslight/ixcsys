@@ -482,6 +482,12 @@ static void ixc_pppoe_handle_discovery_response(struct ixc_mbuf *m,struct ixc_pp
         return;
     }
 
+    // 检查是否是选择的PPPoE服务器
+    if(pppoe.is_selected_server && (pppoe.selected_server_hwaddr,m->src_hwaddr,6)){
+        ixc_mbuf_put(m);
+        return;
+    }
+
     if(header->code==IXC_PPPOE_CODE_PADO){
         memcpy(pppoe.selected_server_hwaddr,m->src_hwaddr,6);
         pppoe.is_selected_server=1;
@@ -509,12 +515,6 @@ static void ixc_pppoe_handle_discovery(struct ixc_mbuf *m)
 
     // 检查服务器的响应代码是否符合要求
     if(header->code!=IXC_PPPOE_CODE_PADO && header->code!=IXC_PPPOE_CODE_PADS && header->code!=IXC_PPPOE_CODE_PADT){
-        ixc_mbuf_put(m);
-        return;
-    }
-
-    // 检查是否是选择的PPPoE服务器
-    if(memcmp(pppoe.selected_server_hwaddr,m->src_hwaddr,6)){
         ixc_mbuf_put(m);
         return;
     }
