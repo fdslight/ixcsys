@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import random, socket, time
+import random, socket
 
-import router
 import ixc_syscore.router.pylib.ncp as ncp
 import ixc_syscore.router.pylib.lcp as lcp
 
 import ixc_syslib.pylib.logging as logging
+
+import router
 
 
 class IPCP(ncp.NCP):
@@ -21,15 +22,15 @@ class IPCP(ncp.NCP):
     # 第二个DNS服务器
     __s_dns = None
 
-    # 尝试此书
-    __try_count = None
+    # 尝试次数
+    # __try_count = None
 
     def my_init(self):
         self.__my_id = 0
         self.__ipaddr_ok = False
         self.__p_dns_ok = False
         self.__s_dns_ok = False
-        self.__try_count = 0
+        # .__try_count = 0
 
     def parse_options(self, cfg_data: bytes):
         permits = (
@@ -88,7 +89,7 @@ class IPCP(ncp.NCP):
     def send_ncp_ipaddr_request(self):
         """发送NCP的IP地址请求
         """
-        self.__try_count += 1
+        # self.__try_count += 1
         self.__my_id = random.randint(1, 0xf0)
         sent_data = self.build_opt_value(3, bytes([0x00, 0x00, 0x00, 0x00]))
         self.send_ncp_packet(ncp.PPP_IPCP, lcp.CFG_REQ, self.__my_id, sent_data)
@@ -96,7 +97,7 @@ class IPCP(ncp.NCP):
     def send_ncp_primary_dns_req(self):
         """发送主DNS请求
         """
-        self.__try_count += 1
+        # self.__try_count += 1
         self.__my_id = random.randint(1, 0xf0)
         sent_data = self.build_opt_value(129, bytes([0x00, 0x00, 0x00, 0x00]))
         self.send_ncp_packet(ncp.PPP_IPCP, lcp.CFG_REQ, self.__my_id, sent_data)
@@ -104,7 +105,7 @@ class IPCP(ncp.NCP):
     def send_ncp_second_dns_req(self):
         """发送次DNS服务器请求
         """
-        self.__try_count += 1
+        # self.__try_count += 1
         self.__my_id = random.randint(1, 0xf0)
         sent_data = self.build_opt_value(131, bytes([0x00, 0x00, 0x00, 0x00]))
         self.send_ncp_packet(ncp.PPP_IPCP, lcp.CFG_REQ, self.__my_id, sent_data)
@@ -148,7 +149,7 @@ class IPCP(ncp.NCP):
                 break
             ''''''
         # 有ACK响应那么重置尝试次数
-        self.__try_count = 0
+        # self.__try_count = 0
 
     def handle_cfg_nak(self, _id: int, byte_data: bytes):
         """重写这个方法
@@ -196,17 +197,18 @@ class IPCP(ncp.NCP):
         self.my_init()
 
     def loop(self):
-        if not self.__ipaddr_ok and self.__try_count > 3:
-            self.pppoe.lcp.term_req()
-            return
+        if not self.pppoe.is_auth_ok(): return
+        # if not self.__ipaddr_ok and self.__try_count > 3:
+        #    self.pppoe.lcp.term_req()
+        #    return
         if not self.__ipaddr_ok:
             self.send_ncp_ipaddr_request()
             return
-        if not self.__p_dns_ok and self.__try_count <= 3:
+        if not self.__p_dns_ok:
             self.send_ncp_primary_dns_req()
             return
 
-        if not self.__s_dns_ok and self.__try_count <= 3:
+        if not self.__s_dns_ok:
             self.send_ncp_second_dns_req()
             return
         ''''''

@@ -45,16 +45,20 @@ class PAP(object):
         self.__pppoe.send_data_to_ns(0xc023, sent_data)
 
     def handle_success(self):
+        self.__pppoe.ncp_start()
         self.__pppoe.set_auth_ok(True)
         self.__pppoe.router.pppoe_set_ok(True)
-        if self.debug: logging.print_info("PPPoE PAP auth OK")
+
+        logging.print_alert("PPPoE PAP auth OK")
 
     def handle_fail(self, msg: bytes):
-        logging.print_error("PPPoE PAP auth fail,msg:%s" % msg.decode("iso-8859-1"))
+        logging.print_alert("PPPoE PAP auth fail,msg:%s" % msg.decode("iso-8859-1"))
         self.__pppoe.reset()
 
     def handle_packet(self, code: int, _id: int, bye_data: bytes):
-        if code not in (2, 3,): return
+        if code not in (2, 3,):
+            logging.print_alert("PPPoE wrong pap auth code")
+            return
         if _id != self.__pap_id:
             logging.print_alert("PPPoE wrong pap id response")
             return
@@ -67,7 +71,7 @@ class PAP(object):
         now = time.time() - self.__up_time
 
         if now < 1: return
-        if not self.__auth_ok:
+        if not self.__pppoe.is_auth_ok():
             logging.print_alert("PPPoE send PAP auth request")
             self.send_auth_request()
 

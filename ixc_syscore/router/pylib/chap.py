@@ -55,7 +55,7 @@ class CHAP(object):
             s = byte_data.decode("iso-8859-1")
         else:
             s = ""
-        logging.print_error("PPPoE chap auth failure,server msg:%s" % s)
+        logging.print_alert("PPPoE chap auth failure,server msg:%s" % s)
         self.__pppoe.reset()
 
     def handle_packet(self, code: int, _id: int, bye_data: bytes):

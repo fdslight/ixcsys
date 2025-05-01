@@ -135,7 +135,7 @@ class pppoe(object):
         code, _id, length = struct.unpack("!BBH", data[0:4])
 
         if length != size:
-            if self.debug: print("Wrong PAP length field value")
+            logging.print_alert("PPPoE wrong PAP length field value")
             return
         data = data[4:]
         self.__pap.handle_packet(code, _id, data)
@@ -146,7 +146,7 @@ class pppoe(object):
         code, _id, length = struct.unpack("!BBH", data[0:4])
 
         if length != size:
-            if self.debug: print("Wrong IPCP length field value")
+            logging.print_alert("Wrong IPCP length field value")
             return
         data = data[4:]
         self.__ipcp.handle_packet(code, _id, data)
@@ -157,7 +157,7 @@ class pppoe(object):
         code, _id, length = struct.unpack("!BBH", data[0:4])
 
         if length != size:
-            if self.debug: print("Wrong IPv6CP length field value")
+            logging.print_alert("Wrong IPv6CP length field value")
             return
         data = data[4:]
         self.__ipv6cp.handle_packet(code, _id, data)
@@ -168,7 +168,7 @@ class pppoe(object):
         code, _id, length = struct.unpack("!BBH", data[0:4])
 
         if length != size:
-            if self.debug: print("Wrong LCP length field value")
+            logging.print_alert("PPPoE wrong LCP length field value")
             return
         data = data[4:]
         self.__lcp.handle_packet(code, _id, data)

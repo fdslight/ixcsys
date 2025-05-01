@@ -308,7 +308,7 @@ class LCP(object):
 
     def handle_cfg_reject(self, _id: int, byte_data: bytes):
         self.__pppoe.reset()
-        logging.print_error("pppoe server bug,cannot support auth or MRU")
+        logging.print_alert("pppoe server bug,cannot support auth or MRU")
 
     def handle_term_req(self, _id: int, byte_data: bytes):
         self.send(TERM_ACK, _id, byte_data)
@@ -340,7 +340,7 @@ class LCP(object):
 
     def handle_packet(self, code: int, _id: int, byte_data: bytes):
         if code not in self.__lcp_code_map_fn_set:
-            if self.debug: print("not found LCP code map value %d" % code)
+            logging.print_alert("PPPoE not found LCP code map value %d" % code)
             return
         self.__lcp_code_map_fn_set[code](_id, byte_data)
 

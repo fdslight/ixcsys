@@ -6,11 +6,10 @@ import pywind.lib.netutils as netutils
 import ixc_syscore.router.pylib.ncp as ncp
 import ixc_syscore.router.pylib.lcp as lcp
 import ixc_syslib.pylib.logging as logging
-import router
 
 
 class IPv6CP(ncp.NCP):
-    __try_count = None
+    #__try_count = None
     __interface_id = None
     __peer_id = None
     __my_id = None
@@ -20,7 +19,6 @@ class IPv6CP(ncp.NCP):
         for n in byte_data:
             ch = hex(n)[2:].lower()
             results.append(ch)
-
         return results
 
     def my_init(self):
@@ -38,7 +36,7 @@ class IPv6CP(ncp.NCP):
 
     def send_ncp_ipv6id_request(self):
         self.set_my_interface_id()
-        self.__try_count += 1
+        #self.__try_count += 1
         self.__my_id = random.randint(1, 0xf0)
         data = self.build_opt_value(1, self.__interface_id)
         self.send_ncp_packet(ncp.PPP_IPv6CP, lcp.CFG_REQ, self.__my_id, data)
@@ -74,7 +72,7 @@ class IPv6CP(ncp.NCP):
         if _id != self.__my_id: return
 
         self.__interface_id = byte_data[2:]
-        self.__try_count = 0
+        #self.__try_count = 0
 
         results = self.byte_to_hex(self.__interface_id)
         logging.print_alert("PPPoE My Ipv6 interface ID: %s" % ":".join(results))
@@ -97,13 +95,15 @@ class IPv6CP(ncp.NCP):
         self.send_ncp_ipv6id_request()
 
     def loop(self):
-        if not self.__interface_id and self.__try_count > 3:
-            return
+        if not self.pppoe.is_auth_ok(): return
+        # if self.__try_count > 16:
+        #    logging.print_alert("PPPoE IPv6CP server not response")
+        #    return
         if not self.__interface_id:
             self.send_ncp_ipv6id_request()
             return
 
     def reset(self):
-        self.__try_count = 0
-        self.__interface_id = False
+        #self.__try_count = 0
+        self.__interface_id = b""
         self.__my_id = 0
