@@ -46,7 +46,7 @@ class PAP(object):
 
     def handle_success(self):
         self.__pppoe.set_auth_ok(True)
-
+        self.__pppoe.router.pppoe_set_ok(True)
         if self.debug: logging.print_info("PPPoE PAP auth OK")
 
     def handle_fail(self, msg: bytes):
