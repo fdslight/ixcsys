@@ -120,7 +120,7 @@ class LCP(object):
         return True
 
     def get_auth_method(self, byte_data: bytes):
-        proto = struct.unpack("!H", byte_data[0:2])
+        proto, = struct.unpack("!H", byte_data[0:2])
         if proto == 0xc223:
             return proto, byte_data[2]
         return proto, 0
@@ -239,6 +239,13 @@ class LCP(object):
         if rejects:
             acks.append(self.build_opt_value(OPT_MAGIC_NUM, struct.pack("!I", magic_num)))
             self.send(CFG_REJECT, _id, b"".join(rejects))
+
+        if self.auth_method_get() == "pap":
+            # PAP这里直接发送认证请求
+            self.__pppoe.pap.send_auth_request()
+            logging.print_alert("PPPoE use pap auth")
+        if self.auth_method_get() == "chap":
+            logging.print_alert("PPPoE use chap auth")
 
     def handle_cfg_ack(self, _id: int, byte_data: bytes):
         self.__is_first = False

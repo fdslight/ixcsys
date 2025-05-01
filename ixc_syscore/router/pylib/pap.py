@@ -38,7 +38,7 @@ class PAP(object):
 
     def handle_success(self):
         self.__pppoe.set_auth_ok(True)
-        
+
         if self.debug: logging.print_info("PPPoE PAP auth OK")
 
     def handle_fail(self, msg: bytes):
@@ -56,7 +56,9 @@ class PAP(object):
         now = time.time() - self.__up_time
 
         if now < 1: return
-        if not self.__auth_ok: self.send_auth_request()
+        if not self.__auth_ok:
+            logging.print_alert("PPPoE send PAP auth request")
+            self.send_auth_request()
 
     def reset(self):
         self.__up_time = time.time()
