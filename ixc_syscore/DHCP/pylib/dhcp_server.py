@@ -211,6 +211,7 @@ class dhcp_server(object):
         if not request_list: return
         resp_opts = []
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
+        ipaddr = None
         for i in range(10):
             ipaddr = self.__alloc.get_ipaddr(s_client_hwaddr)
             if not ipaddr: continue
