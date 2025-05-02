@@ -217,7 +217,7 @@ class dhcp_server(object):
             if ipaddr in self.__used_ips: continue
             break
         if not ipaddr:
-            logging.print_alert("cannot alloc ip address for client %s" % s_client_hwaddr)
+            logging.print_alert("no ip address for client %s" % s_client_hwaddr)
             return
         if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
 
