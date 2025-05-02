@@ -216,9 +216,7 @@ class dhcp_server(object):
             if not ipaddr: continue
             if ipaddr in self.__used_ips: continue
             break
-        if not ipaddr:
-            logging.print_alert("no ip address for client %s" % s_client_hwaddr)
-            return
+        if not ipaddr: return
         if self.debug: print("DHCP ALLOC: %s for %s" % (ipaddr, s_client_hwaddr,))
 
         client_id = self.get_dhcp_opt_value(opts, 61)
@@ -276,7 +274,7 @@ class dhcp_server(object):
         # 如果不存在那么发送NAK直接告诉客户端重新发现
         if s_client_hwaddr not in self.__tmp_alloc_addrs:
             resp_opts = [(53, bytes([6]))]
-            # logging.print_alert("not found client discovery record %s" % s_client_hwaddr)
+            #logging.print_alert("not found client discovery record %s" % s_client_hwaddr)
             self.dhcp_msg_send(resp_opts)
             return
         o = self.__tmp_alloc_addrs[s_client_hwaddr]
@@ -302,7 +300,7 @@ class dhcp_server(object):
         if is_subnet:
             resp_opts.append((53, bytes([5])))
         else:
-            s_request_ip = socket.inet_ntop(socket.AF_INET, request_ip)
+            s_request_ip=socket.inet_ntop(socket.AF_INET, request_ip)
             logging.print_alert("client ip address %s is not subnet with router" % s_request_ip)
             resp_opts.append((53, bytes([6])))
         self.add_boot_file(opts, request_list, resp_opts)
