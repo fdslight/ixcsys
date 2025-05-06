@@ -75,12 +75,7 @@ class pppoe(object):
         self.__time = time.time()
 
     def stop_lcp(self):
-        self.__start = False
-        self.__lcp.reset()
-        self.__ipcp.reset()
-        self.__ipv6cp.reset()
-        self.__chap.reset()
-        self.__pap.reset()
+        self.reset()
 
         logging.print_alert("PPPoE LCP STOP and reset")
 
@@ -175,6 +170,7 @@ class pppoe(object):
 
     def reset(self):
         self.__start = False
+        self.__auth_ok = False
 
         if self.__is_first:
             self.__is_first = False
