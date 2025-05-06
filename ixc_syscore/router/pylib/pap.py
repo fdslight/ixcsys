@@ -7,7 +7,6 @@ import ixc_syslib.pylib.logging as logging
 class PAP(object):
     __pppoe = None
     __up_time = None
-    __try_count = None
     __pap_id = None
 
     def __init__(self, pppoe):
@@ -76,4 +75,3 @@ class PAP(object):
 
     def reset(self):
         self.__up_time = time.time()
-        self.__try_count = 0
