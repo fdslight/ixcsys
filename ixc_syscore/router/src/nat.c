@@ -597,3 +597,8 @@ void ixc_nat_handle(struct ixc_mbuf *m)
     if(IXC_MBUF_FROM_LAN==m->from) ixc_nat_handle_from_lan(m);
     else ixc_nat_handle_from_wan(m);
 }
+
+unsigned int ixc_nat_sessions_num_get(void)
+{
+    return (nat.lan2wan)->key_tot_num;
+}

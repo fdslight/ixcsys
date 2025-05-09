@@ -1010,6 +1010,12 @@ router_passthrough_set_vid_for_passdev(PyObject *self,PyObject *args)
     Py_RETURN_TRUE;
 }
 
+static PyObject *
+router_nat_sessions_num_get(PyObject *self,PyObject)
+{
+    return PyLong_FromUnsignedLong(ixc_nat_sessions_num_get());
+}
+
 /// 返回系统的CPU总数
 static PyObject *
 router_cpu_num(PyObject *self,PyObject *args)
@@ -1150,6 +1156,8 @@ static PyMethodDef routerMethods[]={
     {"passthrough_device_add",(PyCFunction)router_passthrough_device_add,METH_VARARGS,"add passthrough device"},
     {"passthrough_device_del",(PyCFunction)router_passthrough_device_del,METH_VARARGS,"delete passthrough device"},
     {"passthrough_set_vid_for_passdev",(PyCFunction)router_passthrough_set_vid_for_passdev,METH_VARARGS,"set vlan id for passdev"},
+    //
+    {"nat_sessions_num_get",(PyCFunction)router_nat_sessions_num_get,METH_NOARGS,"get nat sessions"},
     //
     {"cpu_num",(PyCFunction)router_cpu_num,METH_NOARGS,"get cpu num"},
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},

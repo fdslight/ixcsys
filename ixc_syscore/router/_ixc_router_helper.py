@@ -96,6 +96,8 @@ class rpc(object):
             "passthrough_device_del": self.passthrough_device_del,
             "passthrough_set_vid_for_passdev": self.passthrough_set_vid_for_passdev,
 
+            "nat_sessions_num_get": self.nat_sessions_num_get,
+
             "cpu_num": self.cpu_num,
             "bind_cpu": self.bind_cpu,
             "router_start_time": self.router_start_time,
@@ -831,6 +833,9 @@ class rpc(object):
         self.__helper.save_router_configs()
 
         return 0, self.__helper.router.passthrough_set_vid_for_passdev(vid)
+
+    def nat_sessions_num_get(self):
+        return 0, self.__helper.router.nat_sessions_num_get()
 
     def cpu_num(self):
         return 0, self.__helper.router.cpu_num()

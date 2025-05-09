@@ -208,5 +208,6 @@ class widget(ui_widget.widget):
         dic["host_os"] = os_info.get_os_info()[0]
         dic['uname'] = self.get_uname()
         dic["self_global_ip"] = self.sysadm.self_global_ip
+        dic["nat_sessions_num"] = RPC.fn_call("router", "/config", "nat_sessions_num_get")
 
         return True, uri, dic

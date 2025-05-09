@@ -67,4 +67,7 @@ void ixc_nat_uninit(void);
 void ixc_nat_handle(struct ixc_mbuf *m);
 int ixc_nat_enable(int status);
 
+/// 获取nat会话数量
+unsigned int ixc_nat_sessions_num_get(void);
+
 #endif
