@@ -389,6 +389,7 @@ class service(dispatcher.dispatcher):
             "use_unix_socket": True,
             "listen": os.getenv("IXC_MYAPP_SCGI_PATH"),
             "application": webroute.app_route(),
+            # 处理有些大数据比较耗费时间,增加连接超时时间
             "timeout": 120
         }
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
