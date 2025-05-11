@@ -702,6 +702,10 @@ class service(dispatcher.dispatcher):
         return
 
     def sec_rules_modify(self, rules: list):
+        # 先清除所有的规则
+        self.del_sec_rules([])
+        self.add_sec_rules(rules)
+        """
         added_list = []
         dels_list = []
         tmp_dict = {}
@@ -710,8 +714,7 @@ class service(dispatcher.dispatcher):
             tmp_dict[rule] = None
             if rule in self.__sec_rules_dict:
                 continue
-            else:
-                added_list.append(rule)
+            added_list.append(rule)
             ''''''
         old_rules = self.sec_rules
         for rule in old_rules:
@@ -720,12 +723,11 @@ class service(dispatcher.dispatcher):
             else:
                 dels_list.append(rule)
             ''''''
-
         for rule in added_list:
             self.add_sec_rule(rule)
         for rule in dels_list:
             self.del_sec_rule(rule)
-        ''''''
+        """
 
     def sec_rules_modify_with_raw(self, text: bytes, is_compressed=False):
         """传递未经处理的文本的原始规则
