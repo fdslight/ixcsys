@@ -124,8 +124,6 @@ class service(dispatcher.dispatcher):
     __router_wan_configs = None
     __read_pppoe_dns_time = None
 
-    __new_sec_dns_rules = None
-
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
 
@@ -167,7 +165,6 @@ class service(dispatcher.dispatcher):
         self.__enable_sec_dns = False
         self.__sec_dns_forward_port = 0
         self.__sec_dns_forward_key = os.urandom(4)
-        self.__new_sec_dns_rules = []
 
         RPCClient.wait_processes(["router", ])
 
@@ -748,8 +745,15 @@ class service(dispatcher.dispatcher):
             if not s: continue
             if s[0] == "#": continue
             results.append(s)
-        self.__new_sec_dns_rules = results
-        # self.sec_rules_modify(results)
+
+        self.sec_rules_modify(results)
+
+    def sec_rules_modify_with_fpath(self, fpath: str):
+        if not os.path.isfile(fpath): return
+        with open(fpath, "r",errors='ignore') as f:
+            s = f.read()
+        f.close()
+        self.sec_rules_modify_with_raw(s, is_compressed=False)
 
     def rule_clear(self):
         # 清除所有clear
@@ -863,12 +867,6 @@ class service(dispatcher.dispatcher):
 
         if self.is_pppoe_dial():
             self.update_pppoe_dns()
-
-        # 放在后台进行规则修改
-        if self.__new_sec_dns_rules:
-            self.sec_rules_modify(self.__new_sec_dns_rules)
-            self.save_sec_rules()
-            self.__new_sec_dns_rules = []
 
 
 def main():

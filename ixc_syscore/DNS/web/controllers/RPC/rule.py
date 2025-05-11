@@ -28,6 +28,7 @@ class controller(rpc.controller):
             "sec_rules_del": self.sec_rules_del,
             "sec_rules_modify": self.sec_rules_modify,
             "sec_rules_modify_with_raw": self.sec_rules_modify_with_raw,
+            "sec_rules_modify_with_fpath": self.sec_rules_modify_with_fpath,
             "get_sec_rules": self.get_sec_rules,
         }
 
@@ -96,6 +97,11 @@ class controller(rpc.controller):
 
     def sec_rules_modify_with_raw(self, text: bytes, is_compressed=False):
         self.__runtime.sec_rules_modify_with_raw(text, is_compressed=is_compressed)
+
+        return 0, None
+
+    def sec_rules_modify_with_fpath(self, fpath: str):
+        self.__runtime.sec_rules_modify_with_fpath(fpath)
 
         return 0, None
 
