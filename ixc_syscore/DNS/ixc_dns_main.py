@@ -753,7 +753,7 @@ class service(dispatcher.dispatcher):
         with open(fpath, "r",errors='ignore') as f:
             s = f.read()
         f.close()
-        self.sec_rules_modify_with_raw(s, is_compressed=False)
+        self.sec_rules_modify_with_raw(s.encode("iso-8859-1"), is_compressed=False)
 
     def rule_clear(self):
         # 清除所有clear
