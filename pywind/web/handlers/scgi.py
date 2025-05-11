@@ -140,6 +140,7 @@ class scgid(tcp_handler.tcp_handler):
         self.__mtime = time.time()
         self.__sent_buf = []
         self.__closed = False
+        self.set_timeout(self.fileno, 10)
 
         return self.fileno
 
@@ -173,11 +174,11 @@ class scgid(tcp_handler.tcp_handler):
     def tcp_timeout(self):
         t = time.time()
 
-        if self.__mtime + self.__timeout < t:
+        if t - self.__mtime >= self.__timeout:
             self.delete_handler(self.fileno)
             return
 
-        self.set_timeout(self.fileno, self.__timeout)
+        self.set_timeout(self.fileno, 10)
 
     def tcp_delete(self):
         self.unregister(self.fileno)

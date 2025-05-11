@@ -53,7 +53,7 @@ class SCGIClient(tcp_handler.tcp_handler):
         self.__sent = []
         self.__is_resp_header = False
         self.__up_time = time.time()
-        self.__conn_timeout = 120
+        self.__conn_timeout = 30
 
         address = self.get_scgi_path(cgi_env["PATH_INFO"])
         if not os.path.exists(address): return -1
@@ -248,7 +248,7 @@ class httpd_handler(ssl_handler.ssl_handler):
 
     # HTTP1x版本是否保持连接
     __http1_keep_conn = None
-    __http1_parssed_header = None
+    __http1_parsed_header = None
     __scgi_closed = None
 
     # 连接超时时间
@@ -272,7 +272,7 @@ class httpd_handler(ssl_handler.ssl_handler):
         self.__caddr = caddr
 
         self.__http_version = 1
-        self.__http1_parssed_header = False
+        self.__http1_parsed_header = False
         self.__scgi_closed = False
 
         self.__conn_timeout = 120
@@ -357,7 +357,7 @@ class httpd_handler(ssl_handler.ssl_handler):
         if not self.__http1_keep_conn:
             self.delete_this_no_sent_data()
             return
-        self.__http1_parssed_header = False
+        self.__http1_parsed_header = False
 
     def http2_header_send(self, xid: int, status: str, kv_pairs: list):
         pass
@@ -366,7 +366,7 @@ class httpd_handler(ssl_handler.ssl_handler):
         pass
 
     def http2_finish(self, xid: int):
-        pass
+        self.delete_this_no_sent_data()
 
     def http_finish(self, xid: int):
         fd, cls = self.__sessions[xid]
@@ -376,6 +376,7 @@ class httpd_handler(ssl_handler.ssl_handler):
         else:
             self.http2_finish(xid)
 
+        del self.__sessions[xid]
         self.delete_handler(fd)
 
     def send_header(self, xid: int, status: str, kv_pairs: list):
@@ -421,6 +422,12 @@ class httpd_handler(ssl_handler.ssl_handler):
         method, url, version = request
         content_length = self.kv_pairs_value_get("content-length", kv_pairs)
 
+        self.__http1_keep_conn = False
+        if version.lower() == "http/1.1":
+            keep_alive = self.kv_pairs_value_get("connection", kv_pairs)
+            if keep_alive is None:
+                self.__http1_keep_conn = True
+            ''''''
         # 检查HTTP请求方法是否支持
         methods = (
             "GET", "POST", "PUT", "DELETE", "CONNECT",
@@ -474,7 +481,7 @@ class httpd_handler(ssl_handler.ssl_handler):
             return
 
         if self.__http_version == 1:
-            self.__http1_parssed_header = True
+            self.__http1_parsed_header = True
         # 此处打开SCGI会话
         env = self.convert_to_cgi_env(request, kv_pairs)
 
@@ -519,9 +526,9 @@ class httpd_handler(ssl_handler.ssl_handler):
         self.get_handler(scgi_fd).send_scgi_body(self.reader.read())
 
     def handle_http1_request(self):
-        if not self.__http1_parssed_header:
+        if not self.__http1_parsed_header:
             self.parse_http1_request_header()
-        if not self.__http1_parssed_header:
+        if not self.__http1_parsed_header:
             return
         if self.__is_error: return
         self.handle_http1_request_body()
