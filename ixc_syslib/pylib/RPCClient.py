@@ -110,7 +110,7 @@ class RPCClient(SCGIClient.SCGIClient):
         try:
             self.handle_response()
         except SCGIClient.SCGIErr:
-            return ERR_SYS, ""
+            raise RPCSysErr("RPC response error")
         byte_data = self.reader.read()
 
         result = pickle.loads(byte_data)
