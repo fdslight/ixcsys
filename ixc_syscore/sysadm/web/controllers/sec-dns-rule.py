@@ -58,7 +58,7 @@ class controller(base_controller.BaseController):
             except RPC.RPCErr:
                 self.json_resp(True, "系统错误")
                 return
-            RPC.fn_call("DNS", "/config", "save")
+            #RPC.fn_call("DNS", "/config", "save")
             self.json_resp(False, {})
         else:
             RPC.fn_call("DNS", "/rule", "sec_rule_del", rule)
