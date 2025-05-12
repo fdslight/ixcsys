@@ -1186,6 +1186,10 @@ class helper(object):
             # os.system("ifconfig %s promisc" % self.__WAN_NAME)
             os.system("ifconfig %s up" % lan_phy_ifname)
 
+        # 禁用临时IPv6地址
+        os.system("sysctl -w net.ipv6.conf.all.use_tempaddr=0")
+        os.system("sysctl -w net.ipv6.conf.default.use_tempaddr=0")
+
         lan_addr = lan_ifconfig["ip_addr"]
         manage_addr = lan_ifconfig["manage_addr"]
         mask = lan_ifconfig["mask"]
@@ -1296,9 +1300,6 @@ class helper(object):
             # 关闭外网IPv6支持
             os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__WAN_BR_NAME)
             os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % wan_phy_ifname)
-            # 禁用临时IPv6地址
-            os.system("sysctl -w net.ipv6.conf.all.use_tempaddr=0")
-            os.system("sysctl -w net.ipv6.conf.default.use_tempaddr=0")
         else:
             pass
 
