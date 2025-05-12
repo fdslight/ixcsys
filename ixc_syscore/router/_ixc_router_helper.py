@@ -1160,6 +1160,10 @@ class helper(object):
         lan_phy_ifname = lan_ifconfig["phy_ifname"]
         hwaddr = lan_ifconfig["hwaddr"]
 
+        # 禁用临时IPv6地址,主要需要在桥接创建前禁用,否则不生效
+        os.system("echo 0 > /proc/sys/net/ipv6/conf/all/use_tempaddr")
+        os.system("echo 0 > /proc/sys/net/ipv6/conf/default/use_tempaddr")
+
         self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
 
         self.router.netif_set_hwaddr(router.IXC_NETIF_LAN, netutils.str_hwaddr_to_bytes(hwaddr))
@@ -1185,10 +1189,6 @@ class helper(object):
             os.system("ifconfig %s promisc" % lan_phy_ifname)
             # os.system("ifconfig %s promisc" % self.__WAN_NAME)
             os.system("ifconfig %s up" % lan_phy_ifname)
-
-        # 禁用临时IPv6地址
-        os.system("echo 0 > /proc/sys/net/ipv6/conf/all/use_tempaddr")
-        os.system("echo 0 > /proc/sys/net/ipv6/conf/default/use_tempaddr")
 
         lan_addr = lan_ifconfig["ip_addr"]
         manage_addr = lan_ifconfig["manage_addr"]
