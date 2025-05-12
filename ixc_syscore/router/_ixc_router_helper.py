@@ -1160,7 +1160,7 @@ class helper(object):
         lan_phy_ifname = lan_ifconfig["phy_ifname"]
         hwaddr = lan_ifconfig["hwaddr"]
 
-        # 禁用临时IPv6地址,主要需要在桥接创建前禁用,否则不生效
+        # 禁用临时IPv6地址,注意需要在桥接创建前禁用,否则不生效
         os.system("echo 0 > /proc/sys/net/ipv6/conf/all/use_tempaddr")
         os.system("echo 0 > /proc/sys/net/ipv6/conf/default/use_tempaddr")
 
