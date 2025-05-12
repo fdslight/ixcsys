@@ -236,7 +236,7 @@ class service(dispatcher.dispatcher):
             self.__dns_server6 = -1
             return
 
-        # RPCClient.fn_call("router", "/config", "manage_addr_set", ip6_mngaddr, is_ipv6=True)
+        RPCClient.fn_call("router", "/config", "manage_addr_set", ip6_mngaddr, is_ipv6=True)
 
         if self.__ip6_mngaddr != ip6_mngaddr:
             if self.__dns_server6 >= 0:
