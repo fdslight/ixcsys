@@ -388,7 +388,9 @@ class service(dispatcher.dispatcher):
         scgi_configs = {
             "use_unix_socket": True,
             "listen": os.getenv("IXC_MYAPP_SCGI_PATH"),
-            "application": webroute.app_route()
+            "application": webroute.app_route(),
+            # 处理有些大数据比较耗费时间,增加连接超时时间
+            "timeout": 120
         }
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
@@ -708,8 +710,7 @@ class service(dispatcher.dispatcher):
             tmp_dict[rule] = None
             if rule in self.__sec_rules_dict:
                 continue
-            else:
-                added_list.append(rule)
+            added_list.append(rule)
             ''''''
         old_rules = self.sec_rules
         for rule in old_rules:
@@ -718,12 +719,10 @@ class service(dispatcher.dispatcher):
             else:
                 dels_list.append(rule)
             ''''''
-
         for rule in added_list:
             self.add_sec_rule(rule)
         for rule in dels_list:
             self.del_sec_rule(rule)
-        ''''''
 
     def sec_rules_modify_with_raw(self, text: bytes, is_compressed=False):
         """传递未经处理的文本的原始规则
@@ -748,6 +747,13 @@ class service(dispatcher.dispatcher):
             results.append(s)
 
         self.sec_rules_modify(results)
+
+    def sec_rules_modify_with_fpath(self, fpath: str):
+        if not os.path.isfile(fpath): return
+        with open(fpath, "r",errors='ignore') as f:
+            s = f.read()
+        f.close()
+        self.sec_rules_modify_with_raw(s.encode("iso-8859-1"), is_compressed=False)
 
     def rule_clear(self):
         # 清除所有clear

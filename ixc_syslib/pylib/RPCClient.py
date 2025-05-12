@@ -107,7 +107,10 @@ class RPCClient(SCGIClient.SCGIClient):
         self.sock.close()
 
     def get_result(self):
-        self.handle_response()
+        try:
+            self.handle_response()
+        except SCGIClient.SCGIErr:
+            raise RPCSysErr("RPC response error")
         byte_data = self.reader.read()
 
         result = pickle.loads(byte_data)
@@ -123,7 +126,7 @@ class RPCClient(SCGIClient.SCGIClient):
         if is_err == ERR_SYS:
             raise RPCSysErr(message)
 
-        return (is_err, message,)
+        return is_err, message
 
 
 def fn_call(app_name: str, path: str, fn_name: str, *args, **kwargs):
