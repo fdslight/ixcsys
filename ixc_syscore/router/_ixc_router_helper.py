@@ -1187,8 +1187,8 @@ class helper(object):
             os.system("ifconfig %s up" % lan_phy_ifname)
 
         # 禁用临时IPv6地址
-        os.system("sysctl -w net.ipv6.conf.all.use_tempaddr=0")
-        os.system("sysctl -w net.ipv6.conf.default.use_tempaddr=0")
+        os.system("echo 0 > /proc/sys/net/ipv6/conf/all/use_tempaddr")
+        os.system("echo 0 > /proc/sys/net/ipv6/conf/default/use_tempaddr")
 
         lan_addr = lan_ifconfig["ip_addr"]
         manage_addr = lan_ifconfig["manage_addr"]
