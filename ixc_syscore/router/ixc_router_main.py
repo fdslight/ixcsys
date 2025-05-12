@@ -74,6 +74,9 @@ class service(dispatcher.dispatcher):
     __chk_net_try_count = None
     __is_pppoe_dial = None
 
+    __auto_set_ip6_mng_addr_up_time = None
+    __ip6_mng_addr = None
+
     def load_chk_host_info(self):
         ok, chk_net_info = self.router_runtime_fn_call("wan_pppoe_chk_net_info_get")
         try:
@@ -214,6 +217,8 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = -1
         self.__network_status = True
         self.__net_status_up_time = time.time()
+        self.__auto_set_ip6_mng_addr_up_time = time.time()
+        self.__ip6_mng_addr = ""
         self.__chk_net_try_count = 0
         self.__is_pppoe_dial = False
 
@@ -243,8 +248,42 @@ class service(dispatcher.dispatcher):
     def rpc_sock_path(self):
         return "/tmp/ixcsys/router/rpc.sock"
 
+    def auto_set_ipv6_mngaddr(self):
+        now = time.time()
+        if now - self.__auto_set_ip6_mng_addr_up_time < 10: return
+        self.__auto_set_ip6_mng_addr_up_time = now
+
+        cmd = "ip addr show ixclanbr | grep  inet6 | grep mng"
+        mng_ip6addr = None
+        fdst = os.popen(cmd)
+        _list = []
+
+        for line in fdst:
+            line = line.strip()
+            line = line.replace("\n", "")
+            _list.append(line.lower())
+        fdst.close()
+        if not _list: return
+
+        for s in _list:
+            p = s.find("dep")
+            # 检查地址是否被弃用
+            if p >= 0: continue
+            s = s.split(" ")[1]
+            p = s.find("/")
+
+            mng_ip6addr = s[0:p]
+            break
+
+        if not mng_ip6addr: return
+        if mng_ip6addr != self.__ip6_mng_addr:
+            self.router_runtime_fn_call("manage_addr_set", mng_ip6addr, is_ipv6=True)
+            self.__ip6_mng_addr = mng_ip6addr
+        return
+
     def myloop(self):
         self.check_network_status()
+        self.auto_set_ipv6_mngaddr()
 
 
 def main():
