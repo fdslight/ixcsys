@@ -75,6 +75,7 @@ class service(dispatcher.dispatcher):
 
     # 故障日志最大文件大小(bytes)
     __errlog_file_max_size = None
+    __up_time = None
 
     def init_func(self, debug):
         global_vars["ixcsys.init"] = self
@@ -91,6 +92,7 @@ class service(dispatcher.dispatcher):
 
         # 限制最大为256KB
         self.__errlog_file_max_size = 256 * 1024
+        self.__up_time = time.time()
 
         self.load_syslog()
 
@@ -103,6 +105,7 @@ class service(dispatcher.dispatcher):
 
     def myloop(self):
         self.auto_clean_err_log()
+        self.auto_sync_log_to_file()
 
     @property
     def debug(self):
@@ -226,6 +229,14 @@ class service(dispatcher.dispatcher):
         if fstat.st_size > self.__errlog_file_max_size:
             fdst = open(self.__errlog_path, "w")
             fdst.close()
+        return
+
+    def auto_sync_log_to_file(self):
+        # 自动同步普通日志
+        now = time.time()
+        if now - self.__up_time >= 600:
+            self.save_log_to_file()
+            self.__up_time = now
         return
 
     def release(self):

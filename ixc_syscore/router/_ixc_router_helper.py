@@ -1079,6 +1079,9 @@ class helper(object):
         for if_name in added_bind_ifs:
             cmd = "ip link set dev %s master %s" % (if_name, br_name,)
             os.system(cmd)
+            # 禁用桥接网卡的ipv6,用以禁止发送icmpv6
+            cmd = "echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % if_name
+            os.system(cmd)
         self.config_multicast_snooping()
 
     def freebsd_br_create(self, added_bind_ifs: list):
