@@ -85,7 +85,7 @@ class service(dispatcher.dispatcher):
         self.__logs_important = []
         self.__logs_generic_count = 0
         self.__logs_important_count = 0
-        self.__log_max = 1000
+        self.__log_max = 256
 
         self.__errlog_path = "/var/log/ixcsys_error.log"
         self.__syslog_path = "/var/log/ixcsys_syslog.log"
@@ -234,7 +234,7 @@ class service(dispatcher.dispatcher):
     def auto_sync_log_to_file(self):
         # 自动同步普通日志
         now = time.time()
-        if now - self.__up_time >= 600:
+        if now - self.__up_time >= 86400:
             self.save_log_to_file()
             self.__up_time = now
         return
