@@ -1247,7 +1247,7 @@ class helper(object):
             os.system("ip link set %s up" % ifname)
             # 关闭外网IPv6支持
             os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__PASS_BR_NAME)
-            os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % ifname)
+            #os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % ifname)
         else:
             pass
 
@@ -1302,7 +1302,7 @@ class helper(object):
             os.system("ip link set %s up" % wan_phy_ifname)
             # 关闭外网IPv6支持
             os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__WAN_BR_NAME)
-            os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % wan_phy_ifname)
+            #os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % wan_phy_ifname)
         else:
             pass
 
