@@ -85,7 +85,7 @@ class service(dispatcher.dispatcher):
         self.__logs_important = []
         self.__logs_generic_count = 0
         self.__logs_important_count = 0
-        self.__log_max = 256
+        self.__log_max = 512
 
         self.__errlog_path = "/var/log/ixcsys_error.log"
         self.__syslog_path = "/var/log/ixcsys_syslog.log"
@@ -208,6 +208,7 @@ class service(dispatcher.dispatcher):
             r = json.loads(byte_s.decode())
         except:
             return
+        ''''''
 
         for dic in r:
             try:
@@ -219,7 +220,8 @@ class service(dispatcher.dispatcher):
             except KeyError:
                 continue
             ''''''
-        return
+        self.__logs_generic_count = len(self.__logs_generic)
+        self.__logs_important_count = len(self.__logs_important)
 
     def get_errlog(self):
         if not os.path.isfile(self.__errlog_path): return ""
