@@ -148,15 +148,23 @@ class service(dispatcher.dispatcher):
         o = {"level": level_map[level], "application": name, "message": message,
              "time": time.strftime("%Y-%m-%d %H:%M:%S %Z")}
 
-        if level == logging.LEVEL_INFO:
-            _list = self.__logs_generic
-            count = self.__logs_generic_count
-        else:
-            _list = self.__logs_important
-            count = self.__logs_important_count
-
-        if count >= self.__log_max: _list.pop(0)
-
+        while 1:
+            if level == logging.LEVEL_INFO:
+                _list = self.__logs_generic
+                count = self.__logs_generic_count
+            else:
+                _list = self.__logs_important
+                count = self.__logs_important_count
+            if count >= self.__log_max:
+                _list.pop(0)
+                if level == logging.LEVEL_INFO:
+                    self.__logs_generic_count -= 1
+                else:
+                    self.__logs_important_count -= 1
+                ''''''
+            else:
+                break
+            ''''''
         if level == logging.LEVEL_INFO:
             self.__logs_generic_count += 1
         else:
@@ -191,7 +199,7 @@ class service(dispatcher.dispatcher):
     def load_syslog(self):
         fpath = self.__syslog_path
 
-        if not os.path.isfile(fpath): return []
+        if not os.path.isfile(fpath): return
 
         with open(fpath, "rb") as f:
             byte_s = f.read()
