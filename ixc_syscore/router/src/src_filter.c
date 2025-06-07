@@ -83,6 +83,7 @@ int ixc_src_filter_init(void)
         STDERR("cannot init map\r\n");
         return -1;
     }
+    src_filter.map=m;
     bzero(&src_filter,sizeof(struct ixc_src_filter));
     return 0;
 }
