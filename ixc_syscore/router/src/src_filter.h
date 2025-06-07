@@ -7,11 +7,11 @@
 
 struct ixc_src_filter{
     struct map *map;
-    unsigned char ip6_subnet[16];
-    unsigned char ip6_mask[16];
+    //unsigned char ip6_subnet[16];
+    //unsigned char ip6_mask[16];
 
-    unsigned char ip_subnet[4];
-    unsigned char ip_mask[4];
+    //unsigned char ip_subnet[4];
+    //unsigned char ip_mask[4];
 
     // 为0表示该协议直接跳过,非0表示过滤该数据
     unsigned char protocols[256];
