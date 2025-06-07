@@ -16,7 +16,7 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
 {
     int size;
     char is_found;
-    void *data;
+    //void *data;
     //int is_subnet,size;
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset);
     struct netutil_ip6hdr *ip6hdr=(struct netutil_ip6hdr *)(m->data+m->offset);
@@ -66,7 +66,7 @@ static void ixc_src_filter_send(struct ixc_mbuf *m)
         ixc_qos_add(m);
         return;
     }*/
-    data=map_find(src_filter.map,m->src_hwaddr,&is_found);
+    map_find(src_filter.map,(char *)(m->src_hwaddr),&is_found);
     if(!is_found){
         ixc_qos_add(m);
         return;
