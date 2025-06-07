@@ -67,8 +67,7 @@ class controller(base_controller.BaseController):
             },
             "src_filter": {
                 "enable": None,
-                "ip_range": None,
-                "ip6_range": None,
+                "src_hwaddrs": None,
                 "protocol": None,
             }
         }
@@ -194,38 +193,43 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "不支持的源端代理协议")
             return
 
-        ip_range = kv_map["src_filter"]["ip_range"]
-        ip6_range = kv_map["src_filter"]["ip6_range"]
+        # ip_range = kv_map["src_filter"]["ip_range"]
+        # ip6_range = kv_map["src_filter"]["ip6_range"]
 
-        if not ip_range or not ip6_range:
-            self.json_resp(True, "空的源端代理IP地址或IPv6地址")
-            return
+        # if not ip_range or not ip6_range:
+        #    self.json_resp(True, "空的源端代理IP地址或IPv6地址")
+        #    return
 
-        tmp = netutils.parse_ip_with_prefix(ip_range)
-        if not tmp:
-            self.json_resp(True, "错误的源端代理IP地址格式")
-            return
+        # tmp = netutils.parse_ip_with_prefix(ip_range)
+        # if not tmp:
+        #    self.json_resp(True, "错误的源端代理IP地址格式")
+        #    return
 
-        ip, prefix = tmp
-        if not netutils.is_ipv4_address(ip):
-            self.json_resp(True, "错误的源端代理IP地址格式")
-            return
-        if prefix > 32:
-            self.json_resp(True, "错误的源端代理IP地址格式")
-            return
+        # ip, prefix = tmp
+        # if not netutils.is_ipv4_address(ip):
+        #    self.json_resp(True, "错误的源端代理IP地址格式")
+        #    return
+        # if prefix > 32:
+        #    self.json_resp(True, "错误的源端代理IP地址格式")
+        #    return
 
-        tmp = netutils.parse_ip_with_prefix(ip6_range)
-        if not tmp:
-            self.json_resp(True, "错误的源端代理IPv6地址格式")
-            return
-        ip6, prefix = tmp
-        if not netutils.is_ipv6_address(ip6):
-            self.json_resp(True, "错误的源端代理IPv6地址格式")
-            return
-        if prefix > 128:
-            self.json_resp(True, "错误的源端代理IPv6地址格式")
-            return
-
+        # tmp = netutils.parse_ip_with_prefix(ip6_range)
+        # if not tmp:
+        #    self.json_resp(True, "错误的源端代理IPv6地址格式")
+        #    return
+        # ip6, prefix = tmp
+        # if not netutils.is_ipv6_address(ip6):
+        #    self.json_resp(True, "错误的源端代理IPv6地址格式")
+        #    return
+        # if prefix > 128:
+        #    self.json_resp(True, "错误的源端代理IPv6地址格式")
+        #    return
+        src_hwaddrs = kv_map["src_filter"]["src_hwaddrs"]
+        if src_hwaddrs:
+            if not self.is_valid_src_hwaddrs(src_hwaddrs):
+                self.json_resp(True, "错误的源代理硬件地址格式")
+                return
+            ''''''
         RPC.fn_call("proxy", "/config", "conn_cfg_update", kv_map)
         self.json_resp(False, {})
 
@@ -243,3 +247,14 @@ class controller(base_controller.BaseController):
             self.handle_rules(_type)
             return
         self.handle_conn()
+
+    def is_valid_src_hwaddrs(self, s: str):
+        s = s.strip()
+        _list = s.split(",")
+        new_list = []
+        for ss in _list:
+            ss = ss.strip()
+            if not netutils.is_hwaddr(ss):
+                return False
+            ''''''
+        return True

@@ -522,6 +522,12 @@ class service(dispatcher.dispatcher):
         self.__set_rules()
 
     def conn_cfg_update(self, dic: dict):
+        # 首先清除旧的src filter规则
+        src_filter_cfg = self.__configs["src_filter"]
+        src_filter_hwaddrs = self.get_src_filter_hwaddrs(src_filter_cfg['src_hwaddrs'])
+        for src_hwaddr in src_filter_hwaddrs:
+            RPCClient.fn_call("router", "/config", "src_filter_del_hwaddr", src_hwaddr)
+
         fpath = "%s/proxy.ini" % os.getenv("IXC_MYAPP_CONF_DIR")
         conf.save_to_ini(dic, fpath)
         self.__dns_query_tunnel_is_error = False
@@ -546,6 +552,11 @@ class service(dispatcher.dispatcher):
 
         if "self_no_fwd_enable" not in connection: connection["self_no_fwd_enable"] = 0
         if "ciphers" not in https_configs: https_configs["ciphers"] = "NULL"
+
+        src_filter_cfg = self.__configs["src_filter"]
+        if "src_hwaddrs" not in src_filter_cfg:
+            src_filter_cfg["src_hwaddrs"] = ""
+        return
 
     def get_manage_addr(self):
         ipaddr = RPCClient.fn_call("router", "/config", "manage_addr_get")
@@ -753,6 +764,17 @@ class service(dispatcher.dispatcher):
         handler = self.get_handler(self.__conn_fd)
         handler.send_msg_to_tunnel(self.session_id, action, message)
 
+    def get_src_filter_hwaddrs(self, s: str):
+        s = s.replace("-", ":")
+        _list = s.split(",")
+        new_list = []
+        for ss in _list:
+            ss = ss.strip()
+            if netutils.is_hwaddr(ss):
+                new_list.append(ss)
+            ''''''
+        return new_list
+
     def set_forward(self):
         self.__dns_fd = self.create_handler(-1, dns_proxy.dns_proxy)
         self.__rand_key = os.urandom(16)
@@ -777,13 +799,19 @@ class service(dispatcher.dispatcher):
         # 此处设置源代理
         src_filter = self.configs["src_filter"]
         enable = bool(int(src_filter["enable"]))
-        ip, prefix = netutils.parse_ip_with_prefix(src_filter["ip_range"])
-        ip6, prefix6 = netutils.parse_ip_with_prefix(src_filter["ip6_range"])
+
+        # ip, prefix = netutils.parse_ip_with_prefix(src_filter["ip_range"])
+        # ip6, prefix6 = netutils.parse_ip_with_prefix(src_filter["ip6_range"])
+        src_hwaddrs = self.get_src_filter_hwaddrs(src_filter['src_hwaddrs'])
+
         protocol = src_filter["protocol"]
 
         RPCClient.fn_call("router", "/config", "src_filter_enable", enable)
-        RPCClient.fn_call("router", "/config", "src_filter_set_ip", ip, prefix, is_ipv6=False)
-        RPCClient.fn_call("router", "/config", "src_filter_set_ip", ip6, prefix6, is_ipv6=True)
+
+        for src_hwaddr in src_hwaddrs:
+            RPCClient.fn_call("router", "/config", "src_filter_add_hwaddr", src_hwaddr)
+        # RPCClient.fn_call("router", "/config", "src_filter_set_ip", ip, prefix, is_ipv6=False)
+        # RPCClient.fn_call("router", "/config", "src_filter_set_ip", ip6, prefix6, is_ipv6=True)
         RPCClient.fn_call("router", "/config", "src_filter_set_protocols", protocol)
 
     def __open_tunnel(self):
