@@ -107,7 +107,7 @@ int ixc_src_filter_add_hwaddr(const unsigned char *hwaddr)
     void *data=map_find(src_filter.map,hwaddr,&is_found);
     if(is_found) return 1;
 
-    rs=map_add(src_filter.map,hwaddr,NULL);
+    rs=map_add(src_filter.map,(char *)hwaddr,NULL);
     if(0!=rs) return 0;
 
     return 1;
@@ -115,7 +115,7 @@ int ixc_src_filter_add_hwaddr(const unsigned char *hwaddr)
 
 void ixc_src_filter_del_hwaddr(const unsigned char *hwaddr)
 {
-    map_del(src_filter.map,hwaddr,NULL);
+    map_del(src_filter.map,(char *)hwaddr,NULL);
 }
 
 /*
