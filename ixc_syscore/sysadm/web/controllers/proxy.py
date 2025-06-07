@@ -230,6 +230,8 @@ class controller(base_controller.BaseController):
                 self.json_resp(True, "错误的源代理硬件地址格式")
                 return
             ''''''
+        else:
+            kv_map["src_filter"]["src_hwaddrs"] = ""
         RPC.fn_call("proxy", "/config", "conn_cfg_update", kv_map)
         self.json_resp(False, {})
 
