@@ -296,7 +296,7 @@ router_src_filter_add_hwaddr(PyObject *self,PyObject *args)
 {
     unsigned char *hwaddr;
     Py_ssize_t size;
-    if(!PyArg_ParseTule(args,"y#",&hwaddr,&size)) return NULL;
+    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;
     if(6!=size){
         PyErr_SetString(PyExc_ValueError,"wrong hwaddr value");
         return NULL;  
@@ -314,7 +314,7 @@ router_src_filter_del_hwaddr(PyObject *self,PyObject *args)
 {
     unsigned char *hwaddr;
     Py_ssize_t size;
-    if(!PyArg_ParseTule(args,"y#",&hwaddr,&size)) return NULL;  
+    if(!PyArg_ParseTuple(args,"y#",&hwaddr,&size)) return NULL;  
     if(6!=size){
         PyErr_SetString(PyExc_ValueError,"wrong hwaddr value");
         return NULL;  
