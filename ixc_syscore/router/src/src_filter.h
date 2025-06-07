@@ -3,8 +3,10 @@
 #define IXC_SRC_FILTER_H
 
 #include "mbuf.h"
+#include "../../../pywind/clib/map.h"
 
 struct ixc_src_filter{
+    struct map *map;
     unsigned char ip6_subnet[16];
     unsigned char ip6_mask[16];
 
@@ -22,7 +24,11 @@ int ixc_src_filter_init(void);
 void ixc_src_filter_uninit(void);
 
 int ixc_src_filter_enable(int enable);
-int ixc_src_filter_set_ip(unsigned char *subnet,unsigned char prefix,int is_ipv6);
+
+int ixc_src_filter_add_hwaddr(const unsigned char *hwaddr);
+void ixc_src_filter_del_hwaddr(const unsigned char *hwaddr);
+
+//int ixc_src_filter_set_ip(unsigned char *subnet,unsigned char prefix,int is_ipv6);
 
 /// 设置过滤协议
 int ixc_src_filter_set_protocols(unsigned char *protocols);

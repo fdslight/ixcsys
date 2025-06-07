@@ -75,7 +75,8 @@ class rpc(object):
             "port_map_del": self.port_map_del,
             "port_map_configs_get": self.port_map_configs_get,
 
-            "src_filter_set_ip": self.src_filter_set_ip,
+            "src_filter_add_hwaddr": self.src_filter_add_hwaddr,
+            "src_filter_del_hwaddr": self.src_filter_del_hwaddr,
             "src_filter_enable": self.src_filter_enable,
             "src_filter_set_protocols": self.src_filter_set_protocols,
 
@@ -629,13 +630,19 @@ class rpc(object):
     def port_map_configs_get(self):
         return 0, self.__helper.port_map_configs
 
-    def src_filter_set_ip(self, ip: str, prefix: int, is_ipv6=False):
-        if is_ipv6:
-            byte_addr = socket.inet_pton(socket.AF_INET6, ip)
-        else:
-            byte_addr = socket.inet_pton(socket.AF_INET, ip)
+    def src_filter_add_hwaddr(self, hwaddr: str):
+        if not netutils.is_hwaddr(hwaddr):
+            return 0, False
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
 
-        return 0, self.__helper.router.src_filter_set_ip(byte_addr, prefix, is_ipv6);
+        return 0, self.__helper.router.src_filter_add_hwaddr(byte_hwaddr)
+
+    def src_filter_del_hwaddr(self, hwaddr: str):
+        if not netutils.is_hwaddr(hwaddr):
+            return 0, False
+        byte_hwaddr = netutils.str_hwaddr_to_bytes(hwaddr)
+
+        return 0, self.__helper.router.src_filter_del_hwaddr(byte_hwaddr)
 
     def src_filter_enable(self, enable: bool):
         return 0, self.__helper.router.src_filter_enable(enable)
@@ -1247,7 +1254,7 @@ class helper(object):
             os.system("ip link set %s up" % ifname)
             # 关闭外网IPv6支持
             os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__PASS_BR_NAME)
-            #os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % ifname)
+            # os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % ifname)
         else:
             pass
 
@@ -1302,7 +1309,7 @@ class helper(object):
             os.system("ip link set %s up" % wan_phy_ifname)
             # 关闭外网IPv6支持
             os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__WAN_BR_NAME)
-            #os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % wan_phy_ifname)
+            # os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % wan_phy_ifname)
         else:
             pass
 

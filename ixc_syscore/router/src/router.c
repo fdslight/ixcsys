@@ -292,6 +292,39 @@ router_netif_traffic_speed_get(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_src_filter_add_hwaddr(PyObject *self,PyObject *args)
+{
+    unsigned char *hwaddr;
+    Py_ssize_t size;
+    if(!PyArg_ParseTule(args,"y#",&hwaddr,&size)) return NULL;
+    if(6!=size){
+        PyErr_SetString(PyExc_ValueError,"wrong hwaddr value");
+        return NULL;  
+    }
+
+    if(ixc_src_filter_add_hwaddr(hwaddr)){
+        Py_RETURN_TRUE;
+    }else{
+        Py_RETURN_FALSE;
+    }
+}
+
+static PyObject *
+router_src_filter_del_hwaddr(PyObject *self,PyObject *args)
+{
+    unsigned char *hwaddr;
+    Py_ssize_t size;
+    if(!PyArg_ParseTule(args,"y#",&hwaddr,&size)) return NULL;  
+    if(6!=size){
+        PyErr_SetString(PyExc_ValueError,"wrong hwaddr value");
+        return NULL;  
+    }
+    ixc_src_filter_del_hwaddr(hwaddr);
+
+    Py_RETURN_NONE;
+}
+/*
+static PyObject *
 router_src_filter_set_ip(PyObject *self,PyObject *args)
 {
     unsigned char *subnet;
@@ -318,7 +351,7 @@ router_src_filter_set_ip(PyObject *self,PyObject *args)
     }
 
     Py_RETURN_FALSE;
-}
+}*/
 
 static PyObject *
 router_src_filter_enable(PyObject *self,PyObject *args)
@@ -1098,7 +1131,9 @@ static PyMethodDef routerMethods[]={
     {"netif_traffic_get",(PyCFunction)router_netif_traffic_get,METH_VARARGS,"get network card traffic"},
     {"netif_traffic_speed_get",(PyCFunction)router_netif_traffic_speed_get,METH_VARARGS,"get network card traffic speed"},
     //
-    {"src_filter_set_ip",(PyCFunction)router_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
+    {"src_filter_add_hwaddr",(PyCFunction)router_src_filter_add_hwaddr,METH_VARARGS,"add hwaddr for source filter"},
+    {"src_filter_del_hwaddr",(PyCFunction)router_src_filter_del_hwaddr,METH_VARARGS,"del hwaddr for source filter"},
+    //{"src_filter_set_ip",(PyCFunction)router_src_filter_set_ip,METH_VARARGS,"set udp source filter IP address range"},
     {"src_filter_enable",(PyCFunction)router_src_filter_enable,METH_VARARGS,"enable/disable udp source filter"},
     {"src_filter_set_protocols",(PyCFunction)router_src_filter_set_protocols,METH_VARARGS,"set src filter protocol"},
     //
