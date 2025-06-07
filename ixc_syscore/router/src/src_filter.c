@@ -79,18 +79,24 @@ int ixc_src_filter_init(void)
 {
     struct map *m;
     int rs=map_new(&m,6);
+
+    bzero(&src_filter,sizeof(struct ixc_src_filter));
+
     if(0!=rs){
         STDERR("cannot init map\r\n");
         return -1;
     }
+
     src_filter.map=m;
-    bzero(&src_filter,sizeof(struct ixc_src_filter));
+   
     return 0;
 }
 
 void ixc_src_filter_uninit(void)
 {
-    map_release(src_filter.map,NULL);
+    if(NULL!=src_filter.map){
+        map_release(src_filter.map,NULL);
+    }
     src_filter.is_opened=0;
 }
 
