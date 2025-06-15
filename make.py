@@ -136,7 +136,10 @@ def __build(build_name, args: list, for_developer=False):
     if debug:
         d = "-g -Wall"
     else:
-        d = "-O2"
+        if ex_cflags.find("-O") != -1:
+            d = ""
+        else:
+            d = "-O2"
 
     cflags = " ".join([d, include, libdir, lib, ])
     cflags = cflags + " " + "".join(args[0:]) + " " + ex_cflags
