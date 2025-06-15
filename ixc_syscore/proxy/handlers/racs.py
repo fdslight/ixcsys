@@ -157,6 +157,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             fa = socket.AF_INET
 
         s = socket.socket(fa, socket.SOCK_STREAM)
+        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         self.set_socket(s)
 
