@@ -202,6 +202,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
 
         self.writer.write(wrap_data)
         self.add_evt_write(self.fileno)
+        self.send_now()
 
     def send_heartbeat(self):
         self.send_msg(b"")
