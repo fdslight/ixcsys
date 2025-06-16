@@ -69,3 +69,4 @@ class nspkt_handler(udp_handler.udp_handler):
 
         self.add_evt_write(self.fileno)
         self.sendto(sent_msg, ("127.0.0.1", self.__server_port))
+        self.send_now()

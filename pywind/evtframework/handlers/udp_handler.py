@@ -119,6 +119,8 @@ class udp_handler(handler.handler):
                 byte_data = self.__sent.pop(0)
                 try:
                     sent_size = self.socket.send(byte_data)
+                except BlockingIOError:
+                    return
                 except ConnectionError:
                     self.error()
                     return
@@ -199,3 +201,10 @@ class udp_handler(handler.handler):
 
     def close(self):
         self.socket.close()
+
+    def send_now(self):
+        self.evt_write()
+
+    def have_data(self):
+        if self.__sent: return True
+        return False
