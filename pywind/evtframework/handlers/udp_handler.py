@@ -204,7 +204,3 @@ class udp_handler(handler.handler):
 
     def send_now(self):
         self.evt_write()
-
-    def have_data(self):
-        if self.__sent: return True
-        return False
