@@ -1223,7 +1223,11 @@ static struct PyModuleDef routerModule={
     "router",
     NULL,
     -1,
-    routerMethods
+    routerMethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 static PyObject *

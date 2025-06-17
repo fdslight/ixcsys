@@ -76,7 +76,7 @@ static void ixc_npfwd_rx_data(int fd)
 
         //DBG_FLAGS;
         // 检查是否满足最小长度要求
-        if(recv_size<sizeof(struct ixc_npfwd_header)){
+        if(recv_size<(int)(sizeof(struct ixc_npfwd_header))){
             ixc_mbuf_put(m);
             continue;
         }

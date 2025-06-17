@@ -120,7 +120,7 @@ int fuzzyMap_pre_alloc(struct fuzzyMap *m,unsigned int size)
 	struct fuzzyMap_node *t;
 	int rs=0;
 	
-	for(int n=0;n<size;n++){
+	for(unsigned int n=0;n<size;n++){
 		t=malloc(sizeof(struct fuzzyMap_node));
 		if(NULL==t){
 			rs=-1;

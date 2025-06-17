@@ -43,7 +43,8 @@ static struct PyModuleDef racs_module = {
 	"racs_cext",
 	NULL,
 	-1,
-	racs_methods
+	racs_methods,
+    NULL,NULL,NULL,NULL
 };
 
 
