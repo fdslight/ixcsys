@@ -1497,7 +1497,27 @@ class helper(object):
             p = s.find("if_tap.ko")
             if p < 0: os.system("kldload if_tap")
 
+        ''''''
+
+    def stop_apport_for_coredump(self):
+        """停用apport,此功能和coredump冲突
+        """
+        fdst = os.popen("systemctl  | grep apport | grep service | wc -l")
+        s = fdst.read()
+        fdst.close()
+
+        try:
+            v = int(s)
+        except:
+            return
+
+        if v != 0:
+            os.system("systemctl stop apport.service")
+        return
+
     def start(self):
+        self.stop_apport_for_coredump()
+
         self.start_lan()
         self.start_wan()
 

@@ -6,6 +6,7 @@
 #include<time.h>
 
 #include<sched.h>
+#include<sys/resource.h>
 
 #define  PY_SSIZE_T_CLEAN
 #include<Python.h>
@@ -1357,6 +1358,24 @@ void ixc_router_md5_calc(void *data,int size,unsigned char *res)
     Py_XDECREF(args);
 }
 
+static void ixc_init_coredump(void)
+{
+    struct rlimit limit;
+    int err;
+
+    bzero(&limit,sizeof(struct rlimit));
+
+    limit.rlim_cur=RLIM_INFINITY;
+    limit.rlim_max=RLIM_INFINITY;
+
+    err=setrlimit(RLIMIT_CORE,&limit);
+    if(0!=err){
+        STDERR("cannot set core dump\r\n");
+    }
+
+    return;
+}
+
 static void ixc_python_loop(void)
 {
     PyObject *pfunc,*result;
@@ -1594,9 +1613,12 @@ static void ixc_start(int debug)
         return;
     }
 
+    ixc_init_coredump();
+
     loop_time_up=time(NULL);
 
-    signal(SIGSEGV,ixc_signal_handle);
+    // 开启了coredump没必要捕获段错误
+    //signal(SIGSEGV,ixc_signal_handle);
     signal(SIGINT,ixc_signal_handle);
 
     run_start_time=time(NULL);
