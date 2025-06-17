@@ -1044,7 +1044,7 @@ router_passthrough_set_vid_for_passdev(PyObject *self,PyObject *args)
 }
 
 static PyObject *
-router_nat_sessions_num_get(PyObject *self,PyObject)
+router_nat_sessions_num_get(PyObject *self,PyObject *args)
 {
     return PyLong_FromUnsignedLong(ixc_nat_sessions_num_get());
 }

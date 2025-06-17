@@ -343,7 +343,7 @@ int ixc_passthrough_is_passthrough2passdev_traffic(unsigned char *hwaddr)
 
 int ixc_passthrough_set_vid_for_passdev(unsigned short vid)
 {
-    if(vid<0 || vid>4094) {
+    if(vid<=1 || vid>4094) {
         return -1;
     }
     

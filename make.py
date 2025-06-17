@@ -134,12 +134,12 @@ def __build(build_name, args: list, for_developer=False):
         lib = ""
 
     if debug:
-        d = "-g -Wall"
+        d = "-g -Wall -Wextra -Wno-unused-parameter"
     else:
         if ex_cflags.find("-O") != -1:
             d = ""
         else:
-            d = "-O3"
+            d = "-O3 -g -Wall -Wextra -Wno-unused-parameter"
 
     cflags = " ".join([d, include, libdir, lib, ])
     cflags = cflags + " " + "".join(args[0:]) + " " + ex_cflags
