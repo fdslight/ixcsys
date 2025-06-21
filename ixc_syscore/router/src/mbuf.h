@@ -41,18 +41,20 @@ struct ixc_mbuf{
     int end;
     // 是否开启透传
     int passthrough;
+    char pad1[2];
     
     union{
         unsigned short link_proto;
         unsigned char ipproto;
     };
-
     // 指向的下一条主机
     unsigned char next_host[16];
-#define IXC_MBUF_DATA_MAX_SIZE 0x101ff
+#define IXC_MBUF_DATA_MAX_SIZE 0x10800
     unsigned char data[IXC_MBUF_DATA_MAX_SIZE];
     unsigned char src_hwaddr[6];
+    unsigned char pad2[2];
     unsigned char dst_hwaddr[6];
+    unsigned char pad3[2];
 };
 
 /// 检查是否造成了死循环
