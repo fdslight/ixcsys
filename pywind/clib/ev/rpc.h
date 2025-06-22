@@ -34,7 +34,7 @@ enum{
 struct rpc_resp{
 	// 总体数据长度
 	unsigned short tot_len;
-	char pad[6];
+	char pad[10];
 	int is_error;
 	unsigned char message[RPC_DATA_MAX];
 };

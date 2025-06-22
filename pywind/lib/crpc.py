@@ -74,7 +74,7 @@ class RPCClient(object):
             self.__reader._putvalue(recv_data)
             if self.__reader.size() < 16 and not parsed_header: continue
             if not parsed_header:
-                tot_len, _, is_error = struct.unpack("!H6si", self.__reader.read(16))
+                tot_len, _, is_error = struct.unpack("!H10si", self.__reader.read(16))
                 tot_len -= 16
                 parsed_header = True
             if self.__reader.size() >= tot_len:
