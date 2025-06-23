@@ -40,8 +40,10 @@ struct ixc_netif{
     unsigned long long tx_npkt_speed;
 
     char devname[512];
+    //
     int is_used;
     int type;
+    //
     int fd;
     // 写入标志
     int write_flags;
@@ -73,14 +75,15 @@ struct ixc_netif{
     unsigned char ip6_local_link_addr[16];
     unsigned char ip6_local_link_mask[16];
     unsigned char ip6_local_link_subnet[16];
-    int ip6_prefix;
 
-    unsigned char pad1[2];
+    int ip6_prefix;
+    unsigned char pad1[4];
     //
     unsigned char hwaddr[6];
     unsigned char pad2[2];
     // IPv6的默认路由器
     unsigned char ip6_default_router_hwaddr[6];
+    unsigned char pad3[2];
 };
 
 int ixc_netif_init(struct ev_set *ev_set);
