@@ -3,6 +3,8 @@
 #include<sys/types.h>
 #include<arpa/inet.h>
 
+#pragma pack(push)
+#pragma pack(4)
 struct netutil_iphdr{
     unsigned char ver_and_ihl;
     unsigned char tos;
@@ -72,6 +74,7 @@ struct netutil_tcphdr{
     unsigned short csum;
     unsigned short urgent_pointer;
 };
+#pragma pack(pop)
 
 #pragma pack(push)
 #pragma pack(1)
