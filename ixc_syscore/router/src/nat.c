@@ -81,7 +81,7 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
 
     //DBG("%d %d\r\n",slice_size,ipdata_len);
 
-    while (cur_len<ipdata_len){
+    while (cur_len<=ipdata_len){
         new_mbuf=ixc_mbuf_get();
 
         if(NULL==new_mbuf){
