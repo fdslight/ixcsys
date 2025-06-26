@@ -58,14 +58,24 @@ static struct ixc_port_map_record *ixc_nat_port_map_get(struct ixc_mbuf *m,int f
 static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
 {
     struct netutil_iphdr *iphdr=(struct netutil_iphdr *)(m->data+m->offset),*tmp_iphdr;
+    struct ixc_netif *netif=m->netif;
+
     int hdr_len=(iphdr->ver_and_ihl & 0x0f)*4;
     // IP数据内容长度
     int ipdata_len=m->tail-m->offset-hdr_len;
     // 每片数据的大小必须未8的倍数
-    int slice_size=(m->netif->mtu_v4-hdr_len)/8*8;
+    int slice_size=(netif->mtu_v4-hdr_len)/8*8;
     int cur_len=0,data_size=0,mf=0x2000,df=0x4000;
     unsigned short tot_len,offset=0,csum,frag_info;
     struct ixc_mbuf *new_mbuf=NULL;
+
+    // 检查是否需要分片,不需要分片那么直接发送数据
+    if(m->tail-m->offset<=netif->mtu_v4){
+        if(from_wan) ixc_qos_add(new_mbuf);
+        else ixc_addr_map_handle(new_mbuf);
+        
+        return;
+    }
 
     m->offset+=hdr_len;
 
@@ -586,6 +596,17 @@ void ixc_nat_uninit(void)
 
 void ixc_nat_handle(struct ixc_mbuf *m)
 {
+    struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
+    unsigned short frag_info,frag_off;
+    int mf;
+
+    frag_info=ntohs(header->frag_info);
+    frag_off=frag_info & 0x1fff;
+    mf=frag_info & 0x2000;
+
+    if(mf!=0 || frag_off!=0) m=ixc_ipunfrag_add(m);
+    if(NULL==m) return;
+
     if(!nat_is_initialized){
         ixc_mbuf_put(m);
         STDERR("please init nat\r\n");

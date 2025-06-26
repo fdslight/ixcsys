@@ -64,11 +64,11 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
 
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
     unsigned short frag_info,frag_off;
-    int mf;
+    //int mf;
 
     frag_info=ntohs(iphdr->frag_info);
     frag_off=frag_info & 0x1fff;
-    mf=frag_info & 0x2000;
+    //mf=frag_info & 0x2000;
     
     // 检查是否是DHCP Client报文
     if(17==iphdr->protocol && frag_off==0){
@@ -90,8 +90,8 @@ static void ixc_ip_handle_from_wan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
 
     //DBG("frag_off %d mf %d\r\n",frag_off,mf);
     // 如果IP数据包有分包那么首先合并数据包
-    if(mf!=0 || frag_off!=0) m=ixc_ipunfrag_add(m);
-    if(NULL==m) return;
+    //if(mf!=0 || frag_off!=0) m=ixc_ipunfrag_add(m);
+    //if(NULL==m) return;
     
     ixc_nat_handle(m);
 }
@@ -132,12 +132,6 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
     struct netutil_udphdr *udphdr;
     int hdr_len=(iphdr->ver_and_ihl & 0x0f) *4;
     struct ixc_netif *netif=m->netif;
-    unsigned short frag_info,frag_off;
-    int mf;
-
-    frag_info=ntohs(iphdr->frag_info);
-    frag_off=frag_info & 0x1fff;
-    mf=frag_info & 0x2000;
 
     if(!netif->isset_ip){
         ixc_mbuf_put(m);
@@ -167,9 +161,6 @@ static void ixc_ip_handle_from_lan(struct ixc_mbuf *m,struct netutil_iphdr *iphd
         ixc_mbuf_put(m);
         return;
     }
-
-    if(mf!=0 || frag_off!=0) m=ixc_ipunfrag_add(m);
-    if(NULL==m) return;
 
     ixc_sec_net_handle_from_lan(m);
     //DBG_FLAGS;
