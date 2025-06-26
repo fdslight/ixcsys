@@ -51,6 +51,8 @@ static int ixc_ip_check_ok(struct ixc_mbuf *m,struct netutil_iphdr *header)
     }
     // 限制IP数据包最小长度
     if(tot_len<28) return 0;
+    // 最大支持1500字节
+    if(tot_len>1500) return 0;
 
     return 1;
 }

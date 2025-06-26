@@ -63,6 +63,8 @@ static int ixc_ip6_check_ok(struct ixc_mbuf *m)
 
     payload_len=ntohs(header->payload_len);
     if(m->tail-m->offset < (payload_len+40)) return 0;
+    // 限制最大长度
+    if(payload_len > 1460) return 0;
     //if(!memcmp(ip6_loopback_addr,header->dst_addr,16) || !memcmp(ip6_unspec_addr,header->dst_addr,16)) return 0;
 
     return 1;
