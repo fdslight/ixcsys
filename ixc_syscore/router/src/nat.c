@@ -71,8 +71,8 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
 
     // 检查是否需要分片,不需要分片那么直接发送数据
     if(m->tail-m->offset<=netif->mtu_v4){
-        if(from_wan) ixc_qos_add(new_mbuf);
-        else ixc_addr_map_handle(new_mbuf);
+        if(from_wan) ixc_qos_add(m);
+        else ixc_addr_map_handle(m);
         
         return;
     }
