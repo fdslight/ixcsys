@@ -65,7 +65,7 @@ static void ixc_nat_ipfrag_send(struct ixc_mbuf *m,int from_wan)
     int ipdata_len=m->tail-m->offset-hdr_len;
     // 每片数据的大小必须未8的倍数
     int slice_size=(netif->mtu_v4-hdr_len)/8*8;
-    int cur_len=0,data_size=0,mf=0x2000,df=0x4000;
+    int cur_len=0,data_size=0,mf=0x2000,df=0x0000;
     unsigned short tot_len,offset=0,csum,frag_info;
     struct ixc_mbuf *new_mbuf=NULL;
 
