@@ -1624,6 +1624,7 @@ class helper(object):
             return
         if cmd=="syslog":
             logging.print_alert(v)
+            return
         logging.print_error("not found system command %s" % cmd)
 
     def calc_md5(self, byte_data: bytes):
