@@ -347,7 +347,7 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
     struct ixc_mbuf *m;
     struct ev *ev=ev_get(netif_ev_set,netif->fd);
     ssize_t wsize;
-    int rs=0;
+    int rs=0,flags=0;
     unsigned long npkt_cnt=netif->tx_npkt_cnt;
 
     if(!netif_is_initialized){
@@ -358,8 +358,10 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
     while(1){
         m=netif->sent_first;
         if(NULL==m) break;
+
+        flags=1;
         wsize=write(netif->fd,m->data+m->begin,m->end-m->begin);
-        
+    
         //STDERR("%x:%x:%x:%x:%x:%x\r\n",m->src_hwaddr[0],m->src_hwaddr[1],m->src_hwaddr[2],m->src_hwaddr[3],m->src_hwaddr[4],m->src_hwaddr[5]);
 
         if(wsize<0){
@@ -377,6 +379,7 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
 
         netif->sent_first=m->next;
         netif->write_flags=IXC_NETIF_WRITE_OK;
+    
 
         if(NULL==netif->sent_first) netif->sent_last=NULL;
 
@@ -391,7 +394,8 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
     // 包计数未增长,说明无法发送数据,注意丢包需要在write_flags,这里以一次事件循环作为一个时间点判断
     // 如果第二次事件循环仍旧未发送数据包,那么开始执行丢包
     // 引入此功能的目的时因为有些网卡故障,导致无法发送数据包,系统不引入丢包会导致mbuf被使用完毕
-    if(netif->tx_npkt_cnt==npkt_cnt){
+    // 这里需要考虑有网口可能没有任何数据包可发送,因此需要flags,表示尝试发送过数据包
+    if(netif->tx_npkt_cnt==npkt_cnt && flags){
         netif->write_flags=IXC_NETIF_WRITE_FAIL;
     }
 
