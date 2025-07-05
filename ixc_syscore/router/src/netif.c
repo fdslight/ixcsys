@@ -84,7 +84,6 @@ static void ixc_netif_calc_speed(struct ixc_netif *netif)
     netif->tx_npkt_cnt_old=netif->tx_npkt_cnt;
 
     netif->sec_time=n_sec;
-
 }
 
 int ixc_netif_init(struct ev_set *ev_set)
@@ -329,12 +328,27 @@ int ixc_netif_send(struct ixc_mbuf *m)
     return 0;
 }
 
+static void ixc_netif_clear_mbuf_for_sent(struct ixc_netif *netif)
+{
+    // 每次丢第一个数据包
+    struct ixc_mbuf *m=netif->sent_first,*tmp;
+    if(NULL==m) return;
+
+    tmp=m->next;
+    netif->sent_first=tmp;
+
+    if(NULL==tmp) netif->sent_last=NULL;
+
+    ixc_mbuf_put(m);
+}
+
 int ixc_netif_tx_data(struct ixc_netif *netif)
 {
     struct ixc_mbuf *m;
     struct ev *ev=ev_get(netif_ev_set,netif->fd);
     ssize_t wsize;
     int rs=0;
+    unsigned long npkt_cnt=netif->tx_npkt_cnt;
 
     if(!netif_is_initialized){
         STDERR("please initialize netif\r\n");
@@ -362,8 +376,23 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
         netif->tx_npkt_cnt+=1;
 
         netif->sent_first=m->next;
+        netif->write_flags=IXC_NETIF_WRITE_OK;
+
         if(NULL==netif->sent_first) netif->sent_last=NULL;
+
         ixc_mbuf_put(m);
+    }
+
+    if(IXC_NETIF_WRITE_FAIL==netif->write_flags){
+        ixc_router_tell("syslog because of cannot send data,start drop packet");
+        ixc_netif_clear_mbuf_for_sent(netif);
+    }
+
+    // 包计数未增长,说明无法发送数据,注意丢包需要在write_flags,这里以一次事件循环作为一个时间点判断
+    // 如果第二次事件循环仍旧未发送数据包,那么开始执行丢包
+    // 引入此功能的目的时因为有些网卡故障,导致无法发送数据包,系统不引入丢包会导致mbuf被使用完毕
+    if(netif->tx_npkt_cnt==npkt_cnt){
+        netif->write_flags=IXC_NETIF_WRITE_FAIL;
     }
 
     // 加入到写入事件

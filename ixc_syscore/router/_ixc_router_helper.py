@@ -1622,6 +1622,8 @@ class helper(object):
             ac_name = v
             self.__pppoe.tell_selected_ac_name(ac_name)
             return
+        if cmd=="syslog":
+            logging.print_alert(v)
         logging.print_error("not found system command %s" % cmd)
 
     def calc_md5(self, byte_data: bytes):

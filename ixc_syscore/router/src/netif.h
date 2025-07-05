@@ -46,6 +46,8 @@ struct ixc_netif{
     //
     int fd;
     // 写入标志
+#define IXC_NETIF_WRITE_FAIL 0
+#define IXC_NETIF_WRITE_OK 1
     int write_flags;
     // 是否设置了IPv4
     int isset_ip;
