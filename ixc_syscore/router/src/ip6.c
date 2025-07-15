@@ -337,6 +337,7 @@ int ixc_ip6_send_to_peer_for_4in6(struct ixc_mbuf *m,unsigned char *peer_address
         return -1;
     }
 
+    m->is_ipv6=1;
     m->netif=netif;
     m->offset=m->offset-40;
     m->begin=m->offset;
