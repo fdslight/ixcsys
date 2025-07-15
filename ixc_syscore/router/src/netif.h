@@ -119,6 +119,10 @@ struct ixc_netif *ixc_netif_get_with_subnet_ip(unsigned char *ip,int is_ipv6);
 ///不要设置IP地址
 int ixc_netif_unset_ip(int if_idx,int is_ipv6);
 
+/// 设置ipv6接口ID
+// 注意设置接口ID需要在设置hwaddr之后
+int ixc_netif_wan6_iface_id_set(unsigned char *subnet);
+
 /// WAN是否可以发送数据
 int ixc_netif_wan_sendable(void);
 

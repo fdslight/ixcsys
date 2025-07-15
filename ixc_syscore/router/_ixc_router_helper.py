@@ -65,6 +65,9 @@ class rpc(object):
             "lan_static_ipv6_enable": self.lan_static_ipv6_enable,
             "lan_static_ipv6_set": self.lan_static_ipv6_set,
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
+
+            "ip_4in6_tunnel_enable": self.ip_4in6_tunnel_enable,
+
             "passdev_set": self.passdev_set,
             "pppoe_set": self.pppoe_set,
             "pppoe_is_enabled": self.pppoe_is_enabled,
@@ -573,6 +576,21 @@ class rpc(object):
             configs["enable_ipv6_security"] = 0
 
         return 0, None
+
+    def ip_4in6_tunnel_enable(self, enable: bool, peer_ip6_address: str):
+        if enable:
+            enable = True
+        else:
+            enable = False
+
+        if not enable:
+            byte_peer_address = b""
+        else:
+            if not netutils.is_ipv6_address(peer_ip6_address):
+                return RPC.ERR_ARGS, "wrong IPv6 address value"
+            byte_peer_address = socket.inet_pton(socket.AF_INET6, peer_ip6_address)
+        ''''''
+        return 0, self.__helper.router.ip_4in6_enable(enable, byte_peer_address)
 
     def passdev_set(self, config: dict):
         self.__helper.passdev_set(config)
@@ -1622,7 +1640,7 @@ class helper(object):
             ac_name = v
             self.__pppoe.tell_selected_ac_name(ac_name)
             return
-        if cmd=="syslog":
+        if cmd == "syslog":
             logging.print_alert(v)
             return
         logging.print_error("not found system command %s" % cmd)

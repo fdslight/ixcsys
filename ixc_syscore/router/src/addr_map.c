@@ -12,6 +12,8 @@
 #include "router.h"
 #include "route.h"
 #include "global.h"
+#include "ip.h"
+#include "ip6.h"
 
 #include "../../../pywind/clib/sysloop.h"
 #include "../../../pywind/clib/netutils.h"
@@ -280,6 +282,14 @@ static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
 void ixc_addr_map_handle(struct ixc_mbuf *m)
 {
     //struct ixc_netif *netif=m->netif;
+
+    if(IXC_MBUF_FROM_LAN==m->from){
+        // 检查是否开启4in6
+        if(ixc_ip_4in6_is_enabled() && 0==m->is_ipv6){
+            ixc_ip6_send_to_peer_for_4in6(m,ixc_ip_4in6_peer_address_get());
+            return;
+        }
+    }
 
     // 如果目标网卡是WAN并且数据来自于LAN那么直接发送到PPPoE
     if(ixc_pppoe_is_enabled() && m->from==IXC_MBUF_FROM_LAN){

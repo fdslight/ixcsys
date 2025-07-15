@@ -563,6 +563,20 @@ int ixc_netif_unset_ip(int if_idx,int is_ipv6)
     return 0;
 }
 
+int ixc_netif_wan6_iface_id_set(unsigned char *subnet)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+
+    if(NULL==netif){
+        STDERR("cannot get WAN netif\r\n");
+        return -1;
+    }
+
+    ixc_ip6_addr_get(netif->hwaddr,subnet,netif->ipaddr);
+
+    return 0;
+}
+
 inline
 int ixc_netif_wan_sendable(void)
 {

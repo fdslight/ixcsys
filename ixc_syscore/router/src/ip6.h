@@ -37,4 +37,6 @@ int ixc_ip6_multi_brd_get(unsigned char *addr,unsigned char *result);
 /// 开启或者关闭非系统DNS请求
 int ixc_ip6_no_system_dns_drop_enable(int enable);
 
+int ixc_ip6_send_to_peer_for_4in6(struct ixc_mbuf *m,unsigned char *peer_address);
+
 #endif

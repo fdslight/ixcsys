@@ -20,11 +20,16 @@
 // 是否开启非系统DNS丢弃
 static int ip_enable_no_system_dns_drop=0;
 //
+static int ip_4in6_enable=0;
+static unsigned char ip_4in6_peer_address[16];
 static int ip_is_initialized=0;
 
 int ixc_ip_init(void)
 {
     ip_enable_no_system_dns_drop=0;
+    ip_4in6_enable=0;
+    bzero(ip_4in6_peer_address,16);
+
     ip_is_initialized=1;
 
     return 0;
@@ -248,6 +253,44 @@ int ixc_ip_no_system_dns_drop_enable(int enable)
     ip_enable_no_system_dns_drop=enable;
     return 0;
 }
+
+int ixc_ip_enable_4in6(int enable,const unsigned char *peer_ip6_addr)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+
+    if(NULL==netif){
+        STDERR("cannot get WAN netif\r\n");
+        return -1;
+    }
+
+    bzero(ip_4in6_peer_address,16);
+
+    ip_4in6_enable=enable;
+
+    if(!enable){
+        // 恢复MTU,默认ipv4和ipv6的mtu应该相同
+        netif->mtu_v4=netif->mtu_v6;
+        return 0;
+    }
+
+    memcpy(ip_4in6_peer_address,peer_ip6_addr,16);
+    // 减去IPv6头部的4个字节
+    netif->mtu_v4=netif->mtu_v6-40;
+
+    return 0;
+}
+
+int ixc_ip_4in6_is_enabled(void)
+{
+    return ip_4in6_enable;
+}
+
+unsigned char *ixc_ip_4in6_peer_address_get(void)
+{
+    return ip_4in6_peer_address;
+}
+
+
 
 void ixc_ip_uninit(void)
 {

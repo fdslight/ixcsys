@@ -253,6 +253,27 @@ router_netif_mtu_set(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_netif_wan6_iface_id_set(PyObject *self,PyObject *args)
+{
+    unsigned char *id;
+    Py_ssize_t size;
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"y#",&id,&size)) return NULL;
+    if(16!=size){
+        PyErr_SetString(PyExc_ValueError,"wrong interface id size,it must be 16");
+        return NULL;
+    }
+
+    rs=ixc_netif_wan6_iface_id_set(id);
+    if(0!=rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
 router_netif_traffic_get(PyObject *self,PyObject *args)
 {
     unsigned long long rx_traffic,tx_traffic;
@@ -410,6 +431,28 @@ router_ip6sec_enable(PyObject *self,PyObject *args)
     ixc_ip6sec_enable(enable);
 
     Py_RETURN_NONE;
+}
+
+static PyObject *
+router_ip_4in6_enable(PyObject *self,PyObject *args)
+{
+    unsigned char *peer_ip6_address;
+    Py_ssize_t size;
+    int enable,rs;
+
+    if(!PyArg_ParseTuple(args,"py#",&enable,&peer_ip6_address,&size)) return NULL;
+
+    if(16!=size){
+        PyErr_SetString(PyExc_ValueError,"wrong interface id size,it must be 16");
+        return NULL;
+    }
+
+    rs=ixc_ip_enable_4in6(enable,peer_ip6_address);
+    if(rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
 }
 
 /// 添加路由
@@ -1128,6 +1171,7 @@ static PyMethodDef routerMethods[]={
     {"netif_get_ip",(PyCFunction)router_netif_get_ip,METH_VARARGS,"get netif ip address"},
     {"netif_set_ip",(PyCFunction)router_netif_set_ip,METH_VARARGS,"set netif ip"},
     {"netif_set_hwaddr",(PyCFunction)router_netif_set_hwaddr,METH_VARARGS,"set hardware address"},
+    {"netif_wan6_iface_id_set",(PyCFunction)router_netif_wan6_iface_id_set,METH_VARARGS,"set IPv6 WAN interface ID"},
     {"netif_set_mtu",(PyCFunction)router_netif_mtu_set,METH_VARARGS,"set network card MTU value"},
     {"netif_traffic_get",(PyCFunction)router_netif_traffic_get,METH_VARARGS,"get network card traffic"},
     {"netif_traffic_speed_get",(PyCFunction)router_netif_traffic_speed_get,METH_VARARGS,"get network card traffic speed"},
@@ -1141,6 +1185,8 @@ static PyMethodDef routerMethods[]={
     {"g_manage_addr_set",(PyCFunction)router_g_manage_addr_set,METH_VARARGS,"set router self address"},
     //
     {"ip6sec_enable",(PyCFunction)router_ip6sec_enable,METH_VARARGS,"enable/disable IPv6 security"},
+    //
+    {"ip_4in6_enable",(PyCFunction)router_ip_4in6_enable,METH_VARARGS,"enable/disable 4in6 tunnel"},
     //
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},

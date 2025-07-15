@@ -2,6 +2,7 @@
 #include<string.h>
 #include<time.h>
 
+#include "ip.h"
 #include "ip6.h"
 #include "icmpv6.h"
 #include "netif.h"
@@ -88,13 +89,44 @@ static int ixc_ip6_is_dhcp(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 
 static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *header)
 {
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
     // 服务端响应DHCPv6服务数据包
     if(ixc_ip6_is_dhcp(m,header)==1 && !ixc_route_is_enabled_ipv6_pass()){
         ixc_npfwd_send_raw(m,17,IXC_FLAG_DHCP_CLIENT);
         return;
     }
+
+    // 检查是否开启了隧道功能
+    if(!ixc_ip_4in6_is_enabled()){
+        ixc_qos_add(m);
+        return;
+    }
+    
+    // 如果不是接口地址直接执行下一步
+    if(memcmp(netif->ip6addr,header->dst_addr,16)){
+        ixc_qos_add(m);
+        return;
+    }
+
+    // 检查源端地址是否是隧道地址
+    if(memcmp(header->src_addr,ixc_ip_4in6_peer_address_get(),16)){
+        ixc_qos_add(m);
+        return;
+    }
+
+    // 检查是否是4in6封装
+    if(41!=header->next_header){
+        ixc_qos_add(m);
+        return;
+    }
+    
+    // 屏蔽IPv6头部
+    m->offset=m->offset+40;
+    m->begin=m->offset;
+
     //ixc_route_handle(m);
-    ixc_qos_add(m);
+    //ixc_qos_add(m);
+    ixc_ip_handle(m);
 }
 
 /// @是否是系统DNS请求
@@ -291,5 +323,39 @@ int ixc_ip6_addr_get(unsigned char *hwaddr,unsigned char *subnet,unsigned char *
 int ixc_ip6_no_system_dns_drop_enable(int enable)
 {
     ip6_enable_no_system_dns_drop=enable;
+    return 0;
+}
+
+int ixc_ip6_send_to_peer_for_4in6(struct ixc_mbuf *m,unsigned char *peer_address)
+{
+    struct netutil_ip6hdr *header=NULL;
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+
+    if(NULL==netif){
+        ixc_mbuf_put(m);
+        STDERR("cannot get wan netif\r\n");
+        return -1;
+    }
+
+    m->netif=netif;
+    m->offset=m->offset-40;
+    m->begin=m->offset;
+
+    header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    header->ver_and_tc=0x60;
+    // 这里固定流标签
+    header->flow_label[0]=0x00;
+    header->flow_label[1]=0x00;
+    header->flow_label[2]=0x00;
+    // 出去IPv6头部
+    header->payload_len=htons(m->end-m->begin-40);
+    header->next_header=41;
+    header->hop_limit=128;
+    
+    memcpy(header->src_addr,netif->ip6addr,16);
+    memcpy(header->dst_addr,peer_address,16);
+
+    ixc_ip6_handle_from_lan(m,header);
+
     return 0;
 }

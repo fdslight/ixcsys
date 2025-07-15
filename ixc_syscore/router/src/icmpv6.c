@@ -270,7 +270,7 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     }
 
     // 检查前缀是否符合无状态地址配置要求
-    if(opt_prefix->prefix_len>64 || opt_prefix->prefix_len < 48){
+    if(opt_prefix->prefix_len>64 || opt_prefix->prefix_len < 32){
         DBG_FLAGS;
         STDERR("cannot apply to stateless address set because of RA prefix is %d\r\n",opt_prefix->prefix_len);
         ixc_mbuf_put(m);
@@ -299,6 +299,7 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     //ixc_netif_set_ip(IXC_NETIF_WAN,slaac_addr,64,1);
     // 此处发送邻居请求,检查地址是否冲突
     //ixc_icmpv6_send_ns(netif,unspec_addr,slaac_addr);
+    ixc_netif_wan6_iface_id_set(slaac_addr);
 
     // 为LAN分配一个地址
     if_lan=ixc_netif_get(IXC_NETIF_LAN);
