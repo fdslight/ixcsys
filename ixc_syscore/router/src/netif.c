@@ -572,7 +572,7 @@ int ixc_netif_wan6_iface_id_set(unsigned char *subnet)
         return -1;
     }
 
-    ixc_ip6_addr_get(netif->hwaddr,subnet,netif->ipaddr);
+    ixc_ip6_addr_get(netif->hwaddr,subnet,netif->ip6addr);
 
     return 0;
 }

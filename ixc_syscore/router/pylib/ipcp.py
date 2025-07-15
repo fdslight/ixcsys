@@ -47,11 +47,11 @@ class IPCP(ncp.NCP):
                 length = cfg_data[idx + 1]
             except IndexError:
                 results = []
-                if self.debug: print("Wrong IPCP configure data")
+                logging.print_alert("Wrong IPCP configure data")
                 break
             if length < 2:
                 results = []
-                if self.debug: print("Wrong length field value for IPCP")
+                logging.print_alert("Wrong length field value for IPCP")
                 break
             idx += 2
             e = idx + length - 2
@@ -59,22 +59,21 @@ class IPCP(ncp.NCP):
             idx = e
             if len(opt_data) != length - 2:
                 results = []
-                if self.debug: print("Wrong IPCP option length field value")
+                logging.print_alert("Wrong IPCP option length field value")
                 break
             if _type not in permits:
                 results = []
-                if self.debug: print("unkown IPCP option type %d" % _type)
+                logging.print_alert("unkown IPCP option type %d" % _type)
                 break
 
             if _type == 2 and length < 4:
                 results = []
-                if self.debug: print("Wrong data length for IPCP type %d" % _type)
+                logging.print_alert("Wrong data length for IPCP type %d" % _type)
                 return
 
             if _type == 3 and length != 6:
-                print(length, "--")
                 results = []
-                if self.debug: print("Wrong data length for IPCP type %d" % _type)
+                logging.print_alert("Wrong data length for IPCP type %d" % _type)
                 return
 
             results.append((_type, opt_data,))
@@ -126,7 +125,7 @@ class IPCP(ncp.NCP):
                     logging.print_error("PPPoE server IPCP bug,wrong IP address length")
                     return
                 self.__my_ipaddr = value
-                if self.debug: logging.print_alert("PPPoE My IP address:%s" % socket.inet_ntop(socket.AF_INET, value))
+                logging.print_alert("PPPoE My IP address:%s" % socket.inet_ntop(socket.AF_INET, value))
                 self.__ipaddr_ok = True
                 self.pppoe.runtime.router.netif_set_ip(router.IXC_NETIF_WAN, self.__my_ipaddr, 32, False)
                 self.pppoe.runtime.router.route_add(bytes(4), 0, bytes(4), False)
@@ -136,7 +135,7 @@ class IPCP(ncp.NCP):
                     logging.print_error("PPPoE server IPCP bug,wrong primary DNS address length")
                     return
                 self.__p_dns = value
-                if self.debug: print("PPPoE primary DNS:%s" % socket.inet_ntop(socket.AF_INET, value))
+                logging.print_alert("PPPoE primary DNS:%s" % socket.inet_ntop(socket.AF_INET, value))
                 self.__p_dns_ok = True
                 break
             if _type == 131:
@@ -144,7 +143,7 @@ class IPCP(ncp.NCP):
                     logging.print_error("PPPoE server IPCP bug,wro address length")
                     return
                 self.__s_dns = value
-                if self.debug: print("PPPoE secondary DNS:%s" % socket.inet_ntop(socket.AF_INET, value))
+                logging.print_alert("PPPoE secondary DNS:%s" % socket.inet_ntop(socket.AF_INET, value))
                 self.__s_dns_ok = True
                 break
             ''''''
