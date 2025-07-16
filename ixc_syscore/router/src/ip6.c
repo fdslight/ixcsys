@@ -115,7 +115,7 @@ static void ixc_ip6_handle_from_wan(struct ixc_mbuf *m,struct netutil_ip6hdr *he
     }
 
     // 检查是否是4in6封装
-    if(41!=header->next_header){
+    if(0x04!=header->next_header){
         ixc_qos_add(m);
         return;
     }
@@ -350,7 +350,7 @@ int ixc_ip6_send_to_peer_for_4in6(struct ixc_mbuf *m,unsigned char *peer_address
     header->flow_label[2]=0x00;
     // 出去IPv6头部
     header->payload_len=htons(m->end-m->begin-40);
-    header->next_header=41;
+    header->next_header=0x04;
     header->hop_limit=128;
     
     memcpy(header->src_addr,netif->ip6addr,16);

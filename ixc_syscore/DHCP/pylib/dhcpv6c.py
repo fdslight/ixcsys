@@ -19,6 +19,8 @@ class dhcpv6c(object):
     __up_time = None
 
     __nameservers = None
+    __enable_aftr = None
+    __aftr_address = None
 
     def __init__(self, runtime, hostname, wan_hwaddr):
         self.__runtime = runtime
@@ -27,6 +29,27 @@ class dhcpv6c(object):
         self.__up_time = time.time()
         self.__duid_ll = netutils.str_hwaddr_to_bytes(wan_hwaddr)
         self.__nameservers = []
+        self.__enable_aftr = False
+        self.__aftr_address = ""
+
+    def get_aftr_address(self, opt_data: bytes):
+        seq = []
+        while 1:
+            try:
+                length = opt_data[0]
+            except IndexError:
+                seq = []
+                break
+            if length == 0: break
+            v = opt_data[1:1 + length]
+            if len(v) != length:
+                seq = []
+                logging.print_alert("Wrong Server AFTR Format")
+                break
+            opt_data = opt_data[1 + length:]
+            seq.append(v.decode())
+
+        return ".".join(seq)
 
     def get_my_local_address(self, mac_address):
         binary_mac = bin(int(mac_address[:2], 16))[2:].zfill(8)
@@ -94,9 +117,14 @@ class dhcpv6c(object):
             self.build_option(1, struct.pack("!HHI6s", 1, 1, int(time.time()), self.__duid_ll)),
             # vendor
             self.build_option(16, struct.pack("!I", 311) + self.__hostname.encode()),
+
+        ]
+        if self.__enable_aftr:
+            # option request
+            self.build_option(6, struct.pack("!HHHHH", 17, 23, 24, 32, 64)),
+        else:
             # option request
             self.build_option(6, struct.pack("!HHHH", 17, 23, 24, 32)),
-        ]
 
         dhcp_data = b"".join(seq)
 
@@ -151,6 +179,10 @@ class dhcpv6c(object):
             logging.print_alert("dhcpv6 server response wrong dns server format")
             return
 
+        if 64 in opts:
+            self.__aftr_address = self.get_aftr_address(opts[64])
+            logging.print_alert("AFTR Address is %s" % self.__aftr_address)
+        ''''''
         nameservers = []
         b = 0
         e = 16
