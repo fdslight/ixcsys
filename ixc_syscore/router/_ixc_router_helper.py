@@ -584,7 +584,8 @@ class rpc(object):
             enable = False
 
         if not enable:
-            byte_peer_address = b""
+            # 填充为空的地址,避免C检查不通过
+            byte_peer_address = bytes(16)
         else:
             if not netutils.is_ipv6_address(peer_ip6_address):
                 return RPC.ERR_ARGS, "wrong IPv6 address value"
