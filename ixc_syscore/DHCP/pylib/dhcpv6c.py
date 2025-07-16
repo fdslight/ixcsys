@@ -206,6 +206,9 @@ class dhcpv6c(object):
         nameservers = self.__nameservers
         RPC.fn_call("DNS", "/config", "set_ip6_nameservers_from_dhcpv6", nameservers[0], nameservers[1])
 
+    def enable_aftr(self, enable: bool):
+        self.__enable_aftr = enable
+
     def loop(self):
         now = time.time()
         # 如果已经获取到DNS服务器,那么1小时获取一次,否则60秒查找一次
