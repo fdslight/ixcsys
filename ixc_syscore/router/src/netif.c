@@ -315,7 +315,7 @@ int ixc_netif_send(struct ixc_mbuf *m)
 
     if(NULL==netif){
         ixc_mbuf_put(m);
-        ixc_router_tell("syslog send to netif but no netif object");
+        ixc_router_tell("syslog cannot send to netif because no netif object");
         return -1;
     }
 
