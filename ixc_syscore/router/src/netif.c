@@ -313,6 +313,12 @@ int ixc_netif_send(struct ixc_mbuf *m)
         return -1;
     }
 
+    if(NULL==netif){
+        ixc_mbuf_put(m);
+        ixc_router_tell("syslog send to netif but no netif object");
+        return -1;
+    }
+
     m->next=NULL;
 
     if(NULL==netif->sent_first){

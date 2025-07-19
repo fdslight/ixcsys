@@ -101,14 +101,15 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
 {
     struct ixc_ether_header *header;
     struct ixc_netif *netif=mbuf->netif;
+    int length=mbuf->end-mbuf->begin;
     unsigned short type;
     
     // 检查长度是否合法,不合法直接丢包
-    if(mbuf->end-mbuf->begin<14){
+    if(length<46){
         ixc_mbuf_put(mbuf);
         return;
     }
-
+    
     //IXC_MBUF_LOOP_TRACE(mbuf);
 
     header=(struct ixc_ether_header *)(mbuf->data+mbuf->begin);
