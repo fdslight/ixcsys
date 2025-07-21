@@ -1595,9 +1595,6 @@ class helper(object):
         logging.print_alert("start PPPoE re-dial")
         self.__pppoe.reset()
 
-    def nat66_enable(self, enable: bool):
-        self.router.ip6_nat66_enable(enable)
-
     def rpc_fn_call(self, name: str, arg_data: bytes):
         """
         :return (is_error,byte_message)
