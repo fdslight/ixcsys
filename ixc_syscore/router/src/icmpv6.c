@@ -10,6 +10,7 @@
 #include "route.h"
 #include "global.h"
 #include "pppoe.h"
+#include "nat66.h"
 
 static int icmpv6_isset_dns=0;
 static unsigned char icmpv6_dnsserver[16];
@@ -310,6 +311,18 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
 
+    netif->mtu_v6=mtu;
+    memcpy(netif->ip6_default_router_hwaddr,gw_hwaddr,6);
+    // 设置默认路由
+    ixc_route_add(unspec_addr,0,unspec_addr,1);
+
+    // 开启了nat66那么更新nat地址
+    if(ixc_nat66_is_enabled()){
+        ixc_nat66_set_wan_prefix(if_lan->ip6addr,opt_prefix->prefix,opt_prefix->prefix_len);
+        ixc_mbuf_put(m);
+        return;
+    }
+
     // 前缀发生改变,发送失效RA
     // 发送路由无效报文
     if(ixc_icmpv6_prefix_is_changed(if_lan,opt_prefix->prefix,opt_prefix->prefix_len)){
@@ -326,12 +339,6 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     if_lan->v6_prefix_preferred_lifetime=ntohl(opt_prefix->preferred_lifetime);
     
     IXC_PRINT_IP6("IPv6 RA Prefix Address is ",opt_prefix->prefix);
-
-    netif->mtu_v6=mtu;
-    memcpy(netif->ip6_default_router_hwaddr,gw_hwaddr,6);
-
-    // 设置默认路由
-    ixc_route_add(unspec_addr,0,unspec_addr,1);
 
     ixc_mbuf_put(m);
 }

@@ -38,12 +38,14 @@ static void ixc_ip6_sysloop_cb(struct sysloop *loop)
 
     ip6_up_time=time(NULL);
 
-    if(ixc_pppoe_is_enabled()){
+    if(!ixc_route_is_enabled_ipv6_pass()){
         ixc_icmpv6_send_rs();
+        if(netif->isset_ip6){
+            ixc_icmpv6_send_ra(NULL,NULL);
+        }
     }
-
     // 如果设置了IPv6那么定时发送RA
-    if(!ixc_route_is_enabled_ipv6_pass() && netif->isset_ip6) ixc_icmpv6_send_ra(NULL,NULL);
+    //if(!ixc_route_is_enabled_ipv6_pass() && netif->isset_ip6) ixc_icmpv6_send_ra(NULL,NULL);
 }
 
 static int ixc_ip6_check_ok(struct ixc_mbuf *m)

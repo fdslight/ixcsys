@@ -1244,6 +1244,7 @@ class helper(object):
         if enable_static_ipv6:
             self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ip6addr, int(v6_prefix),
                                      True)
+            self.router.ip6_nat66_enable(True)
         self.router.route_ipv6_pass_enable(enable_ipv6_pass)
         self.router.ip6sec_enable(enable_ipv6_security)
         self.router.g_manage_addr_set(manage_addr, False)
@@ -1593,6 +1594,9 @@ class helper(object):
 
         logging.print_alert("start PPPoE re-dial")
         self.__pppoe.reset()
+
+    def nat66_enable(self, enable: bool):
+        self.router.ip6_nat66_enable(enable)
 
     def rpc_fn_call(self, name: str, arg_data: bytes):
         """

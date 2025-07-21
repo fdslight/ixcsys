@@ -34,6 +34,7 @@
 #include "traffic_log.h"
 #include "icmpv6.h"
 #include "passthrough.h"
+#include "nat66.h"
 
 #include "../../../pywind/clib/pycall.h"
 #include "../../../pywind/clib/debug.h"
@@ -453,6 +454,17 @@ router_ip_4in6_enable(PyObject *self,PyObject *args)
     }
 
     Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_ip6_nat66_enable(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+
+    ixc_nat66_enable(enable);
+
+    Py_RETURN_NONE;
 }
 
 /// 添加路由
@@ -1188,6 +1200,8 @@ static PyMethodDef routerMethods[]={
     //
     {"ip_4in6_enable",(PyCFunction)router_ip_4in6_enable,METH_VARARGS,"enable/disable 4in6 tunnel"},
     //
+    {"ip6_nat66_enable",(PyCFunction)router_ip6_nat66_enable,METH_VARARGS,"enable/disable nat66"},
+    //
     {"route_add",(PyCFunction)router_route_add,METH_VARARGS,"add route"},
     {"route_del",(PyCFunction)router_route_del,METH_VARARGS,"delete route"},
     {"route_ipv6_pass_enable",(PyCFunction)router_route_ipv6_pass_enable,METH_VARARGS,"enable/disable IPv6 pass"},
@@ -1711,6 +1725,12 @@ static void ixc_start(int debug)
     rs=ixc_g_init();
     if(rs<0){
         STDERR("cannot init global\r\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    rs=ixc_nat66_init();
+    if(rs<0){
+        STDERR("cannot init nat66\r\n");
         exit(EXIT_SUCCESS);
     }
 

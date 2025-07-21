@@ -3,6 +3,7 @@
 
 #include "qos.h"
 #include "nat.h"
+#include "nat66.h"
 #include "route.h"
 #include "addr_map.h"
 #include "debug.h"
@@ -99,8 +100,11 @@ static void ixc_qos_send_to_next(struct ixc_mbuf *m)
 {
     if(IXC_MBUF_FROM_LAN==m->from){
         //DBG_FLAGS;
-        if(m->is_ipv6) ixc_addr_map_handle(m);
-        else ixc_nat_handle(m);
+        if(m->is_ipv6){
+            ixc_addr_map_handle(m);
+        }else{
+            ixc_nat_handle(m);
+        }
     }else{
         //DBG_FLAGS;
         ixc_route_handle(m);
@@ -164,9 +168,12 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 
     // 只对LAN to WAN的流量进行QOS,因为无法控制WAN to LAN的流量
     if(IXC_MBUF_FROM_WAN==m->from){
+        ixc_nat66_prefix_modify(m,0);
         ixc_qos_send_to_next(m);
         return;
     }
+
+    ixc_nat66_prefix_modify(m,1);
 
     size=m->tail-m->offset;
     if(size<=ixc_qos.qos_mpkt_first_size){
