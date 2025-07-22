@@ -44,9 +44,10 @@ A software router for Linux
 
 # about Packet forwarding speed(the software only support single-core forward packet)
 1.Intel J1800 CPU or arm cortex-a53:100Mbit/s  
-2.Intel N5105:1000Mbit/s     
-3.Raspberry PI 4 or arm cortex-A72:300Mbit/s   
+2.Intel N5105:at least 1000Mbit/s    
+3.Raspberry PI4 or arm cortex-A72:300Mbit/s   
 4.AMD Opteron x3421:500Mbit/s   
+5.Intel i5-6500:2000Mbit/s
 
 # why use Linux tuntap
-netmap is not the part of Linux kernel,though FreeBSD support netmap,but FreeBSD less hardware is supported.
+netmap is not the part of Linux kernel,though FreeBSD support netmap,but FreeBSD netmap less hardware is supported.
