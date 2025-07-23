@@ -204,6 +204,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     struct ixc_addr_map_record *r=NULL;
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
     int is_sent=0;
+    unsigned char *dst_addr=header->dst_addr;
     
     // 如果直通那么直通数据包
     if(m->passthrough){
@@ -219,6 +220,10 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
         return;
     }*/
 
+    if(IXC_NETIF_WAN==netif->type){
+        dst_addr=m->next_host;
+    }
+
     r=ixc_addr_map_get(m->next_host,1);
 
     if(NULL==r) is_sent=1;
@@ -229,10 +234,10 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     // 找不到记录那么就发送ICMPv6 NS报文
     if(is_sent){
         if(0xfe==header->dst_addr[0]){
-            ixc_icmpv6_send_ns(netif,netif->ip6_local_link_addr,header->dst_addr);
+            ixc_icmpv6_send_ns(netif,netif->ip6_local_link_addr,dst_addr);
         }else{
             if(netif->isset_ip6){
-                ixc_icmpv6_send_ns(netif,netif->ip6addr,header->dst_addr);
+                ixc_icmpv6_send_ns(netif,netif->ip6addr,dst_addr);
             }
         }
         
