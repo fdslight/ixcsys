@@ -313,9 +313,14 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 
     netif->mtu_v6=mtu;
     memcpy(netif->ip6_default_router_hwaddr,gw_hwaddr,6);
-    // 设置默认路由
-    ixc_route_add(unspec_addr,0,unspec_addr,1);
 
+    // 设置默认路由
+    if(ixc_pppoe_is_enabled()){
+        ixc_route_add(unspec_addr,0,unspec_addr,1);
+    }else{
+        ixc_route_add(unspec_addr,0,iphdr->src_addr,1);
+    }
+    
     // 开启了nat66那么更新nat地址
     if(ixc_nat66_is_enabled()){
         ixc_nat66_set_wan_prefix(if_lan->ip6addr,opt_prefix->prefix,opt_prefix->prefix_len);
