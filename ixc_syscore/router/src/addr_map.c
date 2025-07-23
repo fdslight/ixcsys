@@ -204,7 +204,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     struct ixc_addr_map_record *r=NULL;
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
     int is_sent=0;
-    unsigned char *dst_addr=header->dst_addr;
+    unsigned char *dst_addr=m->next_host;
     
     // 如果直通那么直通数据包
     if(m->passthrough){
@@ -219,10 +219,6 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
         ixc_ether_send(m,1);
         return;
     }*/
-
-    if(IXC_NETIF_WAN==netif->type){
-        dst_addr=m->next_host;
-    }
 
     r=ixc_addr_map_get(m->next_host,1);
 
