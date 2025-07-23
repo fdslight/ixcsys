@@ -202,7 +202,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
 {
     struct ixc_netif *netif=m->netif;
     struct ixc_addr_map_record *r=NULL;
-    struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
+    //struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
     int is_sent=0;
     unsigned char *dst_addr=m->next_host;
     
