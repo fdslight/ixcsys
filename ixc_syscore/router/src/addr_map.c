@@ -229,13 +229,13 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
 
     // 找不到记录那么就发送ICMPv6 NS报文
     if(is_sent){
-        if(0xfe==dst_addr[0]){
-            ixc_icmpv6_send_ns(netif,netif->ip6_local_link_addr,dst_addr);
-        }else{
-            if(netif->isset_ip6){
-                ixc_icmpv6_send_ns(netif,netif->ip6addr,dst_addr);
-            }
-        }
+        //if(0xfe==dst_addr[0]){
+        ixc_icmpv6_send_ns(netif,netif->ip6_local_link_addr,dst_addr);
+        //}else{
+        //    if(netif->isset_ip6){
+        //        ixc_icmpv6_send_ns(netif,netif->ip6addr,dst_addr);
+        //    }
+        //}
         
         ixc_mbuf_put(m);
         return;
