@@ -685,7 +685,8 @@ static void ixc_route_handle_for_ipv6(struct ixc_mbuf *m)
     if(!memcmp(header->dst_addr,netif->ip6addr,16)){
         ixc_route_handle_for_ipv6_local(m,header);
         return;
-    }    
+    }
+
     //IXC_PRINT_IP6("PRINT IP6",header->dst_addr);
     r=ixc_route_match(header->dst_addr,1);
 

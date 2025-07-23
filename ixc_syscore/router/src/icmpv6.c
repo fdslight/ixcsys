@@ -398,6 +398,12 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         ptr=netif->ip6addr;
     }
 
+    // 开启了NAT66之后所有所有MAC地址都为WAN口的MAC地址
+    if(ixc_nat66_is_enabled() && IXC_NETIF_WAN==netif->type){
+        flags=1;
+        ptr=ns_hdr->target_addr;
+    }
+
     if(!flags){
         ixc_mbuf_put(m);
         return;
