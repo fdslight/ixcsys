@@ -443,8 +443,7 @@ static void ixc_icmpv6_handle_ns(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     //inet_ntop(AF_INET6,iphdr->src_addr,addr,128);
     //DBG("from:%s %x:%x:%x:%x\r\n",addr,ns_opt->hwaddr[0],ns_opt->hwaddr[1],ns_opt->hwaddr[2],ns_opt->hwaddr[3]);
 
-
-    ixc_icmpv6_send(netif,dst_hwaddr,ptr,dst_ipaddr,buf,size);
+    ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,dst_ipaddr,buf,size);
     ixc_mbuf_put(m);
 }
 
