@@ -213,10 +213,10 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
     struct ixc_netif *netif=mbuf->netif;
 
     // 未启用IPv6地址并且未开启IPv6穿透那么丢弃数据包
-    if(!ixc_route_is_enabled_ipv6_pass() && !ixc_pppoe_is_enabled()){
+    /*if(!ixc_route_is_enabled_ipv6_pass() && !ixc_pppoe_is_enabled()){
         ixc_mbuf_put(mbuf);
         return;
-    }
+    }*/
 
     //DBG_FLAGS;
     if(!ixc_ip6_check_ok(mbuf)){
