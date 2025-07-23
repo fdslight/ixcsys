@@ -579,6 +579,7 @@ int ixc_netif_wan6_iface_id_set(unsigned char *subnet)
     }
 
     ixc_ip6_addr_get(netif->hwaddr,subnet,netif->ip6addr);
+    netif->isset_ip6=1;
 
     return 0;
 }
