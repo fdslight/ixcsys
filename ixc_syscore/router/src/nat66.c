@@ -39,6 +39,31 @@ int ixc_nat66_set_wan_prefix(unsigned char *lan_prefix,unsigned char *wan_prefix
     return 0;
 }
 
+static void ixc_nat66_for_icmpv6(struct ixc_mbuf *m,unsigned char *new_addr,int is_src)
+{
+    struct netutil_icmpv6hdr *icmpv6hdr=(struct netutil_icmpv6hdr *)(m->data+m->offset+40);
+    struct netutil_ip6hdr *header=NULL;
+    unsigned char *ptr=m->data+m->offset+48;
+    int need_handle_flags=0;
+
+    switch(icmpv6hdr->type){
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            need_handle_flags=1;
+            break;
+        default:
+            need_handle_flags=0;
+            break;
+    }
+    // 只处理错误消息
+    if(!need_handle_flags) return;
+    // 重写错误消息内部的IPv6数据包
+    header=(struct netutil_ip6hdr *)ptr;
+    rewrite_ip6_addr(header,new_addr,is_src);
+}
+
 void ixc_nat66_prefix_modify(struct ixc_mbuf *m,int is_src)
 {
     unsigned char *new_addr_ptr=is_src?nat66.wan_ip6subnet:nat66.lan_ip6subnet;
@@ -58,4 +83,9 @@ void ixc_nat66_prefix_modify(struct ixc_mbuf *m,int is_src)
     memcpy(new_addr+8,modify_ptr+8,8);
 
     rewrite_ip6_addr(header,new_addr,is_src);
+
+    // 对ICMPv6进行特殊处理,以便支持错误机制
+    if(58==header->next_header){
+        ixc_nat66_for_icmpv6(m,new_addr,is_src);
+    }
 }
