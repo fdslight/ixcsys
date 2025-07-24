@@ -241,6 +241,10 @@ def __install_all(prefix=None):
         "ixc_main.py",
         "net_monitor.ini",
         "version",
+        #### 计划任务相关
+        # PPPoE自动拨号
+        "ixc_cron_pppoe_auto_redial.py",
+        # 计划更新器
         "ixc_cron_updater.py",
     ]
 
