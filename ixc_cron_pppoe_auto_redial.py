@@ -31,6 +31,7 @@ def start(h, m):
         if now_h == h and now_m == m:
             if flags: continue
             # print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
+            # 因为10秒检查一次,可能一分钟会重拨多次,但只需要拨号一次就可以
             do_redial()
             flags = True
         else:
