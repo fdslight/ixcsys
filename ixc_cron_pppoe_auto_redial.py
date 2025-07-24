@@ -22,13 +22,19 @@ def start(h, m):
 
     if pid != 0: sys.exit(0)
 
+    flags = False
+
     while 1:
         now_h = int(time.strftime("%H"))
         now_m = int(time.strftime("%M"))
 
         if now_h == h and now_m == m:
+            if flags: continue
             # print("NOTIFY:start auto update  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
             do_redial()
+            flags = True
+        else:
+            flags = False
         time.sleep(10)
     ''''''
 
