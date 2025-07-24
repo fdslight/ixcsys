@@ -61,7 +61,13 @@ static void ixc_nat66_for_icmpv6(struct ixc_mbuf *m,unsigned char *new_addr,int 
     if(!need_handle_flags) return;
     // 重写错误消息内部的IPv6数据包
     header=(struct netutil_ip6hdr *)ptr;
-    rewrite_ip6_addr(header,new_addr,is_src);
+
+    // 这里IPv6内部原始数据包需要反过来,因为是发送流量或者接收流量的复制
+    if(is_src){
+        rewrite_ip6_addr(header,new_addr,0);
+    }else{
+        rewrite_ip6_addr(header,new_addr,1);
+    }
 }
 
 void ixc_nat66_prefix_modify(struct ixc_mbuf *m,int is_src)
