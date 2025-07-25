@@ -53,7 +53,14 @@ static void ixc_ether_traffic_statistics(struct ixc_mbuf *m,int dir)
 int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
 {
     struct ixc_ether_header eth_header;
+    struct ixc_netif *netif=mbuf->netif;
     int size;
+
+    if(NULL==netif){
+        STDERR("empty netif\r\n");
+        ixc_mbuf_put(mbuf);
+        return 0;
+    }
 
     if(!add_header){
         ixc_ether_traffic_statistics(mbuf,IXC_TRAFFIC_LOG_DIR_IN);
@@ -87,7 +94,7 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
         mbuf->end+=(60-size);
     }
     
-    if(ether_net_monitor_enable && mbuf->netif->type==IXC_NETIF_WAN){
+    if(ether_net_monitor_enable && netif->type==IXC_NETIF_WAN){
         ixc_ether_copy_to_monitor_host(mbuf);
     }
     
