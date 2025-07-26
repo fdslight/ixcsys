@@ -114,22 +114,8 @@ static void ixc_qos_send_to_next(struct ixc_mbuf *m)
 static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr = (struct netutil_iphdr *)(m->data + m->offset);
-    int size;
+    int size,is_first=0;
     //struct ixc_addr_map_record *addr_map_record;
-
-    // 隧道流量优先
-    if(ixc_qos.tunnel_isset){
-        if(!ixc_qos.tunnel_is_ipv6){
-            if(!memcmp(iphdr->dst_addr,ixc_qos.tunnel_addr,4)){
-                ixc_qos_send_to_next(m);
-                return;
-            }
-            if(!memcmp(iphdr->src_addr,ixc_qos.tunnel_addr,4)){
-                ixc_qos_send_to_next(m);
-                return;
-            }
-        }
-    }
 
     // 只对LAN to WAN的流量进行QOS,因为无法控制WAN to LAN的流量
     if(IXC_MBUF_FROM_WAN==m->from){
@@ -137,34 +123,28 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
         return;
     }
 
+    // 隧道流量优先
+    if(ixc_qos.tunnel_isset){
+        if(!ixc_qos.tunnel_is_ipv6){
+            if(!memcmp(iphdr->src_addr,ixc_qos.tunnel_addr,4)) is_first=1;
+        }
+    }
+
     size=m->tail-m->offset;
-    if(size<=ixc_qos.qos_mpkt_first_size){
+
+    if(size<=ixc_qos.qos_mpkt_first_size) is_first=1;
+    if(is_first){
         ixc_qos_send_to_next(m);
     }else{
         ixc_qos_put(m,iphdr,0);
     }
-    
 }
 
 static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
     //struct ixc_addr_map_record *addr_map_record;
-    int size;
-
-    // 隧道流量优先
-    if(ixc_qos.tunnel_isset){
-        if(ixc_qos.tunnel_is_ipv6){
-            if(!memcmp(header->dst_addr,ixc_qos.tunnel_addr,16)){
-                ixc_qos_send_to_next(m);
-                return;
-            }
-            if(!memcmp(header->src_addr,ixc_qos.tunnel_addr,16)){
-                ixc_qos_send_to_next(m);
-                return;
-            }
-        }
-    }
+    int size,is_first=0;
 
     // 只对LAN to WAN的流量进行QOS,因为无法控制WAN to LAN的流量
     if(IXC_MBUF_FROM_WAN==m->from){
@@ -173,10 +153,19 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
         return;
     }
 
+    // 隧道流量优先
+    if(ixc_qos.tunnel_isset){
+        if(ixc_qos.tunnel_is_ipv6){
+            if(!memcmp(header->src_addr,ixc_qos.tunnel_addr,16)) is_first=1;
+        }
+    }
+
     ixc_nat66_prefix_modify(m,1);
 
     size=m->tail-m->offset;
-    if(size<=ixc_qos.qos_mpkt_first_size){
+    if(size<=ixc_qos.qos_mpkt_first_size) is_first=1;
+
+    if(is_first){
         ixc_qos_send_to_next(m);
     }else{
         ixc_qos_put(m,header,1);
