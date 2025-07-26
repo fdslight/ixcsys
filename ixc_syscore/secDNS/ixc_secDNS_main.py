@@ -2,7 +2,7 @@
 import struct
 import sys, os, signal, json, time
 
-import dns.message, dns
+import dns.message, dns.resolver
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
