@@ -55,9 +55,9 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "非法表单提交")
             return
 
-        if not netutils.is_ipv4_address(host) and not netutils.is_ipv6_address(host):
-            self.json_resp(True, "提交了错误的IP地址,IP地址必须为IPv4或者IPv6")
-            return
+        #if not netutils.is_ipv4_address(host) and not netutils.is_ipv6_address(host):
+        #    self.json_resp(True, "提交了错误的IP地址,IP地址必须为IPv4或者IPv6")
+        #    return
 
         RPC.fn_call("secDNS", "/config", "dot_host_del", host)
 
