@@ -583,25 +583,12 @@ class service(dispatcher.dispatcher):
         logging.print_info("DNS_QUERY: %s from %s" % (host, address[0]))
         # 如果域名在非使用安全DNS的域名当中,强制不使用匹配规则
         if host in self.__no_use_sec_dns_domains:
-            match_rs = False
+            logging.print_info("security DNS domain is %s" % host)
+            match_rs = None
 
-        if not match_rs:
-            r_type = None
-            is_aaaa = False
-            if dns_utils.is_aaaa_request(message):
-                is_aaaa = True
-                r_type = DNSCache.AAAA_RECORD
-            if dns_utils.is_a_request(message):
-                r_type = DNSCache.A_RECORD
-            if r_type is not None:
-                record = self.__dns_cache.record_get(host, _type=r_type)
-                # 缓存存在记录那么从缓存响应
-                if not record:
-                    resp_msg = dns_utils.build_dns_addr_response(new_dns_id, host, record['address'], is_ipv6=is_aaaa)
-                    self.handle_msg_from_dnsserver(resp_msg, from_cache=True)
-                    logging.print_info("From DNS Cache for Host %s" % host)
-                    return
-                ''''''
+        if match_rs is None:
+            sent_ok = self.send_dns_resp_from_cache(new_dns_id, host, message)
+            if sent_ok: return
             self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6)
             return
 
@@ -628,7 +615,9 @@ class service(dispatcher.dispatcher):
             del self.__id_wan2lan[new_dns_id]
             return
         # 发送DNS数据到其他应用程序,如果找不到文件号那么丢弃数据包
-        if self.__dns_client < 0: return
+        if self.__dns_client < 0:
+            del self.__id_wan2lan[new_dns_id]
+            return
 
         msg = {
             "action": action,
@@ -637,7 +626,32 @@ class service(dispatcher.dispatcher):
         }
 
         self.__id_wan2lan[new_dns_id]["from_forward"] = True
+
+        sent_ok = self.send_dns_resp_from_cache(new_dns_id, host, message)
+        if sent_ok: return
+
         self.get_handler(self.__dns_client).send_forward_msg(pickle.dumps(msg))
+
+    def send_dns_resp_from_cache(self, dns_id, host, message):
+        r_type = None
+        is_aaaa = False
+        if dns_utils.is_aaaa_request(message):
+            is_aaaa = True
+            r_type = DNSCache.AAAA_RECORD
+        if dns_utils.is_a_request(message):
+            r_type = DNSCache.A_RECORD
+
+        if r_type is None: return False
+
+        record = self.__dns_cache.record_get(host, _type=r_type)
+
+        if record is None: return False
+
+        resp_msg = dns_utils.build_dns_addr_response(dns_id, host, record['address'], is_ipv6=is_aaaa)
+        self.handle_msg_from_dnsserver(resp_msg, from_cache=True)
+        logging.print_info("From DNS Cache for Host %s" % host)
+
+        return True
 
     @property
     def matcher(self):
