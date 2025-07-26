@@ -489,11 +489,15 @@ class service(dispatcher.dispatcher):
                     r_type = DNSCache.A_RECORD
                     if is_ipv6: r_type = DNSCache.AAAA_RECORD
                     self.__dns_cache.set_cache_record(host, ip, _type=r_type)
-                if self.__ip_match.match(ip, is_ipv6=is_ipv6): continue
+                if self.__ip_match.match(ip, is_ipv6=is_ipv6) and not o["from_forward"]: continue
+                action = o['action']
+                if action is None: continue
+                if action != "proxy": continue
                 # DNS自动设置路由后告知proxy程序,由代理程序管理路由
                 # self.set_route(ip, is_ipv6=is_ipv6)
+                # 报告是代理域名
                 msg = {
-                    "action": "proxy_ip",
+                    "action": "proxy_report",
                     "priv_data": None,
                     "message": (ip, is_ipv6,)
                 }
@@ -591,7 +595,7 @@ class service(dispatcher.dispatcher):
         if match_rs is None:
             sent_ok = self.send_dns_resp_from_cache(new_dns_id, host, message)
             if sent_ok: return
-            self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6,is_secdns_server=is_secdns_server)
+            self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6, is_secdns_server=is_secdns_server)
             return
 
         action = match_rs["action"]
