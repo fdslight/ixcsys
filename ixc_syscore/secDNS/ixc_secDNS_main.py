@@ -254,6 +254,7 @@ class service(dispatcher.dispatcher):
         if del_idx < 0: return
         del self.__dot_configs[del_idx]
         self.save_dot_configs()
+        if not self.__dot_configs: return
         self.start()
 
     def secDNS_enable(self, enable: bool):
