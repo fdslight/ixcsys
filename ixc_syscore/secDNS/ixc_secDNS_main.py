@@ -160,6 +160,7 @@ class service(dispatcher.dispatcher):
         if not enable: return
 
         logging.print_info("start secDNS")
+        if len(self.__dot_configs) == 0: return
 
         self.set_dns_forward()
 
@@ -256,7 +257,6 @@ class service(dispatcher.dispatcher):
         if del_idx < 0: return
         del self.__dot_configs[del_idx]
         self.save_dot_configs()
-        if not self.__dot_configs: return
         self.start()
 
     def secDNS_enable(self, enable: bool):
