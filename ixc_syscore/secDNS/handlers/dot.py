@@ -60,8 +60,11 @@ class dot_client(tcp_handler.tcp_handler):
             logging.print_error("cannot get %s ip address" % host)
             s.close()
             return -1
-
-        self.connect((server_ip, port))
+        try:
+            self.connect((server_ip, port))
+        except socket.gaierror:
+            logging.print_error()
+            return -1
 
         return self.fileno
 
