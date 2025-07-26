@@ -36,6 +36,8 @@ class controller(rpc.controller):
             "set_sec_dns_forward": self.set_sec_dns_forward,
             "add_sec_dns_domains": self.add_sec_dns_domains,
             "del_sec_dns_domains": self.del_sec_dns_domains,
+            "set_dns_cache_timeout":self.set_dns_cache_timeout,
+            "clear_dns_cache":self.clear_dns_cache,
         }
 
     def config_get(self):
@@ -175,4 +177,11 @@ class controller(rpc.controller):
     def del_sec_dns_domains(self, domains: list):
         self.__runtime.del_sec_dns_domains(domains)
 
+        return 0, None
+
+    def set_dns_cache_timeout(self, seconds: int):
+        return 0, self.__runtime.set_dns_cache_timeout(seconds)
+
+    def clear_dns_cache(self):
+        self.__runtime.clear_dns_cache()
         return 0, None

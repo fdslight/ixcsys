@@ -108,15 +108,29 @@
                 <input type="text" class="form-control" name="ipv6.second_dns" value="${self.V['ipv6']['second_dns']}"/>
             </div>
         </div>
+        <div class="form-group row">
+            <label for="缓存时间" class="col-sm-2 col-form-label">DNS缓存时间(秒)</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" name="public.dns_cache_timeout" value="${self.V['public']['dns_cache_timeout']}"/>
+            </div>
+        </div>
 
         <div class="form-group row">
             <div class="col-sm-12">
                 <button type="submit" class="btn btn-primary float-lg-right">确定</button>
             </div>
+            <a href="#" class="btn float-lg-right" id="ixc-dns-cache-clear">清除DNS缓存</a>
         </div>
     </form>
 </div>
 <script type="text/javascript">
     $(document).ready(function () {
+        $(".btn#ixc-dns-cache-clear").click(function (){
+            $.get("/dns", {"action":"cache_clear"}, function (result) {
+                let is_error = result["is_error"];
+                let message = result["message"];
+                alert(message);
+            });
+        });
     });
 </script>

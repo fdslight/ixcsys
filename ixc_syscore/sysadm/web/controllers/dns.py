@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from cgitb import enable
 
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
 import ixc_syslib.pylib.RPCClient as RPC
@@ -9,10 +8,16 @@ import pywind.lib.netutils as netutils
 
 class controller(base_controller.BaseController):
     def myinit(self):
-        self.request.set_allow_methods(["POST"])
+        self.request.set_allow_methods(["POST", "GET"])
         return True
 
     def handle(self):
+        action = self.request.get_argument("action", is_qs=True, is_seq=False, default="")
+        if action == "cache_clear":
+            RPC.fn_call("DNS", "/config", "clear_dns_cache")
+            self.json_resp(False, "清除DNS缓存成功")
+            return
+
         enable_edns = self.request.get_argument("enable_edns", is_qs=False, is_seq=False, default="")
         ip4_auto = self.request.get_argument("ipv4.enable_auto", is_qs=False, is_seq=False)
         ip6_auto = self.request.get_argument("ipv6.enable_auto", is_qs=False, is_seq=False)
@@ -82,6 +87,20 @@ class controller(base_controller.BaseController):
             self.json_resp(True, self.LA("there is same for main_dns and second_dns"))
             return
 
+        dns_cache_timeout = self.request.get_argument("dns_cache_timeout", is_qs=False, is_seq=False)
+
+        try:
+            dns_cache_timeout = int(dns_cache_timeout)
+        except ValueError:
+            self.json_resp(True, "无效的DNS缓存值")
+            return
+        except TypeError:
+            dns_cache_timeout = 60
+
+        if dns_cache_timeout < 30 or dns_cache_timeout > 86400:
+            self.json_resp(True, "DNS缓存值必须在30秒与86400秒之间")
+            return
+
         if ipv4_main_dns:
             RPC.fn_call("DNS", "/config", "set_parent_server", ipv4_main_dns, is_main_server=True, is_ipv6=False)
         if ipv4_second_dns:
@@ -95,6 +114,7 @@ class controller(base_controller.BaseController):
         RPC.fn_call("DNS", "/config", "enable", ip6_auto, is_ipv6=True)
         RPC.fn_call("DNS", "/config", "set_dnsv6_drop_enable", enable_dnsv6_drop)
         RPC.fn_call("DNS", "/config", "dns_no_system_drop_enable", enable_dns_no_system_drop)
+        RPC.fn_call("DNS", "/config", "set_dns_cache_timeout", dns_cache_timeout)
         RPC.fn_call("DNS", "/config", "save")
 
         RPC.fn_call("secDNS", "/config", "enable", enable_edns)

@@ -26,6 +26,7 @@ import ixc_syscore.DNS.pylib.rule as rule
 import ixc_syscore.DNS.pylib.os_resolv as os_resolv
 import ixc_syscore.DNS.pylib.sec_rule as sec_rule
 import ixc_syscore.DNS.pylib.ip_match as ip_match
+import ixc_syscore.DNS.pylib.DNSCache as DNSCache
 
 PID_FILE = "%s/proc.pid" % os.getenv("IXC_MYAPP_TMP_DIR")
 
@@ -125,6 +126,8 @@ class service(dispatcher.dispatcher):
     __router_wan_configs = None
     __read_pppoe_dns_time = None
 
+    __dns_cache = None
+
     def init_func(self, *args, **kwargs):
         global_vars["ixcsys.DNS"] = self
 
@@ -166,7 +169,9 @@ class service(dispatcher.dispatcher):
         self.__enable_sec_dns = False
         self.__sec_dns_forward_port = 0
         self.__sec_dns_forward_key = os.urandom(4)
-        self.__no_use_sec_dns_domains={}
+        self.__no_use_sec_dns_domains = {}
+
+        self.__dns_cache = DNSCache.DNSCache()
 
         RPCClient.wait_processes(["router", ])
 
@@ -295,6 +300,7 @@ class service(dispatcher.dispatcher):
         if "enable_auto" not in ip6_cfg: ip6_cfg["enable_auto"] = "1"
         if "enable_ipv6_dns_drop" not in pub: pub["enable_ipv6_dns_drop"] = "0"
         if "enable_dns_no_system_drop" not in pub: pub["enable_dns_no_system_drop"] = "0"
+        if "dns_cache_timeout" not in pub: pub["dns_cache_timeout"] = "60"
 
         # 如果开启了丢弃,那么执行
         if bool(int(pub["enable_dns_no_system_drop"])):
@@ -386,6 +392,13 @@ class service(dispatcher.dispatcher):
                                                  is_ipv6=True)
         self.__dns_server = self.create_handler(-1, dns_proxyd.proxyd, (manage_addr, 53), is_ipv6=False)
 
+        pub = self.__dns_configs["public"]
+        try:
+            cache_timeout = int(pub['dns_cache_timeout'])
+        except ValueError:
+            cache_timeout = 60
+        self.__dns_cache.set_timeout(cache_timeout)
+
     def start_scgi(self):
         scgi_configs = {
             "use_unix_socket": True,
@@ -433,7 +446,7 @@ class service(dispatcher.dispatcher):
 
         self.get_handler(fd).send_request_msg(message)
 
-    def handle_msg_from_dnsserver(self, message: bytes):
+    def handle_msg_from_dnsserver(self, message: bytes, from_cache=False):
         """处理来自于DNS服务器的消息
         """
         dns_id, = struct.unpack("!H", message[0:2])
@@ -450,8 +463,6 @@ class service(dispatcher.dispatcher):
         o = self.__id_wan2lan[dns_id]
         x_dns_id = o["id"]
         new_msg = b"".join([struct.pack("!H", x_dns_id), message[2:]])
-
-        if self.handler_exists(fd): self.get_handler(fd).send_msg(new_msg, o["address"])
 
         if not o["from_forward"] and self.__forward_result:
             try:
@@ -472,6 +483,13 @@ class service(dispatcher.dispatcher):
                     else:
                         continue
                     if not flags: continue
+                    host = self.__id_wan2lan[dns_id]
+
+                    # 如果来自于非缓存响应那么缓存DNS记录
+                    if host is not None and not from_cache:
+                        r_type = DNSCache.A_RECORD
+                        if is_ipv6: r_type = DNSCache.AAAA_RECORD
+                        self.__dns_cache.set_cache_record(host, _type=r_type)
                     if self.__ip_match.match(ip, is_ipv6=is_ipv6): continue
                     # DNS自动设置路由后告知proxy程序,由代理程序管理路由
                     # self.set_route(ip, is_ipv6=is_ipv6)
@@ -484,6 +502,7 @@ class service(dispatcher.dispatcher):
                     logging.print_info("notify proxy for ip address %s" % ip)
                 ''''''
             ''''''
+        if self.handler_exists(fd): self.get_handler(fd).send_msg(new_msg, o["address"])
         # 此处删除记录
         del self.__id_wan2lan[dns_id]
 
@@ -507,7 +526,7 @@ class service(dispatcher.dispatcher):
         new_msg = b"".join(_list)
 
         self.__id_wan2lan[new_dns_id] = {"id": dns_id, "address": address, "is_ipv6": is_ipv6,
-                                         "time": time.time(), "from_forward": False}
+                                         "time": time.time(), "from_forward": False, "host": None}
 
         questions = msg_obj.question
         if len(questions) != 1:
@@ -554,15 +573,35 @@ class service(dispatcher.dispatcher):
                 return
             ''''''
         # WAN无连接允许本地hosts映射
-        if not self.__wan_ok: return
+        if not self.__wan_ok:
+            del self.__id_wan2lan[new_dns_id]
+            return
 
+        self.__id_wan2lan[new_dns_id]['host'] = host
         match_rs = self.__matcher.match(host)
 
         logging.print_info("DNS_QUERY: %s from %s" % (host, address[0]))
         # 如果域名在非使用安全DNS的域名当中,强制不使用匹配规则
         if host in self.__no_use_sec_dns_domains:
             match_rs = False
+
         if not match_rs:
+            r_type = None
+            is_aaaa = False
+            if dns_utils.is_aaaa_request(message):
+                is_aaaa = True
+                r_type = DNSCache.AAAA_RECORD
+            if dns_utils.is_a_request(message):
+                r_type = DNSCache.A_RECORD
+            if r_type is not None:
+                record = self.__dns_cache.record_get(host, _type=r_type)
+                # 缓存存在记录那么从缓存响应
+                if not record:
+                    resp_msg = dns_utils.build_dns_addr_response(new_dns_id, host, record['address'], is_ipv6=is_aaaa)
+                    self.handle_msg_from_dnsserver(resp_msg, from_cache=True)
+                    logging.print_info("From DNS Cache for Host %s" % host)
+                    return
+                ''''''
             self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6)
             return
 
@@ -801,6 +840,17 @@ class service(dispatcher.dispatcher):
     def save_sec_rules(self):
         sec_rule.save_to_file(self.__sec_rules_dict, self.__sec_rule_path)
 
+    def set_dns_cache_timeout(self, seconds: int):
+        pub = self.__dns_configs["public"]
+        pub["dns_cache_timeout"] = seconds
+
+        logging.print_info("set DNS Cache Timeout to %s" % seconds)
+        return self.__dns_cache.set_timeout(seconds)
+
+    def clear_dns_cache(self):
+        logging.print_info("clear DNS Cache")
+        self.__dns_cache.clear_all_records()
+
     def release(self):
         if self.__scgi_fd > 0: self.delete_handler(self.__scgi_fd)
         if self.__dns_server > 0: self.delete_handler(self.__dns_server)
@@ -885,6 +935,8 @@ class service(dispatcher.dispatcher):
 
         if self.is_pppoe_dial():
             self.update_pppoe_dns()
+
+        self.__dns_cache.cache_loop()
 
 
 def main():
