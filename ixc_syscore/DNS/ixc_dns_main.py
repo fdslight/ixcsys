@@ -464,40 +464,41 @@ class service(dispatcher.dispatcher):
         x_dns_id = o["id"]
         new_msg = b"".join([struct.pack("!H", x_dns_id), message[2:]])
 
-        if not o["from_forward"] and self.__forward_result:
-            try:
-                msg_obj = dns.message.from_wire(new_msg)
-            except:
-                del self.__id_wan2lan[dns_id]
-                return
-            for rrset in msg_obj.answer:
-                for cname in rrset:
-                    flags = False
-                    ip = cname.__str__()
-                    is_ipv6 = False
-                    if netutils.is_ipv4_address(ip):
-                        flags = True
-                    elif netutils.is_ipv6_address(ip):
-                        flags = True
-                        is_ipv6 = True
-                    else:
-                        continue
-                    if not flags: continue
-                    host = self.__id_wan2lan[dns_id]['host']
+        # if not o["from_forward"] and self.__forward_result:
+        try:
+            msg_obj = dns.message.from_wire(new_msg)
+        except:
+            del self.__id_wan2lan[dns_id]
+            return
+        for rrset in msg_obj.answer:
+            for cname in rrset:
+                flags = False
+                ip = cname.__str__()
+                is_ipv6 = False
+                if netutils.is_ipv4_address(ip):
+                    flags = True
+                elif netutils.is_ipv6_address(ip):
+                    flags = True
+                    is_ipv6 = True
+                else:
+                    continue
+                if not flags: continue
+                host = self.__id_wan2lan[dns_id]['host']
 
-                    # 如果来自于非缓存响应那么缓存DNS记录
-                    if host is not None and not from_cache:
-                        r_type = DNSCache.A_RECORD
-                        if is_ipv6: r_type = DNSCache.AAAA_RECORD
-                        self.__dns_cache.set_cache_record(host, ip, _type=r_type)
-                    if self.__ip_match.match(ip, is_ipv6=is_ipv6): continue
-                    # DNS自动设置路由后告知proxy程序,由代理程序管理路由
-                    # self.set_route(ip, is_ipv6=is_ipv6)
-                    msg = {
-                        "action": "proxy_ip",
-                        "priv_data": None,
-                        "message": (ip, is_ipv6,)
-                    }
+                # 如果来自于非缓存响应那么缓存DNS记录
+                if host is not None and not from_cache:
+                    r_type = DNSCache.A_RECORD
+                    if is_ipv6: r_type = DNSCache.AAAA_RECORD
+                    self.__dns_cache.set_cache_record(host, ip, _type=r_type)
+                if self.__ip_match.match(ip, is_ipv6=is_ipv6): continue
+                # DNS自动设置路由后告知proxy程序,由代理程序管理路由
+                # self.set_route(ip, is_ipv6=is_ipv6)
+                msg = {
+                    "action": "proxy_ip",
+                    "priv_data": None,
+                    "message": (ip, is_ipv6,)
+                }
+                if self.__forward_result:
                     self.get_handler(self.__dns_client).send_forward_msg(pickle.dumps(msg))
                     logging.print_info("notify proxy for ip address %s" % ip)
                 ''''''
@@ -526,7 +527,7 @@ class service(dispatcher.dispatcher):
         new_msg = b"".join(_list)
 
         self.__id_wan2lan[new_dns_id] = {"id": dns_id, "address": address, "is_ipv6": is_ipv6,
-                                         "time": time.time(), "from_forward": False, "host": None}
+                                         "time": time.time(), "from_forward": False, "host": None, "action": None, }
 
         questions = msg_obj.question
         if len(questions) != 1:
@@ -626,6 +627,7 @@ class service(dispatcher.dispatcher):
         }
 
         self.__id_wan2lan[new_dns_id]["from_forward"] = True
+        self.__id_wan2lan[new_dns_id]["action"] = action
 
         sent_ok = self.send_dns_resp_from_cache(new_dns_id, host, message)
         if sent_ok: return
