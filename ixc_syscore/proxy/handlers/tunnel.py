@@ -112,6 +112,7 @@ class tcp_tunnel(tcp_handler.tcp_handler):
             logging.print_error("DNS_QUERY_ERROR %s" % server_address[0])
             return False
 
+        logging.print_general("proxy server ip", (server_ip, server_address[1],))
         try:
             self.connect((server_ip, server_address[1]), timeout=8)
             logging.print_general("connecting", server_address)
