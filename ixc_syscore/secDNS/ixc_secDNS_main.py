@@ -209,6 +209,8 @@ class service(dispatcher.dispatcher):
                 if netutils.is_ipv6_address(conf["host"]):
                     use_ipv6 = True
                 ''''''
+            else:
+                use_ipv6 = conf['force_ipv6']
             conf['force_ipv6'] = use_ipv6
 
         self.__dot_configs = js
