@@ -427,11 +427,11 @@ class service(dispatcher.dispatcher):
 
         return dns_id
 
-    def send_to_dnsserver(self, message: bytes, is_ipv6=False):
+    def send_to_dnsserver(self, message: bytes, is_ipv6=False, is_secdns_server=False):
         """发送到DNS服务器
         """
         # 如果开启了安全DNS,那么把数据发送到安全DNS
-        if self.__enable_sec_dns:
+        if self.__enable_sec_dns and not is_secdns_server:
             self.get_handler(self.__dns_client).send_forward_msg2(message, self.__sec_dns_forward_port,
                                                                   self.__sec_dns_forward_key)
             return
@@ -581,15 +581,17 @@ class service(dispatcher.dispatcher):
         match_rs = self.__matcher.match(host)
 
         logging.print_info("DNS_QUERY: %s from %s" % (host, address[0]))
+        is_secdns_server = False
         # 如果域名在非使用安全DNS的域名当中,强制不使用匹配规则
         if host in self.__no_use_sec_dns_domains:
             logging.print_info("security DNS domain is %s" % host)
+            is_secdns_server = True
             match_rs = None
 
         if match_rs is None:
             sent_ok = self.send_dns_resp_from_cache(new_dns_id, host, message)
             if sent_ok: return
-            self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6)
+            self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6,is_secdns_server=is_secdns_server)
             return
 
         action = match_rs["action"]
