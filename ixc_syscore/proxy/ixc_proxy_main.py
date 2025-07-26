@@ -919,8 +919,8 @@ class service(dispatcher.dispatcher):
         :param host:
         :return:
         """
-        if netutils.is_ipv4_address(host): return host
-        if netutils.is_ipv6_address(host): return host
+        if netutils.is_ipv4_address(host) and enable_ipv6: return None
+        if netutils.is_ipv6_address(host) and not enable_ipv6: return None
 
         resolver = dns.resolver.Resolver()
 
