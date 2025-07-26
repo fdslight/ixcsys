@@ -28,8 +28,13 @@ class controller(rpc.controller):
 
     def dot_host_add(self, host: str, hostname: str, comment: str, port=853, force_ipv6=False):
         # 必须为IPv4地址或者IPv6地址
-        if not netutils.is_ipv4_address(host) and not netutils.is_ipv6_address(host):
-            return 0, None
+        is_ipv6 = netutils.is_ipv6_address(host)
+        is_ipv4 = netutils.is_ipv4_address(host)
+
+        if is_ipv6:
+            force_ipv6 = True
+        if is_ipv4:
+            force_ipv6 = False
 
         try:
             port = int(port)

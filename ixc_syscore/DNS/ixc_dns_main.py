@@ -472,7 +472,6 @@ class service(dispatcher.dispatcher):
             return
         for rrset in msg_obj.answer:
             for cname in rrset:
-                flags = False
                 ip = cname.__str__()
                 is_ipv6 = False
                 if netutils.is_ipv4_address(ip):
@@ -481,7 +480,7 @@ class service(dispatcher.dispatcher):
                     flags = True
                     is_ipv6 = True
                 else:
-                    continue
+                    flags = False
                 if not flags: continue
                 host = self.__id_wan2lan[dns_id]['host']
 
