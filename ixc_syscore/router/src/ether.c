@@ -136,6 +136,7 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         return;
     }
 
+    memcpy(mbuf->orig_src_hwaddr,header->src_hwaddr,6);
     memcpy(mbuf->dst_hwaddr,header->dst_hwaddr,6);
     memcpy(mbuf->src_hwaddr,header->src_hwaddr,6);
 

@@ -51,10 +51,12 @@ struct ixc_mbuf{
     unsigned char next_host[16];
 #define IXC_MBUF_DATA_MAX_SIZE 0x10800
     unsigned char data[IXC_MBUF_DATA_MAX_SIZE];
-    unsigned char src_hwaddr[6];
+    unsigned char orig_src_hwaddr[6];
     unsigned char pad2[2];
-    unsigned char dst_hwaddr[6];
+    unsigned char src_hwaddr[6];
     unsigned char pad3[2];
+    unsigned char dst_hwaddr[6];
+    unsigned char pad4[2];
 };
 
 /// 检查是否造成了死循环

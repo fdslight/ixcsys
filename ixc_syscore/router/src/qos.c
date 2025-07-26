@@ -227,7 +227,7 @@ void ixc_qos_add(struct ixc_mbuf *m)
 {
     if(IXC_MBUF_FROM_LAN==m->from){
         if(ixc_qos_is_first_host(m->src_hwaddr)){
-            if(m->is_ipv6) ixc_nat66_prefix_modify(m,1);
+            //if(m->is_ipv6) ixc_nat66_prefix_modify(m,1);
             ixc_qos_send_to_next(m);
             return;
         }
