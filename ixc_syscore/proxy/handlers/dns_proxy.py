@@ -27,7 +27,7 @@ class dns_proxy(udp_handler.udp_handler):
         dns_msg = o["message"]
         action = o["action"]
 
-        if action != "proxy_report":
+        if action != "proxy_ip_report":
             self.dispatcher.send_dns_request_to_tunnel(action, dns_msg)
         else:
             # DNS自动设置路由后告知proxy程序,由代理程序管理路由

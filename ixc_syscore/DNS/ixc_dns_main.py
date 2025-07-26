@@ -495,9 +495,9 @@ class service(dispatcher.dispatcher):
                 if action != "proxy": continue
                 # DNS自动设置路由后告知proxy程序,由代理程序管理路由
                 # self.set_route(ip, is_ipv6=is_ipv6)
-                # 报告是代理域名
+                # 报告是需要走代理的IP,这里考虑缓存问题,需要向proxy报告
                 msg = {
-                    "action": "proxy_report",
+                    "action": "proxy_ip_report",
                     "priv_data": None,
                     "message": (ip, is_ipv6,)
                 }
