@@ -26,7 +26,7 @@ class controller(rpc.controller):
     def dot_servers_get(self):
         return 0, self.__runtime.dot_configs
 
-    def dot_host_add(self, host: str, hostname: str, comment: str, port=853):
+    def dot_host_add(self, host: str, hostname: str, comment: str, port=853, force_ipv6=False):
         # 必须为IPv4地址或者IPv6地址
         if not netutils.is_ipv4_address(host) and not netutils.is_ipv6_address(host):
             return 0, None
@@ -39,7 +39,7 @@ class controller(rpc.controller):
         if port < 1 or port > 65534:
             port = 853
 
-        return 0, self.__runtime.dot_host_add(host, hostname, comment, port=port)
+        return 0, self.__runtime.dot_host_add(host, hostname, comment, port=port, force_ipv6=force_ipv6)
 
     def dot_host_del(self, host: str):
         return 0, self.__runtime.dot_host_del(host)

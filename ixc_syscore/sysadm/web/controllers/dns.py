@@ -87,7 +87,7 @@ class controller(base_controller.BaseController):
             self.json_resp(True, self.LA("there is same for main_dns and second_dns"))
             return
 
-        dns_cache_timeout = self.request.get_argument("dns_cache_timeout", is_qs=False, is_seq=False)
+        dns_cache_timeout = self.request.get_argument("public.dns_cache_timeout", is_qs=False, is_seq=False)
 
         try:
             dns_cache_timeout = int(dns_cache_timeout)

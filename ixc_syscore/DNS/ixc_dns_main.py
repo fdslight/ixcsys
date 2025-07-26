@@ -483,7 +483,7 @@ class service(dispatcher.dispatcher):
                     else:
                         continue
                     if not flags: continue
-                    host = self.__id_wan2lan[dns_id]
+                    host = self.__id_wan2lan[dns_id]['host']
 
                     # 如果来自于非缓存响应那么缓存DNS记录
                     if host is not None and not from_cache:
