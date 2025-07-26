@@ -489,7 +489,7 @@ class service(dispatcher.dispatcher):
                     if host is not None and not from_cache:
                         r_type = DNSCache.A_RECORD
                         if is_ipv6: r_type = DNSCache.AAAA_RECORD
-                        self.__dns_cache.set_cache_record(host, _type=r_type)
+                        self.__dns_cache.set_cache_record(host, ip, _type=r_type)
                     if self.__ip_match.match(ip, is_ipv6=is_ipv6): continue
                     # DNS自动设置路由后告知proxy程序,由代理程序管理路由
                     # self.set_route(ip, is_ipv6=is_ipv6)
