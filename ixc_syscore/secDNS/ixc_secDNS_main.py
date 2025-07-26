@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import struct
 import sys, os, signal, json, time
 
 import dns.message, dns.resolver
