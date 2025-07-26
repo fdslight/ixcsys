@@ -57,6 +57,7 @@ def __start_service(debug):
     except KeyboardInterrupt:
         cls.release()
     except:
+        logging.print_error()
         cls.release()
 
     if os.path.isfile(PID_FILE): os.remove(PID_FILE)
