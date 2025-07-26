@@ -482,10 +482,16 @@ class service(dispatcher.dispatcher):
         else:
             h = racs.udp_tunnel
 
+        is_ipv6 = conn["enable_ip6"]
+        if netutils.is_ipv4_address(conn["host"]):
+            is_ipv6 = False
+        if netutils.is_ipv6_address(conn["host"]):
+            is_ipv6 = True
+
         if conn["enable_ip6"]:
-            self.__racs_fd = self.create_handler(-1, h, (conn["host"], int(conn["port"]),), is_ipv6=True)
+            self.__racs_fd = self.create_handler(-1, h, (conn["host"], int(conn["port"]),), is_ipv6=is_ipv6)
         else:
-            self.__racs_fd = self.create_handler(-1, h, (conn["host"], int(conn["port"]),), is_ipv6=False)
+            self.__racs_fd = self.create_handler(-1, h, (conn["host"], int(conn["port"]),), is_ipv6=is_ipv6)
 
         # 此处可能由于查找域名失败而无法建立隧道
         if self.__racs_fd < 0: return
@@ -854,6 +860,11 @@ class service(dispatcher.dispatcher):
 
         if enable_heartbeat and conn_timeout - heartbeat_timeout < 30:
             raise ValueError("the headerbeat_timeout value wrong")
+
+        if netutils.is_ipv4_address(host):
+            enable_ipv6 = False
+        if netutils.is_ipv6_address(host):
+            enable_ipv6 = True
 
         kwargs = {"conn_timeout": conn_timeout, "is_ipv6": enable_ipv6, "enable_heartbeat": enable_heartbeat,
                   "heartbeat_timeout": heartbeat_timeout, "host": host}

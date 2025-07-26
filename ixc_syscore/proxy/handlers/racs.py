@@ -2,7 +2,6 @@
 """客户端隧道实现
 """
 import socket, time
-import struct
 
 import pywind.evtframework.handlers.udp_handler as udp_handler
 import pywind.evtframework.handlers.tcp_handler as tcp_handler
