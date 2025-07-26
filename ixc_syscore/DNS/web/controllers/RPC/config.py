@@ -34,6 +34,8 @@ class controller(rpc.controller):
             "enable_sec_dns": self.enable_sec_dns,
             "is_enabled_sec_dns": self.is_enabled_sec_dns,
             "set_sec_dns_forward": self.set_sec_dns_forward,
+            "add_sec_dns_domains": self.add_sec_dns_domains,
+            "del_sec_dns_domains": self.del_sec_dns_domains,
         }
 
     def config_get(self):
@@ -164,3 +166,13 @@ class controller(rpc.controller):
         self.__runtime.set_sec_dns_forward(port, key)
 
         return 0, True
+
+    def add_sec_dns_domains(self, domains: list):
+        self.__runtime.add_sec_dns_domains(domains)
+
+        return 0, None
+
+    def del_sec_dns_domains(self, domains: list):
+        self.__runtime.del_sec_dns_domains(domains)
+
+        return 0, None

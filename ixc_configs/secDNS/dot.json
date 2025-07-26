@@ -3,12 +3,14 @@
     "host": "223.5.5.5",
     "port": 853,
     "hostname": "dns.alidns.com",
+    "force_ipv6": false,
     "comment": "aliyun DNS"
   },
   {
     "host": "1.12.12.12",
     "port": 853,
     "hostname": "dot.pub",
+    "force_ipv6": false,
     "comment": "DNSPod"
   }
 ]

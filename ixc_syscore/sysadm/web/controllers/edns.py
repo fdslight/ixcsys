@@ -16,9 +16,15 @@ class controller(base_controller.BaseController):
         port = self.request.get_argument("port", is_seq=False, is_qs=False, default="853")
         hostname = self.request.get_argument("hostname", is_seq=False, is_qs=False, default="")
         comment = self.request.get_argument("comment", is_seq=False, is_qs=False, default="")
+        force_ipv6 = self.request.get_argument("force_ipv6", is_seq=False, is_qs=False, default="")
 
-        if not netutils.is_ipv4_address(host) and not netutils.is_ipv6_address(host):
-            self.json_resp(True, "提交了错误的IP地址,IP地址必须为IPv4或者IPv6")
+        try:
+            force_ipv6 = bool(int(force_ipv6))
+        except ValueError:
+            force_ipv6 = False
+
+        if not host:
+            self.json_resp(True, "空的主机名")
             return
 
         try:
@@ -34,7 +40,12 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "TLS认证主机不能为空")
             return
 
-        RPC.fn_call("secDNS", "/config", "dot_host_add", host, hostname, comment, port=port)
+        if netutils.is_ipv4_address(host):
+            force_ipv6 = False
+        if netutils.is_ipv6_address(host):
+            force_ipv6 = True
+
+        RPC.fn_call("secDNS", "/config", "dot_host_add", host, hostname, comment, port=port, force_ipv6=force_ipv6)
         self.json_resp(False, "添加成功")
 
     def handle_delete(self):

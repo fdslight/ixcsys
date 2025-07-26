@@ -31,19 +31,12 @@ class dot_client(tcp_handler.tcp_handler):
         """
         self.__host = host
         self.__ssl_handshake_ok = False
-        self.__hostname = host
+        self.__hostname = hostname
         self.__update_time = time.time()
         self.__conn_timeout = conn_timeout
         self.__tmp_buf = []
         self.__header_ok = False
         self.__length = 0
-
-        if netutils.is_ipv6_address(host):
-            is_ipv6 = True
-            self.__hostname = hostname
-        if netutils.is_ipv4_address(host):
-            is_ipv6 = False
-            self.__hostname = hostname
 
         if is_ipv6:
             fa = socket.AF_INET6

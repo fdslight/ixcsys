@@ -119,8 +119,9 @@ class service(dispatcher.dispatcher):
     __sec_dns_forward_port = None
     # 通信key
     __sec_dns_forward_key = None
+    # 不使用安全DNS的域名列表
+    __no_use_sec_dns_domains = None
 
-    #
     __router_wan_configs = None
     __read_pppoe_dns_time = None
 
@@ -165,6 +166,7 @@ class service(dispatcher.dispatcher):
         self.__enable_sec_dns = False
         self.__sec_dns_forward_port = 0
         self.__sec_dns_forward_key = os.urandom(4)
+        self.__no_use_sec_dns_domains={}
 
         RPCClient.wait_processes(["router", ])
 
@@ -236,7 +238,7 @@ class service(dispatcher.dispatcher):
             self.__dns_server6 = -1
             return
 
-        #RPCClient.fn_call("router", "/config", "manage_addr_set", ip6_mngaddr, is_ipv6=True)
+        # RPCClient.fn_call("router", "/config", "manage_addr_set", ip6_mngaddr, is_ipv6=True)
 
         if self.__ip6_mngaddr != ip6_mngaddr:
             if self.__dns_server6 >= 0:
@@ -557,7 +559,9 @@ class service(dispatcher.dispatcher):
         match_rs = self.__matcher.match(host)
 
         logging.print_info("DNS_QUERY: %s from %s" % (host, address[0]))
-
+        # 如果域名在非使用安全DNS的域名当中,强制不使用匹配规则
+        if host in self.__no_use_sec_dns_domains:
+            match_rs = False
         if not match_rs:
             self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6)
             return
@@ -750,7 +754,7 @@ class service(dispatcher.dispatcher):
 
     def sec_rules_modify_with_fpath(self, fpath: str):
         if not os.path.isfile(fpath): return
-        with open(fpath, "r",errors='ignore') as f:
+        with open(fpath, "r", errors='ignore') as f:
             s = f.read()
         f.close()
         self.sec_rules_modify_with_raw(s.encode("iso-8859-1"), is_compressed=False)
@@ -774,6 +778,20 @@ class service(dispatcher.dispatcher):
     def set_sec_dns_forward(self, port: int, key: bytes):
         self.__sec_dns_forward_port = port
         self.__sec_dns_forward_key = key
+
+    def add_sec_dns_domains(self, domains: list):
+        for host in domains:
+            if host not in self.__no_use_sec_dns_domains:
+                self.__no_use_sec_dns_domains[host] = None
+            ''''''
+        return
+
+    def del_sec_dns_domains(self, domains: list):
+        for host in domains:
+            if host in self.__no_use_sec_dns_domains:
+                del self.__no_use_sec_dns_domains[host]
+            ''''''
+        return
 
     def save_configs(self):
         conf.save_to_ini(self.__dns_configs, self.__dns_conf_path)

@@ -124,6 +124,16 @@ class service(dispatcher.dispatcher):
     def configs(self):
         return self.__secDNS_configs
 
+    def get_domains(self):
+        dot_configs = self.__dot_configs
+        results = []
+        for conf in dot_configs:
+            host = conf['host']
+            if not netutils.is_ipv4_address(host) and not netutils.is_ipv6_address(host):
+                results.append(host)
+            ''''''
+        return results
+
     def set_dns_forward(self):
         # 获取key以及本地端口
         key = self.get_handler(self.__msg_fwd_fd).key
@@ -133,6 +143,8 @@ class service(dispatcher.dispatcher):
 
         # 设置本地UDP DNS服务器,使其转发流量到本进程
         RPCClient.fn_call("DNS", "/config", "enable_sec_dns", True)
+        domains = self.get_domains()
+        RPCClient.fn_call("DNS", "/config", "add_sec_dns_domains", domains)
 
     def start(self):
         self.load_configs()
@@ -160,6 +172,8 @@ class service(dispatcher.dispatcher):
         self.__dns_fds = {}
         # 停止本地UDP DNS服务器流量转发
         RPCClient.fn_call("DNS", "/config", "enable_sec_dns", False)
+        domains = self.get_domains()
+        RPCClient.fn_call("DNS", "/config", "del_sec_dns_domains", domains)
         logging.print_info("stop secDNS")
         ''''''
 
@@ -189,6 +203,14 @@ class service(dispatcher.dispatcher):
             logging.print_error("wrong dot config file,it should be a list")
             return
 
+        for conf in js:
+            use_ipv6 = False
+            if "force_ipv6" not in conf:
+                if netutils.is_ipv6_address(conf["host"]):
+                    use_ipv6 = True
+                ''''''
+            conf['force_ipv6'] = use_ipv6
+
         self.__dot_configs = js
 
         secDNS_conf = configfile.ini_parse_from_file(self.secDNS_conf_path)
@@ -203,7 +225,7 @@ class service(dispatcher.dispatcher):
     def save_secDNS_configs(self):
         configfile.save_to_ini(self.__secDNS_configs, self.secDNS_conf_path)
 
-    def dot_host_add(self, host: str, hostname: str, comment: str, port=853):
+    def dot_host_add(self, host: str, hostname: str, comment: str, port=853, force_ipv6=False):
         exists = False
         # 首先检查是否存在
         for o in self.__dot_configs:
@@ -213,7 +235,8 @@ class service(dispatcher.dispatcher):
         # 如果存在那么不添加
         if exists: return
         self.stop()
-        self.__dot_configs.append({"host": host, "port": port, "comment": comment, "hostname": hostname})
+        self.__dot_configs.append(
+            {"host": host, "port": port, "comment": comment, "hostname": hostname, "force_ipv6": force_ipv6})
         self.save_dot_configs()
         self.start()
 
@@ -317,12 +340,19 @@ class service(dispatcher.dispatcher):
         """
         for o in self.__dot_configs:
             host = o["host"]
+            force_ipv6 = o.get("force_ipv6", False)
+            # 考虑是IP地址的情况,强制修正
+            if netutils.is_ipv4_address(host):
+                force_ipv6 = False
+            if netutils.is_ipv6_address(host):
+                force_ipv6 = True
             if host not in self.__dns_fds:
                 try:
                     port = int(o.get("port", '853'))
                 except ValueError:
                     port = 853
-                fd = self.create_handler(-1, dot_handler.dot_client, o["host"], port=port, hostname=o["hostname"])
+                fd = self.create_handler(-1, dot_handler.dot_client, o["host"], port=port, hostname=o["hostname"],
+                                         is_ipv6=force_ipv6)
                 if fd < 0: continue
                 self.__dns_fds[host] = fd
             ''''''
