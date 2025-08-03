@@ -40,9 +40,11 @@ static int ixc_ip_check_ok(struct ixc_mbuf *m,struct netutil_iphdr *header)
     int version=(header->ver_and_ihl & 0xf0) >> 4;
     unsigned short tot_len;
     unsigned char ipaddr_unspec[]=IXC_IPADDR_UNSPEC;
+    int hdr_len=(header->ver_and_ihl & 0x0f) *4;
 
     if(m->tail-m->offset<28) return 0;
     if(4!=version) return 0;
+    if(hdr_len < 20) return 0;
 
     tot_len=ntohs(header->tot_len);
 
@@ -50,10 +52,7 @@ static int ixc_ip_check_ok(struct ixc_mbuf *m,struct netutil_iphdr *header)
     if(!memcmp(header->dst_addr,ipaddr_unspec,4)) return 0;
     if(header->dst_addr[0]==127) return 0;
     // 源地址与目的地址一样那么丢弃该数据包
-    if(!memcmp(header->dst_addr,header->src_addr,4)){
-        ixc_mbuf_put(m);
-        return 0;
-    }
+    if(!memcmp(header->dst_addr,header->src_addr,4)) return 0;
     // 限制IP数据包最小长度
     if(tot_len<28) return 0;
     // 最大支持1500字节
