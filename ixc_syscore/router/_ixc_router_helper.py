@@ -92,7 +92,6 @@ class rpc(object):
 
             "qos_set_tunnel_first": self.qos_set_tunnel_first,
             "qos_unset_tunnel": self.qos_unset_tunnel,
-            "qos_set_mpkt_first_size": self.qos_set_mpkt_first_size,
             "qos_add_first_host_hwaddr": self.qos_add_first_host_hwaddr,
             "qos_del_first_host_hwaddr": self.qos_del_first_host_hwaddr,
 
@@ -777,19 +776,6 @@ class rpc(object):
     def qos_unset_tunnel(self):
         return 0, None
 
-    def qos_set_mpkt_first_size(self, size: int):
-        if size != 0:
-            if size < 64 or size > 512:
-                return 0, False
-            ''''''
-        self.__helper.wan_configs["qos"]["mpkt_first_size"] = size
-
-        rs = self.__helper.router.qos_set_mpkt_first_size(size)
-
-        self.__helper.save_wan_configs()
-
-        return 0, rs
-
     def qos_add_first_host_hwaddr(self, hwaddr: str, comment=""):
         dic = self.__helper.router_configs['qos_first_host']
 
@@ -939,11 +925,6 @@ class helper(object):
     def load_wan_configs(self):
         path = "%s/wan.ini" % self.__conf_dir
         self.__wan_configs = conf.ini_parse_from_file(path)
-        if "qos" not in self.__wan_configs:
-            self.__wan_configs["qos"] = {
-                "mpkt_first_size": "0"
-            }
-        return
 
     def save_wan_configs(self):
         path = "%s/wan.ini" % self.__conf_dir
@@ -1387,14 +1368,6 @@ class helper(object):
         byte_subnet = socket.inet_pton(socket.AF_INET, "0.0.0.0")
 
         self.router.route_add(byte_subnet, 0, byte_gw, False)
-
-        qos = self.wan_configs["qos"]
-        try:
-            mpkt_first_size = int(qos['mpkt_first_size'])
-        except ValueError:
-            mpkt_first_size = 0
-
-        self.router.qos_set_mpkt_first_size(mpkt_first_size)
 
     def set_gw_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         if is_ipv6:

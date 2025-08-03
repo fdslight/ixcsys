@@ -46,9 +46,6 @@ int ixc_qos_tunnel_addr_first_set(unsigned char *addr,int is_ipv6);
 /// 取消隧道地址优先
 void ixc_qos_tunnel_addr_first_unset(void);
 
-/// 设置小包优先策略
-int ixc_qos_mpkt_first_set(int size);
-
 /// 增加优先主机
 int ixc_qos_add_first_host(const unsigned char *hwaddr);
 /// 删除优先主机

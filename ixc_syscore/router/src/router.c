@@ -999,21 +999,6 @@ router_qos_unset_tunnel(PyObject *self,PyObject *args)
 }
 
 static PyObject *
-router_qos_set_mpkt_first_size(PyObject *self,PyObject *args)
-{
-    int size,rs;
-    if(!PyArg_ParseTuple(args,"i",&size)) return NULL;
-    
-    rs=ixc_qos_mpkt_first_set(size);
-
-    if(0!=rs){
-        Py_RETURN_FALSE;
-    }
-
-    Py_RETURN_TRUE;
-}
-
-static PyObject *
 router_qos_add_first_host_hwaddr(PyObject *self,PyObject *args){
     unsigned char *hwaddr;
     Py_ssize_t size;
@@ -1245,7 +1230,6 @@ static PyMethodDef routerMethods[]={
     //
     {"qos_set_tunnel_first",(PyCFunction)router_qos_set_tunnel_first,METH_VARARGS,"set qos tunnel traffic is first"},
     {"qos_unset_tunnel",(PyCFunction)router_qos_unset_tunnel,METH_NOARGS,"unset qos tunnel traffic is first"},
-    {"qos_set_mpkt_first_size",(PyCFunction)router_qos_set_mpkt_first_size,METH_VARARGS,"set mpkt first size"},
     {"qos_add_first_host_hwaddr",(PyCFunction)router_qos_add_first_host_hwaddr,METH_VARARGS,"add host hwaddr send first for qos"},
     {"qos_del_first_host_hwaddr",(PyCFunction)router_qos_del_first_host_hwaddr,METH_VARARGS,"delete host hwaddr send first for qos"},
     //

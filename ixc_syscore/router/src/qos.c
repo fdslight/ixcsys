@@ -114,7 +114,7 @@ static void ixc_qos_send_to_next(struct ixc_mbuf *m)
 static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *iphdr = (struct netutil_iphdr *)(m->data + m->offset);
-    int size,is_first=0;
+    int is_first=0;
     //struct ixc_addr_map_record *addr_map_record;
 
     // 只对LAN to WAN的流量进行QOS,因为无法控制WAN to LAN的流量
@@ -130,9 +130,6 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
         }
     }
 
-    size=m->tail-m->offset;
-
-    if(size<=ixc_qos.qos_mpkt_first_size) is_first=1;
     if(is_first){
         ixc_qos_send_to_next(m);
     }else{
@@ -144,7 +141,7 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
 {
     struct netutil_ip6hdr *header=(struct netutil_ip6hdr *)(m->data+m->offset);
     //struct ixc_addr_map_record *addr_map_record;
-    int size,is_first=0;
+    int is_first=0;
 
     // 只对LAN to WAN的流量进行QOS,因为无法控制WAN to LAN的流量
     if(IXC_MBUF_FROM_WAN==m->from){
@@ -161,9 +158,6 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
     }
 
     ixc_nat66_prefix_modify(m,1);
-
-    size=m->tail-m->offset;
-    if(size<=ixc_qos.qos_mpkt_first_size) is_first=1;
 
     if(is_first){
         ixc_qos_send_to_next(m);
@@ -182,8 +176,6 @@ int ixc_qos_init(void)
     bzero(&ixc_qos, sizeof(struct ixc_qos));
 
     ixc_qos_is_initialized = 1;
-    // 小于0表示不设置小包优先策略
-    ixc_qos.qos_mpkt_first_size=0;
 
     for (int n = 0; n < IXC_QOS_SLOT_NUM; n++){
         slot = malloc(sizeof(struct ixc_qos_slot));
@@ -317,24 +309,6 @@ int ixc_qos_tunnel_addr_first_set(unsigned char *addr,int is_ipv6)
 void ixc_qos_tunnel_addr_first_unset(void)
 {
     ixc_qos.tunnel_isset=0;
-}
-
-int ixc_qos_mpkt_first_set(int size)
-{
-    
-    if(size<=0){
-        ixc_qos.qos_mpkt_first_size=0;
-        return 0;
-    }
-
-    // 限制小包最大值
-    if(size<64 || size>512){
-        return -1;
-    }
-
-    ixc_qos.qos_mpkt_first_size=size;
-
-    return 0;
 }
 
 /// 增加优先主机
