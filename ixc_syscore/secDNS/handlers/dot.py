@@ -38,6 +38,11 @@ class dot_client(tcp_handler.tcp_handler):
         self.__header_ok = False
         self.__length = 0
 
+        if netutils.is_ipv6_address(host):
+            is_ipv6 = True
+        if netutils.is_ipv4_address(host):
+            is_ipv6 = False
+
         if is_ipv6:
             fa = socket.AF_INET6
         else:
@@ -55,13 +60,8 @@ class dot_client(tcp_handler.tcp_handler):
         self.set_socket(s)
         self.__conn_timeout = conn_timeout
 
-        server_ip = self.dispatcher.get_server_ip(host, enable_ipv6=is_ipv6)
-        if server_ip is None:
-            logging.print_error("cannot get %s ip address" % host)
-            s.close()
-            return -1
         try:
-            self.connect((server_ip, port))
+            self.connect((host, port))
         except socket.gaierror:
             logging.print_error()
             return -1

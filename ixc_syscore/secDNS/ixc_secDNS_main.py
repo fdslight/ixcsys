@@ -276,50 +276,6 @@ class service(dispatcher.dispatcher):
         path = "%s/ca-bundle.crt" % os.getenv("IXC_SHARED_DATA_DIR")
         return path
 
-    def get_server_ip(self, host, enable_ipv6=False):
-        """获取服务器IP
-        :param host:
-        :return:
-        """
-        if netutils.is_ipv4_address(host) and enable_ipv6: return None
-        if netutils.is_ipv6_address(host) and not enable_ipv6: return None
-
-        if netutils.is_ipv4_address(host): return host
-        if netutils.is_ipv6_address(host): return host
-
-        resolver = dns.resolver.Resolver()
-
-        resolver.timeout = 5
-        resolver.lifetime = 5
-
-        try:
-            try:
-                if enable_ipv6:
-                    rs = resolver.resolve(host, "AAAA")
-                else:
-                    rs = resolver.resolve(host, "A")
-                ''''''
-            except AttributeError:
-                try:
-                    if enable_ipv6:
-                        rs = resolver.query(host, "AAAA")
-                    else:
-                        rs = resolver.query(host, "A")
-                    ''''''
-                except:
-                    return None
-                ''''''
-        except:
-            return None
-
-        ipaddr = None
-
-        for anwser in rs:
-            ipaddr = anwser.__str__()
-            break
-
-        return ipaddr
-
     def start_scgi(self):
         scgi_configs = {
             "use_unix_socket": True,
