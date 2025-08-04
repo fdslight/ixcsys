@@ -29,4 +29,9 @@ void ixc_router_exit(void);
 
 void ixc_router_md5_calc(void *data,int size,unsigned char *res);
 
+/// 系统日志
+void ixc_router_syslog(const char *message);
+/// 报告错误的IP数据包
+void ixc_router_report_wrong_ippkt(unsigned char *src_hwaddr,unsigned char *dst_hwaddr,const char *message);
+
 #endif

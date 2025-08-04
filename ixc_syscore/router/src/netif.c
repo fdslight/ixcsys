@@ -393,7 +393,7 @@ int ixc_netif_tx_data(struct ixc_netif *netif)
     }
 
     if(IXC_NETIF_WRITE_FAIL==netif->write_flags){
-        ixc_router_tell("syslog because of cannot send data,start drop packet");
+        ixc_router_syslog("because of cannot send data,start drop packet");
         ixc_netif_clear_mbuf_for_sent(netif);
     }
 

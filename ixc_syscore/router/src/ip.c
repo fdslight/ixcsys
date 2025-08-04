@@ -179,6 +179,7 @@ void ixc_ip_handle(struct ixc_mbuf *mbuf)
     struct ixc_netif *netif=mbuf->netif;
     
     if(!ixc_ip_check_ok(mbuf,header)){
+        ixc_router_report_wrong_ippkt(mbuf->src_hwaddr,mbuf->dst_hwaddr,"Wrong IP packet");
         ixc_mbuf_put(mbuf);
         return;
     }

@@ -1365,6 +1365,20 @@ int ixc_router_tell(const char *content)
     return 0;
 }
 
+void ixc_router_syslog(const char *message)
+{
+    char buf[2048];
+    sprintf(buf,"syslog %s",message);
+    ixc_router_tell(buf);
+}
+
+void ixc_router_report_wrong_ippkt(unsigned char *src_hwaddr,unsigned char *dst_hwaddr,const char *message)
+{
+    char buf[256];
+    sprintf(buf,"%s from mac %x:%x:%x:%x:%x:%x and dst mac %x:%x:%x:%x:%x:%x",message,src_hwaddr[0],src_hwaddr[1],src_hwaddr[2],src_hwaddr[3],src_hwaddr[4],src_hwaddr[5],dst_hwaddr[0],dst_hwaddr[1],dst_hwaddr[2],dst_hwaddr[3],dst_hwaddr[4],dst_hwaddr[5]);
+    ixc_router_syslog(buf);
+}
+
 void ixc_router_exit(void)
 {
     ixc_exit();

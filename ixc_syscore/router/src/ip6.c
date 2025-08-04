@@ -220,6 +220,7 @@ void ixc_ip6_handle(struct ixc_mbuf *mbuf)
 
     //DBG_FLAGS;
     if(!ixc_ip6_check_ok(mbuf)){
+        ixc_router_report_wrong_ippkt(mbuf->src_hwaddr,mbuf->dst_hwaddr,"Wrong IPv6 packet");
         //DBG_FLAGS;
         ixc_mbuf_put(mbuf);
         return;
