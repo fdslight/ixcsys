@@ -653,7 +653,8 @@ unsigned int ixc_nat_sessions_num_get(void)
 
 int ixc_nat_set_id_range(unsigned short begin,unsigned short end)
 {
-    if(end-begin<1) return 0;
+    if(begin>=end) return 0;
+    if(begin<1) return 0;
 
     nat.icmp_set.cur_id=begin;
     nat.icmp_set.id_min=begin;
