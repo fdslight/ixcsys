@@ -15,6 +15,10 @@ class controller(rpc.controller):
         }
 
     def aftr_enable(self, enable):
-        self.dhcp.client6.enable_aftr(enable)
+        r = self.dhcp.client6.enable_aftr(enable)
 
-        return 0, None
+        return 0, r
+
+    def map_e_enable(self, enable):
+        r = self.dhcp.client6.enable_map_e(enable)
+        return 0, r
