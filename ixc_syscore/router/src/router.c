@@ -1090,6 +1090,16 @@ router_nat_sessions_num_get(PyObject *self,PyObject *args)
     return PyLong_FromUnsignedLong(ixc_nat_sessions_num_get());
 }
 
+static PyObject *
+router_nat_id_range_set(PyObject *self,PyObject *args)
+{
+    unsigned short begin,end;
+    if(!PyArg_ParseTuple(args,"HH",&begin,&end)) return NULL;
+
+
+    return PyBool_FromLong(ixc_nat_set_id_range(begin,end));
+}
+
 /// 返回系统的CPU总数
 static PyObject *
 router_cpu_num(PyObject *self,PyObject *args)
@@ -1238,6 +1248,7 @@ static PyMethodDef routerMethods[]={
     {"passthrough_set_vid_for_passdev",(PyCFunction)router_passthrough_set_vid_for_passdev,METH_VARARGS,"set vlan id for passdev"},
     //
     {"nat_sessions_num_get",(PyCFunction)router_nat_sessions_num_get,METH_NOARGS,"get nat sessions"},
+    {"nat_id_range_set",(PyCFunction)router_nat_id_range_set,METH_VARARGS,"set NAT ID range"},
     //
     {"cpu_num",(PyCFunction)router_cpu_num,METH_NOARGS,"get cpu num"},
     {"bind_cpu",(PyCFunction)router_bind_cpu,METH_VARARGS,"bind process to cpu core"},

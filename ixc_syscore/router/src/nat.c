@@ -166,7 +166,7 @@ static struct ixc_nat_id *ixc_nat_id_get(struct ixc_nat_id_set *id_set,unsigned 
         return id;
     }
 
-    if(id_set->cur_id>IXC_NAT_ID_MAX) return NULL;
+    if(id_set->cur_id>id_set->id_max) return NULL;
 
     id=malloc(sizeof(struct ixc_nat_id));
 
@@ -186,6 +186,16 @@ static struct ixc_nat_id *ixc_nat_id_get(struct ixc_nat_id_set *id_set,unsigned 
 static void ixc_nat_id_put(struct ixc_nat_id_set *id_set,struct ixc_nat_id *id)
 {
     if(NULL==id) return;
+
+    // 检查NAT ID范围是否变更,如果发生变更不在范围内的NAT ID将会被丢弃
+    if(id->id<id_set->id_min){
+        free(id);
+        return;
+    }
+    if(id->id>id_set->id_max){
+        free(id);
+        return;
+    }
 
     id->next=id_set->head;
     id_set->head=id;
@@ -546,8 +556,16 @@ int ixc_nat_init(void)
     bzero(&nat,sizeof(struct ixc_nat));
 
     nat.icmp_set.cur_id=IXC_NAT_ID_MIN;
+    nat.icmp_set.id_min=IXC_NAT_ID_MIN;
+    nat.icmp_set.id_max=IXC_NAT_ID_MAX;
+
     nat.tcp_set.cur_id=IXC_NAT_ID_MIN;
+    nat.tcp_set.id_min=IXC_NAT_ID_MIN;
+    nat.tcp_set.id_max=IXC_NAT_ID_MAX;
+
     nat.udp_set.cur_id=IXC_NAT_ID_MIN;
+    nat.udp_set.id_min=IXC_NAT_ID_MIN;
+    nat.udp_set.id_max=IXC_NAT_ID_MAX;
 
     nat_sysloop=sysloop_add(ixc_nat_sysloop_cb,NULL);
 
@@ -597,8 +615,22 @@ void ixc_nat_uninit(void)
 void ixc_nat_handle(struct ixc_mbuf *m)
 {
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
+    struct ixc_netif *wif=ixc_netif_get(IXC_NETIF_WAN);
+
     unsigned short frag_info,frag_off;
     int mf;
+
+    if(!nat_is_initialized){
+        ixc_mbuf_put(m);
+        STDERR("please init nat\r\n");
+        return;
+    }
+
+    // 未设置WAN口IP地址丢弃数据包
+    if(!wif->isset_ip){
+        ixc_mbuf_put(m);
+        return;
+    }
 
     frag_info=ntohs(header->frag_info);
     frag_off=frag_info & 0x1fff;
@@ -607,11 +639,6 @@ void ixc_nat_handle(struct ixc_mbuf *m)
     if(mf!=0 || frag_off!=0) m=ixc_ipunfrag_add(m);
     if(NULL==m) return;
 
-    if(!nat_is_initialized){
-        ixc_mbuf_put(m);
-        STDERR("please init nat\r\n");
-        return;
-    }
 
     IXC_MBUF_LOOP_TRACE(m);
 
@@ -622,4 +649,23 @@ void ixc_nat_handle(struct ixc_mbuf *m)
 unsigned int ixc_nat_sessions_num_get(void)
 {
     return (nat.lan2wan)->key_tot_num;
+}
+
+int ixc_nat_set_id_range(unsigned short begin,unsigned short end)
+{
+    if(end-begin<1) return 0;
+
+    nat.icmp_set.cur_id=begin;
+    nat.icmp_set.id_min=begin;
+    nat.icmp_set.id_max=end;
+
+    nat.tcp_set.cur_id=begin;
+    nat.tcp_set.id_min=begin;
+    nat.tcp_set.id_max=end;
+
+    nat.udp_set.cur_id=begin;
+    nat.udp_set.id_min=begin;
+    nat.udp_set.id_max=end;
+
+    return 1;
 }

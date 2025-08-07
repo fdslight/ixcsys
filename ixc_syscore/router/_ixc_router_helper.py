@@ -100,6 +100,7 @@ class rpc(object):
             "passthrough_set_vid_for_passdev": self.passthrough_set_vid_for_passdev,
 
             "nat_sessions_num_get": self.nat_sessions_num_get,
+            "nat_id_range_set": self.nat_id_range_set,
 
             "cpu_num": self.cpu_num,
             "bind_cpu": self.bind_cpu,
@@ -848,6 +849,14 @@ class rpc(object):
 
     def nat_sessions_num_get(self):
         return 0, self.__helper.router.nat_sessions_num_get()
+
+    def nat_id_range_set(self, begin: int, end: int):
+        if not isinstance(begin, int): return 0, False
+        if not isinstance(end, int): return 0, False
+        if begin < 1: return 0, False
+        if end > 0xffff: return 0, False
+
+        return 0, self.__helper.router.nat_id_range_set(begin, end)
 
     def cpu_num(self):
         return 0, self.__helper.router.cpu_num()

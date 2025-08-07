@@ -45,8 +45,10 @@ struct ixc_nat_id{
 /// ID集合
 struct ixc_nat_id_set{
     struct ixc_nat_id *head;
-    char pad[6];
+    unsigned short id_min;
+    unsigned short id_max;
     unsigned short cur_id;
+    char pad[2];
 };
 
 struct ixc_nat{
@@ -69,5 +71,8 @@ int ixc_nat_enable(int status);
 
 /// 获取nat会话数量
 unsigned int ixc_nat_sessions_num_get(void);
+
+/// 设置NAT地址范围
+int ixc_nat_set_id_range(unsigned short begin,unsigned short end);
 
 #endif
