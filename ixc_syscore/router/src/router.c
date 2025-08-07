@@ -1094,10 +1094,17 @@ static PyObject *
 router_nat_id_range_set(PyObject *self,PyObject *args)
 {
     unsigned short begin,end;
+    int is_err;
+
     if(!PyArg_ParseTuple(args,"HH",&begin,&end)) return NULL;
 
+    is_err=ixc_nat_set_id_range(begin,end);
 
-    return PyBool_FromLong(ixc_nat_set_id_range(begin,end));
+    if(is_err){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
 }
 
 /// 返回系统的CPU总数
@@ -1844,6 +1851,7 @@ static void ixc_start(int debug)
         STDERR("cannot init netif\r\n");
         exit(EXIT_SUCCESS);
     }
+
     // 内存缓存
     rpc_session_pre_alloc_set(4);
   

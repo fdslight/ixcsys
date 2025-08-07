@@ -22,8 +22,6 @@ class dhcpv6c(object):
     __enable_aftr = None
     __aftr_address = None
 
-    __enbale_map_e = None
-
     def __init__(self, runtime, hostname, wan_hwaddr):
         self.__runtime = runtime
         self.__hostname = hostname
@@ -33,7 +31,6 @@ class dhcpv6c(object):
         self.__nameservers = []
         self.__enable_aftr = False
         self.__aftr_address = ""
-        self.__enbale_map_e = False
 
     def get_aftr_address(self, opt_data: bytes):
         seq = []
@@ -125,8 +122,6 @@ class dhcpv6c(object):
         if self.__enable_aftr:
             # option request
             self.build_option(6, struct.pack("!HHHHH", 17, 23, 24, 32, 64)),
-        elif self.__enbale_map_e:
-            self.build_option(6, struct.pack("!HHHH", 17, 23, 24, 32, 94)),
         else:
             # option request
             self.build_option(6, struct.pack("!HHHH", 17, 23, 24, 32)),
@@ -212,18 +207,7 @@ class dhcpv6c(object):
         RPC.fn_call("DNS", "/config", "set_ip6_nameservers_from_dhcpv6", nameservers[0], nameservers[1])
 
     def enable_aftr(self, enable: bool):
-        if enable and self.__enbale_map_e:
-            logging.print_error("cannot enable aftr,because map-e enabled")
-            return False
         self.__enable_aftr = enable
-        return True
-
-    def enable_map_e(self, enable: bool):
-        if enable and self.__enable_aftr:
-            logging.print_error("cannot enable aftr,because aftr enabled")
-            return False
-
-        self.__enbale_map_e = enable
         return True
 
     def loop(self):
