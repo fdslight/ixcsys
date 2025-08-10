@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # 生成DNS广告屏蔽规则
 
-import os
+import os, hashlib
 
 URL = "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/refs/heads/master/anti-ad-domains.txt"
 
@@ -18,8 +18,8 @@ EXTRA_DROPS = [
     "microsoft",
     "bing",
     ".qy.net",
- #   "doubleclick.net",
- #   "doubleclick.com",
+    #   "doubleclick.net",
+    #   "doubleclick.com",
     "sentry.io",
     "app-measurement",
     "cloudflare.com",
@@ -77,11 +77,23 @@ def parse(fpath: str):
     return results
 
 
+def calc_file_md5(fpath: str):
+    if not os.path.isfile(fpath):
+        return b""
+    with open(fpath, "rb") as f:
+        data = f.read()
+    f.close()
+
+    md5 = hashlib.md5(data).digest()
+    return md5
+
+
 def gen_dns_rule(results):
     """生成DNS屏蔽规则
     """
+    fname_tmp = "DNS_NO_ADS_RULES2.txt"
     fname = "DNS_NO_ADS_RULES.txt"
-    fdst = open(fname, "w")
+    fdst = open(fname_tmp, "w")
 
     for host in EXTRA_ADDS:
         fdst.write("%s\r\n" % host)
@@ -90,6 +102,14 @@ def gen_dns_rule(results):
         fdst.write("%s\r\n" % host)
 
     fdst.close()
+
+    if calc_file_md5(fname) == calc_file_md5(fname_tmp):
+        print("%s not changed" % fname)
+        os.remove(fname_tmp)
+        return
+    if os.path.isfile(fname): os.remove(fname)
+    os.rename(fname_tmp, fname)
+
     print("generate DNS NO AD rule file %s OK" % fname)
 
 
