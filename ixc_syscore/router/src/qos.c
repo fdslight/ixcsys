@@ -158,6 +158,11 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
     }
 
     ixc_nat66_prefix_modify(m,1);
+    // 一些BT会向实际地址发送数据包,NAT66重写之后会导致源地址和目标地址一样
+    if(!memcmp(header->src_addr,header->dst_addr,16)){
+        ixc_mbuf_put(m);
+        return;
+    }
 
     if(is_first){
         ixc_qos_send_to_next(m);
@@ -217,9 +222,19 @@ void ixc_qos_uninit(void)
 
 void ixc_qos_add(struct ixc_mbuf *m)
 {
+    struct netutil_ip6hdr *header;
+
     if(IXC_MBUF_FROM_LAN==m->from){
         if(ixc_qos_is_first_host(m->orig_src_hwaddr)){
-            if(m->is_ipv6) ixc_nat66_prefix_modify(m,1);
+            if(m->is_ipv6) {
+                header=(struct netutil_ip6hdr *)(m->data+m->offset);
+                ixc_nat66_prefix_modify(m,1);
+                // 一些BT会向实际地址发送数据包,NAT66重写之后会导致源地址和目标地址一样
+                if(!memcmp(header->src_addr,header->dst_addr,16)){
+                    ixc_mbuf_put(m);
+                    return;
+                }
+            }
             ixc_qos_send_to_next(m);
             return;
         }
