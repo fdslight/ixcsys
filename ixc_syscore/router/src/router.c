@@ -59,6 +59,8 @@ static PyObject *py_helper_instance=NULL;
 static struct ev_set ixc_ev_set;
 ///循环更新事件
 static time_t loop_time_up=0;
+/// IP数据包错误报告时间
+static time_t ippkt_wrong_report_time_up=0;
 
 typedef struct{
     PyObject_HEAD
@@ -1393,8 +1395,15 @@ void ixc_router_syslog(const char *message)
 void ixc_router_report_wrong_ippkt(unsigned char *src_hwaddr,unsigned char *dst_hwaddr,const char *message)
 {
     char buf[256];
+    time_t now=time(NULL);
+
+    // 禁止频繁告警刷日志
+    if(now-ippkt_wrong_report_time_up<60) return;
+
     sprintf(buf,"%s from mac %x:%x:%x:%x:%x:%x and dst mac %x:%x:%x:%x:%x:%x",message,src_hwaddr[0],src_hwaddr[1],src_hwaddr[2],src_hwaddr[3],src_hwaddr[4],src_hwaddr[5],dst_hwaddr[0],dst_hwaddr[1],dst_hwaddr[2],dst_hwaddr[3],dst_hwaddr[4],dst_hwaddr[5]);
     ixc_router_syslog(buf);
+
+    ippkt_wrong_report_time_up=now;
 }
 
 void ixc_router_exit(void)
