@@ -126,7 +126,7 @@ static void ixc_qos_add_for_ip(struct ixc_mbuf *m)
     // 隧道流量优先
     if(ixc_qos.tunnel_isset){
         if(!ixc_qos.tunnel_is_ipv6){
-            if(!memcmp(iphdr->src_addr,ixc_qos.tunnel_addr,4)) is_first=1;
+            if(!memcmp(iphdr->dst_addr,ixc_qos.tunnel_addr,4)) is_first=1;
         }
     }
 
@@ -153,7 +153,7 @@ static void ixc_qos_add_for_ipv6(struct ixc_mbuf *m)
     // 隧道流量优先
     if(ixc_qos.tunnel_isset){
         if(ixc_qos.tunnel_is_ipv6){
-            if(!memcmp(header->src_addr,ixc_qos.tunnel_addr,16)) is_first=1;
+            if(!memcmp(header->dst_addr,ixc_qos.tunnel_addr,16)) is_first=1;
         }
     }
 
