@@ -16,10 +16,13 @@ CPU_VENDOR_ID_MAP = {
     0x51: "Qualcomm",
     0x56: "Marvell",
     0x69: "Intel",
-    0xC0: "Ampere"
+    0xC0: "Ampere",
 }
 
 CPU_PART_NUMBER_MAP = {
+    0x0af: "Thunder X2 29xx",
+    0xc00: "Falkor",
+    0xd01: "Kunpeng-920",
     0xd03: "Cortex-A53",
     0xd05: "Cortex-A55",
     0xd07: "Cortex-A57",
@@ -34,7 +37,11 @@ CPU_PART_NUMBER_MAP = {
     0xd47: "Cortex-A710",
     0xd48: "Cortex-X2",
     0xd4b: "Cortex-A78C",
-    0xd4d: "Cortex-A715"
+    0xd4d: "Cortex-A715",
+    0xd4e: "Cortex-X3",
+    0xd80: "Cortex-A520",
+    0xd81: "Cortex-A720",
+    0xd82: "Cortex-X4",
 }
 
 
