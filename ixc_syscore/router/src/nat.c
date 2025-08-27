@@ -475,7 +475,7 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
 
     // 首先检查端口映射记录是否存在,若存在那么就重写IP地址
     if(NULL!=port_map_record){
-        rewrite_ip_addr(header,m->netif->ipaddr,0);
+        rewrite_ip_addr(header,port_map_record->address,0);
     }else{
         m=ixc_nat_do(m,0);
         if(NULL==m) return;
@@ -491,12 +491,20 @@ static void ixc_nat_handle_from_wan(struct ixc_mbuf *m)
 
 static void ixc_nat_handle_from_lan(struct ixc_mbuf *m)
 {
-    struct ixc_port_map_record *port_map_record=ixc_nat_port_map_get(m,1);
+    struct ixc_port_map_record *port_map_record=ixc_nat_port_map_get(m,0);
     struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
+    int pm_flags=0;
 
     // 如果在端口映射记录中那么就只重写源IP地址
     if(NULL!=port_map_record){
-        rewrite_ip_addr(header,m->netif->ipaddr,1);
+        // 检查端口是否对应主机
+        if(!memcmp(header->src_addr,port_map_record->address,4)){
+            pm_flags=1;
+        }
+    }
+
+    if(pm_flags){
+         rewrite_ip_addr(header,m->netif->ipaddr,1);
     }else{
         m=ixc_nat_do(m,1);
         if(NULL==m) return;
