@@ -10,16 +10,16 @@ A software router for Linux
 
 
 # debian/ubuntu install runtime
-1. sudo apt install python3-pip 
-2. sudo pip3 install dnspython3 
-3. sudo pip3 install cryptography 
-4. sudo pip3 install cloudflare-ddns 
-5. sudo pip3 install s-tui 
-6. sudo apt install libpython3-dev  
-7. sudo apt install tftpd-hpa 
-8. sudo apt install pkg-config 
-9. sudo apt install lsb-release 
-10. sudo apt install curl 
+1. sudo apt install python3-pip
+2. sudo apt install libpython3-dev  
+3. sudo apt install tftpd-hpa 
+4. sudo apt install pkg-config 
+5. sudo apt install lsb-release 
+6. sudo apt install curl 
+7. sudo pip3 install dnspython3 
+8. sudo pip3 install cryptography 
+9. sudo pip3 install cloudflare-ddns 
+10. sudo pip3 install s-tui 
 
 # build ixcsys
 1.first you need run "python3 configure.py" for configure your environment(for example,"python3 build_config.py nodebug")     
@@ -50,4 +50,4 @@ A software router for Linux
 5.Intel i5-6500:2000Mbit/s
 
 # why use Linux tuntap
-netmap is not the part of Linux kernel,though FreeBSD support netmap,but FreeBSD netmap less hardware is supported.
+netmap is not the part of Linux kernel,though FreeBSD support netmap,but FreeBSD less hardware is supported.
