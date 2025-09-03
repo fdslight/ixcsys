@@ -185,7 +185,7 @@ class service(dispatcher.dispatcher):
     def myloop(self):
         #now = time.time()
         # 每隔一段时间监控一次,避免DNS查询过慢
-        # 改称按需连接
+        # 改成按需连接,避免TCP连接过于频繁
         #if now - self.__up_time >= 10:
         #    self.monitor_dot_server_conn()
         #    self.__up_time = now
