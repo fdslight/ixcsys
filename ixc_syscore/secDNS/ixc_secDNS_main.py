@@ -183,12 +183,14 @@ class service(dispatcher.dispatcher):
         self.start()
 
     def myloop(self):
-        now = time.time()
+        #now = time.time()
         # 每隔一段时间监控一次,避免DNS查询过慢
-        if now - self.__up_time >= 10:
-            self.monitor_dot_server_conn()
-            self.__up_time = now
-        return
+        # 改称按需连接
+        #if now - self.__up_time >= 10:
+        #    self.monitor_dot_server_conn()
+        #    self.__up_time = now
+        #return
+        pass
 
     def load_configs(self):
         with open(self.dot_conf_path, "r") as f:
