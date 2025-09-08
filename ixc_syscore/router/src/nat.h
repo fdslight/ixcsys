@@ -23,6 +23,8 @@ struct ixc_nat_session{
     unsigned char _pad1[1];
     unsigned char wan_key[7];
     unsigned char _pad2[1];
+    // 最小超时标记,如果设置了此标记,那么使用最小超时
+    int min_timeout_flags;
     unsigned char protocol;
     // 引用计数
     unsigned char refcnt;
@@ -32,6 +34,9 @@ struct ixc_nat_session{
 #define IXC_NAT_ID_MAX 60000
 
 // NAT 超时时间
+// 最小超时时间
+#define IXC_NAT_MIN_TIMEOUT 10
+// 标准超时时间
 #define IXC_NAT_TIMEOUT 180
 
 struct ixc_nat_id{

@@ -252,10 +252,12 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     unsigned short *csum_ptr,csum;
     unsigned short *id_ptr;
 
-    struct netutil_udphdr *udphdr;
-    struct netutil_tcphdr *tcphdr;
+    struct netutil_udphdr *udphdr=NULL;
+    struct netutil_tcphdr *tcphdr=NULL;
+    unsigned short tcp_header_len_and_flag;
+    int tcp_is_syn=0;
     struct netutil_icmpecho *icmpecho;
-    struct netutil_icmphdr *icmphdr;
+    struct netutil_icmphdr *icmphdr=NULL;
     struct ixc_netif *netif=m->netif;
     struct ixc_nat_id *nat_id=NULL;
     struct ixc_nat_id_set *id_set;
@@ -365,6 +367,15 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
     // 来自于LAN但没有会话记录那么创建session
     if(NULL==session && is_src){
+        // 针对tcp的syn状态进行处理
+        if(6==iphdr->protocol){
+            tcp_header_len_and_flag=ntohs(tcphdr->header_len_and_flag);
+            tcp_is_syn=(tcp_header_len_and_flag & 0x0002) >> 1;
+            if(!tcp_is_syn){
+                ixc_mbuf_put(m);
+                return NULL;
+            }
+        }
         nat_id=ixc_nat_id_get(id_set,iphdr->protocol);
         if(NULL==nat_id){
             ixc_mbuf_put(m);
@@ -428,7 +439,18 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
         session->protocol=iphdr->protocol;
 
-        memcpy(session->addr,iphdr->src_addr,4);        
+        memcpy(session->addr,iphdr->src_addr,4);
+
+        session->min_timeout_flags=0;
+        // 对tcp握手阶段进行
+        if(6!=iphdr->protocol){
+            // ICMP使用最小时间标记
+            if(1==iphdr->protocol){
+                session->min_timeout_flags=1;
+            }
+        }else{
+            if(!tcp_is_syn) session->min_timeout_flags=0;
+        }
     }
 
     if(!is_src){
@@ -519,13 +541,14 @@ static void ixc_nat_timeout_cb(void *data)
     struct ixc_nat_session *session=data;
     struct time_data *tdata=NULL;
     time_t now_time=time(NULL);
+    int timeout=session->min_timeout_flags?IXC_NAT_MIN_TIMEOUT:IXC_NAT_TIMEOUT;
 
     //DBG_FLAGS;
 
     //session->tdata=NULL;
 
     // 如果NAT会话超时那么就删除数据
-    if(now_time-session->up_time>=IXC_NAT_TIMEOUT){
+    if(now_time-session->up_time>=timeout){
         IXC_PRINT_IP("nat session timeout",session->addr);
         map_del(nat.wan2lan,(char *)(session->wan_key),ixc_nat_del_cb);
         map_del(nat.lan2wan,(char *)(session->lan_key),ixc_nat_del_cb);
