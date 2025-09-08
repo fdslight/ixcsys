@@ -365,12 +365,14 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         return NULL;
     }
 
+    if(6==iphdr->protocol){
+        tcp_header_len_and_flag=ntohs(tcphdr->header_len_and_flag);
+        tcp_is_syn=(tcp_header_len_and_flag & 0x0002) >> 1;
+    }
     // 来自于LAN但没有会话记录那么创建session
     if(NULL==session && is_src){
         // 针对tcp的syn状态进行处理
         if(6==iphdr->protocol){
-            tcp_header_len_and_flag=ntohs(tcphdr->header_len_and_flag);
-            tcp_is_syn=(tcp_header_len_and_flag & 0x0002) >> 1;
             if(!tcp_is_syn){
                 ixc_mbuf_put(m);
                 return NULL;
@@ -442,14 +444,16 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         memcpy(session->addr,iphdr->src_addr,4);
 
         session->min_timeout_flags=0;
-        // 对tcp握手阶段进行
+        
+        // 根据状态减少超时时间
         if(6!=iphdr->protocol){
             // ICMP使用最小时间标记
             if(1==iphdr->protocol){
                 session->min_timeout_flags=1;
             }
         }else{
-            if(!tcp_is_syn) session->min_timeout_flags=0;
+            // 这里肯定是TCP SYN,TCP SYN使用最小超时时间
+            session->min_timeout_flags=1;
         }
     }
 
@@ -483,6 +487,9 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
         csum=csum_calc_incre(*id_ptr,session->wan_id,*csum_ptr);
         *id_ptr=session->wan_id;
         session->up_time=time(NULL);
+        if(6==iphdr->protocol){
+            if(!tcp_is_syn) session->min_timeout_flags=0;
+        }
     }
 
     if(!is_not_icmp_echo_reply) *csum_ptr=csum;
