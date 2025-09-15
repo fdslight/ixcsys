@@ -249,28 +249,26 @@ class tcp_tunnel(tcp_handler.tcp_handler):
         self.__header_ok = True
 
     def tcp_readable(self):
-        if not self.__header_ok:
-            self.parse_header()
-        if not self.__header_ok:
-            return
-
-        if self.reader.size() < self.__payload_len: return
-
-        try:
-            priv_key, msg = self.__decrypt.unwrap_tcp_body(self.reader.read(self.__payload_len), self.__crc32)
-        except racs.TCPPktWrong:
-            logging.print_error("WRONG_NETPKT %s,%s" % self.__address)
-            self.delete_handler(self.fileno)
-            return
-        self.__header_ok = False
-        if priv_key != self.__priv_key:
-            logging.print_error("WRONG_PRIV_KEY %s,%s" % self.__address)
-            self.delete_handler(self.fileno)
-            return
-        self.__update_time = time.time()
-        if not msg: return
-        self.dispatcher.send_to_local(msg)
-        self.tcp_readable()
+        while 1:
+            if not self.__header_ok:
+                self.parse_header()
+            if not self.__header_ok:break
+            if self.reader.size() < self.__payload_len: break
+            try:
+                priv_key, msg = self.__decrypt.unwrap_tcp_body(self.reader.read(self.__payload_len), self.__crc32)
+            except racs.TCPPktWrong:
+                logging.print_error("WRONG_NETPKT %s,%s" % self.__address)
+                self.delete_handler(self.fileno)
+                return
+            self.__header_ok = False
+            if priv_key != self.__priv_key:
+                logging.print_error("WRONG_PRIV_KEY %s,%s" % self.__address)
+                self.delete_handler(self.fileno)
+                return
+            self.__update_time = time.time()
+            if not msg: break
+            self.dispatcher.send_to_local(msg)
+        ''''''
 
     def tcp_writable(self):
         self.remove_evt_write(self.fileno)
