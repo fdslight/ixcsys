@@ -527,7 +527,6 @@ class service(dispatcher.dispatcher):
         return self.__traffic_log_parser.traffic_log_get()
 
     def __get_self_global_ip(self, is_ipv6=False):
-        # IPv4和IPv6使用不同网站原因是避免在很短间隔内查询IPv4又查询IPv6被封禁
         if is_ipv6:
             cmd = "curl --connect-timeout 3 -6 'https://ifconfig.me/all.json'"
         else:
