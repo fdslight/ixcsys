@@ -529,9 +529,9 @@ class service(dispatcher.dispatcher):
     def __get_self_global_ip(self, is_ipv6=False):
         # IPv4和IPv6使用不同网站原因是避免在很短间隔内查询IPv4又查询IPv6被封禁
         if is_ipv6:
-            cmd = "curl --connect-timeout 3 -6 'https://api64.ipify.org?format=json'"
+            cmd = "curl --connect-timeout 3 -6 'https://ifconfig.me/all.json'"
         else:
-            cmd = "curl --connect-timeout 3 -4 'https://whatsmyip.dev/api/ip'"
+            cmd = "curl --connect-timeout 3 -4 'https://ifconfig.me/all.json'"
 
         if not os.path.isfile("/usr/bin/curl"):
             logging.print_error("not found curl command")
@@ -547,11 +547,16 @@ class service(dispatcher.dispatcher):
             logging.print_alert("server response wrong data %s for get self global ip" % s)
             return ""
 
+        """
         if "ip" not in o and is_ipv6:
             logging.print_alert("server response wrong json data %s for get global ip6" % s)
             return ""
 
         if "addr" not in o and not is_ipv6:
+            logging.print_alert("server response wrong json data %s for get global ip" % s)
+            return ""
+        """
+        if "ip_addr" not in o:
             logging.print_alert("server response wrong json data %s for get global ip" % s)
             return ""
 
@@ -560,13 +565,13 @@ class service(dispatcher.dispatcher):
             return ""
 
         if is_ipv6:
-            ip = o["ip"]
+            ip = o["ip_addr"]
             if netutils.is_ipv6_address(ip):
                 return ip
             else:
                 return ""
             ''''''
-        ip = o["addr"]
+        ip = o["ip_addr"]
         if netutils.is_ipv4_address(ip):
             return ip
         return ""
