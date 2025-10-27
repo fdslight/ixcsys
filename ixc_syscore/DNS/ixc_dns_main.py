@@ -89,6 +89,8 @@ class service(dispatcher.dispatcher):
 
     __scgi_fd = None
     __cur_dns_id = None
+    __empty_dns_ids = None
+    __dns_id_timer = None
 
     # 是否重定向DNS结果
     __forward_result = None
@@ -112,7 +114,6 @@ class service(dispatcher.dispatcher):
     __hosts = None
 
     __ip_match = None
-    __route_timer = None
 
     # 是否开启安全DNS
     __enable_sec_dns = None
@@ -155,6 +156,8 @@ class service(dispatcher.dispatcher):
 
         self.__scgi_fd = -1
         self.__cur_dns_id = 1
+        self.__empty_dns_ids = []
+        self.__dns_id_timer = timer.timer()
         self.__forward_result = False
         self.__wan_ok = False
 
@@ -164,7 +167,6 @@ class service(dispatcher.dispatcher):
         self.__hosts_fpath = "%s/hosts.json" % os.getenv("IXC_MYAPP_CONF_DIR")
         self.__hosts = {}
         self.__ip_match = ip_match.ip_match()
-        self.__route_timer = timer.timer()
 
         self.__enable_sec_dns = False
         self.__sec_dns_forward_port = 0
@@ -421,9 +423,13 @@ class service(dispatcher.dispatcher):
 
     def get_dns_id(self):
         dns_id = self.__cur_dns_id
+        if self.__empty_dns_ids:
+            dns_id = self.__empty_dns_ids.pop(0)
+            self.__dns_id_timer.set_timeout(dns_id, 5)
+            return dns_id
+        if dns_id > 0xfffe: return -1
         self.__cur_dns_id += 1
-        # 此处重置DNS ID
-        if self.__cur_dns_id > 0xfffe: self.__cur_dns_id = 1
+        self.__dns_id_timer.set_timeout(dns_id, 5)
 
         return dns_id
 
@@ -518,7 +524,7 @@ class service(dispatcher.dispatcher):
         dns_id, = struct.unpack("!H", message[0:2])
         new_dns_id = self.get_dns_id()
 
-        if new_dns_id < 0:
+        if new_dns_id < 1:
             logging.print_error("cannot get DNS ID for DNS proxy")
             return
         try:
@@ -958,6 +964,13 @@ class service(dispatcher.dispatcher):
             self.update_pppoe_dns()
 
         self.__dns_cache.cache_loop()
+
+        # 回收DNS ID
+        dns_ids = self.__dns_id_timer.get_timeout_names()
+        for dns_id in dns_ids:
+            del self.__id_wan2lan[dns_id]
+            self.__empty_dns_ids.append(dns_id)
+        ''''''
 
 
 def main():
