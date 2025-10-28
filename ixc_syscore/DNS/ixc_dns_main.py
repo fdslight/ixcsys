@@ -968,7 +968,8 @@ class service(dispatcher.dispatcher):
         # 回收DNS ID
         dns_ids = self.__dns_id_timer.get_timeout_names()
         for dns_id in dns_ids:
-            del self.__id_wan2lan[dns_id]
+            # 有些DNS ID可能会被提前删除
+            if dns_id in self.__id_wan2lan:del self.__id_wan2lan[dns_id]
             self.__empty_dns_ids.append(dns_id)
         ''''''
 
