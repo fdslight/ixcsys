@@ -323,7 +323,6 @@ class service(dispatcher.dispatcher):
         return
 
     def handle_msg_from_local(self, message: bytes):
-        # 首先查找缓存是否存在,如果存在缓存,那么直接返回
         self.send_to_dns_server(message)
 
     def handle_msg_from_server(self, message: bytes):
