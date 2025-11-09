@@ -417,8 +417,10 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             STDERR("nat map add failed\r\n");
             return NULL;
         }
-
-        memcpy(tmp,netif->ipaddr,4);
+        
+        // 由于wan ip会变化,这里IP地址统一使用0.0.0.0
+        memset(tmp,0,4);
+        //memcpy(tmp,netif->ipaddr,4);
         tmp[4]=iphdr->protocol;
         memcpy(tmp+5,&(nat_id->net_id),2);
         memcpy(session->wan_key,tmp,7);

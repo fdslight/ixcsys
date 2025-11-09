@@ -582,7 +582,6 @@ class service(dispatcher.dispatcher):
                 del self.__id_wan2lan[new_dns_id]
                 return
             ''''''
-        # WAN无连接允许本地hosts映射
         if not self.__wan_ok:
             del self.__id_wan2lan[new_dns_id]
             return
