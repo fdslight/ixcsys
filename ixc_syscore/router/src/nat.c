@@ -278,7 +278,9 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     }*/
 
     if(is_src) memcpy(addr,iphdr->src_addr,4);
-    else memcpy(addr,iphdr->dst_addr,4);
+    // 目标地址为4个0,因为考虑目标地址可能会变,而地址变化后NAT会话并不会被删除
+    else memset(addr,0,4);
+    //else memcpy(addr,iphdr->dst_addr,4);
 
     // 对ICMP进行特殊处理,ICMP只支持echo request和echo reply
     if(1==iphdr->protocol){
@@ -418,7 +420,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             return NULL;
         }
         
-        // 由于wan ip会变化,这里IP地址统一使用0.0.0.0
+        // 由于wan ip会变化,但NAT会话不会跟随删除,所以这里IP地址统一使用0.0.0.0
         memset(tmp,0,4);
         //memcpy(tmp,netif->ipaddr,4);
         tmp[4]=iphdr->protocol;
