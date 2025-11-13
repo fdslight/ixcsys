@@ -21,8 +21,8 @@ struct ixc_nat_session{
 
     unsigned char lan_key[7];
     unsigned char _pad1[1];
-    unsigned char wan_key[7];
-    unsigned char _pad2[1];
+    unsigned char wan_key[3];
+    unsigned char _pad2[5];
     // 最小超时标记,如果设置了此标记,那么使用最小超时
     int min_timeout_flags;
     unsigned char protocol;

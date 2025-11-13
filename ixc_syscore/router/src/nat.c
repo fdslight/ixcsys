@@ -243,7 +243,7 @@ static void ixc_nat_del_cb(void *data)
 static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 {
     struct netutil_iphdr *iphdr,*tmp_iphdr;
-    unsigned char addr[4];
+    unsigned char addr[4]={0,0,0,0};
     int hdr_len=0,tmp_hdr_len,length,is_not_icmp_echo_reply=0;
     char key[7],tmp[7],is_found;
     struct ixc_nat_session *session;
@@ -279,7 +279,7 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
 
     if(is_src) memcpy(addr,iphdr->src_addr,4);
     // 目标地址为4个0,因为考虑目标地址可能会变,而地址变化后NAT会话并不会被删除
-    else memset(addr,0,4);
+    //else memset(addr,0,4);
     //else memcpy(addr,iphdr->dst_addr,4);
 
     // 对ICMP进行特殊处理,ICMP只支持echo request和echo reply
@@ -358,7 +358,8 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
     memcpy(key+5,id_ptr,2);
 
     if(is_src) session=map_find(nat.lan2wan,key,&is_found);
-    else session=map_find(nat.wan2lan,key,&is_found);
+    // wan2lan只需要三个字节
+    else session=map_find(nat.wan2lan,key+4,&is_found);
 
     // WAN口找不到的那么直接丢弃数据包
     if(NULL==session && !is_src){
@@ -419,13 +420,11 @@ static struct ixc_mbuf *ixc_nat_do(struct ixc_mbuf *m,int is_src)
             STDERR("nat map add failed\r\n");
             return NULL;
         }
-        
-        // 由于wan ip会变化,但NAT会话不会跟随删除,所以这里IP地址统一使用0.0.0.0
-        memset(tmp,0,4);
+        //memset(tmp,0,4);
         //memcpy(tmp,netif->ipaddr,4);
-        tmp[4]=iphdr->protocol;
-        memcpy(tmp+5,&(nat_id->net_id),2);
-        memcpy(session->wan_key,tmp,7);
+        tmp[0]=iphdr->protocol;
+        memcpy(tmp+1,&(nat_id->net_id),2);
+        memcpy(session->wan_key,tmp,3);
 
         if(0!=map_add(nat.wan2lan,tmp,session)){
             tdata->is_deleted=1;
@@ -632,7 +631,7 @@ int ixc_nat_init(void)
         return -1;
     }
     nat.lan2wan=m;
-    rs=map_new(&m,7);
+    rs=map_new(&m,3);
     if(rs){
         sysloop_del(nat_sysloop);
         map_release(nat.lan2wan,NULL);
