@@ -208,7 +208,10 @@ class dhcp_server(object):
 
     def handle_dhcp_discover_req(self, opts: list):
         request_list = self.get_dhcp_opt_value(opts, 55)
-        if not request_list: return
+        # 某些错误不发送请求列表,使用默认列表
+        # if not request_list: return
+        if not request_list:
+            request_list = [1, 3, 6]
         resp_opts = []
         s_client_hwaddr = netutils.byte_hwaddr_to_str(self.__client_hwaddr)
         ipaddr = None
