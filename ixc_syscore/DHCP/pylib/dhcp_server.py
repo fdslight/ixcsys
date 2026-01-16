@@ -285,8 +285,8 @@ class dhcp_server(object):
             return
         o = self.__tmp_alloc_addrs[s_client_hwaddr]
 
-        # 在分配IP地址前5秒钟时间用于冲突检测
-        if now - o["time"] < 5 and not o["neg_ok"]: return
+        # 在分配IP地址前1秒钟时间用于冲突检测
+        if now - o["time"] < 1 and not o["neg_ok"]: return
 
         client_id = self.get_dhcp_opt_value(opts, 61)
         request_ip = self.get_dhcp_opt_value(opts, 50)
