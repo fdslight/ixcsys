@@ -169,8 +169,8 @@ class dhcp_server(object):
         resp_opts.append((59, struct.pack("!I", int(self.__TIMEOUT * 0.8))))
 
         # DHCP server分配的DNS地址就是路由器自身的管理地址
-        if 138 not in self.__dhcp_options and self.is_from_request_list(138, request_list):
-            resp_opts.append((138, self.__dns_bytes))
+        #if 138 not in self.__dhcp_options and self.is_from_request_list(138, request_list):
+        #    resp_opts.append((138, self.__dns_bytes))
 
         return resp_opts
 
