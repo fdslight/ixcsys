@@ -522,6 +522,9 @@ class httpd_handler(ssl_handler.ssl_handler):
         self.handle_http_request_header(HTTP1_xID, request, kv_pairs)
 
     def handle_http1_request_body(self):
+        if HTTP1_xID not in self.__sessions:
+            self.__is_error = True
+            return
         scgi_fd, cls = self.__sessions[HTTP1_xID]
         self.get_handler(scgi_fd).send_scgi_body(self.reader.read())
 
