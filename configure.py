@@ -5,7 +5,7 @@ import getopt, sys, os, json
 __helper = """
 action:
     nodebug              set no debug build environment
-    debug                st debug build environment
+    debug                set debug build environment
     help                 print help
 
 default or debug optional arguments:
