@@ -90,6 +90,7 @@ copilot.microsoft.com:1
 *.discord.com:1
 *.discordapp.net:1
 *.tumblr.com:1
+*.linkedin.com:1
 
 # 防止skype重定向到gmw.cn
 *.skype.com:1
