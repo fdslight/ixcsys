@@ -57,7 +57,7 @@ def main():
     fdst = open(PKG_FILE, "rb")
     # 丢弃前面23个字节magic+md5
     fdst.read(23)
-    new_file = "/tmp/ixcsys_temp.tar.gz"
+    new_file = "/var/ixcsys/ixcsys_temp.tar.gz"
     fdst_temp = open(new_file, "wb")
 
     while 1:
@@ -74,12 +74,12 @@ def main():
 
     # 备份配置文件
     if os.path.isdir("/opt/ixcsys/ixc_configs"):
-        os.system("mv /opt/ixcsys/ixc_configs /tmp/ixc_configs_bak")
+        os.system("mv /opt/ixcsys/ixc_configs /var/ixcsys/ixc_configs_bak")
 
     os.system("tar xf %s -C /opt/ixcsys" % new_file)
     # 通过备份覆盖
-    os.system("cp -r /tmp/ixc_configs_bak/* /opt/ixcsys/ixc_configs")
-    os.system("rm -rf /tmp/ixc_configs_bak")
+    os.system("cp -r /var/ixcsys/ixc_configs_bak/* /opt/ixcsys/ixc_configs")
+    os.system("rm -rf /var/ixcsys/ixc_configs_bak")
 
     print("install ixcsys OK")
 
