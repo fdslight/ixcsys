@@ -280,10 +280,10 @@ def __gen_update_archive():
     """生成更新归档,注意执行此函数需要先make install_all
     :return:
     """
-    update_file = "/var/ixcsys/ixcsys_update.tar.gz"
-    update_check_file = "/var/ixcsys/ixcsys_update_check.md5"
+    update_file = "/tmp/ixcsys_update.tar.gz"
+    update_check_file = "/tmp/ixcsys_update_check.md5"
     # 生成一个临时安装目录
-    prefix = "/var/ixcsys/ixc_update_temp"
+    prefix = "/tmp/ixc_update_temp"
     if not os.path.isdir(prefix): os.mkdir(prefix)
     __install_all(prefix=prefix)
 
@@ -291,7 +291,7 @@ def __gen_update_archive():
         print("ERROR:not found install directory %s" % prefix)
         return
 
-    gen_host_info("/var/ixcsys/ixc_update_temp/host_info")
+    gen_host_info("/tmp/ixc_update_temp/host_info")
 
     cur_dir = BASE_DIR
     os.chdir(prefix)
@@ -315,7 +315,7 @@ def __gen_update_archive():
     fdst.write(md5.digest())
     fdst.close()
 
-    print("generate update archive /var/ixcsys/ixcsys_update.tar.gz OK")
+    print("generate update archive /tmp/ixcsys_update.tar.gz OK")
 
 
 def install_lib():
@@ -329,7 +329,7 @@ def install_lib():
 def build_binary_install_pkg():
     """构建二进制安装包
     """
-    archive_path = "/var/ixcsys/ixcsys_update.tar.gz"
+    archive_path = "/tmp/ixcsys_update.tar.gz"
 
     ver_path = "%s/version" % os.path.dirname(os.path.abspath(__file__))
     dis, dis_id, release = os_info.get_os_info()
@@ -338,7 +338,7 @@ def build_binary_install_pkg():
     if not os.path.isfile(archive_path):
         print("ERROR:cannot found archive file")
         return
-    with open("/var/ixcsys/ixcsys_update_check.md5", "rb") as f:
+    with open("/tmp/ixcsys_update_check.md5", "rb") as f:
         md5_code = f.read()
     f.close()
 
@@ -346,7 +346,7 @@ def build_binary_install_pkg():
         version = f.read()
     f.close()
 
-    new_file = "/var/ixcsys/ixcsys-%s-%s-%s-%s.ixcpkg" % (dis_id, release, platform.machine(), version,)
+    new_file = "/tmp/ixcsys-%s-%s-%s-%s.ixcpkg" % (dis_id, release, platform.machine(), version,)
 
     fdst_up = open(archive_path, "rb")
 
@@ -361,7 +361,7 @@ def build_binary_install_pkg():
     fdst_up.close()
     fdst.close()
 
-    pkg_path = "/var/ixcsys/ixcsys_pkg"
+    pkg_path = "/tmp/ixcsys_pkg"
     if not os.path.isdir(pkg_path): os.mkdir(pkg_path)
 
     os.chdir(os.path.dirname(ver_path))
@@ -373,18 +373,18 @@ def build_binary_install_pkg():
     s = fdst.read()
     fdst.close()
     s = s.replace("{{PKG_FILE}}", "ixcsys-%s-%s-%s-%s.ixcpkg" % (dis_id, release, platform.machine(), version,))
-    fdst = open("/var/ixcsys/ixcsys_pkg/ixc_bin_installer.py", "w")
+    fdst = open("/tmp/ixcsys_pkg/ixc_bin_installer.py", "w")
     fdst.write(s)
     fdst.close()
 
-    os.chdir("/var/ixcsys/ixcsys_pkg")
+    os.chdir("/tmp/ixcsys_pkg")
 
     fname = "ixcsys-%s-%s-%s-%s.bin.install.tar.gz" % (
         dis_id, release, platform.machine(), version,)
 
-    os.system("tar czf /var/ixcsys/%s *" % fname)
+    os.system("tar czf /tmp/%s *" % fname)
 
-    print("generate /var/ixcsys/%s OK" % fname)
+    print("generate /tmp/%s OK" % fname)
 
 
 def main():
@@ -403,8 +403,6 @@ def main():
     if action == "help":
         print(__helper)
         return
-
-    if not os.path.isdir("/var/ixcsys"): os.mkdir("/var/ixcsys")
 
     if action == "install_lib":
         install_lib()
