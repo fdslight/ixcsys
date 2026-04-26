@@ -34,7 +34,7 @@ def build(base_dir, my_dir, cflags, debug=True):
             "%s/pywind/clib/netif/freebsd_hwinfo.c" % base_dir,
         ]
 
-    cflags += " "
+    cflags += " -std=gnu11"
 
     if debug:
         cflags += " -D DEBUG -D _GNU_SOURCE"

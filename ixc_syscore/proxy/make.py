@@ -10,7 +10,7 @@ def build(base_dir, mydir, cflags, debug=True):
         "%s/pywind/clib/netutils.c" % base_dir,
     )
 
-    cflags += " "
+    cflags += " -std=gnu11"
 
     if debug:
         cflags += " -D DEBUG -D _GNU_SOURCE"
