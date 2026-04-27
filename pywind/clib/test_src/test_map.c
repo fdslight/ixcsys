@@ -15,17 +15,19 @@ int main(int argc,char *argv[])
     int rs=map_new(&m,4);
     int x=1000,*z;
     char is_found;
+    int ka=1,kb=2;
 
     rs=map_pre_alloc(m,256);
-    rs=map_add(m,"hell",&x);
-    rs=map_add(m,"zzzz",&x);
+    rs=map_add(m,(char *)(&ka),&x);
+    rs=map_add(m,(char *)(&kb),&x);
     
-    z=map_find(m,"hell",&is_found);
-    map_del(m,"hell",NULL);
+    z=map_find(m,(char *)(&ka),&is_found);
+    map_del(m,(char *)(&ka),NULL);
     map_each(m,cb);
     
     
-    map_del(m,"zzzx",NULL);
+    map_del(m,(char *)(&ka),NULL);
+    map_del(m,(char *)(&ka),NULL);
     
     printf("%d %d %d\r\n",rs,is_found,*z);
 
