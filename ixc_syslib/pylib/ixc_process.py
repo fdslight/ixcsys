@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-import os,time
+import os, time, subprocess
 
 
 def get_process():
     results = []
-    fdst = os.popen("ps aux | grep ixc_syscore")
 
-    for line in fdst:
+    r = subprocess.run("ps aux | grep ixc_syscore", capture_output=True, shell=True)
+    xlist = r.stdout.decode().split("\n")
+
+    for line in xlist:
+        if not line: continue
         _list = []
         line = line.replace("\n", "")
         line = line.replace("\r", "")
@@ -29,17 +32,18 @@ def get_process():
         if m["COMMAND"].find("grep") >= 0: continue
         results.append(m)
 
-    fdst.close()
     return results
 
 
 def get_cpu_stat():
     """获取CPU状态
     """
-    fdst = os.popen("cat /proc/stat | grep cpu")
+    r=subprocess.run("cat /proc/stat | grep cpu",capture_output=True, shell=True)
+    xlist = r.stdout.decode().split("\n")
     results = []
 
-    for line in fdst:
+    for line in xlist:
+        if not line: continue
         line = line.replace("\r", "")
         line = line.replace("\n", "")
         _tmplist = line.split(" ")
@@ -61,8 +65,6 @@ def get_cpu_stat():
         }
 
         results.append((_list[0], o))
-
-    fdst.close()
 
     return results
 

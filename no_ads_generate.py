@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # 生成DNS广告屏蔽规则
 
-import os, hashlib
+import os, hashlib, subprocess
 
 URL = "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/refs/heads/master/anti-ad-domains.txt"
 
@@ -116,7 +116,8 @@ def gen_dns_rule(results):
 def main():
     fname = "anti-ad-domains.txt"
     if os.path.isfile(fname): os.remove(fname)
-    os.system("wget %s" % URL)
+
+    subprocess.call("wget %s" % URL, shell=True)
     results = parse(fname)
     # gen_proxy_rule(results)
     gen_dns_rule(results)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # 二进制安装器
-import sys, os, hashlib
+import sys, os, hashlib, subprocess
 
 PKG_FILE = "{{PKG_FILE}}"
 
@@ -69,17 +69,19 @@ def main():
     fdst_temp.close()
 
     if action == "reinstall":
-        os.system("tar xf %s -C /opt/ixcsys" % new_file)
+        subprocess.call("tar xf %s -C /opt/ixcsys" % new_file, shell=True)
         return
 
     # 备份配置文件
     if os.path.isdir("/opt/ixcsys/ixc_configs"):
-        os.system("mv /opt/ixcsys/ixc_configs /tmp/ixc_configs_bak")
+        subprocess.call("mv /opt/ixcsys/ixc_configs /tmp/ixc_configs_bak", shell=True)
 
-    os.system("tar xf %s -C /opt/ixcsys" % new_file)
-    # 通过备份覆盖
-    os.system("cp -r /tmp/ixc_configs_bak/* /opt/ixcsys/ixc_configs")
-    os.system("rm -rf /tmp/ixc_configs_bak")
+    cmds = [
+        "tar xf %s -C /opt/ixcsys" % new_file,
+        "cp -r /tmp/ixc_configs_bak/* /opt/ixcsys/ixc_configs",
+        "rm -rf /tmp/ixc_configs_bak"
+    ]
+    for cmd in cmds: subprocess.call(cmd, shell=True)
 
     print("install ixcsys OK")
 

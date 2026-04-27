@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json
+import json, subprocess
 import pickle, os, socket, sys, hashlib
 import time
 import traceback
@@ -1063,15 +1063,20 @@ class helper(object):
             # 等待一段时间,以便系统能够结束相关清理工作
             time.sleep(10)
         if self.is_linux:
-            os.system("ip link set %s down" % self.__LAN_NAME)
-            os.system("ip link set %s down" % self.__WAN_NAME)
-            os.system("ip link set %s down" % self.__LAN_BR_NAME)
-            os.system("ip link set %s down" % self.__WAN_BR_NAME)
-            os.system("ip link del %s" % self.__LAN_BR_NAME)
-            os.system("ip link del %s" % self.__WAN_BR_NAME)
+            cmds = [
+                "ip link set %s down" % self.__LAN_NAME,
+                "ip link set %s down" % self.__WAN_NAME,
+                "ip link set %s down" % self.__LAN_BR_NAME,
+                "ip link set %s down" % self.__WAN_BR_NAME,
+                "ip link del %s" % self.__LAN_BR_NAME,
+                "ip link del %s" % self.__WAN_BR_NAME,
+            ]
         else:
-            os.system("ifconfig %s destroy" % self.__LAN_BR_NAME)
-            os.system("ifconfig %s destroy" % self.__WAN_BR_NAME)
+            cmds = [
+                "ifconfig %s destroy" % self.__LAN_BR_NAME,
+                "ifconfig %s destroy" % self.__WAN_BR_NAME,
+            ]
+        for cmd in cmds: subprocess.call(cmd, shell=True)
 
         self.stop_pass()
 
@@ -1091,19 +1096,19 @@ class helper(object):
             # "echo 1 > /proc/sys/net/ipv4/ip_forward"
         ]
 
-        for cmd in cmds: os.system(cmd)
+        for cmd in cmds: subprocess.call(cmd, shell=True)
         for if_name in added_bind_ifs:
             cmd = "ip link set dev %s master %s" % (if_name, br_name,)
-            os.system(cmd)
+            subprocess.call(cmd, shell=True)
             # 禁用桥接网卡的ipv6,用以禁止发送icmpv6
             cmd = "echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % if_name
-            os.system(cmd)
+            subprocess.call(cmd, shell=True)
         self.config_multicast_snooping()
 
     def freebsd_br_create(self, added_bind_ifs: list):
-        fd = os.popen("ifconfig bridge create")
-        s = fd.read()
-        fd.close()
+        r = subprocess.run("ifconfig bridge create", capture_output=True, shell=True)
+        s = r.stdout.decode()
+
         s = s.replace("\n", "")
         s = s.replace(" ", "")
 
@@ -1112,7 +1117,7 @@ class helper(object):
             _list.append("addm %s" % name)
         _list.append("up")
         cmd = " ".join(_list)
-        os.system(cmd)
+        subprocess.call(cmd, shell=True)
 
         return s
 
@@ -1130,7 +1135,7 @@ class helper(object):
 
         for br_device in br_devices:
             cmd = "echo 0 > %s/bridge/multicast_snooping" % br_device
-            os.system(cmd)
+            subprocess.call(cmd, shell=True)
         os.chdir(cur_pwd)
 
     def start_security(self):
@@ -1180,8 +1185,8 @@ class helper(object):
         hwaddr = lan_ifconfig["hwaddr"]
 
         # 禁用临时IPv6地址,注意需要在桥接创建前禁用,否则不生效
-        os.system("echo 0 > /proc/sys/net/ipv6/conf/all/use_tempaddr")
-        os.system("echo 0 > /proc/sys/net/ipv6/conf/default/use_tempaddr")
+        subprocess.call("echo 0 > /proc/sys/net/ipv6/conf/all/use_tempaddr", shell=True)
+        subprocess.call("echo 0 > /proc/sys/net/ipv6/conf/default/use_tempaddr", shell=True)
 
         self.__if_lan_fd, self.__LAN_NAME = self.__router.netif_create(self.__LAN_NAME, router.IXC_NETIF_LAN)
 
@@ -1197,17 +1202,14 @@ class helper(object):
             self.linux_br_create(self.__LAN_BR_NAME, lan_ifs + [self.__LAN_NAME])
 
             for devname in lan_ifs:
-                os.system("ip link set %s promisc on" % devname)
-                # os.system("ip link set %s promisc on" % self.__LAN_NAME)
-                os.system("ip link set %s up" % devname)
+                subprocess.call("ip link set %s promisc on" % devname, shell=True)
+                subprocess.call("ip link set %s up" % devname, shell=True)
             # 设置内网桥接网卡MTU为1400,目的为了本机能够被正常访问
-            # os.system("ip link set dev %s mtu 1400" % self.__LAN_BR_NAME)
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
 
-            os.system("ifconfig %s promisc" % lan_phy_ifname)
-            # os.system("ifconfig %s promisc" % self.__WAN_NAME)
-            os.system("ifconfig %s up" % lan_phy_ifname)
+            subprocess.call("ifconfig %s promisc" % lan_phy_ifname, shell=True)
+            subprocess.call("ifconfig %s up" % lan_phy_ifname, shell=True)
 
         lan_addr = lan_ifconfig["ip_addr"]
         manage_addr = lan_ifconfig["manage_addr"]
@@ -1219,9 +1221,8 @@ class helper(object):
         self.router.netif_set_ip(router.IXC_NETIF_LAN, byte_ipaddr, prefix, False)
 
         if self.is_linux:
-            os.system("ip -4 addr add %s/%s dev %s" % (manage_addr, prefix, self.__LAN_BR_NAME))
-            os.system("ip -4 route add default via %s" % lan_addr)
-            # os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+            subprocess.call("ip -4 addr add %s/%s dev %s" % (manage_addr, prefix, self.__LAN_BR_NAME), shell=True)
+            subprocess.call("ip -4 route add default via %s" % lan_addr, shell=True)
 
         # IPv6
         enable_static_ipv6 = bool(int(lan_ifconfig["enable_static_ipv6"]))
@@ -1259,24 +1260,28 @@ class helper(object):
         self.__if_pass_fd, self.__PASS_NAME = self.__router.netif_create("ixcpass", router.IXC_NETIF_PASS)
         if self.is_linux:
             self.linux_br_create(self.__PASS_BR_NAME, [ifname, self.__PASS_NAME, ])
-            os.system("ip link set %s promisc on" % ifname)
-            os.system("ip link set %s promisc on" % self.__PASS_NAME)
-            os.system("ip link set %s up" % ifname)
-            # 关闭外网IPv6支持
-            os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__PASS_BR_NAME)
-            # os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % ifname)
+            cmds = [
+                "ip link set %s promisc on" % ifname,
+                "ip link set %s promisc on" % self.__PASS_NAME,
+                "ip link set %s up" % ifname,
+                "echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__PASS_BR_NAME
+            ]
+            for cmd in cmds: subprocess.call(cmd, shell=True)
         else:
             pass
 
     def stop_pass(self):
         if self.__if_pass_fd < 0: return
         if self.is_linux:
-            os.system("ip link set %s down" % self.__PASS_NAME)
-            os.system("ip link set %s down" % self.__PASS_BR_NAME)
-            os.system("ip link set %s nomaster" % self.__PASS_NAME)
-            os.system("ip link del %s" % self.__PASS_BR_NAME)
+            cmds = [
+                "ip link set %s down" % self.__PASS_NAME,
+                "ip link set %s down" % self.__PASS_BR_NAME,
+                "ip link set %s nomaster" % self.__PASS_NAME,
+                "ip link del %s" % self.__PASS_BR_NAME,
+            ]
+            for cmd in cmds: subprocess.call(cmd, shell=True)
         else:
-            os.system("ifconfig %s destroy" % self.__PASS_BR_NAME)
+            subprocess.call("ifconfig %s destroy" % self.__PASS_BR_NAME, shell=True)
         self.__router.netif_delete(router.IXC_NETIF_PASS)
         self.__if_pass_fd = -1
 
@@ -1314,12 +1319,13 @@ class helper(object):
 
         if self.is_linux:
             self.linux_br_create(self.__WAN_BR_NAME, [wan_phy_ifname, self.__WAN_NAME, ])
-            os.system("ip link set %s promisc on" % wan_phy_ifname)
-            os.system("ip link set %s promisc on" % self.__WAN_NAME)
-            os.system("ip link set %s up" % wan_phy_ifname)
-            # 关闭外网IPv6支持
-            os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__WAN_BR_NAME)
-            # os.system("echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % wan_phy_ifname)
+            cmds = [
+                "ip link set %s promisc on" % wan_phy_ifname,
+                "ip link set %s promisc on" % self.__WAN_NAME,
+                "ip link set %s up" % wan_phy_ifname,
+                "echo 1 > /proc/sys/net/ipv6/conf/%s/disable_ipv6" % self.__WAN_BR_NAME,
+            ]
+            for cmd in cmds: subprocess.call(cmd, shell=True)
         else:
             pass
 
@@ -1493,20 +1499,18 @@ class helper(object):
 
         # FreeBSD if_tap.ko
         if not self.is_linux:
-            fd = os.popen("kldstat")
-            s = fd.read()
-            fd.close()
+            r = subprocess.run("kldstat", capture_output=True, shell=True)
+            s = r.stdout.decode()
             p = s.find("if_tap.ko")
-            if p < 0: os.system("kldload if_tap")
+            if p < 0: subprocess.call("kldload if_tap", shell=True)
 
         ''''''
 
     def stop_apport_for_coredump(self):
         """停用apport,此功能和coredump冲突
         """
-        fdst = os.popen("systemctl  | grep apport | grep service | wc -l")
-        s = fdst.read()
-        fdst.close()
+        r = subprocess.run("systemctl  | grep apport | grep service | wc -l", capture_output=True, shell=True)
+        s = r.stdout.decode()
 
         try:
             v = int(s)
@@ -1514,7 +1518,7 @@ class helper(object):
             return
 
         if v != 0:
-            os.system("systemctl stop apport.service")
+            subprocess.call("systemctl stop apport.service", shell=True)
         return
 
     def start(self):

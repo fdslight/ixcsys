@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket, zlib
+import socket, zlib, subprocess
 import sys, os, signal, time, struct, json, pickle
 import dns.message
 
@@ -210,14 +210,16 @@ class service(dispatcher.dispatcher):
     def get_ipv6_mngaddr(self):
         cmd = "ip addr show ixclanbr | grep  inet6 | grep mng"
         mng_ip6addr = None
-        fdst = os.popen(cmd)
+
+        rs=subprocess.run(cmd, capture_output=True, shell=True)
+        mng_list=rs.stdout.decode().split("\n")
         _list = []
 
-        for line in fdst:
+        for line in mng_list:
             line = line.strip()
             line = line.replace("\n", "")
             _list.append(line.lower())
-        fdst.close()
+
         if not _list: return None
 
         for s in _list:
@@ -968,7 +970,7 @@ class service(dispatcher.dispatcher):
         dns_ids = self.__dns_id_timer.get_timeout_names()
         for dns_id in dns_ids:
             # 有些DNS ID可能会被提前删除
-            if dns_id in self.__id_wan2lan:del self.__id_wan2lan[dns_id]
+            if dns_id in self.__id_wan2lan: del self.__id_wan2lan[dns_id]
             self.__empty_dns_ids.append(dns_id)
         ''''''
 

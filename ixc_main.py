@@ -2,7 +2,7 @@
 import json
 import os, sys, signal, time, traceback, hashlib
 import importlib
-import platform
+import platform, subprocess
 
 sys_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -92,12 +92,11 @@ def force_stop_router():
         "ixclan", "ixcwan", "ixclanbr", "ixcwanbr",
     ]
     for device in del_devices:
-        fdst = os.popen("ip addr | grep %s" % device)
-        s = fdst.read()
-        s = s.replace("\n", "")
-        fdst.close()
+        rs = subprocess.run("ip addr | grep %s" % device, capture_output=True, shell=True)
+        s = rs.stdout.decode().replace("\n", "")
+
         if not s: continue
-        os.system("ip link del %s" % device)
+        subprocess.call("ip link del %s" % device, shell=True)
 
 
 def start(uri: str, debug=False):
@@ -117,7 +116,7 @@ def start(uri: str, debug=False):
     os.putenv("IXC_MYAPP_RELATIVE_DIR", uri)
     os.putenv("IXC_MYAPP_NAME", name)
 
-    os.system(start_file)
+    subprocess.call(start_file, shell=True)
 
 
 def stop(uri: str):
@@ -128,7 +127,8 @@ def stop(uri: str):
     p += 1
     name = uri[p:]
     os.putenv("IXC_MYAPP_TMP_DIR", "/tmp/ixcsys/%s" % name)
-    os.system(stop_file)
+
+    subprocess.call(stop_file, shell=True)
 
     path = "/tmp/ixcsys/%s" % name
     if not os.path.isdir(path): return
@@ -196,8 +196,11 @@ class ixc_main_d(object):
         """获取所有的systemctl服务
         """
         services = []
-        fdst = os.popen("systemctl list-unit-files")
-        for line in fdst:
+        rs = subprocess.run("systemctl list-unit-files", shell=True, capture_output=True)
+        xlist = rs.stdout.decode().split("\n")
+
+        for line in xlist:
+            if not line: continue
             line = line.replace("\n", "")
             line = line.replace("\r", "")
             _list = line.split(" ")
@@ -205,7 +208,6 @@ class ixc_main_d(object):
             service = _list[0].strip()
             if service: services.append(service)
 
-        fdst.close()
         return services
 
     def stop_os_NetworkManager(self):
@@ -221,7 +223,7 @@ class ixc_main_d(object):
 
         for service in services:
             if service not in sys_services: continue
-            os.system("systemctl stop %s" % service)
+            subprocess.call("systemctl stop %s" % service, shell=True)
 
     def get_if_ipaddr(self, ifname: str):
         """获取网卡IP地址
@@ -229,9 +231,8 @@ class ixc_main_d(object):
         :return:
         """
         cmd = "ip addr | grep %s | grep inet" % ifname
-        fd = os.popen(cmd)
-        s = fd.read()
-        fd.close()
+        r = subprocess.run(cmd, shell=True, capture_output=True)
+        s = r.stdout.decode()
         s = s.strip()
         _list = s.split(" ")
         result = []
@@ -254,8 +255,8 @@ class ixc_main_d(object):
             if is_rescued: rescue_ifname = ifname
             if_ipaddr = self.get_if_ipaddr(ifname)
             if not if_ipaddr and not is_rescued:
-                os.system("ip link set %s up" % ifname)
-                os.system("ip addr add %s dev %s" % (ipaddr, ifname))
+                subprocess.call("ip link set %s up" % ifname, shell=True)
+                subprocess.call("ip addr add %s dev %s" % (ipaddr, ifname), shell=True)
         if not rescue_ifname:
             self.__net_monitor_up_time = time.time()
             return
@@ -272,10 +273,10 @@ class ixc_main_d(object):
             ip_info = self.get_if_ipaddr(rescue_ifname)
             # 如果存在IP信息那么先删除
             if ip_info:
-                os.system("ip addr del %s/%s dev %s" % (ip_info[0], ip_info[1], rescue_ifname))
-            os.system("ip link set %s up" % rescue_ifname)
+                subprocess.call("ip addr del %s/%s dev %s" % (ip_info[0], ip_info[1], rescue_ifname), shell=True)
+            subprocess.call("ip link set %s up" % rescue_ifname, shell=True)
             cmd = "ip addr add %s dev %s" % (config[rescue_ifname]["ipaddr"], rescue_ifname)
-            os.system(cmd)
+            subprocess.call(cmd, shell=True)
         self.__is_isset_rescue = True
 
     def __init__(self):
@@ -374,7 +375,7 @@ class ixc_main_d(object):
             print("UPDATE ERROR:wrong update file md5")
             return
 
-        os.system("tar xf %s -C %s" % (self.__update_file_path, d))
+        subprocess.call("tar xf %s -C %s" % (self.__update_file_path, d), shell=True)
         os.chdir(d)
 
         if not self.check_os_env("host_info"):
@@ -385,14 +386,14 @@ class ixc_main_d(object):
 
         for x in _list:
             if x == "ixc_configs":
-                os.system("cp -r -n ixc_configs %s" % sys_dir)
+                subprocess.call("cp -r -n ixc_configs %s" % sys_dir, shell=True)
                 continue
             if x == "net_monitor.ini":
-                os.system("cp -n net_monitor.ini %s" % sys_dir)
+                subprocess.call("cp -n net_monitor.ini %s" % sys_dir, shell=True)
                 continue
-            os.system("cp -r %s %s" % (x, sys_dir))
+            subprocess.call("cp -r %s %s" % (x, sys_dir), shell=True)
             """"""
-        os.system("rm -rf ./*")
+        subprocess.call("rm -rf ./*", shell=True)
         os.remove(self.__update_file_path)
 
 

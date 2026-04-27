@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # 自动更新路由器软件脚本
-import os, sys, time, hashlib, json, platform
+import os, sys, time, hashlib, json, platform, subprocess
 
 sys_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -23,17 +23,17 @@ def __get_os_info_for_line(s: str):
 
 
 def get_os_info():
-    with os.popen("lsb_release -i") as f: s = f.read()
-    f.close()
+    rs = subprocess.run("lsb_release -i", capture_output=True, shell=True)
+    s = rs.stdout.decode()
     dis_id = __get_os_info_for_line(s)
 
-    with os.popen("lsb_release -r") as f: s = f.read()
-    f.close()
+    rs = subprocess.run("lsb_release -r", capture_output=True, shell=True)
+    s = rs.stdout.decode()
 
     release = __get_os_info_for_line(s)
 
-    with os.popen("lsb_release -d") as f: s = f.read()
-    f.close()
+    rs = subprocess.run("lsb_release -d", capture_output=True, shell=True)
+    s = rs.stdout.decode()
 
     dis = __get_os_info_for_line(s)
 
@@ -44,9 +44,9 @@ def is_stopped_all_process():
     """检查所有进程是否都已经停止
     """
     results = []
-    fdst = os.popen("ps -ef | grep ixc_")
-
-    for line in fdst:
+    rs = subprocess.run("ps -ef | grep ixc_", capture_output=True, shell=True)
+    p_list = rs.stdout.decode().split("\n")
+    for line in p_list:
         _list = []
         line = line.replace("\n", "")
         line = line.replace("\r", "")
@@ -110,7 +110,7 @@ def update_router_file():
         print("UPDATE ERROR:wrong update file md5")
         return
 
-    os.system("tar xf %s -C %s" % (UPDATE_FILE, d))
+    subprocess.call("tar xf %s -C %s" % (UPDATE_FILE, d), shell=True)
     os.chdir(d)
 
     if not check_os_env("host_info"):
@@ -121,14 +121,14 @@ def update_router_file():
 
     for x in _list:
         if x == "ixc_configs":
-            os.system("cp -r -n ixc_configs %s" % sys_dir)
+            subprocess.call("cp -r -n ixc_configs %s" % sys_dir, shell=True)
             continue
         if x == "net_monitor.ini":
-            os.system("cp -n net_monitor.ini %s" % sys_dir)
+            subprocess.call("cp -n net_monitor.ini %s" % sys_dir, shell=True)
             continue
-        os.system("cp -r %s %s" % (x, sys_dir))
+        subprocess.call("cp -r %s %s" % (x, sys_dir), shell=True)
         """"""
-    os.system("rm -rf ./*")
+    subprocess.call("rm -rf ./*", shell=True)
     os.remove(UPDATE_FILE)
 
 
@@ -136,7 +136,7 @@ def do_update():
     if not os.path.isfile(UPDATE_FILE): return
 
     cmd = "%s /opt/ixcsys/ixc_main.py stop" % sys.executable
-    os.system(cmd)
+    subprocess.call(cmd, shell=True)
 
     while 1:
         time.sleep(30)
@@ -145,7 +145,7 @@ def do_update():
             break
         ''''''
     cmd = "%s /opt/ixcsys/ixc_main.py service_start" % sys.executable
-    os.system(cmd)
+    subprocess.call(cmd, shell=True)
 
 
 def do_update_immediately():

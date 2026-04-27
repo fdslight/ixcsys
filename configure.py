@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import getopt, sys, os, json
+import getopt, sys, os, json, subprocess
 
 __helper = """
 action:
@@ -44,10 +44,8 @@ def get_shared_object_fname(fpath: str, prefix: str):
 def have_pkg_config():
     """查找是否有pkg-config
     """
-    fdst = os.popen("which pkg-config")
-    s = fdst.read()
-    fdst.close()
-
+    rs = subprocess.run("which pkg-config", capture_output=True, shell=True)
+    s = rs.stdout.decode()
     if not s: return False
 
     return True
@@ -87,14 +85,13 @@ def gen_build_config(debug, cflags):
     print("configure OK")
 
 
-def config_default(cflags,debug=False):
+def config_default(cflags, debug=False):
     if not have_pkg_config():
         print("not found pkg-config")
         return
 
-    fdst = os.popen("pkg-config python3 --libs --cflags")
-    cmd = fdst.read()
-    fdst.close()
+    rs = subprocess.run("pkg-config python3 --libs --cflags", capture_output=True, shell=True)
+    cmd = rs.stdout.decode()
     cmd = cmd.replace("-I", "")
     cmd = cmd.replace("\n", "")
     _lib_dirs = cmd.replace("include", "lib").split(" ")
@@ -119,7 +116,7 @@ def config_default(cflags,debug=False):
                     "c_includes": includes,
                     "libs": [libname],
                     "lib_dirs": lib_dirs,
-                    "cflags":cflags,
+                    "cflags": cflags,
                     }
 
     fdst = open("build_config.json", "w")
@@ -151,17 +148,17 @@ def main():
         print(__helper)
         return
 
-    if sys.argv[1] not in ("debug","nodebug","help",):
+    if sys.argv[1] not in ("debug", "nodebug", "help",):
         print(__helper)
         return
 
-    if sys.argv[1]=="help":
+    if sys.argv[1] == "help":
         print(__helper)
         return
 
     debug = False
-    if sys.argv[1]=="debug":
-        debug=True
+    if sys.argv[1] == "debug":
+        debug = True
     cflags = ""
 
     for name, value in opts:
@@ -184,9 +181,9 @@ def main():
             print("NOTIFY:because of not set python3_include directory,use system default")
         if not lib_dirs:
             print("NOTIFY:because of not set python3_lib directory,use system default")
-        config_default(cflags,debug=debug)
+        config_default(cflags, debug=debug)
         return
-        
+
     gen_build_config(debug, cflags)
 
 

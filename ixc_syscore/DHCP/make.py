@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 
-import os
+import subprocess
 
 
 def build(base_dir, mydir, cflags, debug=True):
@@ -10,6 +10,9 @@ def build(base_dir, mydir, cflags, debug=True):
 
 def install(root_dir, install_root_dir: str, name: str):
     path = "%s/%s" % (install_root_dir, name)
-    os.system("mkdir -p %s/%s" % (install_root_dir, name,))
-    os.system("cp -r %s/%s/* %s" % (root_dir, name, path))
-    os.system("rm %s/make.py" % path)
+    cmds = [
+        "mkdir -p %s/%s" % (install_root_dir, name,),
+        "cp -r %s/%s/* %s" % (root_dir, name, path),
+        "rm %s/make.py" % path,
+    ]
+    for cmd in cmds: subprocess.call(cmd, shell=True)

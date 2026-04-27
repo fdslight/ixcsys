@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, time
+import os, time, subprocess
 
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
 
@@ -18,7 +18,7 @@ class controller(base_controller.BaseController):
     def do_backup(self):
         t = time.strftime("%Y-%m-%d_%H%M%S")
         fpath = "/var/log/ixcsys_config_backup.%s.tar.gz" % t
-        os.system("tar czf %s /opt/ixcsys/ixc_configs" % fpath)
+        subprocess.call("tar czf %s /opt/ixcsys/ixc_configs" % fpath, shell=True)
 
         self.json_resp(False, "备份成功")
 
@@ -52,7 +52,7 @@ class controller(base_controller.BaseController):
             os.remove(fpath)
             msg = ""
         else:
-            os.system("tar xzf %s -C /" % fpath)
+            subprocess.call("tar xzf %s -C /" % fpath, shell=True)
             msg = "恢复成功,请重启路由器"
 
         self.json_resp(False, msg)

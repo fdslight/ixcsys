@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import platform, os, json, time
+import platform, os, time, subprocess
 
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syslib.pylib.RPCClient as RPC
@@ -34,9 +34,8 @@ class widget(ui_widget.widget):
         return os.path.isfile(fpath)
 
     def get_uname(self):
-        fdst = os.popen("uname -a")
-        s = fdst.read()
-        fdst.close()
+        rs = subprocess.run("uname -a", capture_output=True, shell=True)
+        s = rs.stdout.decode()
 
         return s
 
@@ -53,17 +52,18 @@ class widget(ui_widget.widget):
     def get_host_mem_total(self):
         """获取主机内存大小
         """
-        with os.popen("grep MemTotal /proc/meminfo | awk '{print $2 / 1024}'") as f: mem_total = f.read()
-        f.close()
+        rs = subprocess.run("grep MemTotal /proc/meminfo | awk '{print $2 / 1024}'", capture_output=True, shell=True)
+        mem_total = rs.stdout.decode()
+
         return mem_total.replace("\n", "")
 
     def get_host_cpu_model(self):
         """获取主机CPU型号
         """
         if platform.machine().lower() == "x86_64":
-            fdst = os.popen("""cat /proc/cpuinfo | grep "model name" | sed -n "1p" | cut -b 14-""")
-            cpu_model = fdst.read()
-            fdst.close()
+            rs = subprocess.run("""cat /proc/cpuinfo | grep "model name" | sed -n "1p" | cut -b 14-""",
+                                capture_output=True, shell=True)
+            cpu_model = rs.stdout.decode()
 
             return cpu_model.replace("\n", "")
 
@@ -97,8 +97,8 @@ class widget(ui_widget.widget):
         """获取主机可用内存
         """
         cmd = "free -m | awk 'NR==2' | awk '{print $7}'"
-        with os.popen(cmd) as f: mem = f.read()
-        f.close()
+        rs = subprocess.run(cmd, capture_output=True, shell=True)
+        mem = rs.stdout.decode()
 
         return mem.replace("\n", "")
 

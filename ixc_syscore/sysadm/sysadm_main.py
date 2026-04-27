@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, signal, json, time, multiprocessing
+import os, sys, signal, json, time, multiprocessing, subprocess
 import dns.resolver
 
 from cloudflare_ddns import CloudFlare
@@ -536,9 +536,8 @@ class service(dispatcher.dispatcher):
             logging.print_error("not found curl command")
             return ""
 
-        with os.popen(cmd) as f:
-            s = f.read()
-        f.close()
+        rs = subprocess.run(cmd, capture_output=True, shell=True)
+        s = rs.stdout.decode()
 
         try:
             o = json.loads(s)

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
-import os
+import os, subprocess
 
 
 def parse_linux_deps(file_path: str):
-    fd = os.popen("ldd %s" % file_path)
+    rs = subprocess.run("ldd %s" % file_path, capture_output=True, shell=True)
+    lib_list = rs.stdout.decode().split("\n")
+
     results = []
 
-    for line in fd:
+    for line in lib_list:
         s = line.replace("\r", "")
         s = s.replace("\t", "")
         s = s.replace("\n", "")
@@ -21,5 +23,4 @@ def parse_linux_deps(file_path: str):
         so_path = so_path[0:p].strip()
         results.append((so_name, so_path,))
 
-    fd.close()
     return results

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import pickle
-import sys, os, signal, time
+import sys, os, signal, time, subprocess
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -127,12 +127,15 @@ class service(dispatcher.dispatcher):
         """清除系统的路由表
         """
         if is_ipv6:
-            fdst = os.popen("ip -6 route")
+            cmd = "ip -6 route"
         else:
-            fdst = os.popen("ip route")
+            cmd = "ip route"
+
+        rs = subprocess.run(cmd, capture_output=True, shell=True)
+        rlist = rs.stdout.decode().split("\n")
 
         __list = []
-        for line in fdst:
+        for line in rlist:
             line = line.replace("\n", "")
             line = line.replace("\r", "")
             p = line.find("dev")
@@ -144,7 +147,7 @@ class service(dispatcher.dispatcher):
                 cmd = "ip -6 route del %s" % x
             else:
                 cmd = "ip route del %s" % x
-            os.system(cmd)
+            subprocess.call(cmd, shell=True)
 
     @property
     def is_linux(self):
@@ -200,7 +203,7 @@ class service(dispatcher.dispatcher):
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-        os.system("%s/ixc_router_core stop" % os.getenv("IXC_MYAPP_DIR"))
+        subprocess.call("%s/ixc_router_core stop" % os.getenv("IXC_MYAPP_DIR"), shell=True)
         self.__scgi_fd = -1
 
     def start_scgi(self):
@@ -229,7 +232,7 @@ class service(dispatcher.dispatcher):
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
-        os.system("%s/ixc_router_core start" % os.getenv("IXC_MYAPP_DIR"))
+        subprocess.call("%s/ixc_router_core start" % os.getenv("IXC_MYAPP_DIR"), shell=True)
 
         # 等待router_core核心启动完成
         time.sleep(20)
@@ -255,14 +258,14 @@ class service(dispatcher.dispatcher):
 
         cmd = "ip addr show ixclanbr | grep  inet6 | grep mng"
         mng_ip6addr = None
-        fdst = os.popen(cmd)
+        rs=subprocess.run(cmd,capture_output=True,shell=True)
+        m_list=rs.stdout.decode().split("\n")
         _list = []
 
-        for line in fdst:
+        for line in m_list:
             line = line.strip()
             line = line.replace("\n", "")
             _list.append(line.lower())
-        fdst.close()
         if not _list: return
 
         for s in _list:

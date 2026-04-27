@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, os, signal, time
+import sys, os, signal, time, subprocess
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -147,8 +147,11 @@ class service(dispatcher.dispatcher):
         fdst.write("\n".join(_list))
         fdst.close()
 
-        os.system("systemctl stop tftpd-hpa")
-        os.system("systemctl start tftpd-hpa")
+        cmds = [
+            "systemctl stop tftpd-hpa",
+            "systemctl start tftpd-hpa"
+        ]
+        for cmd in cmds: subprocess.call(cmd, shell=True)
 
     def load_tftp_configs(self):
         self.__tftp_configs = conf.ini_parse_from_file(self.__tftp_conf_fpath)
@@ -441,7 +444,7 @@ class service(dispatcher.dispatcher):
         self.__scgi_fd = -1
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
         if self.__dhcp_server: self.__dhcp_server.save_dhcp_cache()
-        os.system("systemctl stop tftpd-hpa")
+        subprocess.call("systemctl stop tftpd-hpa", shell=True)
 
 
 def main():

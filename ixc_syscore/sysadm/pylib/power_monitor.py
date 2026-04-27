@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """能源监控类
 """
-import os
+import subprocess
 import time, socket
 import pywind.lib.netutils as netutils
 import ixc_syscore.sysadm.pylib.wol as wol
@@ -178,6 +178,6 @@ class power_monitor(object):
 
         # 如果需要自动关机,那么自动关机
         if self.is_need_self_shutdown():
-            os.system("halt -p")
+            subprocess.call("halt -p", shell=True)
 
         self.__up_time = now

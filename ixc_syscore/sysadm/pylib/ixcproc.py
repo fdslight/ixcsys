@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os
+import os, subprocess
 
 
 def __parse_proc_info_line(s: str):
@@ -33,14 +33,16 @@ def os_running_proc_get():
     """获取操作系统运行的进程
     :return:
     """
-    fd = os.popen("ps -ef")
+    rs = subprocess.run("ps -ef", shell=True, capture_output=True)
+    p_list = rs.stdout.decode().split("\n")
     results = []
     flags = False
 
-    for line in fd:
+    for line in p_list:
         if not flags:
             flags = True
             continue
+        if not line: continue
         proc_info = __parse_proc_info_line(line)
         results.append(proc_info)
 

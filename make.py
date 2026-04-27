@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys, importlib, json, hashlib
+import os, sys, importlib, json, hashlib, subprocess
 import platform
 
 BASE_DIR = os.path.dirname(sys.argv[0])
@@ -50,7 +50,7 @@ def update_proxy_rule():
     ]
     for fpath in files:
         cmd = "cp %s /opt/ixcsys/%s" % (fpath, fpath,)
-        os.system(cmd)
+        subprocess.call(cmd, shell=True)
 
 
 def app_data_update():
@@ -64,7 +64,7 @@ def app_data_update():
 
     for fpath in files:
         cmd = "cp %s /opt/ixcsys/%s" % (fpath, fpath,)
-        os.system(cmd)
+        subprocess.call(cmd, shell=True)
 
 
 def __get_root_dir():
@@ -190,9 +190,9 @@ def __install(app_name: str, prefix=None):
 
 def get_cp_cmd_version():
     """获取cp命令版本"""
-    fdst = os.popen("cp --version | awk 'NR==1 {print $4}'")
-    s = fdst.read().replace("\n", "")
-    fdst.close()
+    rs = subprocess.run("cp --version | awk 'NR==1 {print $4}'", capture_output=True, shell=True)
+    s = rs.stdout.decode()
+    s = s.replace("\n", "")
     s = s.replace("\r", "")
 
     main_version, minor_version = s.split(".")
@@ -232,9 +232,9 @@ def __install_all(prefix=None):
             ''''''
         if x == "ixc_configs":
             # 不重写配置文件
-            os.system("cp -r %s %s/%s/* %s" % (update_flags, root_dir, x, d))
+            subprocess.call("cp -r %s %s/%s/* %s" % (update_flags, root_dir, x, d), shell=True)
         else:
-            os.system("cp -r %s/%s/* %s" % (root_dir, x, d))
+            subprocess.call("cp -r %s/%s/* %s" % (root_dir, x, d), shell=True)
 
     files = [
         "ixc_cfg.py",
@@ -250,14 +250,14 @@ def __install_all(prefix=None):
 
     for x in files:
         if x == "net_monitor.ini":
-            os.system("cp %s %s/%s %s" % (update_flags, root_dir, x, prefix))
+            subprocess.call("cp %s %s/%s %s" % (update_flags, root_dir, x, prefix), shell=True)
         else:
-            os.system("cp %s/%s %s" % (root_dir, x, prefix))
+            subprocess.call("cp %s/%s %s" % (root_dir, x, prefix), shell=True)
         ''''''
 
 
 def __rescue_install():
-    os.system("cp ixc_main.py %s" % INSTALL_PREFIX)
+    subprocess.call("cp ixc_main.py %s" % INSTALL_PREFIX, shell=True)
 
 
 def gen_host_info(fpath: str):
@@ -295,10 +295,10 @@ def __gen_update_archive():
 
     cur_dir = BASE_DIR
     os.chdir(prefix)
-    os.system("tar czf %s ./*" % update_file)
+    subprocess.call("tar czf %s ./*" % update_file, shell=True)
     os.chdir(cur_dir)
 
-    os.system("rm -rf %s" % prefix)
+    subprocess.call("rm -rf %s" % prefix, shell=True)
 
     if not os.path.isfile(update_file):
         print("ERROR:cannot generate %s" % update_file)
@@ -323,7 +323,7 @@ def install_lib():
         "cp -r ixc_syslib %s" % INSTALL_PREFIX,
         "cp -r pywind %s" % INSTALL_PREFIX
     ]
-    for cmd in cmds: os.system(cmd)
+    for cmd in cmds: subprocess.call(cmd, shell=True)
 
 
 def build_binary_install_pkg():
@@ -366,8 +366,11 @@ def build_binary_install_pkg():
 
     os.chdir(os.path.dirname(ver_path))
     # 清除旧的内容
-    os.system("rm -rf %s/*" % pkg_path)
-    os.system("mv %s %s" % (new_file, pkg_path,))
+    cmds = [
+        "rm -rf %s/*" % pkg_path,
+        "mv %s %s" % (new_file, pkg_path,)
+    ]
+    for cmd in cmds: subprocess.call(cmd, shell=True)
 
     fdst = open("ixc_bin_installer.py", "r")
     s = fdst.read()
@@ -382,7 +385,7 @@ def build_binary_install_pkg():
     fname = "ixcsys-%s-%s-%s-%s.bin.install.tar.gz" % (
         dis_id, release, platform.machine(), version,)
 
-    os.system("tar czf /tmp/%s *" % fname)
+    subprocess.call("tar czf /tmp/%s *" % fname, shell=True)
 
     print("generate /tmp/%s OK" % fname)
 

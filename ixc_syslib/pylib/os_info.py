@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os
+import subprocess
 
 
 def __get_os_info_for_line(s: str):
@@ -16,17 +16,17 @@ def __get_os_info_for_line(s: str):
 
 
 def get_os_info():
-    with os.popen("lsb_release -i") as f: s = f.read()
-    f.close()
+    rs = subprocess.run("lsb_release -i", capture_output=True, shell=True)
+    s = rs.stdout.decode()
     dis_id = __get_os_info_for_line(s)
 
-    with os.popen("lsb_release -r") as f: s = f.read()
-    f.close()
+    rs = subprocess.run("lsb_release -r", capture_output=True, shell=True)
+    s = rs.stdout.decode()
 
     release = __get_os_info_for_line(s)
 
-    with os.popen("lsb_release -d") as f: s = f.read()
-    f.close()
+    rs = subprocess.run("lsb_release -d", capture_output=True, shell=True)
+    s = rs.stdout.decode()
 
     dis = __get_os_info_for_line(s)
 

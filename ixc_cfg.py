@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # 初始化配置工具
 
-import os, sys
+import os, sys, subprocess
 
 sys_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -183,7 +183,7 @@ class user(object):
     def do_reset(self):
         src = "%s/ixc_configs_bak/sysadm/user.json" % sys_dir
         dst = "%s/ixc_configs/sysadm" % sys_dir
-        os.system("cp -v %s %s" % (src, dst,))
+        subprocess.call("cp -v %s %s" % (src, dst,), shell=True)
 
 
 class system(object):
@@ -201,7 +201,7 @@ class system(object):
     def do_reset(self):
         src = "%s/ixc_configs_bak/sysadm/user.json" % sys_dir
         dst = "%s/ixc_configs" % sys_dir
-        os.system("cp -rv %s %s" % (src, dst,))
+        subprocess.call("cp -rv %s %s" % (src, dst,), shell=True)
 
 
 def main():
