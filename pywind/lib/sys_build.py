@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os, subprocess
 
 
 def get_c_files(d):
@@ -46,4 +46,4 @@ def do_compile(flist, output, c_flags, is_shared=False):
 
     print(cmd)
 
-    os.system(cmd)
+    subprocess.call(cmd, shell=True)
