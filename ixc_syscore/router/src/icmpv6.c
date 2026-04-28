@@ -207,7 +207,7 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
             break;
         }
         
-        if(length==1 && (type!=1 || type!=5)){
+        if(length==1){
             if(type!=1 && type!=5){
                 is_err=1;
                 break;
