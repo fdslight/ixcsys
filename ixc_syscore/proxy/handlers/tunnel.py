@@ -528,7 +528,10 @@ class udp_tunnel(udp_handler.udp_handler):
         return True
 
     def udp_readable(self, message, address):
-        result = self.__decrypt.parse(message)
+        try:
+            result = self.__decrypt.parse(message)
+        except proto_utils.ProtoError:
+            return
         if not result: return
 
         session_id, action, byte_data = result
