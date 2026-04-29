@@ -216,6 +216,7 @@ class service(dispatcher.dispatcher):
         _list = []
 
         for line in mng_list:
+            if not line:continue
             line = line.strip()
             line = line.replace("\n", "")
             _list.append(line.lower())

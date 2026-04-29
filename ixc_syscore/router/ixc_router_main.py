@@ -136,6 +136,7 @@ class service(dispatcher.dispatcher):
 
         __list = []
         for line in rlist:
+            if not line: continue
             line = line.replace("\n", "")
             line = line.replace("\r", "")
             p = line.find("dev")
@@ -258,11 +259,12 @@ class service(dispatcher.dispatcher):
 
         cmd = "ip addr show ixclanbr | grep  inet6 | grep mng"
         mng_ip6addr = None
-        rs=subprocess.run(cmd,capture_output=True,shell=True)
-        m_list=rs.stdout.decode().split("\n")
+        rs = subprocess.run(cmd, capture_output=True, shell=True)
+        m_list = rs.stdout.decode().split("\n")
         _list = []
 
         for line in m_list:
+            if not line: continue
             line = line.strip()
             line = line.replace("\n", "")
             _list.append(line.lower())

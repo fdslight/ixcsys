@@ -10,6 +10,7 @@ def parse_linux_deps(file_path: str):
     results = []
 
     for line in lib_list:
+        if not line: continue
         s = line.replace("\r", "")
         s = s.replace("\t", "")
         s = s.replace("\n", "")

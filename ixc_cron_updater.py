@@ -47,6 +47,7 @@ def is_stopped_all_process():
     rs = subprocess.run("ps -ef | grep ixc_", capture_output=True, shell=True)
     p_list = rs.stdout.decode().split("\n")
     for line in p_list:
+        if not line: continue
         _list = []
         line = line.replace("\n", "")
         line = line.replace("\r", "")

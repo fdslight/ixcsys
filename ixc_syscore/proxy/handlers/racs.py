@@ -60,9 +60,6 @@ class udp_tunnel(udp_handler.udp_handler):
         if not server_ip:
             logging.print_error("DNS_QUERY_FAIL %s" % self.__address[0])
             return False
-
-
-
         self.__server_address = (server_ip, self.__address[1],)
         self.__tunnel_ok = True
 

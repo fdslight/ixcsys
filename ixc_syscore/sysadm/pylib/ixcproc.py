@@ -39,10 +39,10 @@ def os_running_proc_get():
     flags = False
 
     for line in p_list:
+        if not line: continue
         if not flags:
             flags = True
             continue
-        if not line: continue
         proc_info = __parse_proc_info_line(line)
         results.append(proc_info)
 
