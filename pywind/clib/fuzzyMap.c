@@ -218,16 +218,15 @@ void fuzzyMap_del(struct fuzzyMap *m,const char *key,fuzzyMap_del_func_t fn)
 {
 	unsigned char v;
 	char x,is_found;
+	void *data;
 
 	struct fuzzyMap_node *node=m->tree_root,*t,*tmp_list=NULL;
 
 	//DBG("%d\r\n",m->tree_root);
 	
 	//如没找到记录那么直接返回
-	t=__fuzzyMap_match(m,key,&is_found);
+	data=__fuzzyMap_match(m,key,&is_found);
 	if(!is_found) return;
-
-	if(NULL!=fn) fn(t);
 
 	// 首先进行反转,由下到上删除
 	for(int n=0;n<m->length;n++){
@@ -273,6 +272,7 @@ void fuzzyMap_del(struct fuzzyMap *m,const char *key,fuzzyMap_del_func_t fn)
 	}
 	//DBG("%d\r\n",m->tree_root);
 	m->tree_root->refcnt-=1;
+	if(NULL!=fn) fn(data);
 }
 
 void *fuzzyMap_find(struct fuzzyMap *m,const char *key,char *is_found,unsigned int *match_count)

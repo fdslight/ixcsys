@@ -19,7 +19,11 @@ def get_cpu_temperature(cpu_seq: int):
     for file in try_files:
         if not os.path.isfile(file): continue
         with open(file, "r") as f:
-            s = f.read()
+            try:
+                s = f.read()
+            except OSError:
+                f.close()
+                continue
         f.close()
 
         temp = int(s)
