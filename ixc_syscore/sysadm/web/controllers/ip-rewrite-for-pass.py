@@ -41,5 +41,6 @@ class controller(base_controller.BaseController):
 
         RPC.fn_call("router", "/config", "ip_rewrite_for_pass_set", dest_ip, old_src_ip, new_src_ip)
         RPC.fn_call("router", "/config", "ip_rewrite_for_pass_enable", enable)
+        RPC.fn_call("router", "/config", "config_save")
 
         self.json_resp(False, {})
