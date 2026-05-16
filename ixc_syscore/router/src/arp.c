@@ -9,18 +9,27 @@
 #include "router.h"
 #include "debug.h"
 #include "npfwd.h"
+#include "ip.h"
 
 static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 {
     struct ixc_netif *netif=mbuf->netif;
+    int ip_rewrite_for_pass=0;
     //unsigned char brd[]={0xff,0xff,0xff,0xff,0xff,0xff};
+
+    // 如果是WAN网口并且开启直通的那么代理ARP请求
+    if(IXC_NETIF_WAN==netif->type){
+        if(ixc_ip_rewrite_for_pass_is_allowed(arp->dst_ipaddr,arp->src_ipaddr,0)){
+            ip_rewrite_for_pass=1;
+        }
+    }
     
-    // 检查是否是本机的IP地址,不是本机的IP地址那么丢弃ARP请求
-    if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
+    // 检查是否是本机的IP地址,不是本机的IP地址和不允许直通的IP地址那么丢弃ARP请求
+    if(memcmp(arp->dst_ipaddr,netif->ipaddr,4) && !ip_rewrite_for_pass){
         ixc_mbuf_put(mbuf);
         return;
     }
-
+   
     IXC_PRINT_IP("arp request from",arp->src_ipaddr);
 
     memcpy(mbuf->dst_hwaddr,mbuf->src_hwaddr,6);
@@ -34,7 +43,12 @@ static void ixc_arp_handle_request(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     memcpy(arp->src_hwaddr,netif->hwaddr,6);
     
     arp->op=htons(IXC_ARP_OP_RESP);
-   
+
+    // 开启了IP直通的那么重写ARP源地址
+    if(ip_rewrite_for_pass){
+        memcpy(arp->src_ipaddr,ixc_ip_rewrite_for_pass_new_src_addr_get(),4);
+    }
+
     ixc_ether_send(mbuf,1);
 }
 

@@ -673,6 +673,26 @@ void ixc_nat_handle(struct ixc_mbuf *m)
         return;
     }
 
+    // 对于直通的数据包特殊处理
+    if(IXC_MBUF_FROM_LAN==m->from){
+        if(ixc_ip_rewrite_for_pass_is_allowed(header->dst_addr,header->src_addr,1)){
+            // 直接重写发送
+            ixc_ip_rewrite_for_pass_do(m,1);
+            memcpy(m->next_host,header->dst_addr,4);
+            m->netif=ixc_netif_get(IXC_NETIF_WAN);
+            ixc_addr_map_handle_for_ip(m);
+            return;
+        }
+    }else{
+        if(ixc_ip_rewrite_for_pass_is_allowed(header->dst_addr,header->src_addr,0)){
+            ixc_ip_rewrite_for_pass_do(m,0);
+            memcpy(m->next_host,ixc_ip_rewrite_for_pass_old_src_addr_get(),4);
+            m->netif=ixc_netif_get(IXC_NETIF_LAN);
+            ixc_addr_map_handle_for_ip(m);
+            return;
+        }
+    }
+
     frag_info=ntohs(header->frag_info);
     frag_off=frag_info & 0x1fff;
     mf=frag_info & 0x2000;

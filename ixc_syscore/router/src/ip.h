@@ -18,6 +18,15 @@ int ixc_ip_4in6_is_enabled(void);
 
 unsigned char *ixc_ip_4in6_peer_address_get(void);
 
+// 提供直通访问,便于管理桥接后的光猫等设备
+int ixc_ip_rewrite_for_pass_enable(int enable);
+int ixc_ip_rewrite_for_pass_set(const unsigned char *dest_addr,const unsigned char *src_addr,const unsigned char *new_src_addr);
+int ixc_ip_rewrite_for_pass_is_allowed(const unsigned char *dest_addr,const unsigned char *src_addr,int is_src);
+int ixc_ip_rewrite_for_pass_do(struct ixc_mbuf *m,int is_src);
+
+unsigned char *ixc_ip_rewrite_for_pass_new_src_addr_get(void);
+unsigned char *ixc_ip_rewrite_for_pass_old_src_addr_get(void);
+
 void ixc_ip_uninit(void);
 
 

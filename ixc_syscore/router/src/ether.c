@@ -109,6 +109,7 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     struct ixc_ether_header *header;
     struct ixc_netif *netif=mbuf->netif;
     int length=mbuf->end-mbuf->begin;
+    int pppoe_and_wan=0;
     unsigned short type;
     
     // 检查长度是否合法,不合法直接丢包
@@ -176,11 +177,13 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
     }
     
     if(ixc_pppoe_is_enabled() && IXC_NETIF_WAN==netif->type){
+        pppoe_and_wan=1;
         // 如果WAN口开启PPPoE那么限制只支持PPPoE数据包
+        /*
         if(type!=0x8864 && type!=0x8863){
             ixc_mbuf_put(mbuf);
             return;
-        }
+        }*/
     }
 
     switch (type){
@@ -194,7 +197,12 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
             break;
         // IPv6
         case 0x86dd:
-            ixc_ip6_handle(mbuf);
+            // pppoe接口接收到ipv6数据包直接丢弃
+            if(pppoe_and_wan){
+                ixc_mbuf_put(mbuf);
+            }else{
+                ixc_ip6_handle(mbuf);
+            }
             break;
         // PPPoE discovery
         case 0x8863:

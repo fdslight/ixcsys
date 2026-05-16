@@ -248,7 +248,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     ixc_ether_send(m,1);
 }
 
-static void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
+void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
 {
     struct ixc_addr_map_record *r=NULL;
     struct ixc_netif *netif=m->netif;

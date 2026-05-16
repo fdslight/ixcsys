@@ -24,11 +24,22 @@ static int ip_4in6_enable=0;
 static unsigned char ip_4in6_peer_address[16];
 static int ip_is_initialized=0;
 
+// 直通访问
+static unsigned char ip_rewrite_for_pass_dest_addr[4];
+static unsigned char ip_rewrite_for_pass_old_src_addr[4];
+static unsigned char ip_rewrite_for_pass_new_src_addr[4];
+static int ip_rewrite_for_pass_enable=0;
+
 int ixc_ip_init(void)
 {
     ip_enable_no_system_dns_drop=0;
     ip_4in6_enable=0;
+    ip_rewrite_for_pass_enable=0;
+
     bzero(ip_4in6_peer_address,16);
+    bzero(ip_rewrite_for_pass_dest_addr,4);
+    bzero(ip_rewrite_for_pass_old_src_addr,4);
+    bzero(ip_rewrite_for_pass_new_src_addr,4);
 
     ip_is_initialized=1;
 
@@ -290,7 +301,61 @@ unsigned char *ixc_ip_4in6_peer_address_get(void)
     return ip_4in6_peer_address;
 }
 
+int ixc_ip_rewrite_for_pass_enable(int enable)
+{
+    ip_rewrite_for_pass_enable=enable;
 
+    return 0;
+}
+
+int ixc_ip_rewrite_for_pass_set(const unsigned char *dest_addr,const unsigned char *src_addr,const unsigned char *new_src_addr)
+{
+    memcpy(ip_rewrite_for_pass_dest_addr,dest_addr,4);
+    memcpy(ip_rewrite_for_pass_old_src_addr,src_addr,4);
+    memcpy(ip_rewrite_for_pass_new_src_addr,new_src_addr,4);
+
+    return 0;
+}
+
+int ixc_ip_rewrite_for_pass_is_allowed(const unsigned char *dest_addr,const unsigned char *src_addr,int is_src)
+{
+    if(!ip_rewrite_for_pass_enable) return 0;
+    if(is_src){
+        if(!memcmp(dest_addr,ip_rewrite_for_pass_dest_addr,4) && !memcmp(ip_rewrite_for_pass_old_src_addr,src_addr,4)) return 1;
+    }else{
+        if(!memcmp(dest_addr,ip_rewrite_for_pass_new_src_addr,4) && !memcmp(src_addr,ip_rewrite_for_pass_dest_addr,4)) return 1;
+    }
+
+    return 0;
+}
+
+int ixc_ip_rewrite_for_pass_do(struct ixc_mbuf *m,int is_src)
+{
+    struct netutil_iphdr *header=(struct netutil_iphdr *)(m->data+m->offset);
+
+    if(!ip_rewrite_for_pass_enable){
+        STDERR("ip rewrite for pass not enable,but call this function\r\n");
+        return -1;
+    }
+
+    if(is_src){
+        rewrite_ip_addr(header,ip_rewrite_for_pass_new_src_addr,1);
+    }else{
+        rewrite_ip_addr(header,ip_rewrite_for_pass_old_src_addr,0);
+    }
+
+    return 0;
+}
+
+unsigned char *ixc_ip_rewrite_for_pass_new_src_addr_get()
+{
+    return &ip_rewrite_for_pass_new_src_addr[0];
+}
+
+unsigned char *ixc_ip_rewrite_for_pass_old_src_addr_get()
+{
+    return &ip_rewrite_for_pass_old_src_addr[0];
+}
 
 void ixc_ip_uninit(void)
 {

@@ -459,6 +459,56 @@ router_ip_4in6_enable(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_ip_rewrite_for_pass_enable(PyObject *self,PyObject *args)
+{
+    int enable,rs;
+
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+    rs=ixc_ip_rewrite_for_pass_enable(enable);
+    
+    if(rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_ip_rewrite_for_pass_set(PyObject *self,PyObject *args)
+{
+    unsigned char n_dest_addr[4];
+    unsigned char n_old_src_addr[4];
+    unsigned char n_new_src_addr[4];
+    
+    const char *dest_addr,*old_src_addr,*new_src_addr;
+    int rs;
+
+    if(!PyArg_ParseTuple(args,"sss",&dest_addr,&old_src_addr,&new_src_addr)) return NULL;
+
+    rs=inet_pton(AF_INET,dest_addr,n_dest_addr);
+    if(rs<0){
+        PyErr_SetString(PyExc_ValueError,"invalid dest ip address");
+        return NULL;
+    }
+
+    rs=inet_pton(AF_INET,old_src_addr,n_old_src_addr);
+    if(rs<0){
+        PyErr_SetString(PyExc_ValueError,"invalid old souce ip address");
+        return NULL;
+    }
+
+    rs=inet_pton(AF_INET,new_src_addr,n_new_src_addr);
+    if(rs<0){
+        PyErr_SetString(PyExc_ValueError,"invalid new source ip address");
+        return NULL;
+    }
+
+    rs=ixc_ip_rewrite_for_pass_set(n_dest_addr,n_old_src_addr,n_new_src_addr);
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
 router_ip6_nat66_enable(PyObject *self,PyObject *args)
 {
     int enable;
@@ -1203,6 +1253,8 @@ static PyMethodDef routerMethods[]={
     {"ip6sec_enable",(PyCFunction)router_ip6sec_enable,METH_VARARGS,"enable/disable IPv6 security"},
     //
     {"ip_4in6_enable",(PyCFunction)router_ip_4in6_enable,METH_VARARGS,"enable/disable 4in6 tunnel"},
+    {"ip_rewrite_for_pass_enable",(PyCFunction)router_ip_rewrite_for_pass_enable,METH_VARARGS,"enable/disable ip rewrite pass"},
+    {"ip_rewrite_for_pass_set",(PyCFunction)router_ip_rewrite_for_pass_set,METH_VARARGS,"set ip rewrite pass address"},
     //
     {"ip6_nat66_enable",(PyCFunction)router_ip6_nat66_enable,METH_VARARGS,"enable/disable nat66"},
     //

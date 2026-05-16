@@ -67,6 +67,8 @@ class rpc(object):
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
 
             "ip_4in6_tunnel_enable": self.ip_4in6_tunnel_enable,
+            "ip_rewrite_for_pass_enable": None,
+            "ip_rewrite_for_pass_set": None,
 
             "passdev_set": self.passdev_set,
             "pppoe_set": self.pppoe_set,
@@ -592,6 +594,24 @@ class rpc(object):
             byte_peer_address = socket.inet_pton(socket.AF_INET6, peer_ip6_address)
         ''''''
         return 0, self.__helper.router.ip_4in6_enable(enable, byte_peer_address)
+
+    def ip_rewrite_for_pass_enable(self, enable: bool):
+        if enable:
+            enable = True
+        else:
+            enable = False
+
+        return 0, self.__helper.router.ip_rewrite_for_pass_enable(enable)
+
+    def ip_rewrite_for_pass_set(self, dest_addr: str, old_src_addr: str, new_src_addr: str):
+        if not netutils.is_ipv4_address(dest_addr):
+            return RPC.ERR_ARGS, "wrong destination address value"
+        if not netutils.is_ipv4_address(old_src_addr):
+            return RPC.ERR_ARGS, "wrong old source address value"
+        if not netutils.is_ipv4_address(new_src_addr):
+            return RPC.ERR_ARGS, "wrong new source address value"
+
+        return 0, self.__helper.router.ip_rewrite_for_pass_set(dest_addr, old_src_addr, new_src_addr)
 
     def passdev_set(self, config: dict):
         self.__helper.passdev_set(config)
