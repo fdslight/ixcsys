@@ -97,7 +97,7 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     ixc_mbuf_put(mbuf);
 }
 
-int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op)
+int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op,unsigned char *src_addr)
 {
     struct ixc_arp arp;
     struct ixc_mbuf *m;
@@ -110,7 +110,12 @@ int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char
     arp.op=htons(op);
 
     memcpy(arp.src_hwaddr,netif->hwaddr,6);
-    memcpy(arp.src_ipaddr,netif->ipaddr,4);
+
+    if(NULL==src_addr){
+        memcpy(arp.src_ipaddr,netif->ipaddr,4);
+    }else{
+        memcpy(arp.src_ipaddr,src_addr,4);
+    }
 
     memcpy(arp.dst_hwaddr,no_hwaddr,6);
     memcpy(arp.dst_ipaddr,dst_ipaddr,4);

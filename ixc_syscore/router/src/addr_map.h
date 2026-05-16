@@ -34,7 +34,7 @@ struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6);
 
 int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hwaddr,int is_ipv6);
 struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6);
-void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m);
+void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m,unsigned char *src_addr);
 void ixc_addr_map_handle(struct ixc_mbuf *m);
 
 ///核对地址,检查客户端是否改变了地址

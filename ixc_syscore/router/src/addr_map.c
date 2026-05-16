@@ -71,7 +71,7 @@ static void ixc_addr_map_timeout_cb(void *data)
         return;
     }
     // 发送ARP请求,检查ARP记录
-    ixc_arp_send(r->netif,r->hwaddr,r->address,IXC_ARP_OP_REQ);
+    ixc_arp_send(r->netif,r->hwaddr,r->address,IXC_ARP_OP_REQ,NULL);
 }
 
 int ixc_addr_map_init(void)
@@ -248,7 +248,7 @@ static void ixc_addr_map_handle_for_ipv6(struct ixc_mbuf *m)
     ixc_ether_send(m,1);
 }
 
-void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
+void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m,unsigned char *src_addr)
 {
     struct ixc_addr_map_record *r=NULL;
     struct ixc_netif *netif=m->netif;
@@ -268,7 +268,7 @@ void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m)
     }
     
     if(is_sent){
-        ixc_arp_send(netif,brd,m->next_host,IXC_ARP_OP_REQ);
+        ixc_arp_send(netif,brd,m->next_host,IXC_ARP_OP_REQ,NULL);
         ixc_mbuf_put(m);
         return;
     }
@@ -299,7 +299,7 @@ void ixc_addr_map_handle(struct ixc_mbuf *m)
     }
 
     if(m->is_ipv6) ixc_addr_map_handle_for_ipv6(m);
-    else ixc_addr_map_handle_for_ip(m);
+    else ixc_addr_map_handle_for_ip(m,NULL);
 }
 
 int ixc_addr_map_check(unsigned char *ip,unsigned char *hwaddr,int is_ipv6)

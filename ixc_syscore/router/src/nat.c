@@ -680,7 +680,7 @@ void ixc_nat_handle(struct ixc_mbuf *m)
             ixc_ip_rewrite_for_pass_do(m,1);
             memcpy(m->next_host,header->dst_addr,4);
             m->netif=ixc_netif_get(IXC_NETIF_WAN);
-            ixc_addr_map_handle_for_ip(m);
+            ixc_addr_map_handle_for_ip(m,ixc_ip_rewrite_for_pass_new_src_addr_get());
             return;
         }
     }else{
@@ -688,7 +688,7 @@ void ixc_nat_handle(struct ixc_mbuf *m)
             ixc_ip_rewrite_for_pass_do(m,0);
             memcpy(m->next_host,ixc_ip_rewrite_for_pass_old_src_addr_get(),4);
             m->netif=ixc_netif_get(IXC_NETIF_LAN);
-            ixc_addr_map_handle_for_ip(m);
+            ixc_addr_map_handle_for_ip(m,NULL);
             return;
         }
     }
