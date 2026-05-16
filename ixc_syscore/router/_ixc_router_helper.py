@@ -1491,6 +1491,20 @@ class helper(object):
             self.router.passthrough_device_add(byte_hwaddr, is_passdev)
         self.router.passthrough_set_vid_for_passdev(int(conf["vlanid_for_passdev"]))
 
+        # 设置直通
+        rewrite_configs = self.router_configs["rewrite_for_pass"]
+        try:
+            enable = int(rewrite_configs["enable"])
+        except ValueError:
+            enable = 0
+
+        if enable:
+            self.router.ip_rewrite_for_pass_enable(True)
+            self.router.ip_rewrite_for_pass_set(rewrite_configs["dest_ip"], rewrite_configs["old_src_ip"],
+                                                rewrite_configs["new_src_ip"])
+            ''''''
+        return
+
     def port_map_add(self, protocol: int, port: int, address: str, alias_name: str):
         self.__port_map_configs[alias_name] = {
             "protocol": protocol,
