@@ -56,15 +56,21 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
 {
     struct ixc_netif *netif=mbuf->netif;
     struct ixc_addr_map_record *r;
+    int for_pass=0;
 
 
     // 拷贝到DHCP CLIENT与DHCP SERVER
     ixc_npfwd_send_raw(ixc_mbuf_clone(mbuf),0,IXC_FLAG_DHCP_CLIENT);
     ixc_npfwd_send_raw(ixc_mbuf_clone(mbuf),0,IXC_FLAG_DHCP_SERVER);
     
+    if(IXC_NETIF_WAN==netif->type){
+        if(ixc_ip_rewrite_for_pass_is_allowed(arp->dst_ipaddr,arp->src_ipaddr,0)){
+            for_pass=1;
+        }
+    }
 
     // 不是本机的IP地址那么丢弃数据包
-    if(memcmp(arp->dst_ipaddr,netif->ipaddr,4)){
+    if(memcmp(arp->dst_ipaddr,netif->ipaddr,4) && !for_pass){
         ixc_mbuf_put(mbuf);
         return;
     }
