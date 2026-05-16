@@ -601,7 +601,7 @@ class rpc(object):
         else:
             enable = False
 
-        configs = self.__helper.ruter_configs['rewrite_for_pass']
+        configs = self.__helper.router_configs['rewrite_for_pass']
 
         if enable:
             configs["enable"] = 1
@@ -617,10 +617,8 @@ class rpc(object):
             return RPC.ERR_ARGS, "wrong old source address value"
         if not netutils.is_ipv4_address(new_src_addr):
             return RPC.ERR_ARGS, "wrong new source address value"
-        if dest_addr == new_src_addr:
-            return RPC.ERR_ARGS, "wrong destination address value,it is same with new source address"
 
-        configs = self.__helper.ruter_configs['rewrite_for_pass']
+        configs = self.__helper.router_configs['rewrite_for_pass']
         configs["dest_ip"] = dest_addr
         configs["old_src_ip"] = old_src_addr
         configs["new_src_ip"] = new_src_addr
