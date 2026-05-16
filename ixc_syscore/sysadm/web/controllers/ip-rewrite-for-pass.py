@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import json
 
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
 import pywind.lib.netutils as netutils
