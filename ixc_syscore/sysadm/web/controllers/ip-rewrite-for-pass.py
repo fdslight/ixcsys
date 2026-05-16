@@ -44,8 +44,8 @@ class controller(base_controller.BaseController):
                 self.json_resp(True, "新IP地址和目标IP地址冲突,IP地址不能相同")
                 return
             ''''''
-
-        RPC.fn_call("router", "/config", "ip_rewrite_for_pass_set", dest_ip, old_src_ip, new_src_ip)
+        if enable:
+            RPC.fn_call("router", "/config", "ip_rewrite_for_pass_set", dest_ip, old_src_ip, new_src_ip)
         RPC.fn_call("router", "/config", "ip_rewrite_for_pass_enable", enable)
         RPC.fn_call("router", "/config", "config_save")
 
