@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, json, time
+import sys, os, signal, json, time, subprocess
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
@@ -93,6 +93,9 @@ class service(dispatcher.dispatcher):
         # 限制最大为256KB
         self.__errlog_file_max_size = 256 * 1024
         self.__up_time = time.time()
+
+        # 避免/tmp被自动清理导致程序异常
+        subprocess.run("systemctl stop systemd-tmpfiles-clean.timer", capture_output=True, shell=True)
 
         self.load_syslog()
 

@@ -67,8 +67,8 @@ class rpc(object):
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
 
             "ip_4in6_tunnel_enable": self.ip_4in6_tunnel_enable,
-            "ip_rewrite_for_pass_enable": None,
-            "ip_rewrite_for_pass_set": None,
+            "ip_rewrite_for_pass_enable": self.ip_rewrite_for_pass_enable,
+            "ip_rewrite_for_pass_set": self.ip_rewrite_for_pass_set,
 
             "passdev_set": self.passdev_set,
             "pppoe_set": self.pppoe_set,
