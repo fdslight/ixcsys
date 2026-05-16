@@ -39,4 +39,7 @@ class controller(base_controller.BaseController):
             self.json_resp(True, "错误的新的IP地址格式")
             return
 
+        RPC.fn_call("router", "/config", "ip_rewrite_for_pass_set", dest_ip, old_src_ip, new_src_ip)
+        RPC.fn_call("router", "/config", "ip_rewrite_for_pass_enable", enable)
+
         self.json_resp(False, {})
