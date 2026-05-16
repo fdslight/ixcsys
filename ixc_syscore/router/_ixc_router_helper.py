@@ -610,6 +610,8 @@ class rpc(object):
             return RPC.ERR_ARGS, "wrong old source address value"
         if not netutils.is_ipv4_address(new_src_addr):
             return RPC.ERR_ARGS, "wrong new source address value"
+        if dest_addr == new_src_addr:
+            return RPC.ERR_ARGS, "wrong destination address value,it is same with new source address"
 
         return 0, self.__helper.router.ip_rewrite_for_pass_set(dest_addr, old_src_addr, new_src_addr)
 
@@ -987,6 +989,13 @@ class helper(object):
                 "enable": 0,
                 "host": "",
                 "port": 443,
+            }
+        if "rewrite_for_pass" not in self.__router_configs:
+            self.__router_configs["rewrite_for_pass"] = {
+                "enable": 0,
+                "dest_ip": "0.0.0.0",
+                "old_src_ip": "0.0.0.0",
+                "new_src_ip": "0.0.0.0",
             }
 
     def load_port_map_configs(self):
