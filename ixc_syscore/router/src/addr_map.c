@@ -268,7 +268,7 @@ void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m,unsigned char *src_addr)
     }
     
     if(is_sent){
-        ixc_arp_send(netif,brd,m->next_host,IXC_ARP_OP_REQ,NULL);
+        ixc_arp_send(netif,brd,m->next_host,IXC_ARP_OP_REQ,src_addr);
         ixc_mbuf_put(m);
         return;
     }
