@@ -601,6 +601,13 @@ class rpc(object):
         else:
             enable = False
 
+        configs = self.__helper.ruter_configs['rewrite_for_pass']
+
+        if enable:
+            configs["enable"] = 1
+        else:
+            configs["enable"] = 0
+
         return 0, self.__helper.router.ip_rewrite_for_pass_enable(enable)
 
     def ip_rewrite_for_pass_set(self, dest_addr: str, old_src_addr: str, new_src_addr: str):
@@ -612,6 +619,11 @@ class rpc(object):
             return RPC.ERR_ARGS, "wrong new source address value"
         if dest_addr == new_src_addr:
             return RPC.ERR_ARGS, "wrong destination address value,it is same with new source address"
+
+        configs = self.__helper.ruter_configs['rewrite_for_pass']
+        configs["dest_ip"] = dest_addr
+        configs["old_src_ip"] = old_src_addr
+        configs["new_src_ip"] = new_src_addr
 
         return 0, self.__helper.router.ip_rewrite_for_pass_set(dest_addr, old_src_addr, new_src_addr)
 
