@@ -673,7 +673,7 @@ int ixc_netif_vlan_set(int vlan_id)
 {
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
     
-    if(vlan_id<1 || vlan_id > 4094) return -1;
+    if(vlan_id<0 || vlan_id > 4094) return -1;
 
     netif->vlan_id=vlan_id;
 

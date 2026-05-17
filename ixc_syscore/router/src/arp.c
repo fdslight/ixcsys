@@ -139,6 +139,7 @@ int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char
     m->tail=m->begin+sizeof(struct ixc_arp);
     m->end=m->tail;
     m->link_proto=0x806;
+    m->no_vlan_tag=no_vlan_flag;
 
     memcpy(m->data+m->begin,&arp,sizeof(struct ixc_arp));
 
