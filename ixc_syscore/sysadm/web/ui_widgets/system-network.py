@@ -91,6 +91,6 @@ class widget(ui_widget.widget):
                                              "net_devices": avaliable_devices,
                                              "enable_pass": enable_pass,
                                              "vlan_id": vid,
-                                             "enable_vlan_pass": vlan_enable_pass,
+                                             "vlan_enable_pass": vlan_enable_pass,
                                              "wan_vlan_id": wan_vlan_id,
                                              }
