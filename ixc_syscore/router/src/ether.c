@@ -212,8 +212,8 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
             if(vlan_id!=tmp_netif->vlan_id){
                 mbuf->netif=dst_netif;
                 ixc_netif_send(mbuf);
+                return;
             }
-            return;
         }else{
             // 未开启直通并且不是WAN网卡的VLAN ID那么丢弃数据包
             // LAN口在未直通状态下不允许有VLAN数据包
