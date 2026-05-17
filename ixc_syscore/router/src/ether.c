@@ -50,6 +50,24 @@ static void ixc_ether_traffic_statistics(struct ixc_mbuf *m,int dir)
     ixc_traffic_log_statistics(header,m->end-m->begin,dir);
 }
 
+/*static void ixc_ether_add_vlan_header(unsigned char *src_hwaddr,unsigned char *dest_addr,unsigned char priv,unsigned short vlan_id,void *buf)
+{
+    unsigned short tpid=htons(0x8100);
+    unsigned char *p=buf;
+    unsigned short v=0;
+
+    if(priv<0 || priv>7) priv=7;
+    
+    memcpy(p,&tpid,2);
+    priv=priv<<13;
+    v|=priv;
+
+    vlan_id=vlan_id & 0x0fff;
+    v|=vlan_id;
+    
+    memcpy(p+2,&v,2);
+}*/
+
 int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
 {
     struct ixc_ether_header eth_header;
@@ -65,6 +83,11 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
     if(!add_header){
         ixc_ether_traffic_statistics(mbuf,IXC_TRAFFIC_LOG_DIR_IN);
         ixc_netif_send(mbuf);
+        return 0;
+    }
+
+    if(IXC_NETIF_WAN==netif->type && 0!=netif->vlan_id){
+        ixc_ether_send3(mbuf,0x8100,netif->vlan_id);
         return 0;
     }
 
@@ -107,10 +130,12 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
 void ixc_ether_handle(struct ixc_mbuf *mbuf)
 {
     struct ixc_ether_header *header;
-    struct ixc_netif *netif=mbuf->netif;
+    struct ixc_netif *netif=mbuf->netif,*tmp_netif,*dst_netif;
     int length=mbuf->end-mbuf->begin;
     int pppoe_and_wan=0;
     unsigned short type;
+    unsigned short vlan_flags=0;
+    int vlan_id;
     
     // 检查长度是否合法,不合法直接丢包
     if(length<14){
@@ -136,7 +161,7 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         ixc_mbuf_put(mbuf);
         return;
     }
-
+    
     memcpy(mbuf->orig_src_hwaddr,header->src_hwaddr,6);
     memcpy(mbuf->dst_hwaddr,header->dst_hwaddr,6);
     memcpy(mbuf->src_hwaddr,header->src_hwaddr,6);
@@ -163,6 +188,53 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         mbuf=ixc_passthrough_send_auto(mbuf);
         if(NULL==mbuf) return;
     }
+
+    // 如果是VLAN数据包那么处理VLAN数据包
+    if(0x8100==type){
+        memcpy(&vlan_flags,mbuf->data+mbuf->offset,2);
+        vlan_id = vlan_flags & 0x0fff;
+
+        // 不合法VLAN ID丢弃
+        if(vlan_id<1 || vlan_id > 4094){
+            ixc_mbuf_put(mbuf);
+            return;
+        }
+
+        if(IXC_NETIF_WAN==netif->type){
+            tmp_netif=netif;
+            dst_netif=ixc_netif_get(IXC_NETIF_LAN);
+        }else{
+            tmp_netif=ixc_netif_get(IXC_NETIF_WAN);
+            dst_netif=tmp_netif;
+        }
+        // 开启直通并且不是本网卡的VLAN ID的直通数据包
+        if(ixc_netif_vlan_pass_is_enabled()){
+            if(vlan_id!=tmp_netif->vlan_id){
+                mbuf->netif=dst_netif;
+                ixc_netif_send(mbuf);
+            }
+            return;
+        }else{
+            // 未开启直通并且不是WAN网卡的VLAN ID那么丢弃数据包
+            // LAN口在未直通状态下不允许有VLAN数据包
+            if(IXC_NETIF_LAN==netif->type){
+                ixc_mbuf_put(mbuf);
+                return;
+            }
+            if(vlan_id!=tmp_netif->vlan_id){
+                ixc_mbuf_put(mbuf);
+                return;
+            }
+        }
+
+        // 读取上层协议类型
+        mbuf->offset+=2;
+        memcpy(&type,mbuf->data+mbuf->offset,2);
+        type=ntohs(type);
+        // 重写链路类型
+        mbuf->link_proto=type;
+    }
+    
     
     // 此处检查MAC地址是否是本地地址,非本地MAC地址丢弃数据包(前提是IPv6直通未开启)
     if(!ixc_ether_is_self(netif,header->dst_hwaddr)){
@@ -223,6 +295,7 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
 int ixc_ether_send2(struct ixc_mbuf *m)
 {
     struct ixc_ether_header *header;
+    struct ixc_netif *netif=m->netif;
     int size=0;
 
     if(NULL==m) return 0;
@@ -247,6 +320,11 @@ int ixc_ether_send2(struct ixc_mbuf *m)
     if(ntohs(header->type)<0x0101){
         ixc_mbuf_put(m);
         return -1;
+    }
+
+    if(IXC_NETIF_WAN==netif->type && 0!=netif->vlan_id){
+        ixc_ether_send3(m,0x8100,netif->vlan_id);
+        return 0;
     }
 
     if(size<60){

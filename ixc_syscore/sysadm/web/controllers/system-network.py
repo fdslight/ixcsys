@@ -19,6 +19,8 @@ class controller(base_controller.BaseController):
         # check_host = self.request.get_argument("check_host", is_seq=False,
         #                                       is_qs=False)
         ip4_mtu = self.request.get_argument("ip4_mtu", is_seq=False, is_qs=False)
+        vlan_enable_pass = self.request.get_argument("vlan_enable_pass", is_seq=False, is_qs=False)
+        vlan_id = self.request.get_argument("vlan_id", is_seq=False, is_qs=False)
 
         # if enable_auto and temp_ifname not in network.get_available_net_devices():
         #    self.json_resp(True, "不可用的故障切换网卡")
@@ -36,6 +38,20 @@ class controller(base_controller.BaseController):
             return
         if not netutils.is_hwaddr(hwaddr):
             self.json_resp(True, "错误的硬件地址格式")
+            return
+
+        if vlan_enable_pass:
+            vlan_enable_pass = True
+        else:
+            vlan_enable_pass = False
+
+        try:
+            vlan_id = int(vlan_id)
+        except ValueError:
+            self.json_resp(True, "错误的VLAN ID值")
+            return
+        if vlan_id < 0 or vlan_id > 4094:
+            self.json_resp(True, "错误的VLAN ID值,必须是0-4094之间的数字")
             return
 
         # if enable_auto:
@@ -80,7 +96,8 @@ class controller(base_controller.BaseController):
 
         self.save_sysadm_json_config("%s/network_shift.json" % self.my_config_dir, o)
         """
-
+        RPC.fn_call("router", "/config", "vlan_set_pass", vlan_enable_pass)
+        RPC.fn_call("router", "/config", "vlan_set_id", vlan_id)
         RPC.fn_call("router", "/config", "wan_hwaddr_set", hwaddr)
         RPC.fn_call("router", "/config", "wan_mtu_set", ip4_mtu, False)
         RPC.fn_call("router", "/config", "config_save")

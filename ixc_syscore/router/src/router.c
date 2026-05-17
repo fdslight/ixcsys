@@ -317,6 +317,31 @@ router_netif_traffic_speed_get(PyObject *self,PyObject *args)
 }
 
 static PyObject *
+router_netif_vlan_set_pass(PyObject *self,PyObject *args)
+{
+    int enable;
+    if(!PyArg_ParseTuple(args,"p",&enable)) return NULL;
+    
+    ixc_netif_vlan_set_pass(enable);
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+router_netif_vlan_set_id(PyObject *self,PyObject *args)
+{
+    int vlan_id,rs;
+    if(!PyArg_ParseTuple(args,"i",&vlan_id)) return NULL;
+
+    rs=ixc_netif_vlan_set(vlan_id);
+    if(0!=rs){
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
 router_src_filter_add_hwaddr(PyObject *self,PyObject *args)
 {
     unsigned char *hwaddr;
@@ -1241,6 +1266,8 @@ static PyMethodDef routerMethods[]={
     {"netif_set_mtu",(PyCFunction)router_netif_mtu_set,METH_VARARGS,"set network card MTU value"},
     {"netif_traffic_get",(PyCFunction)router_netif_traffic_get,METH_VARARGS,"get network card traffic"},
     {"netif_traffic_speed_get",(PyCFunction)router_netif_traffic_speed_get,METH_VARARGS,"get network card traffic speed"},
+    {"netif_vlan_set_pass",(PyCFunction)router_netif_vlan_set_pass,METH_VARARGS,"enable/disable vlan passthrough"},
+    {"netif_vlan_set_id",(PyCFunction)router_netif_vlan_set_id,METH_VARARGS,"set WAN interface VLAN ID"},
     //
     {"src_filter_add_hwaddr",(PyCFunction)router_src_filter_add_hwaddr,METH_VARARGS,"add hwaddr for source filter"},
     {"src_filter_del_hwaddr",(PyCFunction)router_src_filter_del_hwaddr,METH_VARARGS,"del hwaddr for source filter"},

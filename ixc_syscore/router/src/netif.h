@@ -86,6 +86,11 @@ struct ixc_netif{
     // IPv6的默认路由器
     unsigned char ip6_default_router_hwaddr[6];
     unsigned char pad3[2];
+
+    // 网口VLAN ID
+    int vlan_id;
+    // 是否开启VLAN直通
+    int vlan_pass_enable;
 };
 
 int ixc_netif_init(struct ev_set *ev_set);
@@ -136,5 +141,10 @@ int ixc_netif_traffic_speed_get(int if_type,\
 unsigned long long *rx_traffic_speed,unsigned long long *tx_traffic_speed,\
 unsigned long long *rx_npkt_speed,unsigned long long *tx_npkt_speed\
 );
+
+/// 是否开启VLAN直通,只支持WAN
+int ixc_netif_vlan_set_pass(int enable);
+int ixc_netif_vlan_pass_is_enabled(void);
+int ixc_netif_vlan_set(int vlan_id);
 
 #endif

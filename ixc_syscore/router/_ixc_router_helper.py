@@ -65,6 +65,8 @@ class rpc(object):
             "lan_static_ipv6_enable": self.lan_static_ipv6_enable,
             "lan_static_ipv6_set": self.lan_static_ipv6_set,
             "lan_ipv6_security_enable": self.lan_ipv6_security_enable,
+            "vlan_set_pass": self.vlan_set_pass,
+            "vlan_set_id": self.vlan_set_id,
 
             "ip_4in6_tunnel_enable": self.ip_4in6_tunnel_enable,
             "ip_rewrite_for_pass_enable": self.ip_rewrite_for_pass_enable,
@@ -449,6 +451,25 @@ class rpc(object):
     def lan_traffic_speed_get(self):
         speed_info = self.__helper.router.netif_traffic_speed_get(router.IXC_NETIF_LAN)
         return 0, speed_info
+
+    def vlan_set_pass(self, enable: bool):
+        vlan = self.__helper.wan_configs['vlan']
+        if enable:
+            enable = True
+            vlan['enable_pass'] = 1
+        else:
+            enable = False
+            vlan['enable_pass'] = 0
+        self.__helper.router.netif_vlan_set_pass(enable)
+        return 0, None
+
+    def vlan_set_id(self, vlan_id: int):
+        if vlan_id < 0 or vlan_id > 4094:
+            return RPC.ERR_ARGS, "wrong vlan value %s" % vlan_id
+        vlan = self.__helper.wan_configs['vlan']
+        vlan['vlan_id'] = vlan_id
+
+        return 0, self.__helper.router.netif_vlan_set_id(vlan_id)
 
     def manage_addr_set(self, ip: str, is_ipv6=False):
         # 对IPv6地址进行特殊处理
@@ -966,6 +987,9 @@ class helper(object):
     def load_wan_configs(self):
         path = "%s/wan.ini" % self.__conf_dir
         self.__wan_configs = conf.ini_parse_from_file(path)
+        if "vlan" not in self.__wan_configs:
+            self.__wan_configs['vlan'] = {"enable_pass": 0, "vlan_id": 0}
+        return
 
     def save_wan_configs(self):
         path = "%s/wan.ini" % self.__conf_dir

@@ -641,3 +641,41 @@ unsigned long long *rx_npkt_speed,unsigned long long *tx_npkt_speed\
 
     return 0;
 }
+
+int ixc_netif_vlan_set_pass(int enable)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+
+    // 修改网卡MTU值,需要考虑是否重复设置,让mtu持续减少的问题
+    if(enable && !netif->vlan_pass_enable){
+        // 减少MTU
+        netif->mtu_v4-=4;
+        netif->mtu_v6-=4;
+    }
+    if(!enable && netif->vlan_pass_enable){
+        netif->mtu_v4+=4;
+        netif->mtu_v6+=4;
+    }
+
+    netif->vlan_pass_enable=enable;
+
+    return 0;
+}
+
+int ixc_netif_vlan_pass_is_enabled(void)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+
+    return netif->vlan_pass_enable;
+}
+
+int ixc_netif_vlan_set(int vlan_id)
+{
+    struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+    
+    if(vlan_id<1 || vlan_id > 4094) return -1;
+
+    netif->vlan_id=vlan_id;
+
+    return 0;
+}
