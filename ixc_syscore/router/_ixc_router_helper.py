@@ -1447,6 +1447,16 @@ class helper(object):
 
         self.router.route_add(byte_subnet, 0, byte_gw, False)
 
+        wan_vlan = self.__wan_configs["vlan"]
+        try:
+            enable_vlan_pass = bool(int(wan_vlan["enable_pass"]))
+        except ValueError:
+            enable_vlan_pass = False
+        wan_vlan_id = int(wan_vlan["vlan_id"])
+        if enable_vlan_pass:
+            self.router.netif_vlan_set_pass(True)
+        self.router.netif_vlan_set_id(wan_vlan_id)
+
     def set_gw_ipaddr(self, ipaddr: str, prefix: int, is_ipv6=False):
         if is_ipv6:
             fa = socket.AF_INET6
