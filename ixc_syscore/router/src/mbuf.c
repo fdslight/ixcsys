@@ -84,6 +84,7 @@ struct ixc_mbuf *ixc_mbuf_get(void)
         m->priv_flags=0;
         m->loop_trace=0;
         m->passthrough=0;
+        m->no_vlan_tag=0;
         
         ixc_mbuf_cur_mem_pool_num-=1;
 
@@ -107,6 +108,7 @@ struct ixc_mbuf *ixc_mbuf_get(void)
     m->priv_flags=0;
     m->loop_trace=0;
     m->passthrough=0;
+    m->no_vlan_tag=0;
 
     ixc_mbuf_used_num+=1;
 
@@ -158,6 +160,7 @@ struct ixc_mbuf *ixc_mbuf_clone(struct ixc_mbuf *m)
     new_mbuf->end=m->tail;
     new_mbuf->passthrough=m->passthrough;
     new_mbuf->link_proto=m->link_proto;
+    new_mbuf->no_vlan_tag=m->no_vlan_tag;
 
     memcpy(new_mbuf->next_host,m->next_host,16);
     memcpy(new_mbuf->dst_hwaddr,m->dst_hwaddr,6);

@@ -20,7 +20,7 @@ class controller(base_controller.BaseController):
         #                                       is_qs=False)
         ip4_mtu = self.request.get_argument("ip4_mtu", is_seq=False, is_qs=False)
         vlan_enable_pass = self.request.get_argument("vlan_enable_pass", is_seq=False, is_qs=False)
-        vlan_id = self.request.get_argument("vlan_id", is_seq=False, is_qs=False)
+        vlan_id = self.request.get_argument("wan_vlan_id", is_seq=False, is_qs=False)
 
         # if enable_auto and temp_ifname not in network.get_available_net_devices():
         #    self.json_resp(True, "不可用的故障切换网卡")

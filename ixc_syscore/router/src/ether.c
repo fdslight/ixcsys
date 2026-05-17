@@ -86,7 +86,7 @@ int ixc_ether_send(struct ixc_mbuf *mbuf,int add_header)
         return 0;
     }
 
-    if(IXC_NETIF_WAN==netif->type && 0!=netif->vlan_id){
+    if(IXC_NETIF_WAN==netif->type && 0!=netif->vlan_id && !mbuf->no_vlan_tag){
         ixc_ether_send3(mbuf,0x8100,netif->vlan_id);
         return 0;
     }
@@ -322,7 +322,7 @@ int ixc_ether_send2(struct ixc_mbuf *m)
         return -1;
     }
 
-    if(IXC_NETIF_WAN==netif->type && 0!=netif->vlan_id){
+    if(IXC_NETIF_WAN==netif->type && 0!=netif->vlan_id && !m->no_vlan_tag){
         ixc_ether_send3(m,0x8100,netif->vlan_id);
         return 0;
     }

@@ -57,6 +57,9 @@ struct ixc_mbuf{
     unsigned char pad3[2];
     unsigned char dst_hwaddr[6];
     unsigned char pad4[2];
+    // 如果该值不为0,表示强制无vlan tag,否则系统自动是否增加
+    int no_vlan_tag;
+    char pad5[4];
 };
 
 /// 检查是否造成了死循环

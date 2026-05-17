@@ -35,17 +35,31 @@ class widget(ui_widget.widget):
         peer_host = ""
         peer_port = ""
         pass_key = ""
+        vlan_enable_pass = False
         router_config = RPC.fn_call("router", "/config", "router_config_get")
         vid = router_config['config']["vlanid_for_passdev"]
+        wan_vlan_id = 0
 
         if _type == "wan":
             configs = RPC.fn_call("router", "/config", "wan_config_get")
             public = configs["public"]
+            vlan = configs["vlan"]
             if_name = public["phy_ifname"]
             hwaddr = public["hwaddr"]
             # 避免模板找不到变量报错
             ip_addr = ""
             ip4_mtu = public.get("ip4_mtu", 1500)
+            try:
+                if int(vlan['enable_pass']) != 0:
+                    vlan_enable_pass = True
+            except ValueError:
+                pass
+
+            try:
+                wan_vlan_id = int(vlan['vlan_id'])
+            except ValueError:
+                pass
+
         elif _type == "pass":
             configs = RPC.fn_call("router", "/config", "lan_config_get")
             config = configs["passthrough"]
@@ -76,5 +90,7 @@ class widget(ui_widget.widget):
                                              "ip4_mtu": ip4_mtu,
                                              "net_devices": avaliable_devices,
                                              "enable_pass": enable_pass,
-                                             "vlan_id": vid
+                                             "vlan_id": vid,
+                                             "enable_vlan_pass": vlan_enable_pass,
+                                             "wan_vlan_id": wan_vlan_id,
                                              }
