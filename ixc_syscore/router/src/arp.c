@@ -91,7 +91,7 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     
     // 如果不存在那么添加到映射表
     if(NULL==r){
-        ixc_addr_map_add(netif,arp->src_ipaddr,arp->src_hwaddr,0);
+        ixc_addr_map_add(netif,arp->src_ipaddr,arp->src_hwaddr,0,mbuf->no_vlan_tag);
         ixc_mbuf_put(mbuf);
         return;
     }
@@ -103,7 +103,7 @@ static void ixc_arp_handle_response(struct ixc_mbuf *mbuf,struct ixc_arp *arp)
     ixc_mbuf_put(mbuf);
 }
 
-int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op,unsigned char *src_addr)
+int ixc_arp_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *dst_ipaddr,unsigned short op,unsigned char *src_addr,int no_vlan_flag)
 {
     struct ixc_arp arp;
     struct ixc_mbuf *m;

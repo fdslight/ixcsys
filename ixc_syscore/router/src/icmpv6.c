@@ -487,7 +487,7 @@ static void ixc_icmpv6_handle_na(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
 
-    rs=ixc_addr_map_add(netif,na_header->target_addr,opt->hwaddr,1);
+    rs=ixc_addr_map_add(netif,na_header->target_addr,opt->hwaddr,1,m->no_vlan_tag);
     if(rs<0){
         ixc_mbuf_put(m);
         STDERR("cannot add address map for IPv6\r\n");

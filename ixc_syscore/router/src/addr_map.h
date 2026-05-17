@@ -25,6 +25,8 @@ struct ixc_addr_map_record{
     int is_ipv6;
     int is_changed;
     unsigned char hwaddr[6];
+    char pad[2];
+    int no_vlan_flag;
 };
 
 int ixc_addr_map_init(void);
@@ -32,7 +34,7 @@ void ixc_addr_map_uninit(void);
 
 struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6);
 
-int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hwaddr,int is_ipv6);
+int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hwaddr,int is_ipv6,int no_vlan_flag);
 struct ixc_addr_map_record *ixc_addr_map_get(unsigned char *ip,int is_ipv6);
 void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m,unsigned char *src_addr);
 void ixc_addr_map_handle(struct ixc_mbuf *m);

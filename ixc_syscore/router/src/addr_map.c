@@ -71,7 +71,7 @@ static void ixc_addr_map_timeout_cb(void *data)
         return;
     }
     // 发送ARP请求,检查ARP记录
-    ixc_arp_send(r->netif,r->hwaddr,r->address,IXC_ARP_OP_REQ,NULL);
+    ixc_arp_send(r->netif,r->hwaddr,r->address,IXC_ARP_OP_REQ,NULL,r->no_vlan_flag);
 }
 
 int ixc_addr_map_init(void)
@@ -131,7 +131,7 @@ void ixc_addr_map_uninit(void)
     addr_map_is_initialized=0;
 }
 
-int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hwaddr,int is_ipv6)
+int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hwaddr,int is_ipv6,int no_vlan_flag)
 {
     struct time_data *tdata;
     struct ixc_addr_map_record *r;
@@ -173,6 +173,7 @@ int ixc_addr_map_add(struct ixc_netif *netif,unsigned char *ip,unsigned char *hw
     r->netif=netif;
     r->tdata=tdata;
     r->is_changed=0;
+    r->no_vlan_flag=no_vlan_flag;
     tdata->data=r;
 
     if(is_ipv6) memcpy(r->address,ip,16);
@@ -268,7 +269,7 @@ void ixc_addr_map_handle_for_ip(struct ixc_mbuf *m,unsigned char *src_addr)
     }
     
     if(is_sent){
-        ixc_arp_send(netif,brd,m->next_host,IXC_ARP_OP_REQ,src_addr);
+        ixc_arp_send(netif,brd,m->next_host,IXC_ARP_OP_REQ,src_addr,m->no_vlan_tag);
         ixc_mbuf_put(m);
         return;
     }

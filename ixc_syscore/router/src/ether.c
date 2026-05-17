@@ -233,6 +233,8 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         type=ntohs(type);
         // 重写链路类型
         mbuf->link_proto=type;
+    }else{
+        mbuf->no_vlan_tag=1;
     }
     
     
