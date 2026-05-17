@@ -233,10 +233,7 @@ void ixc_ether_handle(struct ixc_mbuf *mbuf)
         type=ntohs(type);
         // 重写链路类型
         mbuf->link_proto=type;
-    }else{
-        mbuf->no_vlan_tag=1;
     }
-    
     
     // 此处检查MAC地址是否是本地地址,非本地MAC地址丢弃数据包(前提是IPv6直通未开启)
     if(!ixc_ether_is_self(netif,header->dst_hwaddr)){
