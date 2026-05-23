@@ -43,7 +43,7 @@ class widget(ui_widget.widget):
                 try:
                     v = int(s)
                     if v < 0:
-                        s = "--"
+                        results.append("--")
                     else:
                         results.append(s + "Mbit/s")
                     ''''''
