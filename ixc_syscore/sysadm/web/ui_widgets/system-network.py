@@ -33,7 +33,7 @@ class widget(ui_widget.widget):
         for if_name in _list:
             fpath = "/sys/class/net/%s/speed" % if_name
             if not os.path.isfile(fpath):
-                results.append("0Mbit/s")
+                results.append("--")
             else:
                 with open(fpath, "r") as f:
                     s = f.read()
@@ -42,11 +42,14 @@ class widget(ui_widget.widget):
                 s = s.replace("\r", "")
                 try:
                     v = int(s)
+                    if v < 0:
+                        s = "--"
+                    else:
+                        results.append(s + "Mbit/s")
+                    ''''''
                 except ValueError:
-                    s = "-"
-                if v < 0:
-                    s = "-"
-                results.append(s + "Mbit/s")
+                    results.append("--")
+                ''''''
             ''''''
         return ",".join(results)
 
