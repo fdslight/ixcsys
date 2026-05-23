@@ -24,19 +24,25 @@ class widget(ui_widget.widget):
 
         return json.loads(s)
 
-    def get_if_neg_speed(self, if_name: str):
-        """获取网卡协商速度
+    def get_if_neg_speed(self, if_names: str):
+        """获取网卡协商速度,考虑到多张网卡有逗号隔开的场景
         """
-        fpath = "/sys/class/net/%s/speed" % if_name
-        if not os.path.isfile(fpath):
-            return 0
+        _list = if_names.split(",")
+        results = []
 
-        with open(fpath, "r") as f: s = f.read()
-        f.close()
-        s = s.replace("\n", "")
-        s = s.replace("\r", "")
-
-        return int(s)
+        for if_name in _list:
+            fpath = "/sys/class/net/%s/speed" % if_name
+            if not os.path.isfile(fpath):
+                results.append("0Mbit/s")
+            else:
+                with open(fpath, "r") as f:
+                    s = f.read()
+                f.close()
+                s = s.replace("\n", "")
+                s = s.replace("\r", "")
+                results.append(s + "Mbit/s")
+            ''''''
+        return ",".join(results)
 
     def handle(self, *args, **kwargs):
         _type = self.get_argument("type", default="wan")
@@ -53,7 +59,7 @@ class widget(ui_widget.widget):
         router_config = RPC.fn_call("router", "/config", "router_config_get")
         vid = router_config['config']["vlanid_for_passdev"]
         wan_vlan_id = 0
-        neg_speed = 0
+        neg_speed = "0Mbit/s"
 
         if _type == "wan":
             configs = RPC.fn_call("router", "/config", "wan_config_get")
