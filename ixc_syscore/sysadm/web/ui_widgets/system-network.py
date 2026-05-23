@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json, os
+import json, os, subprocess
 import ixc_syslib.pylib.RPCClient as RPC
 import ixc_syslib.web.ui_widget as ui_widget
 import ixc_syscore.sysadm.pylib.network as network
@@ -24,6 +24,20 @@ class widget(ui_widget.widget):
 
         return json.loads(s)
 
+    def get_if_neg_speed(self, if_name: str):
+        """获取网卡协商速度
+        """
+        fpath = "/sys/class/net/%s/speed" % if_name
+        if not os.path.isfile(fpath):
+            return 0
+
+        with open(fpath, "r") as f: s = f.read()
+        f.close()
+        s = s.replace("\n", "")
+        s = s.replace("\r", "")
+
+        return int(s)
+
     def handle(self, *args, **kwargs):
         _type = self.get_argument("type", default="wan")
         if _type not in ("wan", "lan", "pass",): _type = "wan"
@@ -39,6 +53,7 @@ class widget(ui_widget.widget):
         router_config = RPC.fn_call("router", "/config", "router_config_get")
         vid = router_config['config']["vlanid_for_passdev"]
         wan_vlan_id = 0
+        neg_speed = 0
 
         if _type == "wan":
             configs = RPC.fn_call("router", "/config", "wan_config_get")
@@ -59,6 +74,7 @@ class widget(ui_widget.widget):
                 wan_vlan_id = int(vlan['vlan_id'])
             except ValueError:
                 pass
+            neg_speed = self.get_if_neg_speed(if_name)
 
         elif _type == "pass":
             configs = RPC.fn_call("router", "/config", "lan_config_get")
@@ -82,6 +98,7 @@ class widget(ui_widget.widget):
             ip_addr = if_config["ip_addr"]
             # 避免模板找不到变量报错
             ip4_mtu = 1500
+            neg_speed = self.get_if_neg_speed(if_name)
 
         # network_shift_conf = self.get_network_shift_conf()
 
@@ -93,4 +110,5 @@ class widget(ui_widget.widget):
                                              "vlan_id": vid,
                                              "vlan_enable_pass": vlan_enable_pass,
                                              "wan_vlan_id": wan_vlan_id,
+                                             "neg_speed": neg_speed,
                                              }
