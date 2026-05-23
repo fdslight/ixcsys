@@ -40,6 +40,12 @@ class widget(ui_widget.widget):
                 f.close()
                 s = s.replace("\n", "")
                 s = s.replace("\r", "")
+                try:
+                    v = int(s)
+                except ValueError:
+                    s = "-"
+                if v < 0:
+                    s = "-"
                 results.append(s + "Mbit/s")
             ''''''
         return ",".join(results)
