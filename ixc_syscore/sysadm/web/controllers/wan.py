@@ -76,12 +76,12 @@ class controller(base_controller.BaseController):
             if not self.pppoe_host_uniq_check_ok(host_uniq):
                 self.json_resp(True, "错误的pppoe host uniq 值")
                 return
-            if len(host_uniq) > 128:
-                self.json_resp(True, "pppoe host uniq长度过长,最大支持64字节")
+            if len(host_uniq) > 60:
+                self.json_resp(True, "pppoe host uniq长度过长,最大支持60字节")
                 return
             ''''''
-        if len(service_name) > 64:
-            self.json_resp(True, "pppoe host uniq长度过长,最大支持64个UTF-8长度")
+        if len(service_name) > 60:
+            self.json_resp(True, "pppoe host uniq长度过长,最大支持60个UTF-8长度")
             return
 
         if chk_net_enable:
