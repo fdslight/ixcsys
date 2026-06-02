@@ -250,13 +250,13 @@ class ixc_main_d(object):
 
         for ifname in config:
             info = config[ifname]
-            ipaddr = info["ipaddr"]
+            #ipaddr = info["ipaddr"]
             is_rescued = bool(int(info.get("is_rescued", 0)))
             if is_rescued: rescue_ifname = ifname
-            if_ipaddr = self.get_if_ipaddr(ifname)
-            if not if_ipaddr and not is_rescued:
-                subprocess.call("ip link set %s up" % ifname, shell=True)
-                subprocess.call("ip addr add %s dev %s" % (ipaddr, ifname), shell=True)
+            #if_ipaddr = self.get_if_ipaddr(ifname)
+            #if not if_ipaddr and not is_rescued:
+            #    subprocess.call("ip link set %s up" % ifname, shell=True)
+            #    subprocess.call("ip addr add %s dev %s" % (ipaddr, ifname), shell=True)
         if not rescue_ifname:
             self.__net_monitor_up_time = time.time()
             return
