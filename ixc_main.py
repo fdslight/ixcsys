@@ -266,7 +266,7 @@ class ixc_main_d(object):
 
         interval = time.time() - self.__net_monitor_up_time
 
-        if not self.__is_isset_rescue and interval < 30: return
+        if not self.__is_isset_rescue and interval < 60: return
 
         if_ipaddr = self.get_if_ipaddr("ixclanbr")
         if not if_ipaddr:
