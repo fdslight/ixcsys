@@ -16,7 +16,6 @@
     <form style="width: 50%;margin: auto;min-width: 400px;display: none;" class="ixc-system-network ixc-conf-form"
           id="ixc-system-network-wan-view" action="${self.url_prefix}/system-network?type=wan" method="post"
           enctype="application/x-www-form-urlencoded">
-        <p class="ixc-prompt">设置完成后需要重启路由器</p>
         <div class="form-group row">
             <label for="inputPassword3" class="col-sm-2 col-form-label">网卡</label>
             <div class="col-sm-10">
@@ -72,6 +71,8 @@
                 <p class="ixc-prompt">WAN口如果不需要VLAN,请设置为0</p>
             </div>
         </div>
+        <hr />
+        <p class="ixc-prompt">设置完成后需要重启路由器</p>
         <div class="form-group row">
             <div class="col-sm-12">
                 <button type="submit" class="btn btn-primary float-lg-right">确定</button>
