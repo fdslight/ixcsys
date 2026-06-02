@@ -69,6 +69,7 @@ class widget(ui_widget.widget):
         vid = router_config['config']["vlanid_for_passdev"]
         wan_vlan_id = 0
         neg_speed = "0Mbit/s"
+        ip6_mtu = ""
 
         if _type == "wan":
             configs = RPC.fn_call("router", "/config", "wan_config_get")
@@ -79,6 +80,7 @@ class widget(ui_widget.widget):
             # 避免模板找不到变量报错
             ip_addr = ""
             ip4_mtu = public.get("ip4_mtu", 1500)
+            ip6_mtu = public.get("ip6_mtu", 1280)
             try:
                 if int(vlan['enable_pass']) != 0:
                     vlan_enable_pass = True
@@ -120,6 +122,7 @@ class widget(ui_widget.widget):
         return True, "system-network.html", {"if_name": if_name, "hwaddr": hwaddr, "manage_addr": manage_addr,
                                              "mask": mask, "ip_addr": ip_addr,
                                              "ip4_mtu": ip4_mtu,
+                                             "ip6_mtu": ip6_mtu,
                                              "net_devices": avaliable_devices,
                                              "enable_pass": enable_pass,
                                              "vlan_id": vid,

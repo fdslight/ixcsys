@@ -287,9 +287,13 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     }
 
     if(mtu>1500){
-        STDERR("Wrong MTU value from RA%u\r\n",mtu);
-        ixc_mbuf_put(m);
-        return;
+        STDERR("Wrong MTU value from RA %u ,system will use default mtu 1500\r\n",mtu);
+        mtu=1500;
+    }
+
+    if(mtu<1280){
+        STDERR("Wrong MTU value from RA %u ,system will use default mtu 1280\r\n",mtu);
+        mtu=1280;
     }
 
     memcpy(slaac_addr,opt_prefix->prefix,16);
@@ -311,7 +315,8 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
         return;
     }
 
-    netif->mtu_v6=mtu;
+    if(netif->mtu_v6 > (int)mtu ) netif->mtu_v6=mtu;
+    
     memcpy(netif->ip6_default_router_hwaddr,gw_hwaddr,6);
 
     // 设置默认路由

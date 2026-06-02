@@ -1277,6 +1277,7 @@ class helper(object):
         lan_addr = lan_ifconfig["ip_addr"]
         manage_addr = lan_ifconfig["manage_addr"]
         mask = lan_ifconfig["mask"]
+        m
 
         byte_ipaddr = socket.inet_pton(socket.AF_INET, lan_addr)
         prefix = netutils.mask_to_prefix(mask, False)
@@ -1398,6 +1399,13 @@ class helper(object):
         ip4_mtu = int(wan_public.get("ip4_mtu", 1500))
         ip6_mtu = int(wan_public.get("ip6_mtu", 1280))
 
+        if ip4_mtu < 576:
+            ip4_mtu = 1500
+            logging.print_error("Wrong IPv4 MTU value,will be set to default value 1500")
+        if ip6_mtu < 1280:
+            logging.print_error("Wrong IPv6 MTU value,will be set to default value 1280")
+            ip6_mtu = 1280
+
         if internet_type == "pppoe":
             self.__pppoe_enable = True
         else:
@@ -1405,7 +1413,9 @@ class helper(object):
 
         if self.__pppoe_enable:
             # PPPoE需要减去头部的8个字节
-            ip4_mtu -= 8
+            # IPv4的最小MTU为576字节,如果低于584字节,那么不减MTU
+            if ip4_mtu >= 584:
+                ip4_mtu -= 8
             # 由于IPv6最小mtu为1280,只有大于1288时才减去8
             if ip6_mtu >= 1288: ip6_mtu -= 8
 

@@ -607,6 +607,8 @@ int ixc_netif_mtu_set(int if_type,unsigned short v,int is_ipv6)
 
     if(v>1500) return -1;
     if(is_ipv6 && v<1280) return -1;
+    // 限制IPv4 MTU大小
+    if(!is_ipv6 && v<576) return -1;
     
     if(is_ipv6) netif->mtu_v6=v;
     else netif->mtu_v4=v;
@@ -646,17 +648,6 @@ int ixc_netif_vlan_set_pass(int enable)
 {
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
 
-    // 修改网卡MTU值,需要考虑是否重复设置,让mtu持续减少的问题
-    if(enable && !netif->vlan_pass_enable){
-        // 减少MTU
-        netif->mtu_v4-=4;
-        netif->mtu_v6-=4;
-    }
-    if(!enable && netif->vlan_pass_enable){
-        netif->mtu_v4+=4;
-        netif->mtu_v6+=4;
-    }
-
     netif->vlan_pass_enable=enable;
 
     return 0;
@@ -674,6 +665,18 @@ int ixc_netif_vlan_set(int vlan_id)
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
     
     if(vlan_id<0 || vlan_id > 4094) return -1;
+
+    // 修改网卡MTU值,需要考虑是否重复设置,让mtu持续减少的问题
+    // 现代网卡对VLAN数据包不会丢包,不需要考虑mtu
+    /*if(0!=vlan_id && 0==netif->vlan_id){
+        // 减少MTU
+        netif->mtu_v4-=4;
+        netif->mtu_v6-=4;
+    }
+    if(0==vlan_id && 0!=netif->vlan_id){
+        netif->mtu_v4+=4;
+        netif->mtu_v6+=4;
+    }*/
 
     netif->vlan_id=vlan_id;
 

@@ -19,6 +19,7 @@ class controller(base_controller.BaseController):
         # check_host = self.request.get_argument("check_host", is_seq=False,
         #                                       is_qs=False)
         ip4_mtu = self.request.get_argument("ip4_mtu", is_seq=False, is_qs=False)
+        ip6_mtu = self.request.get_argument("ip6_mtu", is_seq=False, is_qs=False)
         vlan_enable_pass = self.request.get_argument("vlan_enable_pass", is_seq=False, is_qs=False)
         vlan_id = self.request.get_argument("wan_vlan_id", is_seq=False, is_qs=False)
 
@@ -45,6 +46,14 @@ class controller(base_controller.BaseController):
         else:
             vlan_enable_pass = False
 
+        if ip4_mtu is None:
+            ip4_mtu = 1500
+        if ip6_mtu is None:
+            ip6_mtu = 1500
+
+        if vlan_id is None:
+            vlan_id = 0
+
         try:
             vlan_id = int(vlan_id)
         except ValueError:
@@ -69,11 +78,21 @@ class controller(base_controller.BaseController):
         try:
             ip4_mtu = int(ip4_mtu)
         except ValueError:
-            self.json_resp(True, "错误的MTU值类型")
+            self.json_resp(True, "错误的IPv4 MTU值类型")
             return
 
         if ip4_mtu < 576 or ip4_mtu > 1500:
-            self.json_resp(True, "MTU的取值范围为576~1500")
+            self.json_resp(True, "IPv4 MTU的取值范围为576~1500")
+            return
+
+        try:
+            ip6_mtu = int(ip6_mtu)
+        except ValueError:
+            self.json_resp(True, "错误的IPv6 MTU值类型")
+            return
+
+        if ip6_mtu < 1280 or ip6_mtu > 1500:
+            self.json_resp(True, "IPv6 MTU的取值范围为1280~1500")
             return
 
         # if not check_host: check_host = ""
@@ -100,6 +119,7 @@ class controller(base_controller.BaseController):
         RPC.fn_call("router", "/config", "vlan_set_id", vlan_id)
         RPC.fn_call("router", "/config", "wan_hwaddr_set", hwaddr)
         RPC.fn_call("router", "/config", "wan_mtu_set", ip4_mtu, False)
+        RPC.fn_call("router", "/config", "wan_mtu_set", ip6_mtu, False)
         RPC.fn_call("router", "/config", "config_save")
         self.json_resp(False, "")
 
