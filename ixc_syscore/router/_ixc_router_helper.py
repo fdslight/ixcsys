@@ -1277,7 +1277,6 @@ class helper(object):
         lan_addr = lan_ifconfig["ip_addr"]
         manage_addr = lan_ifconfig["manage_addr"]
         mask = lan_ifconfig["mask"]
-        m
 
         byte_ipaddr = socket.inet_pton(socket.AF_INET, lan_addr)
         prefix = netutils.mask_to_prefix(mask, False)
