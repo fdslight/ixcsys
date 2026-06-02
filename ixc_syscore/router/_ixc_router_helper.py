@@ -1267,7 +1267,6 @@ class helper(object):
             for devname in lan_ifs:
                 subprocess.call("ip link set %s promisc on" % devname, shell=True)
                 subprocess.call("ip link set %s up" % devname, shell=True)
-            # 设置内网桥接网卡MTU为1400,目的为了本机能够被正常访问
         else:
             self.__LAN_BR_NAME = self.freebsd_br_create([lan_phy_ifname, self.__LAN_NAME, ])
 
