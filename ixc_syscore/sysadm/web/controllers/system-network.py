@@ -119,7 +119,7 @@ class controller(base_controller.BaseController):
         RPC.fn_call("router", "/config", "vlan_set_id", vlan_id)
         RPC.fn_call("router", "/config", "wan_hwaddr_set", hwaddr)
         RPC.fn_call("router", "/config", "wan_mtu_set", ip4_mtu, False)
-        RPC.fn_call("router", "/config", "wan_mtu_set", ip6_mtu, False)
+        RPC.fn_call("router", "/config", "wan_mtu_set", ip6_mtu, True)
         RPC.fn_call("router", "/config", "config_save")
         self.json_resp(False, "")
 
