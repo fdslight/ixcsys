@@ -332,12 +332,6 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     // 为LAN分配一个地址
     if_lan=ixc_netif_get(IXC_NETIF_LAN);
 
-    if(opt_prefix->prefix_len>64){
-        ixc_router_syslog2("Unsupport IPv6 prefix length for RA %d",opt_prefix->prefix_len);
-        ixc_mbuf_put(m);
-        return;
-    }
-
     // 取最小的mtu值
     if(netif->mtu_v6 > (int)mtu ) netif->mtu_v6=mtu;
     
