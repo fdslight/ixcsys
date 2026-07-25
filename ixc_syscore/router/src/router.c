@@ -1466,7 +1466,7 @@ int ixc_router_tell(const char *content)
 
 void ixc_router_syslog(const char *message)
 {
-    char buf[2048];
+    char buf[4096];
     sprintf(buf,"syslog %s",message);
     ixc_router_tell(buf);
 }
