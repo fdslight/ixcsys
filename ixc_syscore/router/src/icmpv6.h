@@ -106,6 +106,8 @@ void ixc_icmpv6_handle(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr);
 /// 发送RA报文
 // 如果hwaddr为空,那么自动生成all_nodes地址
 int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr);
+/// 前缀超时核对
+void ixc_icmpv6_prefix_timeout_check(void);
 /// 发送路由器请求报文
 int ixc_icmpv6_send_rs(void);
 /// 发送邻居报文请求

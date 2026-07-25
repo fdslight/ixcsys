@@ -572,6 +572,7 @@ int ixc_netif_unset_ip(int if_idx,int is_ipv6)
 int ixc_netif_wan6_iface_id_set(unsigned char *subnet)
 {
     struct ixc_netif *netif=ixc_netif_get(IXC_NETIF_WAN);
+    unsigned char unspec_addr[]=IXC_IP6ADDR_UNSPEC;
 
     if(NULL==netif){
         STDERR("cannot get WAN netif\r\n");
@@ -583,6 +584,12 @@ int ixc_netif_wan6_iface_id_set(unsigned char *subnet)
 
     netif->isset_ip6=1;
     netif->ip6_prefix=128;
+
+    // 如果地址为空,那么取消IPv6
+    if(!memcmp(unspec_addr,subnet,16)){
+        netif->isset_ip6=0;
+        ixc_route_del(unspec_addr,0,1);
+    }
     
     return 0;
 }

@@ -11,11 +11,15 @@
 #include "global.h"
 #include "pppoe.h"
 #include "nat66.h"
+#include "router.h"
 
 static int icmpv6_isset_dns=0;
 static unsigned char icmpv6_dnsserver[16];
 static unsigned char icmpv6_wan_dnsserver_a[16];
 static unsigned char icmpv6_wan_dnsserver_b[16];
+/// ipv6前缀更新时间
+static time_t icmpv6_prefix_up_time=0;
+static int icmpv6_prefix_exists=0;
 
 static int ixc_icmpv6_send(struct ixc_netif *netif,unsigned char *dst_hwaddr,unsigned char *src_ipaddr,unsigned char *dst_ipaddr,void *icmp_data,int length)
 {
@@ -196,6 +200,7 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     // 清空DNS
     bzero(icmpv6_wan_dnsserver_a,16);
     bzero(icmpv6_wan_dnsserver_b,16);
+    bzero(slaac_addr,16);
 
     while(size<(m->end-m->offset-16)){
         type=ptr[0];
@@ -251,12 +256,20 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 
     if(is_err){
         DBG_FLAGS;
+        icmpv6_prefix_exists=0;
+        // 未下发前缀使用默认的空前缀
+        ixc_netif_wan6_iface_id_set(slaac_addr);
+        ixc_router_syslog("ICMPv6 PD format Error");
         ixc_mbuf_put(m);
         return;
     }
 
     if(NULL==opt_prefix){
         DBG_FLAGS;
+        icmpv6_prefix_exists=0;
+        ixc_router_syslog("ICMPv6 PD not set prefix");
+        // 未下发前缀使用默认的空前缀
+        ixc_netif_wan6_iface_id_set(slaac_addr);
         ixc_mbuf_put(m);
         return;
     }
@@ -266,6 +279,10 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     // 首先检查地址是否合法
     if(byte==0x00 || byte==0xff || byte==0xfe){
         DBG_FLAGS;
+        icmpv6_prefix_exists=0;
+        // 未下发前缀使用默认的空前缀
+        ixc_netif_wan6_iface_id_set(slaac_addr);
+        ixc_router_syslog("ICMPv6 PD format Error");
         ixc_mbuf_put(m);
         return;
     }
@@ -273,7 +290,10 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     // 检查前缀是否符合无状态地址配置要求
     if(opt_prefix->prefix_len>64 || opt_prefix->prefix_len < 32){
         DBG_FLAGS;
-        STDERR("cannot apply to stateless address set because of RA prefix is %d\r\n",opt_prefix->prefix_len);
+        icmpv6_prefix_exists=0;
+        // 未下发前缀使用默认的空前缀
+        ixc_netif_wan6_iface_id_set(slaac_addr);
+        ixc_router_syslog2("cannot apply to stateless address set because of RA prefix is %d",opt_prefix->prefix_len);
         ixc_mbuf_put(m);
         return;
     }
@@ -281,18 +301,21 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     // 检查上级路由器是否允许无状态地址配置
     A=opt_prefix->la & 0x40;
     if(!A){
-        STDERR("cannot apply to stateless address set because of RA not permit %d\r\n",opt_prefix->prefix_len);
+        icmpv6_prefix_exists=0;
+        // 未下发前缀使用默认的空前缀
+        ixc_netif_wan6_iface_id_set(slaac_addr);
+        ixc_router_syslog2("cannot apply to stateless address set because of RA not permit %d",opt_prefix->prefix_len);
         ixc_mbuf_put(m);
         return;
     }
 
+    // MTU错误使用默认的MTU
     if(mtu>1500){
-        STDERR("Wrong MTU value from RA %u ,system will use default mtu 1500\r\n",mtu);
+        ixc_router_syslog2("Wrong MTU value from RA %u ,system will use default mtu 1500",mtu);
         mtu=1500;
     }
-
     if(mtu<1280){
-        STDERR("Wrong MTU value from RA %u ,system will use default mtu 1280\r\n",mtu);
+        ixc_router_syslog2("Wrong MTU value from RA %u ,system will use default mtu 1280",mtu);
         mtu=1280;
     }
 
@@ -310,7 +333,7 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     if_lan=ixc_netif_get(IXC_NETIF_LAN);
 
     if(opt_prefix->prefix_len>64){
-        STDERR("Unsupport IPv6 prefix length for RA %d\r\n",opt_prefix->prefix_len);
+        ixc_router_syslog2("Unsupport IPv6 prefix length for RA %d",opt_prefix->prefix_len);
         ixc_mbuf_put(m);
         return;
     }
@@ -329,6 +352,9 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
     
     // 开启了nat66那么更新nat地址
     if(ixc_nat66_is_enabled()){
+        ixc_router_syslog("ICMPv6 PD OK");
+        icmpv6_prefix_up_time=time(NULL);
+        icmpv6_prefix_exists=1;
         ixc_nat66_set_wan_prefix(if_lan->ip6addr,opt_prefix->prefix,opt_prefix->prefix_len);
         ixc_mbuf_put(m);
         return;
@@ -348,10 +374,15 @@ static void ixc_icmpv6_handle_ra(struct ixc_mbuf *m,struct netutil_ip6hdr *iphdr
 
     if_lan->v6_prefix_valid_lifetime=ntohl(opt_prefix->valid_lifetime);
     if_lan->v6_prefix_preferred_lifetime=ntohl(opt_prefix->preferred_lifetime);
+
+    icmpv6_prefix_up_time=time(NULL);
+    icmpv6_prefix_exists=1;
     
     IXC_PRINT_IP6("IPv6 RA Prefix Address is ",opt_prefix->prefix);
+    ixc_router_syslog("ICMPv6 PD OK");
 
     ixc_mbuf_put(m);
+    
 }
 
 /// 处理邻居请求报文
@@ -510,6 +541,8 @@ int ixc_icmpv6_init(void)
     bzero(icmpv6_wan_dnsserver_b,16);
 
     icmpv6_isset_dns=0;
+    icmpv6_prefix_up_time=time(NULL);
+    icmpv6_prefix_exists=0;
 
     return 0;
 }
@@ -648,6 +681,18 @@ int ixc_icmpv6_send_ra(unsigned char *hwaddr,unsigned char *ipaddr)
     ixc_icmpv6_send(netif,dst_hwaddr,netif->ip6_local_link_addr,dst_ipaddr,buf,size);
 
     return 0;
+}
+
+void ixc_icmpv6_prefix_timeout_check()
+{
+    unsigned char unspec_addr[]=IXC_IP6ADDR_UNSPEC;
+    time_t now=time(NULL);
+    
+    if(!icmpv6_prefix_exists) return;
+    if(now-icmpv6_prefix_up_time<1800) return;
+
+    ixc_router_syslog("IPv6 prefix timeout,IPv6 address is invalid");
+    ixc_netif_wan6_iface_id_set(unspec_addr);
 }
 
 int ixc_icmpv6_send_rs(void)

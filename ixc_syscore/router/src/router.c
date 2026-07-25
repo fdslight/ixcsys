@@ -1471,9 +1471,19 @@ void ixc_router_syslog(const char *message)
     ixc_router_tell(buf);
 }
 
+void ixc_router_syslog2(const char *message,...)
+{
+    char buf[1024];
+    va_list args;
+    va_start(args,message);
+    vsnprintf(buf,1024,message,args);
+    va_end(args);
+    ixc_router_syslog(buf);
+}
+
 void ixc_router_report_wrong_ippkt(unsigned char *src_hwaddr,unsigned char *dst_hwaddr,const char *message)
 {
-    char buf[256];
+    char buf[2048];
     time_t now=time(NULL);
 
     // 禁止频繁告警刷日志

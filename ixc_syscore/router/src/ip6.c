@@ -43,6 +43,7 @@ static void ixc_ip6_sysloop_cb(struct sysloop *loop)
         if(netif->isset_ip6){
             ixc_icmpv6_send_ra(NULL,NULL);
         }
+        ixc_icmpv6_prefix_timeout_check();
     }
     // 如果设置了IPv6那么定时发送RA
     //if(!ixc_route_is_enabled_ipv6_pass() && netif->isset_ip6) ixc_icmpv6_send_ra(NULL,NULL);

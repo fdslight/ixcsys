@@ -189,6 +189,7 @@ class widget(ui_widget.widget):
         dic["nameservers6"] = nameservers6
 
         wan_ipinfo = RPC.fn_call("router", "/config", "get_wan_ipaddr_info", is_ipv6=False)
+        wan_ip6info = RPC.fn_call("router", "/config", "get_wan_ipaddr_info", is_ipv6=True)
 
         if not wan_ipinfo:
             dic["wan_ip"] = ""
@@ -196,6 +197,13 @@ class widget(ui_widget.widget):
         else:
             dic["wan_ip"] = wan_ipinfo[0]
             dic["wan_prefix"] = wan_ipinfo[1]
+
+        if not wan_ip6info:
+            dic["wan6_ip"] = ""
+            dic["wan6_prefix"] = ""
+        else:
+            dic["wan6_ip"] = wan_ip6info[0]
+            dic["wan6_prefix"] = ""
 
         dic["cpu_arch"] = platform.machine()
         dic["cpu_count"] = os.cpu_count()
