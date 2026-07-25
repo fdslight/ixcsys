@@ -682,6 +682,7 @@ void ixc_icmpv6_prefix_timeout_check()
     unsigned char unspec_addr[]=IXC_IP6ADDR_UNSPEC;
     time_t now=time(NULL);
     
+    // 透传不需要检查
     if(ixc_route_is_enabled_ipv6_pass()) return;
     if(!icmpv6_prefix_exists) return;
     if(now-icmpv6_prefix_up_time<1800) return;
