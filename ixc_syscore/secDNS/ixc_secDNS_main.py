@@ -283,7 +283,9 @@ class service(dispatcher.dispatcher):
         """启用或者关闭UDP DNS
         """
         # 未开启DoT那么忽略
-        if not self.__enable_sec_dns: return
+        if not self.__enable_sec_dns:
+            self.__up_time = time.time()
+            return
         # 关闭UDP DNS那么开启DoT
         if not enable and self.__use_udp_dns:
             self.start()
