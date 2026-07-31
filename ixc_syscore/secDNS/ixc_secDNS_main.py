@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import sys, os, signal, json, time
-
-import dns.message, dns.resolver
+import sys, os, signal, json, time, dns.resolver
 
 sys.path.append(os.getenv("IXC_SYS_DIR"))
 
