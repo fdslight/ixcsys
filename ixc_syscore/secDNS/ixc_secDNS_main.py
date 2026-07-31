@@ -77,6 +77,8 @@ class service(dispatcher.dispatcher):
 
     __dns_fds = None
 
+    __use_udp_dns = None
+
     def init_func(self, debug):
         global_vars["ixcsys.secDNS"] = self
 
@@ -86,6 +88,7 @@ class service(dispatcher.dispatcher):
         self.__enable_sec_dns = False
         self.__up_time = time.time()
         self.__dns_fds = {}
+        self.__use_udp_dns = False
 
         RPCClient.wait_processes(["router", "DNS", ])
 
@@ -183,14 +186,12 @@ class service(dispatcher.dispatcher):
         self.start()
 
     def myloop(self):
-        #now = time.time()
-        # 每隔一段时间监控一次,避免DNS查询过慢
-        # 改成按需连接,避免TCP连接过于频繁
-        #if now - self.__up_time >= 10:
-        #    self.monitor_dot_server_conn()
-        #    self.__up_time = now
-        #return
-        pass
+        now = time.time()
+        # 每隔5分钟自动重启强制关闭传统DNS查询
+        if now - self.__up_time >= 300:
+            self.__up_time = now
+            self.enable_udp_dns(False)
+        return
 
     def load_configs(self):
         with open(self.dot_conf_path, "r") as f:
@@ -277,6 +278,63 @@ class service(dispatcher.dispatcher):
     def ca_path(self):
         path = "%s/ca-bundle.crt" % os.getenv("IXC_SHARED_DATA_DIR")
         return path
+
+    def enable_udp_dns(self, enable: bool):
+        """启用或者关闭UDP DNS
+        """
+        # 未开启DoT那么忽略
+        if not self.__enable_sec_dns: return
+        # 关闭UDP DNS那么开启DoT
+        if not enable and self.__use_udp_dns:
+            self.start()
+            logging.print_alert("system disable UDP DNS automatically")
+            ''''''
+        if enable:
+            self.stop()
+
+        self.__up_time = time.time()
+        self.__use_udp_dns = enable
+
+    def get_server_ip(self, host, force_ipv6=False):
+        """获取服务器IP
+        :param host:
+        :return:
+        """
+        if netutils.is_ipv4_address(host): return host
+        if netutils.is_ipv6_address(host): return host
+
+        resolver = dns.resolver.Resolver()
+
+        resolver.timeout = 3
+        resolver.lifetime = 3
+
+        try:
+            try:
+                if force_ipv6:
+                    rs = resolver.resolve(host, "AAAA")
+                else:
+                    rs = resolver.resolve(host, "A")
+                ''''''
+            except AttributeError:
+                try:
+                    if force_ipv6:
+                        rs = resolver.query(host, "AAAA")
+                    else:
+                        rs = resolver.query(host, "A")
+                    ''''''
+                except:
+                    return None
+                ''''''
+        except:
+            return None
+
+        ipaddr = None
+
+        for anwser in rs:
+            ipaddr = anwser.__str__()
+            break
+
+        return ipaddr
 
     def start_scgi(self):
         scgi_configs = {

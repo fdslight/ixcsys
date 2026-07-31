@@ -38,9 +38,16 @@ class dot_client(tcp_handler.tcp_handler):
         self.__header_ok = False
         self.__length = 0
 
-        if netutils.is_ipv6_address(host):
+        server_ipaddr = self.dispatcher.get_server_ip(host, force_ipv6=is_ipv6)
+        if server_ipaddr is None:
+            self.dispatcher.enable_udp_dns(True)
+            logging.print_alert("cannot get server_ip for DoT host %s,enable UDP DNS" % host)
+            return -1
+
+        # get_server_ip如果host是ipv4或者ipv6直接返回IP地址而忽略force_ipv6参数,因此这里需要做判断
+        if netutils.is_ipv6_address(server_ipaddr):
             is_ipv6 = True
-        if netutils.is_ipv4_address(host):
+        if netutils.is_ipv4_address(server_ipaddr):
             is_ipv6 = False
 
         if is_ipv6:
