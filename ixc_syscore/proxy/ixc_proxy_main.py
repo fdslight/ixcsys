@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, signal, time, importlib, struct, socket, json, zlib
+import sys, os, signal, time, importlib, struct, socket, zlib
 import dns.resolver, dns.message, json
 
 ### 启pyjoin JIT加速
@@ -731,7 +731,7 @@ class service(dispatcher.dispatcher):
         if not self.handler_exists(self.__conn_fd): self.__open_tunnel()
         if not self.handler_exists(self.__conn_fd): return
 
-        # 压缩DNS和IPDATA数据
+        # 压缩DNS数据
         if action == proto_utils.ACT_DNS:
             length = len(message)
             new_msg = zlib.compress(message)
