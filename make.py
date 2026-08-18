@@ -49,7 +49,7 @@ def update_proxy_rule():
         "ixc_configs/proxy/pass_ip.txt"
     ]
     for fpath in files:
-        cmd = "cp %s /opt/ixcsys/%s" % (fpath, fpath,)
+        cmd = "cp -v %s /opt/ixcsys/%s" % (fpath, fpath,)
         subprocess.call(cmd, shell=True)
 
 
@@ -63,7 +63,7 @@ def app_data_update():
     ]
 
     for fpath in files:
-        cmd = "cp %s /opt/ixcsys/%s" % (fpath, fpath,)
+        cmd = "cp -v %s /opt/ixcsys/%s" % (fpath, fpath,)
         subprocess.call(cmd, shell=True)
 
 
