@@ -606,12 +606,6 @@ class service(dispatcher.dispatcher):
             return
 
         action = match_rs["action"]
-        # 直通那么直接发送给上游DNS服务器
-        if action == "passthrough":
-            sent_ok = self.send_dns_resp_from_cache(new_dns_id, host, message)
-            if sent_ok: return
-            self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6, is_secdns_server=is_secdns_server)
-            return
 
         # 如果规则为丢弃那么直接丢弃该DNS请求
         if action == "drop":
@@ -634,6 +628,14 @@ class service(dispatcher.dispatcher):
 
             del self.__id_wan2lan[new_dns_id]
             return
+
+        # 直通那么直接发送给上游DNS服务器
+        if action == "passthrough":
+            sent_ok = self.send_dns_resp_from_cache(new_dns_id, host, message)
+            if sent_ok: return
+            self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6, is_secdns_server=is_secdns_server)
+            return
+
         # 发送DNS数据到其他应用程序,如果找不到文件号那么丢弃数据包
         if self.__dns_client < 0:
             del self.__id_wan2lan[new_dns_id]
