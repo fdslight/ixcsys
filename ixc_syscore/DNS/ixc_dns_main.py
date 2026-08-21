@@ -211,12 +211,12 @@ class service(dispatcher.dispatcher):
         cmd = "ip addr show ixclanbr | grep  inet6 | grep mng"
         mng_ip6addr = None
 
-        rs=subprocess.run(cmd, capture_output=True, shell=True)
-        mng_list=rs.stdout.decode().split("\n")
+        rs = subprocess.run(cmd, capture_output=True, shell=True)
+        mng_list = rs.stdout.decode().split("\n")
         _list = []
 
         for line in mng_list:
-            if not line:continue
+            if not line: continue
             line = line.strip()
             line = line.replace("\n", "")
             _list.append(line.lower())
@@ -535,16 +535,15 @@ class service(dispatcher.dispatcher):
         except:
             return
 
+        # 只允许一个问题
+        questions = msg_obj.question
+        if len(questions) != 1: return
+
         _list = [struct.pack("!H", new_dns_id), message[2:]]
         new_msg = b"".join(_list)
 
         self.__id_wan2lan[new_dns_id] = {"id": dns_id, "address": address, "is_ipv6": is_ipv6,
                                          "time": time.time(), "from_forward": False, "host": None, "action": None, }
-
-        questions = msg_obj.question
-        if len(questions) != 1:
-            self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6)
-            return
 
         q = questions[0]
         host = b".".join(q.name[0:-1]).decode("iso-8859-1")
@@ -607,6 +606,13 @@ class service(dispatcher.dispatcher):
             return
 
         action = match_rs["action"]
+        # 直通那么直接发送给上游DNS服务器
+        if action == "passthrough":
+            sent_ok = self.send_dns_resp_from_cache(new_dns_id, host, message)
+            if sent_ok: return
+            self.send_to_dnsserver(new_msg, is_ipv6=is_ipv6, is_secdns_server=is_secdns_server)
+            return
+
         # 如果规则为丢弃那么直接丢弃该DNS请求
         if action == "drop":
             flags = False

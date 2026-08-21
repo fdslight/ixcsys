@@ -17,6 +17,7 @@ class controller(rpc.controller):
 
         self.fobjs = {
             "add": self.add,
+            "adds": self.adds,
             "del": self.delete,
             "list": self.list,
             "set_forward": self.set_forward,
@@ -38,6 +39,11 @@ class controller(rpc.controller):
         if not isinstance(action_name, str):
             return RPC.ERR_ARGS, "wrong action_name argument type"
         return 0, self.__runtime.matcher.add_rule(host, action_name, priv_data=priv_data)
+
+    def adds(self, hosts: list):
+        for host, action in hosts:
+            self.add(host, action)
+        return 0, None
 
     def delete(self, host: str):
         """删除DNS规则

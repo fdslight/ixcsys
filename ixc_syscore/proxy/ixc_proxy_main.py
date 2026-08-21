@@ -214,11 +214,33 @@ class service(dispatcher.dispatcher):
                     action = "encrypt"
                 elif n == 1:
                     action = "proxy"
+                elif n == 2:
+                    action = "passthrough"
                 else:
                     continue
                 RPCClient.fn_call("DNS", "/rule", "add", host, action)
         except file_parser.FilefmtErr:
             logging.print_error()
+
+    def set_domain_rules(self):
+        fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
+        rules = []
+        try:
+            rules = file_parser.parse_host_file(fpath)
+            for r in rules:
+                host, n = r
+                if n == 0:
+                    action = "encrypt"
+                elif n == 1:
+                    action = "proxy"
+                elif n == 2:
+                    action = "passthrough"
+                else:
+                    continue
+                rules.append((host, action,))
+        except file_parser.FilefmtErr:
+            logging.print_error()
+        RPCClient.fn_call("DNS", "/rule", "adds", rules)
 
     def __set_rules(self):
         # 隧道未开启不刷新规则
@@ -229,7 +251,7 @@ class service(dispatcher.dispatcher):
         RPCClient.fn_call("DNS", "/config", "forward_dns_result", True)
 
         self.get_handler(self.__dns_fd).set_forward(port)
-        self.set_domain_rule()
+        self.set_domain_rules()
 
         fpaths = [
             "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR"),
@@ -511,7 +533,7 @@ class service(dispatcher.dispatcher):
         with open(fpath, "w") as f: f.write(text)
         f.close()
         RPCClient.fn_call("DNS", "/rule", "clear")
-        self.set_domain_rule()
+        self.set_domain_rules()
 
     def update_pass_ip_rule(self, text: str):
         fpath = "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
