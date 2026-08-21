@@ -57,7 +57,7 @@ class controller(rpc.controller):
     def __check_ip_rule(self, text: str):
         _list = text.split("\n")
         for s in _list:
-            s = s.replace("\r","")
+            s = s.replace("\r", "")
             s = s.strip()
             if not s: continue
             if s[0] == "#": continue
@@ -76,7 +76,7 @@ class controller(rpc.controller):
     def __check_dns_rule(self, text: str):
         _list = text.split("\n")
         for s in _list:
-            s = s.replace("\r","")
+            s = s.replace("\r", "")
             s = s.strip()
             if not s: continue
             if s[0] == "#": continue
@@ -89,7 +89,7 @@ class controller(rpc.controller):
                 action = int(s[p:].strip())
             except ValueError:
                 return False, s
-            if action not in (0, 1,):
+            if action not in (0, 1, 2,):
                 return False, s
 
         return True, None
