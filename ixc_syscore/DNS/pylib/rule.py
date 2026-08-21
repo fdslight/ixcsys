@@ -64,6 +64,10 @@ class matcher(object):
         if "*" in o:
             return o["*"]["rule_info"]
 
+        o = self.__rule_tree
+        if "*" in o:
+            return o["*"]["rule_info"]
+
         return None
 
     def add_rule(self, rule: str, action: str, priv_data=None):
@@ -146,7 +150,7 @@ class matcher(object):
 # cls = matcher()
 # cls.add_rule("*.facebook.com", "drop")
 # cls.add_rule("*.google.com", "this is action")
-# cls.add_rule("*", "this is action")
+# cls.add_rule("*", "this is action2")
 # print(cls.rules)
 # print(cls.rule_tree)
-# print(cls.match("www.facebook.com"))
+# print(cls.match("www.google.com"))
