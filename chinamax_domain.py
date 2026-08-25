@@ -45,7 +45,7 @@ def main():
         ("*.freekai.net", 2),
         ("*.wss.ws", 2),
     ]
-    generate("chinamax_domain.txt", "host_rules.txt", ext_rules, "2")
+    generate("chinamax_domain.txt", "proxy_domain.txt", ext_rules, "2")
 
 
 if __name__ == "__main__":
