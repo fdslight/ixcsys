@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 # https://github.com/blackmatrix7/ios_rule_script/blob/master/rule/Clash/ChinaMax/ChinaMax_Domain.txt
 
-import subprocess, os
+import subprocess, os, time
 
 
 def generate(src_path, dst_path, adds: list, suffix):
+    up_time = time.strftime("# %Y-%m-%d %H:%M:%S %Z\n\n")
     dst = open(dst_path, "w")
+    dst.write(up_time)
+
     for name, value in adds:
-        dst.write(name + ":" + value + "\n")
+        dst.write(name + ":" + str(value) + "\n")
+    dst.write("\n")
+
     src = open(src_path, 'r')
     for line in src:
         line = line.strip()
@@ -35,7 +40,12 @@ def main():
     url = "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/ChinaMax/ChinaMax_Domain.txt"
 
     subprocess.call("curl %s -o chinamax_domain.txt" % url, shell=True)
-    generate("chinamax_domain.txt", "proxy_domain.txt", [("*", "1")], "2")
+    ext_rules = [
+        ("*", 1),
+        ("*.freekai.net", 2),
+        ("*.wss.ws", 2),
+    ]
+    generate("chinamax_domain.txt", "host_rules.txt", ext_rules, "2")
 
 
 if __name__ == "__main__":
