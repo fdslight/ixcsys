@@ -54,6 +54,8 @@ def main():
     subprocess.call("curl %s -o chinamax_domain.txt" % url, shell=True)
     ext_rules = [
         ("*", 1),
+        ("*.wss.ws", 2),
+        ("*.freekai.net", 2),
     ]
     generate("chinamax_domain.txt", "proxy_domain.txt", ext_rules, "2")
 
