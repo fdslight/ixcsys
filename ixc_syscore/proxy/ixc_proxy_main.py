@@ -753,7 +753,7 @@ class service(dispatcher.dispatcher):
         if not self.handler_exists(self.__conn_fd): self.__open_tunnel()
         if not self.handler_exists(self.__conn_fd): return
 
-        # 压缩DNS和IPDATA数据
+        # 压缩DNS数据
         if action == proto_utils.ACT_DNS:
             length = len(message)
             new_msg = zlib.compress(message)
