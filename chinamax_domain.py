@@ -5,9 +5,21 @@ import subprocess, os, time
 
 
 def generate(src_path, dst_path, adds: list, suffix):
-    up_time = time.strftime("# %Y-%m-%d %H:%M:%S %Z\n\n")
+    up_time = time.strftime("# %Y-%m-%d %H:%M:%S %Z\n")
     dst = open(dst_path, "w")
     dst.write(up_time)
+
+    s = """### --------------重要说明--------------------------
+
+## 域名前缀的"*"表示匹配所有,"#"开头的表示注释
+# ":0" 表示DNS走加密
+# ":1" 表示解析DNS并且走代理
+# ":2" 表示DNS不走代理,可与规则"*:1"配合使用,实现规则外全部走代理
+
+###-------------------------------------------------
+"""
+    dst.write(s)
+    dst.write("\n")
 
     for name, value in adds:
         dst.write(name + ":" + str(value) + "\n")
