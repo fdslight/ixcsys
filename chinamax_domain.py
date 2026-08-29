@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # https://github.com/blackmatrix7/ios_rule_script/blob/master/rule/Clash/ChinaMax/ChinaMax_Domain.txt
+# 生成规则文件
 
 import subprocess, os, time
 
