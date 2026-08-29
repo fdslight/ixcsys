@@ -15,6 +15,7 @@ def generate(src_path, dst_path, adds: list, suffix):
 # ":0" 表示DNS走加密
 # ":1" 表示解析DNS并且走代理
 # ":2" 表示DNS不走代理,可与规则"*:1"配合使用,实现规则外全部走代理
+# 如果配置"*:1"规则时,需要额外增加一条“your_proxy_domain:2”,让你自己的域名不走代理,否则会造成无法连接代理服务器
 
 ###-------------------------------------------------
 """
@@ -54,8 +55,6 @@ def main():
     subprocess.call("curl %s -o chinamax_domain.txt" % url, shell=True)
     ext_rules = [
         ("*", 1),
-        ("*.wss.ws", 2),
-        ("*.freekai.net", 2),
     ]
     generate("chinamax_domain.txt", "proxy_domain.txt", ext_rules, "2")
 
