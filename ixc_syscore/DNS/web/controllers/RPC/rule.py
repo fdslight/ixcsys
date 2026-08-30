@@ -5,6 +5,7 @@
 import pywind.lib.netutils as netutils
 import ixc_syslib.web.controllers.rpc_controller as rpc
 import ixc_syslib.pylib.RPCClient as RPC
+from DNS.pylib.rule import matcher
 
 from pywind.global_vars import global_vars
 
@@ -34,6 +35,7 @@ class controller(rpc.controller):
 
             "dbg_rule_match": self.dbg_rule_match,
             "dbg_rule_show": self.dbg_rule_show,
+            "dbg_rule_tree_show": self.dbg_rule_tree_show,
         }
 
     def dbg_rule_match(self, host: str):
@@ -41,6 +43,9 @@ class controller(rpc.controller):
 
     def dbg_rule_show(self):
         return 0, self.__runtime.matcher.rules
+
+    def dbg_rule_tree_show(self):
+        return 0, self.__runtime.matcher.rule_tree
 
     def add(self, host: str, action_name: str, priv_data=None):
         """增加DNS规则
