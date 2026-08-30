@@ -611,6 +611,8 @@ class service(dispatcher.dispatcher):
             return
 
         action = match_rs["action"]
+
+        logging.print_info("DNS_MATCH_RULE:%s" % match_rs['priv_data'])
         logging.print_info("DNS_QUERY_%s: %s from client %s" % (action.upper(), host, address[0]))
 
         # 如果规则为丢弃那么直接丢弃该DNS请求
@@ -766,7 +768,7 @@ class service(dispatcher.dispatcher):
         if rule in self.__sec_rules_dict:
             return
         self.__sec_rules_dict[rule] = None
-        self.matcher.add_rule(rule, "drop", None)
+        self.matcher.add_rule(rule, "drop", priv_data=rule)
 
     def add_sec_rules(self, rules: list):
         """批量加入rules

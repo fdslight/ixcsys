@@ -42,16 +42,18 @@ class controller(rpc.controller):
     def dbg_rule_show(self):
         return 0, self.__runtime.matcher.rules
 
-    def add(self, host: str, action_name: str, priv_data=None):
+    def add(self, host: str, action_name: str):
         """增加DNS规则
         """
         if not isinstance(action_name, str):
             return RPC.ERR_ARGS, "wrong action_name argument type"
-        return 0, self.__runtime.matcher.add_rule(host, action_name, priv_data=priv_data)
+        return 0, self.__runtime.matcher.add_rule(host, action_name, priv_data=host)
 
     def adds(self, hosts: list):
         for host, action in hosts:
-            self.add(host, action)
+            if not isinstance(action, str):
+                return RPC.ERR_ARGS, "wrong action_name argument type"
+            self.__runtime.matcher.add_rule(host, action, priv_data=host)
         return 0, None
 
     def delete(self, host: str):
