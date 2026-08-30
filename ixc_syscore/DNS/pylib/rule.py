@@ -9,6 +9,7 @@ www.example.com
 
 """
 
+
 class matcher(object):
     __rule_tree = None
     __rules = None
@@ -18,7 +19,7 @@ class matcher(object):
     def __init__(self):
         self.clear()
         self.__internal_keywords = [
-            "refcnt", "action", "rule_info",
+            "refcnt", "action", "rule_info", "priv_data"
         ]
 
     def match(self, host: str):
