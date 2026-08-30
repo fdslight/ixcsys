@@ -402,6 +402,11 @@ class service(dispatcher.dispatcher):
             cache_timeout = int(pub['dns_cache_timeout'])
         except ValueError:
             cache_timeout = 60
+        # 无效数字进行DNS强制限制
+        if cache_timeout < 60 or cache_timeout > 1200: cache_timeout = 60
+
+        pub['dns_cache_timeout'] = str(cache_timeout)
+
         self.__dns_cache.set_timeout(cache_timeout)
 
     def start_scgi(self):

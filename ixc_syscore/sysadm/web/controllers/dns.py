@@ -97,8 +97,8 @@ class controller(base_controller.BaseController):
         except TypeError:
             dns_cache_timeout = 60
 
-        if dns_cache_timeout < 30 or dns_cache_timeout > 86400:
-            self.json_resp(True, "DNS缓存值必须在30秒与86400秒之间")
+        if dns_cache_timeout < 60 or dns_cache_timeout > 1200:
+            self.json_resp(True, "DNS缓存值必须在60秒与1200秒之间")
             return
 
         if ipv4_main_dns:

@@ -78,8 +78,8 @@ def __start_service(debug):
     sys.exit(0)
 
 
-ROUTE_TIMEOUT = 480
-
+# 这里设置的时间一定要大于DNS缓存的时间,因此要限制DNS缓存时间
+ROUTE_TIMEOUT = 1800
 
 class service(dispatcher.dispatcher):
     __conf_path = None
@@ -224,7 +224,7 @@ class service(dispatcher.dispatcher):
 
     def set_domain_rules(self):
         fpath = "%s/proxy_domain.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
-        rules = []
+        new_rules = []
         try:
             rules = file_parser.parse_host_file(fpath)
             for r in rules:
@@ -237,10 +237,10 @@ class service(dispatcher.dispatcher):
                     action = "passthrough"
                 else:
                     continue
-                rules.append((host, action,))
+                new_rules.append((host, action,))
         except file_parser.FilefmtErr:
             logging.print_error()
-        RPCClient.fn_call("DNS", "/rule", "adds", rules)
+        RPCClient.fn_call("DNS", "/rule", "adds", new_rules)
 
     def __set_rules(self):
         # 隧道未开启不刷新规则
