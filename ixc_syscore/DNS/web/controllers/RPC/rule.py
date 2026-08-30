@@ -5,7 +5,6 @@
 import pywind.lib.netutils as netutils
 import ixc_syslib.web.controllers.rpc_controller as rpc
 import ixc_syslib.pylib.RPCClient as RPC
-from DNS.pylib.rule import matcher
 
 from pywind.global_vars import global_vars
 
