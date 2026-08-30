@@ -611,6 +611,7 @@ class service(dispatcher.dispatcher):
             return
 
         action = match_rs["action"]
+        logging.print_info("DNS_QUERY_%s: %s from client %s" % (action.upper(), host, address[0]))
 
         # 如果规则为丢弃那么直接丢弃该DNS请求
         if action == "drop":
@@ -629,7 +630,7 @@ class service(dispatcher.dispatcher):
                 drop_msg = dns_utils.build_dns_no_such_name_response(dns_id, host, is_ipv6=is_aaaa)
                 self.get_handler(from_fd).send_msg(drop_msg, address)
 
-            logging.print_info("DNS_QUERY_DROP: %s from %s" % (host, address[0]))
+            # logging.print_info("DNS_QUERY_DROP: %s from %s" % (host, address[0]))
 
             del self.__id_wan2lan[new_dns_id]
             return
