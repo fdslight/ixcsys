@@ -31,7 +31,16 @@ class controller(rpc.controller):
             "sec_rules_modify_with_raw": self.sec_rules_modify_with_raw,
             "sec_rules_modify_with_fpath": self.sec_rules_modify_with_fpath,
             "get_sec_rules": self.get_sec_rules,
+
+            "dbg_rule_match": self.dbg_rule_match,
+            "dbg_rule_show": self.dbg_rule_show,
         }
+
+    def dbg_rule_match(self, host: str):
+        return 0, self.__runtime.matcher.match(host)
+
+    def dbg_rule_show(self):
+        return 0, self.__runtime.matcher.rules
 
     def add(self, host: str, action_name: str, priv_data=None):
         """增加DNS规则
