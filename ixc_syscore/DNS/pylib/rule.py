@@ -7,20 +7,7 @@
 2.匹配单个子域名
 www.example.com
 
-action规则是一个Python字典对象,规则如下
-1.重定向
-{"action":"forward"}
-2.重定向以及自动设置路由到指定程序端口
-{"action":"forward_and_auto_route"}
-3.丢弃该DNS请求
-{"action":"drop"}
-4.重写DNS记录,该动作目前未实现,保留
-{"action":"rewrite","DNS":{"MX":"","A":""}}
 """
-
-action_names = [
-    "forward", "forward_and_auto_route", "drop", "rewrite"
-]
 
 
 class matcher(object):
@@ -90,7 +77,7 @@ class matcher(object):
             o = o[x]
             o["refcnt"] += 1
         o["rule_info"] = {"action": action, "priv_data": priv_data}
-        self.__rules[rule] = None
+        self.__rules[rule] = action
         return True
 
     def del_rule(self, rule: str):
@@ -135,7 +122,7 @@ class matcher(object):
     @property
     def rules(self):
         rules = []
-        for x in self.__rules: rules.append(x)
+        for x, act in self.__rules.items(): rules.append((x, act,))
         return rules
 
     def exists(self, rule: str):
