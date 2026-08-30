@@ -8,8 +8,6 @@
 www.example.com
 
 """
-from hashlib import new
-
 
 class matcher(object):
     __rule_tree = None
