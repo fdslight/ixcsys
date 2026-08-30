@@ -8,6 +8,7 @@
 www.example.com
 
 """
+from hashlib import new
 
 
 class matcher(object):
@@ -31,31 +32,47 @@ class matcher(object):
 
         o = self.__rule_tree
         is_found = True
+
+        i = 0
         for x in _list:
             if x in self.__internal_keywords: x = "__%s" % x
             if x not in o:
                 is_found = False
                 break
             o = o[x]
+            i += 1
 
         if is_found:
             # 这里可能存在xxx.xx格式的域名情况,需要额外考虑
             # o["rule_info"]可能为空
             if o["rule_info"]: return o["rule_info"]
             # 补全一个空元素,以便join方法形成".xxx.xx"域名
-            _list.append("")
-            _list.reverse()
-            return self.match(".".join(_list))
+            # _list.append("")
+            # _list.reverse()
+            # return self.match(".".join(_list))
+
+        # if i < 0:
+        #    o = self.__rule_tree
+        #    if "*" in o:
+        #        return o["*"]["rule_info"]
+        #    else:
+        #        return None
+        #    ''''''
 
         # 未匹配那么查找子项所有匹配是否存在
         if "*" in o:
             return o["*"]["rule_info"]
 
-        o = self.__rule_tree
-        if "*" in o:
-            return o["*"]["rule_info"]
+        # 子项不存在那么逐渐减少域名等级域,执行最大话匹配
 
-        return None
+        if i == 0: return None
+        i -= 1
+        new_list = _list[0:i]
+        new_list.append("")
+        new_list.reverse()
+        # print(new_list)
+
+        return self.match(".".join(new_list))
 
     def add_rule(self, rule: str, action: str, priv_data=None):
         """加入规则
