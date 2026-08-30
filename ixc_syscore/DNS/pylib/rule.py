@@ -63,7 +63,7 @@ class matcher(object):
         if "*" in o:
             return o["*"]["rule_info"]
 
-        # 子项不存在那么逐渐减少域名等级域,执行最大话匹配
+        # 子项不存在那么逐渐减少域名等级域,执行最大化匹配
 
         if i == 0: return None
         i -= 1
