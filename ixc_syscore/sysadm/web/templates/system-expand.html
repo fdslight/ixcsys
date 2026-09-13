@@ -1,3 +1,13 @@
 <div id="ixc-system-expand-view" class="ixc-menu-content">
-    <textarea></textarea>
+    <textarea id="ixc-system-expand-editor"></textarea>
 </div>
+<script type="text/javascript" src="${self.staticfile_prefix}/codemirror5/codemirror.js"></script>
+<script type="text/javascript">
+$(document).ready(function (e) {
+    let editor_ele=document.getElementById("ixc-system-expand-editor");
+    let editor=CodeMirror.FromTextArea(editor_ele,{
+        lineNumbers:true,
+        mode:"shell"
+    });
+})
+</script>
