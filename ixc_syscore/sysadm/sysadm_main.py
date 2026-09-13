@@ -611,6 +611,14 @@ class service(dispatcher.dispatcher):
         pid = proc.get_pid(fpath)
         os.kill(pid, signal.SIGUSR1)
 
+    def execute_expand_script(self):
+        """执行扩展脚本
+        """
+        script_path = "%s/expand.start" % os.getenv("IXC_MYAPP_CONF_DIR")
+        if not os.path.isfile(script_path): return
+        os.chmod(script_path, 0o755)
+        subprocess.run(script_path, capture_output=True, shell=True)
+
     def restart(self):
         self.__up_time = time.time()
         self.__is_restart = True

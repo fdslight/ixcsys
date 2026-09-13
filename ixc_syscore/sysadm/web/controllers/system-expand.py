@@ -10,7 +10,7 @@ class controller(base_controller.BaseController):
         return True
 
     def save_script(self, content: str):
-        script_path = "expand.start" % os.getenv("IXC_MYAPP_CONF_DIR")
+        script_path = "%s/expand.start" % os.getenv("IXC_MYAPP_CONF_DIR")
         with open(script_path, "w") as f:
             f.write(content)
         f.close()
