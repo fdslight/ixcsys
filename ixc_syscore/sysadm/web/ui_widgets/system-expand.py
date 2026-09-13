@@ -3,4 +3,4 @@ import ixc_syslib.web.ui_widget as ui_widget
 
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
-        return True, "user-info.html", {}
+        return True, "system-expand.html", {}
