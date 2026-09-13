@@ -357,6 +357,8 @@ class service(dispatcher.dispatcher):
         self.start_power_monitor()
         self.start_network_shift()
 
+        self.execute_expand_script()
+
     def start_scgi(self):
         scgi_configs = {
             "use_unix_socket": True,
