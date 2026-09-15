@@ -30,7 +30,11 @@ class controller(base_controller.BaseController):
         else:
             fn = "pass_ip_rule_update"
 
-        is_ok, err_msg = RPC.fn_call("proxy", "/config", fn, text)
+        try:
+            is_ok, err_msg = RPC.fn_call("proxy", "/config", fn, text)
+        except RPC.RPCErr:
+            self.json_resp(True, "系统发生错误")
+            return
 
         if not is_ok:
             err_msg = "规则错误,发生在 " + err_msg
