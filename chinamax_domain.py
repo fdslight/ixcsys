@@ -58,6 +58,7 @@ def main():
         ("*", 1),
         ("services.googleapis.cn", 1),
         ("ifconfig.me", 2),
+        ("*.cn.akadns.net", 2),
     ]
     generate("chinamax_domain.txt", "proxy_domain.txt", ext_rules, "2")
 
