@@ -357,7 +357,7 @@ class service(dispatcher.dispatcher):
         self.start_power_monitor()
         self.start_network_shift()
 
-        self.execute_expand_script()
+        self.execute_expand_script(args="start")
 
     def start_scgi(self):
         scgi_configs = {
@@ -613,13 +613,13 @@ class service(dispatcher.dispatcher):
         pid = proc.get_pid(fpath)
         os.kill(pid, signal.SIGUSR1)
 
-    def execute_expand_script(self):
+    def execute_expand_script(self, args="start"):
         """执行扩展脚本
         """
-        script_path = "%s/expand.start" % os.getenv("IXC_MYAPP_CONF_DIR")
+        script_path = "%s/expand.sh" % os.getenv("IXC_MYAPP_CONF_DIR")
         if not os.path.isfile(script_path): return
         os.chmod(script_path, 0o755)
-        subprocess.run(script_path, capture_output=True, shell=True)
+        subprocess.run(script_path + " %s" + args, capture_output=True, shell=True)
 
     def restart(self):
         self.__up_time = time.time()
@@ -645,6 +645,7 @@ class service(dispatcher.dispatcher):
             self.delete_handler(self.__httpd_ssl_fd6)
             self.__httpd_ssl_fd6 = -1
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
+        self.execute_expand_script(args="stop")
 
 
 def main():

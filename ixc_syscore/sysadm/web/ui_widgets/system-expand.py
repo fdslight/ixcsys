@@ -5,7 +5,7 @@ import ixc_syslib.web.ui_widget as ui_widget
 
 class widget(ui_widget.widget):
     def handle(self, *args, **kwargs):
-        script_path = "%s/expand.start" % os.getenv("IXC_MYAPP_CONF_DIR")
+        script_path = "%s/expand.sh" % os.getenv("IXC_MYAPP_CONF_DIR")
         if not os.path.isfile(script_path):
             script_content = ""
         else:
