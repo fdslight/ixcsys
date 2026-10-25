@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import getopt, sys, os, json, subprocess, sysconfig
+import getopt, sys, os, json, sysconfig
 
 __helper = """
 action:
@@ -39,16 +39,6 @@ def get_shared_object_fname(fpath: str, prefix: str):
         break
 
     return result
-
-
-def have_pkg_config():
-    """查找是否有pkg-config
-    """
-    rs = subprocess.run("which pkg-config", capture_output=True, shell=True)
-    s = rs.stdout.decode()
-    if not s: return False
-
-    return True
 
 
 def gen_build_config(debug, cflags):

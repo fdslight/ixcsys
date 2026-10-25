@@ -12,14 +12,13 @@ A software router for Linux
 # debian/ubuntu install runtime
 1. sudo apt install python3-pip
 2. sudo apt install libpython3-dev  
-3. sudo apt install tftpd-hpa 
-4. sudo apt install pkg-config 
-5. sudo apt install lsb-release 
-6. sudo apt install curl 
-7. sudo pip3 install dnspython3 
-8. sudo pip3 install cryptography 
-9. sudo pip3 install cloudflare-ddns 
-10. sudo pip3 install s-tui 
+3. sudo apt install tftpd-hpa
+4. sudo apt install lsb-release 
+5. sudo apt install curl 
+6. sudo pip3 install dnspython3 
+7. sudo pip3 install cryptography 
+8. sudo pip3 install cloudflare-ddns 
+9. sudo pip3 install s-tui 
 
 # build ixcsys
 1.first you need run "python3 configure.py" for configure your environment(for example,"python3 build_config.py nodebug")     
