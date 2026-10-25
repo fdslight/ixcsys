@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import getopt, sys, os, json, subprocess
+import getopt, sys, os, json, subprocess, sysconfig
 
 __helper = """
 action:
@@ -86,35 +86,21 @@ def gen_build_config(debug, cflags):
 
 
 def config_default(cflags, debug=False):
-    if not have_pkg_config():
-        print("not found pkg-config")
-        return
+    includes = [
+        sysconfig.get_path("include"),
+    ]
 
-    rs = subprocess.run("pkg-config python3 --libs --cflags", capture_output=True, shell=True)
-    cmd = rs.stdout.decode()
-    cmd = cmd.replace("-I", "")
-    cmd = cmd.replace("\n", "")
-    _lib_dirs = cmd.replace("include", "lib").split(" ")
-    lib_dirs = []
-    libname = "python3"
+    libs = [
+        "python" + sysconfig.get_python_version()
+    ]
 
-    for s in _lib_dirs:
-        p = s.find("/python")
-        if p <= 0: continue
-        lib_dirs.append(s[0:p])
-        p += 1
-        libname = s[p:]
-
-    _includes = cmd.split(" ")
-    includes = []
-    for s in _includes:
-        s = s.strip()
-        if not s: continue
-        includes.append(s)
+    lib_dirs = [
+        sysconfig.get_config_var("LIBDIR"),
+    ]
 
     build_config = {"debug": debug,
                     "c_includes": includes,
-                    "libs": [libname],
+                    "libs": libs,
                     "lib_dirs": lib_dirs,
                     "cflags": cflags,
                     }
