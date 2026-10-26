@@ -280,8 +280,8 @@ def __gen_update_archive():
     """生成更新归档,注意执行此函数需要先make install_all
     :return:
     """
-    update_file = "/tmp/ixcsys_update.tar.gz"
-    update_check_file = "/tmp/ixcsys_update_check.md5"
+    update_file = "/var/ixcsys_update.tar.gz"
+    update_check_file = "/var/ixcsys_update_check.md5"
     # 生成一个临时安装目录
     prefix = "/tmp/ixc_update_temp"
     if not os.path.isdir(prefix): os.mkdir(prefix)
