@@ -1,3 +1,7 @@
+#define  PY_SSIZE_T_CLEAN
+#include<Python.h>
+#include<structmember.h>
+
 #include<unistd.h>
 #include<signal.h>
 #include<stdlib.h>
@@ -7,10 +11,6 @@
 
 #include<sched.h>
 #include<sys/resource.h>
-
-#define  PY_SSIZE_T_CLEAN
-#include<Python.h>
-#include<structmember.h>
 
 #include "mbuf.h"
 #include "router.h"
