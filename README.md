@@ -23,7 +23,7 @@ A software router for Linux
 # build ixcsys
 1.first you need run "python3 configure.py" for configure your environment(for example,"python3 build_config.py nodebug")     
 2.secondly you need run "python3 make.py build_all" for build all apps     
-3.last run "python3 make.py install_all" for install to directory "/opt/ixcsys"    
+3.last run "sudo python3 make.py install_all" for install to directory "/opt/ixcsys"    
 
 
 # run ixcsys
