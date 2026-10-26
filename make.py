@@ -280,8 +280,8 @@ def __gen_update_archive():
     """生成更新归档,注意执行此函数需要先make install_all
     :return:
     """
-    update_file = "/var/ixcsys_update.tar.gz"
-    update_check_file = "/var/ixcsys_update_check.md5"
+    update_file = "/tmp/ixcsys_update.tar.gz"
+    update_check_file = "/tmp/ixcsys_update_check.md5"
     # 生成一个临时安装目录
     prefix = "/tmp/ixc_update_temp"
     if not os.path.isdir(prefix): os.mkdir(prefix)
@@ -315,7 +315,7 @@ def __gen_update_archive():
     fdst.write(md5.digest())
     fdst.close()
 
-    print("generate update archive %s OK" % update_file)
+    print("generate update archive /tmp/ixcsys_update.tar.gz OK")
 
 
 def install_lib():
@@ -329,7 +329,7 @@ def install_lib():
 def build_binary_install_pkg():
     """构建二进制安装包
     """
-    archive_path = "/var/ixcsys_update.tar.gz"
+    archive_path = "/tmp/ixcsys_update.tar.gz"
 
     ver_path = "%s/version" % os.path.dirname(os.path.abspath(__file__))
     dis, dis_id, release = os_info.get_os_info()
@@ -338,7 +338,7 @@ def build_binary_install_pkg():
     if not os.path.isfile(archive_path):
         print("ERROR:cannot found archive file")
         return
-    with open("/var/ixcsys_update_check.md5", "rb") as f:
+    with open("/tmp/ixcsys_update_check.md5", "rb") as f:
         md5_code = f.read()
     f.close()
 

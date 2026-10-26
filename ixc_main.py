@@ -281,8 +281,8 @@ class ixc_main_d(object):
         self.__is_isset_rescue = True
 
     def __init__(self):
-        self.__update_file_path = "/var/ixcsys_update.tar.gz"
-        self.__update_check_file = "/var/ixcsys_update_check.md5"
+        self.__update_file_path = "/tmp/ixcsys_update.tar.gz"
+        self.__update_check_file = "/tmp/ixcsys_update_check.md5"
         self.__net_monitor_path = "%s/net_monitor.ini" % sys_dir
 
         self.__net_monitor_up_time = time.time()

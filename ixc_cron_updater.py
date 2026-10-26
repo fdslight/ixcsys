@@ -7,7 +7,7 @@ sys_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(sys_dir)
 
 # 更新文件路径
-UPDATE_FILE = "/var/ixcsys_update.tar.gz"
+UPDATE_FILE = "/tmp/ixcsys_update.tar.gz"
 
 
 def __get_os_info_for_line(s: str):
