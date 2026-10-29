@@ -41,7 +41,9 @@ A software router for Linux
 5. sudo python3 ixc_main.py restart
 6. plan update: sudo python3 ixc_cron_updater hours:minutes
 
-# protect your SSD or TF
+# protect your SSD or TF card(record syslog by memory,do this before start ixcsys)
+1. sudo mkdir /var/ixcsys_log
+2. sudo mount -t tmpfs -o size=96M tmpfs /var/ixcsys_log
 
 # about Packet forwarding speed(the software only support single-core forward packet)
 1.Intel J1800 CPU or arm cortex-a53:100Mbit/s  
