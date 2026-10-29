@@ -41,6 +41,8 @@ A software router for Linux
 5. sudo python3 ixc_main.py restart
 6. plan update: sudo python3 ixc_cron_updater hours:minutes
 
+# protect your SSD or TF
+
 # about Packet forwarding speed(the software only support single-core forward packet)
 1.Intel J1800 CPU or arm cortex-a53:100Mbit/s  
 2.Intel N5105:at least 1000Mbit/s    
