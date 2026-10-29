@@ -130,6 +130,7 @@ class service(dispatcher.dispatcher):
         self.get_handler(self.__scgi_fd).after()
 
     def write_log_to_archive(self, content: str):
+        # 限制日志大小
         size = 256 * 1024 * 1024
         # 超过指定大小覆写日志
         if os.stat(self.__syslog_archive_path).st_size >= size:
