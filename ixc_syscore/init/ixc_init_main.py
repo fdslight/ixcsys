@@ -77,6 +77,9 @@ class service(dispatcher.dispatcher):
     __errlog_file_max_size = None
     __up_time = None
 
+    __syslog_archive_path = None
+    __syslog_archive_fd = None
+
     def init_func(self, debug):
         global_vars["ixcsys.init"] = self
 
@@ -89,6 +92,9 @@ class service(dispatcher.dispatcher):
 
         self.__errlog_path = "/var/log/ixcsys_error.log"
         self.__syslog_path = "/var/log/ixcsys_syslog.log"
+        # 除故障日志外的日志归档,非实时日志
+        self.__syslog_archive_path = "/var/log/ixcsys_syslog_archive.log"
+        self.__syslog_archive_fd = open(self.__syslog_archive_path, "a")
 
         # 限制最大为256KB
         self.__errlog_file_max_size = 256 * 1024
@@ -122,6 +128,13 @@ class service(dispatcher.dispatcher):
         }
         self.__scgi_fd = self.create_handler(-1, scgi.scgid_listener, scgi_configs)
         self.get_handler(self.__scgi_fd).after()
+
+    def write_log_to_archive(self, content: str):
+        size = 256 * 1024 * 1024
+        # 超过指定大小覆写日志
+        if os.stat(self.__syslog_archive_path).st_size >= size:
+            self.__syslog_archive_fd.seek(0)
+        self.__syslog_archive_fd.write(content)
 
     def log_write(self, level: int, name: str, message: str):
         t = message.replace("\n", "")
@@ -174,6 +187,8 @@ class service(dispatcher.dispatcher):
             self.__logs_important_count += 1
 
         _list.append(o)
+        content = "%s  %s  %s  %s\r\n" % (o['level'], o['application'], o['message'], o['time'])
+        self.write_log_to_archive(content)
 
     def write_err_log(self, name: str, message: str):
         s1 = time.strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -258,6 +273,7 @@ class service(dispatcher.dispatcher):
 
         if os.path.exists(os.getenv("IXC_MYAPP_SCGI_PATH")): os.remove(os.getenv("IXC_MYAPP_SCGI_PATH"))
 
+        self.__syslog_archive_fd.close()
         self.save_log_to_file()
 
 
