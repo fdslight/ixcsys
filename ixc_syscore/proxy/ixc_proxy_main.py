@@ -81,6 +81,7 @@ def __start_service(debug):
 # 这里设置的时间一定要大于DNS缓存的时间,因此要限制DNS缓存时间
 ROUTE_TIMEOUT = 1800
 
+
 class service(dispatcher.dispatcher):
     __conf_path = None
 
@@ -125,6 +126,8 @@ class service(dispatcher.dispatcher):
     __dns_query_tunnel_retry_up_time = None
     __dns_query_racs_retry_up_time = None
 
+    __tasks = None
+
     def init_func(self, debug):
         global_vars["ixcsys.proxy"] = self
 
@@ -144,6 +147,7 @@ class service(dispatcher.dispatcher):
         self.__racs_fd = -1
         self.__dns_query_tunnel_is_error = False
         self.__dns_query_racs_is_error = False
+        self.__tasks = []
 
         RPCClient.wait_processes(["router", "DNS", ])
 
@@ -347,6 +351,12 @@ class service(dispatcher.dispatcher):
         if self.__racs_configs["connection"]["enable"] and self.__racs_fd < 0:
             self.reset_racs()
 
+        try:
+            f = self.__tasks.pop(0)
+            f()
+        except IndexError:
+            pass
+
     @property
     def https_configs(self):
         configs = self.__configs.get("tunnel_over_https", {})
@@ -533,21 +543,28 @@ class service(dispatcher.dispatcher):
         with open(fpath, "w") as f: f.write(text)
         f.close()
         RPCClient.fn_call("DNS", "/rule", "clear")
-        self.set_domain_rules()
+
+        f = self.set_domain_rules
+        if f not in self.__tasks: self.__tasks.append(self.set_domain_rules)
+        # self.set_domain_rules()
 
     def update_pass_ip_rule(self, text: str):
         fpath = "%s/pass_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
         with open(fpath, "w") as f: f.write(text)
         f.close()
         self.reset()
-        self.__set_rules()
+        f = self.__set_rules
+        if f not in self.__tasks: self.__tasks.append(f)
+        # self.__set_rules()
 
     def update_proxy_ip_rule(self, text: str):
         fpath = "%s/proxy_ip.txt" % os.getenv("IXC_MYAPP_CONF_DIR")
         with open(fpath, "w") as f: f.write(text)
         f.close()
         self.reset()
-        self.__set_rules()
+        f = self.__set_rules
+        if f not in self.__tasks: self.__tasks.append(f)
+        # self.__set_rules()
 
     def conn_cfg_update(self, dic: dict):
         # 首先清除旧的src filter规则
