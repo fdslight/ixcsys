@@ -42,7 +42,7 @@ A software router for Linux
 6. plan update: sudo python3 ixc_cron_updater hours:minutes
 
 # protect your SSD or TF card(record syslog by memory,do this before start ixcsys,the suggestion of memory is 64MBit at least)
-1. sudo mkdir /var/ixcsys_log
+1. sudo mkdir -p /var/ixcsys_log
 2. sudo mount -t tmpfs -o size=64M tmpfs /var/ixcsys_log
 
 # about Packet forwarding speed(the software only support single-core forward packet)
