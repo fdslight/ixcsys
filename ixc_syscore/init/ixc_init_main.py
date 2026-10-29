@@ -93,7 +93,9 @@ class service(dispatcher.dispatcher):
         self.__errlog_path = "/var/log/ixcsys_error.log"
         self.__syslog_path = "/var/log/ixcsys_syslog.log"
         # 除故障日志外的日志归档,非实时日志
-        self.__syslog_archive_path = "/var/log/ixcsys_syslog_archive.log"
+        archive_log_dir = "/var/ixcsys_log"
+        if not os.path.isdir(archive_log_dir): os.mkdir(archive_log_dir)
+        self.__syslog_archive_path = "%s/ixcsys_syslog_archive.log" % archive_log_dir
         self.__syslog_archive_fd = open(self.__syslog_archive_path, "a")
 
         # 限制最大为256KB
