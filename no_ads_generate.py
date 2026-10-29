@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # 生成DNS广告屏蔽规则
 
-import os, hashlib, subprocess
+import os, hashlib, subprocess, time
 
 URL = "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/refs/heads/master/anti-ad-domains.txt"
 
@@ -94,6 +94,8 @@ def gen_dns_rule(results):
     fname_tmp = "DNS_NO_ADS_RULES2.txt"
     fname = "DNS_NO_ADS_RULES.txt"
     fdst = open(fname_tmp, "w")
+
+    fdst.write("# generate time %s \r\n\r\n" % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 
     for host in EXTRA_ADDS:
         fdst.write("%s\r\n" % host)
