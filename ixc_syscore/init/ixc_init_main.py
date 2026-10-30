@@ -97,7 +97,11 @@ class service(dispatcher.dispatcher):
         # 除故障日志外的日志归档,非实时日志
         self.__syslog_archive_path = "%s/ixcsys_syslog_archive.log" % log_dir
 
-        self.__syslog_archive_fd = open(self.__syslog_archive_path, "a+")
+        if not os.path.isfile(self.__syslog_archive_path):
+            self.__syslog_archive_fd = open(self.__syslog_archive_path, "w")
+        else:
+            self.__syslog_archive_fd = open(self.__syslog_archive_path, "r+")
+            self.__syslog_archive_fd.seek(0, os.SEEK_END)
 
         # 限制最大为256KB
         self.__errlog_file_max_size = 256 * 1024
