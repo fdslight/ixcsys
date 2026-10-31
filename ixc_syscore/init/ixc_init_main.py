@@ -267,6 +267,10 @@ class service(dispatcher.dispatcher):
             fdst.close()
         return
 
+    def error_log_clear(self):
+        fdst = open(self.__errlog_path, "w")
+        fdst.close()
+
     def auto_sync_log_to_file(self):
         # 自动同步普通日志
         now = time.time()

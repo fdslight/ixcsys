@@ -15,6 +15,7 @@ class controller(rpc.controller):
             "syslog_info_get": self.syslog_info_get,
             "syslog_alert_get": self.syslog_alert_get,
             "errlog_get": self.errlog_get,
+            "errlog_clear_immediately": self.errlog_clear_immediately,
         }
 
     def syslog_info_get(self):
@@ -25,3 +26,8 @@ class controller(rpc.controller):
 
     def errlog_get(self):
         return 0, self.__runtime.get_errlog()
+
+    def errlog_clear_immediately(self):
+        """立即清除故障日志
+        """
+        return 0, self.__runtime.error_log_clear()
