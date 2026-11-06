@@ -8,35 +8,15 @@
             <label>IPv6访问方式</label>
             <select class="form-control" id="ixc-ipv6-type" name="ipv6_type">
                 <option value="0">自动</option>
-                <option value="1">静态地址</option>
+                <option value="1">静态地址NAT66</option>
                 <option value="2">穿透模式</option>
             </select>
+            <p class="ixc-prompt">NAT66实现为无状态,在非PPPoE上网情况下上级路由器请不要接其他终端设备</br>否则会造成NDP被此路由器抢达造成上级终端无法上网</p>
         </div>
         <div class="form-group">
             <label for="inputEmail3">IPv6下发地址段</label>
             <input type="text" class="form-control" name="static_ipv6"
                    value="${self.V['ip6_addr']}"/>
-        </div>
-        <div class="form-group">
-            <label for="inputEmail3">IPv6网关</label>
-            <input type="text" class="form-control" name="static_ipv6_router"
-                   value="${self.V['ip6_static_router']}"/>
-        </div>
-        <div class="form-check">
-            <label class="form-check-label">
-                <%
-                s="""<input class="form-check-input" name="enable_ipv6_nat66" value="1" type="checkbox" {}/>"""
-                if self.V["enable_ipv6_nat66"]:x=s.format("checked")
-                else:x=s.format("")
-                self.show(x)
-                %>
-                开启NAT66
-            </label>
-            <p class="ixc-prompt">
-                NAT66实现为无状态,在非PPPoE上网情况下上级路由器请不要接其他终端设备<br />
-                否则会造成NDP被此路由器抢达造成上级终端无法上网<br />
-                在动态前缀下发状态下建议开启避免前缀变化导致有些终端长时间无法上网<br />
-            </p>
         </div>
         <div class="form-check">
             <label class="form-check-label">

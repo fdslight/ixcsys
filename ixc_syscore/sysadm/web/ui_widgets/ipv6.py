@@ -11,15 +11,11 @@ class widget(ui_widget.widget):
         enable_ipv6_pass = if_config["enable_ipv6_pass"]
         ip6_addr = if_config["ip6_addr"]
         enable_ipv6_security = if_config["enable_ipv6_security"]
-        enable_ipv6_nat66 = if_config['enable_ipv6_nat66']
-        ip6_static_router = if_config['ip6_static_router']
 
         configs = {
             "enable_static_ipv6": enable_static_ipv6,
             "enable_ipv6_pass": enable_ipv6_pass,
             "enable_ipv6_security": bool(int(enable_ipv6_security)),
-            "enable_ipv6_nat66": bool(int(enable_ipv6_nat66)),
-            "ip6_static_router": ip6_static_router,
             "ip6_addr": ip6_addr
         }
 
