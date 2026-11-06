@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-from pywind.global_vars import global_vars
 import ixc_syscore.sysadm.web.controllers.controller as base_controller
-
+import ixc_syslib.pylib.RPCClient as RPC
 
 class controller(base_controller.BaseController):
     def myinit(self):
@@ -10,7 +9,5 @@ class controller(base_controller.BaseController):
         return True
 
     def handle(self):
-        fdst = open("/var/log/ixcsys_error.log", "w")
-        fdst.close()
-
+        RPC.fn_call("init","/syslog","errlog_clear_immediately")
         self.json_resp(False, {})
