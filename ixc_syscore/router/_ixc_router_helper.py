@@ -981,7 +981,7 @@ class helper(object):
         if "enable" not in o: o["enable"] = "0"
 
         if_configs = self.__lan_configs["if_name"]
-        if "enable_nat66" not in if_configs: if_configs["enable_nat66"] = "0"
+        if "enable_nat66" not in if_configs: if_configs["enable_ipv6_nat66"] = "0"
         if "ip6_static_router" not in if_configs: if_configs["ip6_static_router"] = "fe80::1"
 
     def save_lan_configs(self):
