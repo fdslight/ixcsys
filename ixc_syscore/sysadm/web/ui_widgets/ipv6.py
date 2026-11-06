@@ -16,6 +16,8 @@ class widget(ui_widget.widget):
             "enable_static_ipv6": enable_static_ipv6,
             "enable_ipv6_pass": enable_ipv6_pass,
             "enable_ipv6_security": bool(int(enable_ipv6_security)),
+            "enable_ipv6_nat66": bool(int(enable_ipv6_security)),
+            "ip6_static_router": "fe80::1",
             "ip6_addr": ip6_addr
         }
 
