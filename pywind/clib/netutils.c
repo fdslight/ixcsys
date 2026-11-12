@@ -193,9 +193,9 @@ int is_udplite,int udplite_csum_coverage)
     struct pseudo_header6{
         unsigned char src_addr[16];
         unsigned char dst_addr[16];
-        unsigned char __pad;
+        unsigned int length;
+        unsigned char __pad[3];
         unsigned char protocol;
-        unsigned short length;
     } header6;
 
     struct udphdr{
@@ -221,7 +221,7 @@ int is_udplite,int udplite_csum_coverage)
         memcpy(header6.src_addr,src_addr,16);
         memcpy(header6.dst_addr,dst_addr,16);
 
-        header6.__pad=0;
+        bzero(header6.__pad,3);
         header6.protocol=protocol;
         header6.length=length;
 
