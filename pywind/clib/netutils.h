@@ -132,13 +132,6 @@ unsigned short csum_calc(unsigned short *buffer,size_t size);
 // 如果opt_len长度为0表示选项结束
 int build_ipv4_header(struct netutil_iphdr *iphdr,const char options[][40],unsigned char every_opt_len[],void *res);
 
-/// 构建UDP数据包
-// return:返回数据包的大小
-char *build_udp_packet(\
-unsigned char *src_addr,unsigned char *dst_addr,unsigned short src_port,unsigned short dst_port,\
-char *user_data,unsigned short user_data_len,char *res,int *offset,int is_ipv6,\
-int is_udplite,int udplite_csum_coverage);
-
 /// 检查是否是IPv4地址
 int is_ipv4_address(const char *address);
 /// 检查是否是IPv6地址

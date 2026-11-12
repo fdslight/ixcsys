@@ -66,17 +66,31 @@ unsigned short mtu,int is_udplite,unsigned short udplite_csum_coverage)
         ps_header->pad[0]=0;
         ps_header->length=htons(data_len+8);
     }
-
+    
     if(is_udplite){
         if(udplite_csum_coverage<8) udplite_csum_coverage=8;
         if(data_len+8<udplite_csum_coverage) udplite_csum_coverage=data_len+8;
         udphdr->csum_coverage=htons(udplite_csum_coverage);
         csum=csum_calc((unsigned short *)(udphdr),udplite_csum_coverage);
     }else{
+        s=user_data-8;
         csum=csum_calc((unsigned short *)s,size+8+data_len);
     }
-
     udphdr->checksum=htons(csum);
+
+    // 执行头部偏移
+    mdata->begin=mdata->begin-8;
+    mdata->offset=mdata->begin;
+
+    data_len=mdata->end-mdata->begin;
+
+    if(is_ipv6){
+        size=mtu-48;
+    }else{
+        size=mtu-28;
+    }
+
+    // 此处构建IP头部
 
     return mdata;
 }
