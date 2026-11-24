@@ -824,6 +824,11 @@ void ixc_icmpv6_filter_and_modify(struct ixc_mbuf *m)
                     if(length>=4) memcpy(icmpv6_wan_dnsserver_b,ptr+24,16);
                 }
                 break;
+            // 跳过icmpv6 ra encrypted dns option
+            // 局域网不需要该选项,加密DNS由路由器发起,不然会导致代理这类软件异常
+            case 144:
+                offset+=x;
+                break;
             default:
                 memcpy(buf+offset,ptr,x);
                 offset+=x;
