@@ -166,7 +166,7 @@ class widget(ui_widget.widget):
             t = float(_list[0])
         except ValueError:
             return self.get_format_run_time(0)
-        return self.get_format_run_time(0)
+        return self.get_format_run_time(t)
 
     def handle(self, *args, **kwargs):
         uri = "default.html"
