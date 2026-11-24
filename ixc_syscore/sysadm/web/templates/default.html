@@ -14,9 +14,15 @@
                 <td>${self.V["time"]}</td>
             </tr>
             <tr>
-                <td>运行时间</td>
-                <td>${self.V["start_time"]["run_days"]}&nbsp;天 &nbsp;${self.V["start_time"]["run_hours"]}&nbsp;小时&nbsp;${self.V["start_time"]["run_minutes"]}
-                    &nbsp;分&nbsp;${self.V["start_time"]["run_seconds"]}&nbsp;秒
+                <td>OS运行时间</td>
+                <td>${self.V["os_run_time"]["run_days"]}&nbsp;天 &nbsp;${self.V["os_run_time"]["run_hours"]}&nbsp;小时&nbsp;${self.V["os_run_time"]["run_minutes"]}
+                    &nbsp;分&nbsp;${self.V["os_run_time"]["run_seconds"]}&nbsp;秒
+                </td>
+            </tr>
+            <tr>
+                <td>路由运行时间</td>
+                <td>${self.V["soft_run_time"]["run_days"]}&nbsp;天 &nbsp;${self.V["soft_run_time"]["run_hours"]}&nbsp;小时&nbsp;${self.V["soft_run_time"]["run_minutes"]}
+                    &nbsp;分&nbsp;${self.V["soft_run_time"]["run_seconds"]}&nbsp;秒
                 </td>
             </tr>
             <tr>

@@ -120,10 +120,10 @@ class widget(ui_widget.widget):
 
         return s
 
-    def get_format_run_time(self):
-        now_time = time.time()
-        start_time = RPC.fn_call("router", "/config", "router_start_time")
-        v = now_time - start_time
+    def get_format_run_time(self, v: int):
+        # now_time = time.time()
+        # start_time = RPC.fn_call("router", "/config", "router_start_time")
+        # v = now_time - start_time
 
         tot_days = int(v / 86400)
         tot_hours = int(v / 3600)
@@ -144,6 +144,29 @@ class widget(ui_widget.widget):
             "run_minutes": run_minutes,
             "run_seconds": run_secs,
         }
+
+    def get_soft_run_time(self):
+        """获取软件运行时长
+        """
+        now_time = time.time()
+        start_time = RPC.fn_call("router", "/config", "router_start_time")
+        v = now_time - start_time
+
+        return self.get_format_run_time(v)
+
+    def get_os_run_time(self):
+        """获取操作系统运行时长
+        """
+        rs = subprocess.run("cat /proc/uptime", capture_output=True, shell=True)
+        s = rs.stdout.decode()
+        _list = s.split(" ")
+        if len(_list) != 2:
+            return self.get_format_run_time(0)
+        try:
+            t = float(_list[0])
+        except ValueError:
+            return self.get_format_run_time(0)
+        return self.get_format_run_time(0)
 
     def handle(self, *args, **kwargs):
         uri = "default.html"
@@ -174,7 +197,8 @@ class widget(ui_widget.widget):
         dic["rx_npkt_speed"] = rx_npkt_speed
         dic["tx_npkt_speed"] = tx_npkt_speed
 
-        dic["start_time"] = self.get_format_run_time()
+        dic["soft_run_time"] = self.get_soft_run_time()
+        dic["os_run_time"] = self.get_os_run_time()
 
         wan_configs = RPC.fn_call("router", "/config", "wan_config_get")
         pub = wan_configs["public"]
