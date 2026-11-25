@@ -559,7 +559,7 @@ class service(dispatcher.dispatcher):
             drop_msg = dns_utils.build_dns_ddr_no_response(dns_id)
             self.get_handler(from_fd).send_msg(drop_msg, address)
             del self.__id_wan2lan[new_dns_id]
-            logging.print_alert("DNS DDR is dropped at LAN from %s" % address[0])
+            logging.print_alert("DNS DDR is dropped on the LAN from %s" % address[0])
             return
         # 检查是否开启丢弃DNSv6请求
         if self.enable_drop_dnsv6():
