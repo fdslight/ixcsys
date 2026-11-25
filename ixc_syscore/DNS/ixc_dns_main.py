@@ -553,6 +553,14 @@ class service(dispatcher.dispatcher):
         q = questions[0]
         host = b".".join(q.name[0:-1]).decode("iso-8859-1")
 
+        # 局域网不需要主动请求加密DNS,影响代理软件工作
+        # 加密DNS由路由器代理请求
+        if dns_utils.is_dns_ddr_request(message):
+            drop_msg = dns_utils.build_dns_ddr_no_response(dns_id)
+            self.get_handler(from_fd).send_msg(drop_msg, address)
+            del self.__id_wan2lan[new_dns_id]
+            logging.print_alert("DNS DDR is dropped at LAN from %s" % address[0])
+            return
         # 检查是否开启丢弃DNSv6请求
         if self.enable_drop_dnsv6():
             if dns_utils.is_aaaa_request(message):
