@@ -92,6 +92,7 @@ def is_dns_ddr_request(dnspkt: bytes):
         except IndexError:
             break
         if length == 0:
+            dnspkt = dnspkt[1:]
             dns_fmt_ok = True
             break
         dnspkt = dnspkt[1:]
@@ -177,7 +178,7 @@ def build_dns_addr_response(xid, host, addr, is_ipv6=False):
 
 
 """
-zz = "7d710100000100000000000003777777036d736e02636e0000010001"
+zz = "11b901200001000000000001045f646e73087265736f6c7665720461727061000040000100002904d000000000000c000a00089823e6427671f3b5"
 seq = []
 b, e = (0, 2,)
 while 1:
@@ -190,7 +191,7 @@ while 1:
     e += 2
 
 dnspkt = bytes(seq)
-print(is_aaaa_request(dnspkt))
+print(is_dns_ddr_request(dnspkt))
 """
 
 # print(build_dns_no_such_name_response(0x0011, "www.google.com",is_ipv6=True))
