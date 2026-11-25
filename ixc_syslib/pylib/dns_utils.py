@@ -98,7 +98,7 @@ def is_dns_ddr_request(dnspkt: bytes):
         tmp_v = dnspkt[0:length]
         host_seq.append(tmp_v)
         dnspkt = dnspkt[length:]
-    if len(dnspkt) <= 4: return False
+    if len(dnspkt) < 4: return False
     if not dns_fmt_ok: return False
     _type, = struct.unpack("!H", dnspkt[0:2])
     if _type != 64: return False
